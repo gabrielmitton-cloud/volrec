@@ -27,13 +27,33 @@ import csv
 import json
 import os
 import sys
+import time
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import requests
 
 DATA = "https://data.alpaca.markets"
-WATCHLIST = ["SPY", "AAPL", "NVDA", "TSLA"]
+WATCHLIST = [
+    # broad index ETFs, ascending volatility
+    "SPY", "DIA", "QQQ", "IWM", "MDY",
+    # non-equity asset classes - volatility driven by different forces
+    "GLD", "SLV", "TLT", "IEF", "USO", "UNG", "FXE", "EEM", "EFA",
+    # sector ETFs - regime coverage without single-name noise
+    "XLK", "XLF", "XLE", "XLV", "XLP", "XLU", "XLI", "XLY", "XLB", "XRT",
+    # mega-cap tech
+    "AAPL", "MSFT", "GOOGL", "AMZN", "META",
+    # high-vol growth and speculative
+    "NVDA", "TSLA", "AMD", "PLTR", "COIN", "MSTR", "SMCI",
+    # low-vol defensives - anchors the bottom of the vol range
+    "JNJ", "PG", "KO", "PEP", "WMT", "MCD", "VZ",
+    # financials
+    "JPM", "BAC", "GS",
+    # energy and industrials
+    "XOM", "CVX", "CAT", "BA",
+    # healthcare and staples
+    "UNH", "COST",
+]
 TARGET_DTE = 30
 DTE_WINDOW = (21, 45)
 STRIKE_BAND = 0.08          # only pull strikes within +/-8% of spot
@@ -64,7 +84,13 @@ def session():
 
 
 def get(s, url, **params):
-    r = s.get(url, params=params, timeout=25)
+    for attempt in range(4):
+        r = s.get(url, params=params, timeout=25)
+        if r.status_code != 429:
+            break
+        wait = 2 ** attempt
+        print(f"    rate limited, waiting {wait}s")
+        time.sleep(wait)
     if r.status_code == 401:
         raise RuntimeError("401 - keys rejected. Check you copied the PAPER keys.")
     if r.status_code == 403:
@@ -221,6 +247,7 @@ def main():
         except Exception as e:
             failed.append(sym)
             print(f"  {sym:6s} FAILED: {e}")
+        time.sleep(0.35)   # ~170 req/min, under the 200/min free-tier cap
 
     if rows:
         append(rows)
