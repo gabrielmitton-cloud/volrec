@@ -56,6 +56,28 @@ WATCHLIST = [
     "XOM", "CVX", "CAT", "BA",
     # healthcare and staples
     "UNH", "COST",
+    # --- added 2026-09-05, screened live for populated IV/greeks and quotes
+    #     tighter than 60% of mid. Original 52 above are unchanged. ---
+    # credit and international - vol driven by spreads and geography
+    "LQD", "FXI",
+    # industry ETFs - regimes the sector SPDRs do not isolate
+    "SMH", "XBI", "KRE", "GDX", "IBIT", "XHB", "XOP",
+    # tech and semis single names
+    "AVGO", "ORCL", "CRM", "ADBE", "INTC", "MU", "QCOM", "TSM", "NFLX", "CSCO", "TXN",
+    # financials
+    "MS", "WFC", "C", "AXP", "SCHW",
+    # healthcare
+    "LLY", "ABBV", "PFE", "MRK", "TMO",
+    # consumer
+    "HD", "NKE", "TGT", "LOW", "DIS",
+    # industrials
+    "GE", "DE", "LMT", "UPS", "RTX",
+    # energy
+    "COP", "SLB", "OXY",
+    # utilities and communication
+    "NEE", "DUK", "T", "CMCSA",
+    # high-vol and speculative - anchors the top of the vol range
+    "RIVN", "SOFI", "HOOD", "MARA", "RBLX", "SNOW", "CRWD",
 ]
 TARGET_DTE = 30
 DTE_WINDOW = (21, 45)
@@ -63,12 +85,20 @@ STRIKE_BAND = 0.08          # only pull strikes within +/-8% of spot
 OPTION_FEED = "indicative"  # free feed; "opra" needs a paid subscription
 STOCK_FEED = "iex"          # free feed; "sip" needs a paid subscription
 MAX_PAGES = 10             # safety cap; one page holds 1000 contracts
+PACE = 0.40                # 150 req/min. The documented cap is 200/min and it
+                           # is undocumented whether the data and trading APIs
+                           # share one bucket, so leave real headroom.
 OUT = Path(__file__).parent / "data" / "iv_history.csv"
 
 FIELDS = [
     "date", "symbol", "spot", "expiration", "dte", "strike", "moneyness",
     "option_symbol", "bid", "ask", "mid", "iv", "delta", "gamma", "theta",
     "vega", "rho",
+    # added 2026-09-05. quote_time detects stale quotes; volume is a liquidity
+    # filter; the put at the SAME strike lets you average call and put IV, which
+    # cancels the dividend/borrow error that biases call IV down on its own.
+    "quote_time", "volume",
+    "put_symbol", "put_bid", "put_ask", "put_mid", "put_iv",
 ]
 
 
@@ -134,7 +164,8 @@ def spot_prices(s, symbols):
 
 def snapshot(s, symbol, spot, today):
     params = dict(
-        feed=OPTION_FEED, type="call", limit=1000,
+        feed=OPTION_FEED, limit=1000,   # no type filter: one request returns
+                                        # both calls and puts for this window
         expiration_date_gte=(today + timedelta(days=DTE_WINDOW[0])).isoformat(),
         expiration_date_lte=(today + timedelta(days=DTE_WINDOW[1])).isoformat(),
         strike_price_gte=round(spot * (1 - STRIKE_BAND), 2),
@@ -150,7 +181,7 @@ def snapshot(s, symbol, spot, today):
         if not token or not page:
             break
         params["page_token"] = token
-        time.sleep(0.35)
+        time.sleep(PACE)
     if not snaps:
         raise RuntimeError("no contracts returned in the strike/expiry window")
 
@@ -179,6 +210,14 @@ def snapshot(s, symbol, spot, today):
     mid = (round((bid + ask) / 2, 4)
            if bid is not None and ask is not None else None)
 
+    # the put at the same strike and expiry, if it came back in the same pages
+    psym = osym.replace(f"{exp:%y%m%d}C", f"{exp:%y%m%d}P", 1)
+    put = snaps.get(psym) or {}
+    pq = put.get("latestQuote") or {}
+    pbid, pask = pq.get("bp"), pq.get("ap")
+    pmid = (round((pbid + pask) / 2, 4)
+            if pbid is not None and pask is not None else None)
+
     return {
         "date": today.isoformat(), "symbol": symbol, "spot": round(spot, 4),
         "expiration": exp.isoformat(), "dte": dte, "strike": strike,
@@ -187,6 +226,11 @@ def snapshot(s, symbol, spot, today):
         "iv": snap.get("impliedVolatility"),
         "delta": g.get("delta"), "gamma": g.get("gamma"),
         "theta": g.get("theta"), "vega": g.get("vega"), "rho": g.get("rho"),
+        "quote_time": q.get("t"),
+        "volume": (snap.get("dailyBar") or {}).get("v"),
+        "put_symbol": psym if put else None,
+        "put_bid": pbid, "put_ask": pask, "put_mid": pmid,
+        "put_iv": put.get("impliedVolatility") if put else None,
     }
 
 
@@ -288,7 +332,7 @@ def main():
         except Exception as e:
             failed.append(sym)
             print(f"  {sym:6s} FAILED: {e}")
-        time.sleep(0.35)   # ~170 req/min, under the 200/min free-tier cap
+        time.sleep(PACE)   # see PACE: headroom under the 200/min free-tier cap
 
     if rows:
         append(rows)
