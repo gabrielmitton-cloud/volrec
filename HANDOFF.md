@@ -34,8 +34,8 @@ questioned about for fifteen minutes, not a résumé line.
 
 | piece | status |
 |---|---|
-| `record.py` | Working. 52 tickers, ~20 seconds per run. |
-| GitHub Actions | Live. Weekdays 15:30 UTC (8:30am Pacific). First scheduled run: Mon 8 Sep (7 Sep is Labor Day and is skipped). |
+| `record.py` | Working. 109 tickers, ~95 seconds per run (measured live 5 Sep). |
+| GitHub Actions | Live. Weekdays 15:30 UTC (8:30am Pacific). First scheduled run: Tue 8 Sep. Mon 7 Sep is Labor Day and is skipped. |
 | Data | Collecting since 2026-09-04. First run: 52/52 rows, all IV populated. |
 | `tools/gamma-lab*.html` | Complete. Educational, not part of the pipeline. |
 | Analysis | Not started. Blocked on data volume until late October. |
@@ -63,18 +63,20 @@ observation repeated 52 times. The universe spans index ETFs, non-equity asset
 classes (metals, rates, energy, FX, international), sector ETFs, mega-cap tech,
 high-vol growth, and low-vol defensives.
 
-**Expanded 52 -> 106 on 5 September 2026, deliberately and once.** The freeze
+**Expanded 52 -> 109 on 5 September 2026, deliberately and once.** The freeze
 argument was always about uneven history length, and that cost is proportional
 to how long you wait. On 5 Sep the dataset was one day old, so the entire cost
 of expanding was one missing day on the new names. In late October it would
 have been forty. Day one was the cheapest moment this decision would ever have.
 
-The 54 additions were not chosen by eye. Sixty-four candidates were screened
+The 57 additions were not chosen by eye. Sixty-four candidates were screened
 live against the API and kept only if IV, all five greeks and a two-sided quote
-came back with a spread under 60% of mid. Ten failed and were dropped: XLRE,
-XLC, HYG, EWZ, EWJ, IYR, ARKK, SBUX, HON, SO. Caveat: that screen ran on stale
-weekend quotes, which are wider than midday. XLC and XLRE in particular would
-complete the 11 GICS sectors and deserve a re-screen intraday.
+came back with a spread under 60% of mid. Ten failed: XLRE, XLC, HYG, EWZ, EWJ,
+IYR, ARKK, SBUX, HON, SO. Seven were dropped; **XLRE, XLC and HYG were added
+back anyway**, which is why the universe is 109 and not 106. The reason is the
+caveat: that screen ran on stale weekend quotes, which are far wider than
+midday, and those three complete the 11 GICS sectors and the credit sleeve.
+See section 6 - the 5 Sep pressure test measured how unreliable that screen is.
 
 The additions widen the range at both ends - LQD at 4.9% IV sits below IEF,
 MARA at 82% above MSTR - and add asset classes the original 52 lacked:
@@ -122,8 +124,8 @@ corrections to what the original spec said, and they are not stylistic.
 **(a) The significance test. This is the big one.**
 
 Sampling daily but looking forward ~30 days means consecutive observations
-share ~29 days of the same realized path, and all 106 tickers on a given day
-share a market factor. A pooled t-test across all rows treats ~106 x T
+share ~29 days of the same realized path, and all 109 tickers on a given day
+share a market factor. A pooled t-test across all rows treats ~109 x T
 observations as independent when the effective count is closer to
 `(T / 21) x (a handful)`.
 
@@ -178,7 +180,7 @@ dividing by `n` is correct. 252-day annualization is correct.
 - **Is it bigger for index ETFs than single names?** The literature is strong
   and consistent here (Bakshi-Kapadia: ~3.3 vol pts index vs ~1.5 single
   names; the mechanism is a correlation risk premium). If the data reproduces
-  it, that validates the dataset. The 106-name universe was expanded partly to
+  it, that validates the dataset. The 109-name universe was expanded partly to
   make this testable.
 - Does the spread scale with the level of implied vol, or is it flat?
 - **Does it survive costs?** `bid`/`ask` exist so this is computed, not
@@ -253,6 +255,14 @@ Anything before then is premature. The recorder needs no further changes.
 - **FXE and XLU** quoted 0.63/1.27 and 0.45/0.79 on day one - spreads of 67%
   and 55% of the mid. Those spreads make the mid unreliable for both. Under
   review; drop them if the pattern persists.
+- **The weekend spread screen is not discriminating - do not act on it.**
+  Measured 5 Sep against the live API: the same original-52 tickers that quoted
+  cleanly intraday on Friday blow out by 1.5x to 14x on Saturday's stale quotes.
+  PEP went 36.8% -> 97.7%, XRT 29.2% -> 72.3%, JNJ 2.5% -> 36.3%. A 60%-of-mid
+  screen applied to weekend data would drop PEP and XRT - both original-52 names
+  with a full clean row. HYG (92.3%), XLC (127.4%) and XLRE (85.3%) read badly on
+  a weekend for exactly that reason, which is *not* evidence about those tickers.
+  Judge all three from an intraday row; the first is Tue 8 Sep.
 - **Indicative feed** means quotes are approximate, not exact NBBO. Fine for the
   analysis, but state it plainly in the write-up.
 - **The snapshot time shifts an hour on 1 Nov 2026.** The cron is fixed at
@@ -333,13 +343,27 @@ one - see section 5 for why.
 **Open interest is NOT in the options snapshot** - confirmed against the schema
 and two SDKs. It lives on the Trading API at `/v2/options/contracts`, which
 accepts `underlying_symbols` (plural) and `limit` up to 10,000, so it is a
-handful of extra calls, not 106. It is T+2 stale, so store `open_interest_date`
+handful of extra calls, not 109. It is T+2 stale, so store `open_interest_date`
 alongside it or the values will mislead.
 
-**Still open:** open interest, per the paragraph above. And the first live run
-of the 109-ticker universe is Monday - the full-scale run could not be tested
-on a weekend, so check the Actions log that day and watch HYG, XLC and XLRE in
-particular, which were added despite failing a weekend spread screen.
+**Still open:** open interest, per the paragraph above.
+
+**The 109-ticker / 24-column path was verified live on 5 Sep 2026**, using a
+temporary `pressure.yml` workflow (run `pressure #2`, since deleted). It called
+`spot_prices()` and `snapshot()` directly to bypass the weekend guard, pointed
+`OUT` at a copy under `/tmp`, and asserted the real file's md5 was unchanged:
+
+- 109/109 tickers returned a row; no failures
+- **0 HTTP 429s** across 219 requests, 94.1 s elapsed (~140 req/min)
+- `spot_prices()` handles all 109 symbols in one request - no symbol cap
+- put match 109/109; the same-strike put lookup works for every name
+- `migrate_header()` added exactly the 7 columns and left all 52x17 original
+  cells byte-identical, with a byte-identical backup, idempotent on a re-run
+- the only gaps were `volume` on 4 names whose contracts did not trade Friday
+
+No defects were found and nothing in `record.py` was changed. The first
+scheduled live run on Tue 8 Sep should therefore be uneventful; what is worth
+reading off it is the *intraday* spread on HYG, XLC and XLRE - see section 6.
 
 ---
 

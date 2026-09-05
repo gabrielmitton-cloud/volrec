@@ -26,7 +26,7 @@ own six months of proprietary history for a fixed universe. Started 4 September
 ## Method
 
 `record.py` runs every weekday at 8:30am Pacific via GitHub Actions. For each of
-106 tickers it:
+109 tickers it:
 
 1. Fetches the underlying's spot price
 2. Pulls the option chain filtered to strikes within ±8% of spot and expiries
@@ -45,8 +45,8 @@ contracts roll.
 
 ## The universe
 
-106 tickers chosen for *spread*, not count — 106 correlated tech names would be
-one observation repeated 106 times. Started at 52; expanded to 106 on 5
+109 tickers chosen for *spread*, not count — 109 correlated tech names would be
+one observation repeated 109 times. Started at 52; expanded to 109 on 5
 September 2026, one day into collection, when the cost of uneven history was a
 single day. Candidates were screened live against the API and kept only if
 implied volatility, all five greeks and a two-sided quote came back with a
@@ -86,7 +86,7 @@ sample, that is worth writing up as it stands.
 
 One caution that shapes the whole analysis: sampling daily while looking forward
 30 days means consecutive observations share almost the same realized path, and
-all 106 tickers on a given day share a market factor. A pooled t-test across
+all 109 tickers on a given day share a market factor. A pooled t-test across
 every row would report significance on pure noise — simulated at 65–89% false
 positives against this exact design. The effective sample size is roughly the
 number of *non-overlapping* windows, not the number of rows. `HANDOFF.md` §4
