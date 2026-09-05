@@ -21,10 +21,31 @@ jobs:
           ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
         run: |
           python - <<'PY'
-          import csv, hashlib, sys, time
+          import atexit, csv, hashlib, os, sys, time
           from datetime import date, datetime, timezone
           from pathlib import Path
           import record as m
+
+          # tee stdout into the job summary so the whole report is readable on the run page
+          _S = os.environ.get("GITHUB_STEP_SUMMARY")
+          if _S:
+              _sf = open(_S, "a", buffering=1)
+              _sf.write("```text\n")
+              class _Tee:
+                  def __init__(self, *fs): self.fs = fs
+                  def write(self, x):
+                      for f in self.fs:
+                          f.write(x)
+                      return len(x)
+                  def flush(self):
+                      for f in self.fs: f.flush()
+              sys.stdout = _Tee(sys.__stdout__, _sf)
+              @atexit.register
+              def _close():
+                  try:
+                      _sf.write("\n```\n"); _sf.flush()
+                  except Exception:
+                      pass
 
           FAILS = []
           REAL = Path("data/iv_history.csv")
