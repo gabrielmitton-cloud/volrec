@@ -35,7 +35,9 @@ own six months of proprietary history for a fixed universe. Started 4 September
 4. Records spot, strike, expiry, bid/ask, implied volatility, and greeks
 
 One row per ticker per day, appended to `data/iv_history.csv`. Same-day reruns
-are deduplicated.
+are deduplicated, and weekends and exchange holidays are skipped outright
+(checked against the market calendar), so no row is written for a day the
+market never traded.
 
 At-the-money and ~30 days is deliberate: that's where gamma is highest and where
 implied volatility is most reliably quoted, which keeps snapshots comparable as
@@ -56,8 +58,8 @@ observation repeated 52 times.
 | Defensives (JNJ, PG, KO, PEP, WMT, MCD, VZ) | Anchors the bottom — without these everything clusters 20–45% |
 | Financials, energy, industrials | Sector variety |
 
-First run confirmed the spread is real: implied vol ranged from IEF at 5.1% to
-MSTR at 72.1%.
+First run confirmed the spread is real: implied vol ranged from 4.2% (FXE) and
+5.1% (IEF) at the low end up to 72.1% (MSTR).
 
 ## The analysis (from ~November 2026)
 
@@ -91,8 +93,9 @@ vol, and jumps, and sweeps rebalance frequency to find where net profit peaks.
   volatility is invisible.
 - **Expiry drift**: MDY and FXE lack weekly options and fall back to ~42-day
   expiries. The `dte` column records this so it can be controlled for.
-- **FXE liquidity**: quoted 0.63/1.27 on day one — a spread that wide makes the
-  mid unreliable. Under review.
+- **Wide quotes on FXE and XLU**: on day one FXE quoted 0.63/1.27 and XLU
+  0.45/0.79 — spreads of 67% and 55% of the mid respectively. Wide enough that
+  the mid is unreliable for both. Under review.
 - **Survivorship**: the universe is fixed as of Sept 2026 and doesn't adjust for
   future delistings or index changes.
 - **No skew**: only at-the-money is recorded. Implied vol varies by strike, and

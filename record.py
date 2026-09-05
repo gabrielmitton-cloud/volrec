@@ -18,6 +18,8 @@ Setup:
     4. pip install requests
     5. python record.py
 
+Skips weekends and, via Alpaca's market calendar, exchange holidays.
+
 Debugging:
     python record.py --probe SPY    dumps the raw API response so you can
                                     see the actual field names
@@ -34,6 +36,7 @@ from pathlib import Path
 import requests
 
 DATA = "https://data.alpaca.markets"
+TRADING = "https://paper-api.alpaca.markets"
 WATCHLIST = [
     # broad index ETFs, ascending volatility
     "SPY", "DIA", "QQQ", "IWM", "MDY",
@@ -59,6 +62,7 @@ DTE_WINDOW = (21, 45)
 STRIKE_BAND = 0.08          # only pull strikes within +/-8% of spot
 OPTION_FEED = "indicative"  # free feed; "opra" needs a paid subscription
 STOCK_FEED = "iex"          # free feed; "sip" needs a paid subscription
+MAX_PAGES = 10             # safety cap; one page holds 1000 contracts
 OUT = Path(__file__).parent / "data" / "iv_history.csv"
 
 FIELDS = [
@@ -129,13 +133,24 @@ def spot_prices(s, symbols):
 
 
 def snapshot(s, symbol, spot, today):
-    j = get(s, f"{DATA}/v1beta1/options/snapshots/{symbol}",
-            feed=OPTION_FEED, type="call", limit=1000,
-            expiration_date_gte=(today + timedelta(days=DTE_WINDOW[0])).isoformat(),
-            expiration_date_lte=(today + timedelta(days=DTE_WINDOW[1])).isoformat(),
-            strike_price_gte=round(spot * (1 - STRIKE_BAND), 2),
-            strike_price_lte=round(spot * (1 + STRIKE_BAND), 2))
-    snaps = j.get("snapshots") or {}
+    params = dict(
+        feed=OPTION_FEED, type="call", limit=1000,
+        expiration_date_gte=(today + timedelta(days=DTE_WINDOW[0])).isoformat(),
+        expiration_date_lte=(today + timedelta(days=DTE_WINDOW[1])).isoformat(),
+        strike_price_gte=round(spot * (1 - STRIKE_BAND), 2),
+        strike_price_lte=round(spot * (1 + STRIKE_BAND), 2))
+    # The endpoint pages. A truncated response would not error - it would
+    # silently hide the true at-the-money contract and record the wrong one.
+    snaps = {}
+    for _ in range(MAX_PAGES):
+        j = get(s, f"{DATA}/v1beta1/options/snapshots/{symbol}", **params)
+        page = j.get("snapshots") or {}
+        snaps.update(page)
+        token = j.get("next_page_token")
+        if not token or not page:
+            break
+        params["page_token"] = token
+        time.sleep(0.35)
     if not snaps:
         raise RuntimeError("no contracts returned in the strike/expiry window")
 
@@ -161,7 +176,8 @@ def snapshot(s, symbol, spot, today):
     q = snap.get("latestQuote") or {}
     g = snap.get("greeks") or {}
     bid, ask = q.get("bp"), q.get("ap")
-    mid = round((bid + ask) / 2, 4) if bid and ask else None
+    mid = (round((bid + ask) / 2, 4)
+           if bid is not None and ask is not None else None)
 
     return {
         "date": today.isoformat(), "symbol": symbol, "spot": round(spot, 4),
@@ -172,6 +188,27 @@ def snapshot(s, symbol, spot, today):
         "delta": g.get("delta"), "gamma": g.get("gamma"),
         "theta": g.get("theta"), "vega": g.get("vega"), "rho": g.get("rho"),
     }
+
+
+def is_trading_day(s, day):
+    """True if `day` is a US equity trading day.
+
+    Alpaca's calendar lists only trading days, so an empty response means the
+    market was closed - a holiday the weekday check cannot see.
+
+    Fails OPEN on error: a stray holiday row can be dropped in analysis, but a
+    real trading day missed is gone for good.
+    """
+    try:
+        j = get(s, f"{TRADING}/v2/calendar",
+                start=day.isoformat(), end=day.isoformat())
+    except Exception as e:
+        print(f"  calendar check failed ({e}) - recording anyway")
+        return True
+    if not isinstance(j, list):
+        print("  calendar returned an unexpected shape - recording anyway")
+        return True
+    return any(d.get("date") == day.isoformat() for d in j)
 
 
 def already_recorded(today):
@@ -228,6 +265,10 @@ def main():
         return
 
     s = session()
+    if not is_trading_day(s, today):
+        print(f"{today} is a market holiday - nothing to record.")
+        return
+
     try:
         spots = spot_prices(s, todo)
     except Exception as e:
