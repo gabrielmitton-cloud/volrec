@@ -166,26 +166,34 @@ def spot_prices(s, symbols):
 
 def snapshot(s, symbol, spot, today):
     params = dict(
-        feed=OPTION_FEED, limit=1000,   # no type filter: one request returns
-                                        # both calls and puts for this window
+        feed=OPTION_FEED, limit=1000,
         expiration_date_gte=(today + timedelta(days=DTE_WINDOW[0])).isoformat(),
         expiration_date_lte=(today + timedelta(days=DTE_WINDOW[1])).isoformat(),
         strike_price_gte=round(spot * (1 - STRIKE_BAND), 2),
         strike_price_lte=round(spot * (1 + STRIKE_BAND), 2))
-    # The endpoint pages. A truncated response would not error - it would
-    # silently hide the true at-the-money contract and record the wrong one.
-    snaps = {}
-    for _ in range(MAX_PAGES):
-        j = get(s, f"{DATA}/v1beta1/options/snapshots/{symbol}", **params)
-        page = j.get("snapshots") or {}
-        snaps.update(page)
-        token = j.get("next_page_token")
-        if not token or not page:
-            break
-        params["page_token"] = token
-        time.sleep(PACE)
+    def chain(kind):
+        """One side of the chain. Calls and puts are fetched separately and
+        type-filtered so each response stays inside a single 1000-contract
+        page; the paging loop below is a safety net, not the normal path.
+        A truncated response would not error - it would silently hide the
+        true at-the-money contract and record the wrong one."""
+        out, p = {}, dict(params, type=kind)
+        for _ in range(MAX_PAGES):
+            j = get(s, f"{DATA}/v1beta1/options/snapshots/{symbol}", **p)
+            page = j.get("snapshots") or {}
+            out.update(page)
+            token = j.get("next_page_token")
+            if not token or not page:
+                break
+            p["page_token"] = token
+            time.sleep(PACE)
+        return out
+
+    snaps = chain("call")
     if not snaps:
         raise RuntimeError("no contracts returned in the strike/expiry window")
+    time.sleep(PACE)          # keep the two-request burst inside the rate limit
+    puts = chain("put")
 
     best = None
     for osym, snap in snaps.items():
@@ -214,7 +222,7 @@ def snapshot(s, symbol, spot, today):
 
     # the put at the same strike and expiry, if it came back in the same pages
     psym = osym.replace(f"{exp:%y%m%d}C", f"{exp:%y%m%d}P", 1)
-    put = snaps.get(psym) or {}
+    put = puts.get(psym) or {}
     pq = put.get("latestQuote") or {}
     pbid, pask = pq.get("bp"), pq.get("ap")
     pmid = (round((pbid + pask) / 2, 4)
