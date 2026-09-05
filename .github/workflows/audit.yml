@@ -1,0 +1,155 @@
+name: audit
+# TEMPORARY. Exercises the paths the 5 Sep pressure test did not: real main(),
+# the live market calendar, and the dedup guard. Delete after reading.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Audit
+        env:
+          ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
+          ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
+        run: |
+          python - <<'PY'
+          import atexit, csv, hashlib, os, sys, time
+          from pathlib import Path
+          import record as m
+
+          _S = os.environ.get("GITHUB_STEP_SUMMARY")
+          if _S:
+              _sf = open(_S, "a", buffering=1); _sf.write("```text\n")
+              class _Tee:
+                  def __init__(self, *fs): self.fs = fs
+                  def write(self, x):
+                      for f in self.fs: f.write(x)
+                      return len(x)
+                  def flush(self):
+                      for f in self.fs: f.flush()
+              sys.stdout = _Tee(sys.__stdout__, _sf)
+              @atexit.register
+              def _c():
+                  try: _sf.write("\n```\n"); _sf.flush()
+                  except Exception: pass
+
+          FAILS = []
+          REAL = Path("data/iv_history.csv")
+          MD5 = hashlib.md5(REAL.read_bytes()).hexdigest()
+          with REAL.open(newline="") as f: ORIG_HEADER = next(csv.reader(f))
+          with REAL.open(newline="") as f: ORIG_ROWS = list(csv.DictReader(f))
+          print(f"REAL: md5 {MD5}, {len(ORIG_HEADER)} cols x {len(ORIG_ROWS)} rows")
+
+          tmp = Path("/tmp/audit/data"); tmp.mkdir(parents=True, exist_ok=True)
+          COPY = tmp / "iv_history.csv"; COPY.write_bytes(REAL.read_bytes())
+          m.OUT = COPY
+          print(f"m.OUT -> {m.OUT}")
+
+          # Pretend it is Fri 4 Sep 2026 - a real trading day - so main()'s weekend guard
+          # passes and the market-calendar call is exercised against a genuine open day.
+          TARGET = m.date(2026, 9, 4)
+          class FakeDate(m.date):
+              @classmethod
+              def today(cls): return TARGET
+          m.date = FakeDate
+          print(f"date.today() patched -> {m.date.today()} ({TARGET:%A})\n")
+
+          CODES = {}
+          _orig = m.session
+          def counting_session():
+              s = _orig()
+              g = s.get
+              def cg(*a, **kw):
+                  r = g(*a, **kw); CODES[r.status_code] = CODES.get(r.status_code, 0) + 1; return r
+              s.get = cg
+              return s
+          m.session = counting_session
+
+          # --- A. dedup guard: the copy already holds 4 Sep rows for the original 52 ---
+          done = m.already_recorded(TARGET)
+          todo = [s for s in m.WATCHLIST if s not in done]
+          print("=" * 74)
+          print("A. already_recorded() / dedup")
+          print("=" * 74)
+          print(f"  already recorded for {TARGET}: {len(done)}")
+          print(f"  would fetch:                  {len(todo)}")
+          if len(done) != 52: FAILS.append(f"already_recorded saw {len(done)}, expected 52")
+          if len(todo) != 57: FAILS.append(f"todo is {len(todo)}, expected 57")
+          print(f"  -> the 57 names added on 5 Sep: {', '.join(todo[:6])} ... {todo[-1]}")
+
+          # --- B. market calendar, never exercised before ---
+          print("\n" + "=" * 74); print("B. is_trading_day() against the live Alpaca calendar"); print("=" * 74)
+          s = counting_session()
+          t0 = time.perf_counter()
+          open_day = m.is_trading_day(s, TARGET)
+          sat = m.is_trading_day(s, m.date(2026, 9, 5))
+          labor = m.is_trading_day(s, m.date(2026, 9, 7))
+          print(f"  Fri 2026-09-04 (normal weekday) -> {open_day}   expected True")
+          print(f"  Sat 2026-09-05 (weekend)        -> {sat}   expected False")
+          print(f"  Mon 2026-09-07 (Labor Day)      -> {labor}   expected False")
+          if not open_day: FAILS.append("calendar says 4 Sep is not a trading day")
+          if sat: FAILS.append("calendar says Saturday IS a trading day")
+          if labor: FAILS.append("calendar says Labor Day IS a trading day - Monday would record a bogus row")
+
+          # --- C. the real main(), end to end ---
+          print("\n" + "=" * 74); print("C. main() end-to-end"); print("=" * 74)
+          t1 = time.perf_counter()
+          try:
+              m.main()
+          except SystemExit as e:
+              FAILS.append(f"main() called sys.exit({e.code})")
+          except Exception as e:
+              FAILS.append(f"main() raised {type(e).__name__}: {e}")
+          el = time.perf_counter() - t1
+
+          with COPY.open(newline="") as f: hdr = next(csv.reader(f))
+          with COPY.open(newline="") as f: after = list(csv.DictReader(f))
+          added = [c for c in hdr if c not in ORIG_HEADER]
+          new_rows = [r for r in after if r["date"] == TARGET.isoformat() and r["symbol"] in todo]
+          print(f"  elapsed {el:.1f}s   HTTP {dict(sorted(CODES.items()))}   429s: {CODES.get(429,0)}")
+          print(f"  header {len(ORIG_HEADER)} -> {len(hdr)}; added {added}")
+          print(f"  rows {len(ORIG_ROWS)} -> {len(after)};  new rows written: {len(new_rows)}")
+          if CODES.get(429, 0): FAILS.append(f"{CODES[429]} HTTP 429s")
+          if len(added) != 7: FAILS.append(f"migration added {len(added)} cols, expected 7")
+          if hdr != m.FIELDS: FAILS.append("header != FIELDS")
+          if len(new_rows) != 57: FAILS.append(f"{len(new_rows)} new rows, expected 57")
+
+          bad = sum(1 for i, o in enumerate(ORIG_ROWS) for k in ORIG_HEADER if after[i].get(k) != o[k])
+          print(f"  original cells preserved: {len(ORIG_ROWS)*len(ORIG_HEADER)-bad}/{len(ORIG_ROWS)*len(ORIG_HEADER)}")
+          if bad: FAILS.append(f"{bad} original cells changed")
+          pop = sum(1 for r in new_rows if all(r.get(k) not in (None, "") for k in m.FIELDS))
+          putm = sum(1 for r in new_rows if r.get("put_iv"))
+          print(f"  fully populated: {pop}/{len(new_rows)}   put match: {putm}/{len(new_rows)}")
+
+          # --- D. idempotency: re-running the same day must fetch nothing ---
+          print("\n" + "=" * 74); print("D. re-run the same day (idempotency)"); print("=" * 74)
+          before = dict(CODES); n_before = len(after)
+          m.main()
+          with COPY.open(newline="") as f: after2 = list(csv.DictReader(f))
+          new_calls = sum(CODES.values()) - sum(before.values())
+          print(f"  extra HTTP requests on the second run: {new_calls}   (expect 0)")
+          print(f"  rows {n_before} -> {len(after2)}   (expect unchanged)")
+          if len(after2) != n_before: FAILS.append(f"second run added {len(after2)-n_before} duplicate rows")
+          if new_calls: FAILS.append(f"second run made {new_calls} API calls; dedup did not short-circuit")
+
+          # --- E. the real file ---
+          print("\n" + "=" * 74)
+          after_md5 = hashlib.md5(REAL.read_bytes()).hexdigest()
+          print(f"  real md5 before {MD5}\n  real md5 after  {after_md5}")
+          if after_md5 != MD5: FAILS.append("REAL DATASET MODIFIED")
+          else: print("  real dataset UNCHANGED")
+          assert after_md5 == MD5
+
+          print("\n" + "=" * 74)
+          if FAILS:
+              print("FAILURES:"); [print("  -", f) for f in FAILS]; sys.exit(1)
+          print("ALL AUDIT CHECKS PASSED")
+          PY
