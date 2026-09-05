@@ -369,7 +369,11 @@ reading off it is the *intraday* spread on HYG, XLC and XLRE - see section 6.
 
 ## 8. Design direction for a future dashboard
 
-Not built, and not a priority — recorded so the intent isn't lost.
+The *collection monitor* is built - `tools/monitor.html`, in this aesthetic. It
+tracks continuity, schema state, staleness, the IV cross-section, quote quality
+and per-ticker coverage, and it says plainly that the analysis is not runnable
+yet. What is still unbuilt is the **analysis** dashboard below - that one waits
+on ~40 trading days, so late October.
 
 Reference: a Polymarket trading-bot dashboard. Terminal / mission-control
 aesthetic:
@@ -400,6 +404,17 @@ requirements.txt              one dependency: requests
 data/iv_history.csv           the dataset — the only irreplaceable artifact
 tools/gamma-lab.html          delta-hedging simulator v1
 tools/gamma-lab-v2.html       v2 — adds costs, stochastic IV, jumps, freq sweep
+tools/monitor.html            collection monitor — reads the live CSV from GitHub
+```
+
+`tools/monitor.html` needs no build and no server data: it fetches
+`data/iv_history.csv` straight from raw.githubusercontent (which sends
+`access-control-allow-origin: *`), so it always shows what the recorder last
+committed. Browsers block `fetch` from `file://`, so serve it:
+
+```
+cd ~/Desktop/Archive/Volrec && python3 -m http.server 8000
+# then open localhost:8000/tools/monitor.html
 ```
 
 If anything here has to be prioritized: the dataset is the only thing that can't
