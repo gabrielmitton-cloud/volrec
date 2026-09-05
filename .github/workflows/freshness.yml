@@ -1,0 +1,30 @@
+name: freshness
+on:
+  schedule:
+    - cron: "0 17 * * *"      # daily, 90 min after the recorder
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Fail loudly if the dataset has gone stale
+        run: |
+          python - <<'PY'
+          import csv, datetime, sys
+          rows = list(csv.DictReader(open("data/iv_history.csv", newline="")))
+          if not rows:
+              sys.exit("iv_history.csv has no rows at all.")
+          dates = sorted({datetime.date.fromisoformat(r["date"]) for r in rows})
+          age = (datetime.date.today() - dates[-1]).days
+          print(f"rows: {len(rows)}   distinct days: {len(dates)}   "
+                f"newest: {dates[-1]} ({age} days old)")
+          if age > 5:
+              sys.exit(f"STALE: no snapshot in {age} days. The recorder has "
+                       f"stopped - check the Actions tab (GitHub disables "
+                       f"scheduled workflows silently).")
+          print("Dataset is fresh.")
+          PY
