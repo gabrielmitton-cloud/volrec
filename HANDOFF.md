@@ -245,8 +245,11 @@ Anything before then is premature. The recorder needs no further changes.
 
 ## 6. Known data issues
 
-- **MDY and FXE** lack weekly options and fall back to ~42-day expiries. The
-  `dte` column records this — control for it, don't discard the rows.
+- **MDY, FXE and XLRE** lack weekly options and fall back to ~42-day expiries.
+  The `dte` column records this — control for it, don't discard the rows. XLRE
+  came back at `dte` 41 in the 5 Sep full-scale run. That reading is trustworthy
+  even though it was taken on a weekend: staleness widens quotes, but it does not
+  change which expiries exist.
 - **FXE and XLU** quoted 0.63/1.27 and 0.45/0.79 on day one - spreads of 67%
   and 55% of the mid. Those spreads make the mid unreliable for both. Under
   review; drop them if the pattern persists.
