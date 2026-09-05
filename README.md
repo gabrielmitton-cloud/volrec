@@ -90,7 +90,11 @@ vol, and jumps, and sweeps rebalance frequency to find where net profit peaks.
   are indicative, not exact NBBO. Fine for daily snapshots; worth stating in any
   write-up.
 - **Snapshot timing**: one reading per day at a fixed time, so intraday
-  volatility is invisible.
+  volatility is invisible. The schedule is fixed at 15:30 UTC, which is
+  11:30am ET while daylight saving is in effect but 10:30am ET once it ends
+  on 1 November 2026. Snapshots from November onward therefore sit an hour
+  earlier in the session than those before it — worth controlling for, since
+  implied vol is not flat across the trading day.
 - **Expiry drift**: MDY and FXE lack weekly options and fall back to ~42-day
   expiries. The `dte` column records this so it can be controlled for.
 - **Wide quotes on FXE and XLU**: on day one FXE quoted 0.63/1.27 and XLU
