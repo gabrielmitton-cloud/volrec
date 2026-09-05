@@ -26,7 +26,7 @@ own six months of proprietary history for a fixed universe. Started 4 September
 ## Method
 
 `record.py` runs every weekday at 8:30am Pacific via GitHub Actions. For each of
-52 tickers it:
+106 tickers it:
 
 1. Fetches the underlying's spot price
 2. Pulls the option chain filtered to strikes within ±8% of spot and expiries
@@ -45,8 +45,12 @@ contracts roll.
 
 ## The universe
 
-52 tickers chosen for *spread*, not count — 52 correlated tech names would be one
-observation repeated 52 times.
+106 tickers chosen for *spread*, not count — 106 correlated tech names would be
+one observation repeated 106 times. Started at 52; expanded to 106 on 5
+September 2026, one day into collection, when the cost of uneven history was a
+single day. Candidates were screened live against the API and kept only if
+implied volatility, all five greeks and a two-sided quote came back with a
+spread under 60% of mid.
 
 | group | why |
 |---|---|
@@ -59,7 +63,8 @@ observation repeated 52 times.
 | Financials, energy, industrials | Sector variety |
 
 First run confirmed the spread is real: implied vol ranged from 4.2% (FXE) and
-5.1% (IEF) at the low end up to 72.1% (MSTR).
+5.1% (IEF) at the low end up to 72.1% (MSTR). The expansion widened it further,
+adding LQD at 4.9% and MARA at 82%.
 
 ## The analysis (from ~November 2026)
 
@@ -70,12 +75,22 @@ If realized consistently comes in below implied, the premium is present. The
 questions worth asking:
 
 - Does it hold across asset classes, or only in equities?
+- Is it larger for index ETFs than for single names? The literature says yes,
+  and attributes the gap to a correlation risk premium.
 - Does it scale with the volatility level, or is it flat?
 - Is it large enough to survive bid-ask costs? (The `bid`/`ask` columns exist
   precisely so this can be answered rather than assumed.)
 
 A null result is a real result. If the premium doesn't clear costs in this
 sample, that is worth writing up as it stands.
+
+One caution that shapes the whole analysis: sampling daily while looking forward
+30 days means consecutive observations share almost the same realized path, and
+all 106 tickers on a given day share a market factor. A pooled t-test across
+every row would report significance on pure noise — simulated at 65–89% false
+positives against this exact design. The effective sample size is roughly the
+number of *non-overlapping* windows, not the number of rows. `HANDOFF.md` §4
+carries the corrected method.
 
 ## Companion tool
 
@@ -102,8 +117,15 @@ vol, and jumps, and sweeps rebalance frequency to find where net profit peaks.
   the mid is unreliable for both. Under review.
 - **Survivorship**: the universe is fixed as of Sept 2026 and doesn't adjust for
   future delistings or index changes.
-- **No skew**: only at-the-money is recorded. Implied vol varies by strike, and
-  that shape carries information this dataset doesn't capture.
+- **Vendor-computed IV**: implied volatility and greeks are calculated by Alpaca
+  from its free *indicative* feed rather than from exact NBBO quotes, using a
+  documented Black–Scholes solver but an undocumented risk-free rate and
+  dividend treatment. Levels should be read as approximate.
+- **At-the-money only, and calls only**: implied vol varies by strike, and that
+  shape carries information this dataset doesn't capture. An ATM Black–Scholes
+  IV also approximates the *volatility* swap rate rather than the model-free
+  variance swap rate that VIX-style measures use — which understates the
+  premium, and understates it more for index ETFs than for single names.
 
 ## Running it
 
