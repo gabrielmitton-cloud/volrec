@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gamma Lab v2 — delta-hedging under friction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDEFF2;--card:#F7F8FA;--ink:#1B1F26;--muted:#6B7480;--rule:#D3D7DD;
+  --gain:#1D6E56;--loss:#A32D2D;--gamma:#4A3FA8;--warn:#8A5A0B;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:880px;margin:0 auto;padding:32px 20px 64px}
+header{border-bottom:1px solid var(--rule);padding-bottom:20px;margin-bottom:24px}
+h1{font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;margin:0 0 4px}
+.ver{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:12px}
+.thesis{margin:0;max-width:62ch;color:var(--muted)}
+.thesis b{color:var(--ink);font-weight:500}
+
+.panel{background:var(--card);border:1px solid var(--rule);padding:20px;margin-bottom:20px}
+.panel-label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.sub{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:22px 0 14px;padding-top:16px;border-top:1px solid var(--rule)}
+
+.controls{display:grid;grid-template-columns:repeat(2,1fr);gap:18px 28px}
+@media(max-width:620px){.controls{grid-template-columns:1fr}}
+.ctl label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;gap:12px}
+.ctl .name{font-size:14px;font-weight:500}
+.ctl .val{font-family:var(--mono);font-size:14px;font-weight:500;white-space:nowrap}
+.ctl .hint{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.4}
+input[type=range]{width:100%;accent-color:var(--gamma);height:22px;margin:0}
+input[type=range]:focus-visible{outline:2px solid var(--gamma);outline-offset:3px}
+
+.verdict{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.pnl{font-family:var(--mono);font-size:40px;font-weight:600;letter-spacing:-.02em;line-height:1}
+.pnl.up{color:var(--gain)}.pnl.down{color:var(--loss)}
+.vn{font-size:14px;color:var(--muted)}
+.edge{font-family:var(--mono);font-size:13px;margin-top:14px;padding-top:14px;border-top:1px solid var(--rule);color:var(--muted)}
+.edge b{color:var(--ink);font-weight:500}
+
+canvas{display:block;width:100%;border:1px solid var(--rule);background:#fff}
+.cap{font-size:12.5px;color:var(--muted);margin:8px 0 20px}
+.cap b{color:var(--ink);font-weight:500}
+.cap:last-child{margin-bottom:0}
+
+.legs{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule)}
+@media(max-width:640px){.legs{grid-template-columns:repeat(2,1fr)}}
+.leg{background:var(--card);padding:13px 15px}
+.leg .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.leg .v{font-family:var(--mono);font-size:19px;font-weight:500;margin-top:3px}
+.leg .d{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.35}
+
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+button{font-family:var(--sans);font-size:14px;font-weight:500;padding:9px 18px;background:var(--ink);color:var(--paper);border:1px solid var(--ink);cursor:pointer}
+button.ghost{background:transparent;color:var(--ink)}
+button:hover{opacity:.85}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible{outline:2px solid var(--gamma);outline-offset:2px}
+
+.hidden{display:none}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+@media(max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font-family:var(--mono);font-size:21px;font-weight:500}
+.finding{background:#fff;border:1px solid var(--rule);border-left:3px solid var(--gamma);padding:14px 16px;margin-top:16px;font-size:14px;line-height:1.55}
+.finding b{font-weight:500}
+.note{font-size:13.5px;color:var(--muted);line-height:1.65;margin-top:26px;padding-top:20px;border-top:1px solid var(--rule)}
+.note b{color:var(--ink);font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Gamma Lab</h1>
+  <div class="ver">Version 2 — under friction</div>
+  <p class="thesis">Version 1 said: profit when realized beats implied. That's true in a frictionless world. Add <b>hedging costs</b>, <b>an implied vol that moves against you</b>, and <b>gaps</b>, and the edge stops being automatic. This version finds where it survives.</p>
+</header>
+
+<div class="panel">
+  <div class="panel-label">The trade</div>
+  <div class="controls">
+    <div class="ctl">
+      <label for="iv"><span class="name">Implied vol paid</span><span class="val" id="ivv">20%</span></label>
+      <input type="range" id="iv" min="5" max="80" value="20" step="1">
+      <div class="hint">What the option costs, in vol terms.</div>
+    </div>
+    <div class="ctl">
+      <label for="rv"><span class="name">Realized vol (diffusive)</span><span class="val" id="rvv">30%</span></label>
+      <input type="range" id="rv" min="5" max="80" value="30" step="1">
+      <div class="hint">Day-to-day movement, before any gaps.</div>
+    </div>
+    <div class="ctl">
+      <label for="dy"><span class="name">Days to expiry</span><span class="val" id="dyv">60</span></label>
+      <input type="range" id="dy" min="10" max="252" value="60" step="1">
+      <div class="hint">How long you hold the position.</div>
+    </div>
+    <div class="ctl">
+      <label for="hf"><span class="name">Re-hedge every</span><span class="val" id="hfv">1 day</span></label>
+      <input type="range" id="hf" min="1" max="20" value="1" step="1">
+      <div class="hint">Tighter tracking, more cost. That's the tension.</div>
+    </div>
+  </div>
+
+  <div class="sub">Friction — the part v1 left out</div>
+  <div class="controls">
+    <div class="ctl">
+      <label for="tc"><span class="name">Hedging cost</span><span class="val" id="tcv">5 bps</span></label>
+      <input type="range" id="tc" min="0" max="40" value="5" step="1">
+      <div class="hint">Half-spread plus fees, charged on every share you trade.</div>
+    </div>
+    <div class="ctl">
+      <label for="vv"><span class="name">Vol of vol</span><span class="val" id="vvv">60%</span></label>
+      <input type="range" id="vv" min="0" max="150" value="60" step="5">
+      <div class="hint">How much implied vol itself drifts while you hold. Moves against you when the stock rallies.</div>
+    </div>
+    <div class="ctl">
+      <label for="jp"><span class="name">Gaps per year</span><span class="val" id="jpv">2.0</span></label>
+      <input type="range" id="jp" min="0" max="120" value="20" step="1">
+      <div class="hint">Overnight jumps you cannot hedge through.</div>
+    </div>
+    <div class="ctl">
+      <label for="js"><span class="name">Typical gap size</span><span class="val" id="jsv">5%</span></label>
+      <input type="range" id="js" min="1" max="20" value="5" step="1">
+      <div class="hint">Long gamma tends to like these. Watch whether it does.</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-label">Result — one path</div>
+  <div class="verdict"><span class="pnl" id="pnl">$0.00</span><span class="vn" id="vn"></span></div>
+  <div class="edge" id="edge"></div>
+</div>
+
+<div class="panel">
+  <div class="panel-label">What happened</div>
+  <canvas id="cStock" height="170"></canvas>
+  <p class="cap">Stock price, strike dashed. Vertical marks are gaps.</p>
+  <canvas id="cIv" height="120"></canvas>
+  <p class="cap">Implied vol over the life of the trade. <b>This line is new in v2</b> — when it falls, your option is marked down no matter how much the stock is moving.</p>
+  <canvas id="cPnl" height="170"></canvas>
+  <p class="cap">Cumulative net profit and loss, after costs.</p>
+  <div class="legs">
+    <div class="leg"><div class="k">Gamma</div><div class="v" id="lGam">—</div><div class="d">Earned from re-hedging.</div></div>
+    <div class="leg"><div class="k">Vega</div><div class="v" id="lVeg">—</div><div class="d">From implied vol moving.</div></div>
+    <div class="leg"><div class="k">Costs</div><div class="v" id="lCost">—</div><div class="d">Paid to rebalance.</div></div>
+    <div class="leg"><div class="k">Net</div><div class="v" id="lNet">—</div><div class="d">What you keep.</div></div>
+  </div>
+  <div class="row">
+    <button id="again">New path</button>
+    <button class="ghost" id="run">Run 300 paths</button>
+  </div>
+
+  <div class="hidden" id="batch">
+    <div class="sub">Across 300 paths</div>
+    <div class="stats">
+      <div class="stat"><div class="k">Average net</div><div class="v" id="bAvg">—</div></div>
+      <div class="stat"><div class="k">Win rate</div><div class="v" id="bWin">—</div></div>
+      <div class="stat"><div class="k">Worst</div><div class="v" id="bWorst">—</div></div>
+      <div class="stat"><div class="k">Realized vol</div><div class="v" id="bRv">—</div></div>
+    </div>
+    <canvas id="cDist" height="140"></canvas>
+    <p class="cap">Distribution of net outcomes. The black line is break-even.</p>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-label">Sweep — how often should you re-hedge?</div>
+  <p style="margin:0 0 16px;color:var(--muted);font-size:14px;max-width:60ch">In v1 the answer was always "as often as possible." With costs, it isn't. This runs the whole simulation at every rebalance interval from daily to every 20 days and finds where net profit peaks.</p>
+  <div class="row" style="margin-top:0"><button id="sweep">Run sweep</button></div>
+  <div class="hidden" id="swWrap" style="margin-top:18px">
+    <canvas id="cSweep" height="190"></canvas>
+    <p class="cap">Average net profit and loss by rebalance interval, 150 paths each.</p>
+    <div class="finding" id="swFind"></div>
+  </div>
+</div>
+
+<p class="note"><b>Where real data plugs in.</b> Everything above is generated by <code>makePath()</code> in the script. Replace that one function with a real price series and a real implied-vol series and the rest of the engine works unchanged — the P&amp;L accounting, greeks, and cost model don't care where the numbers came from. That's the seam.<br><br><b>Still simplified.</b> Zero interest rates, one strike, no skew (real implied vol differs by strike, and that shape matters), no early assignment, no borrow cost on the short shares — and borrow is a real expense that can swamp thin edges in hard-to-borrow names.</p>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const YR = 252, S0 = 100, K = 100;
+
+function ncdf(x){
+  const t=1/(1+.2316419*Math.abs(x)), d=.3989422804014327*Math.exp(-x*x/2);
+  const p=d*t*(.31938153+t*(-.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429))));
+  return x>0?1-p:p;
+}
+function bs(S,T,v){
+  if(T<=1e-9||v<=1e-6) return {c:Math.max(S-K,0),d:S>K?1:0};
+  const sq=v*Math.sqrt(T), d1=(Math.log(S/K)+.5*v*v*T)/sq;
+  return {c:S*ncdf(d1)-K*ncdf(d1-sq), d:ncdf(d1)};
+}
+let spare=null;
+function gauss(){
+  if(spare!==null){const s=spare;spare=null;return s}
+  let u,v,s;do{u=Math.random()*2-1;v=Math.random()*2-1;s=u*u+v*v}while(s===0||s>=1);
+  const f=Math.sqrt(-2*Math.log(s)/s);spare=v*f;return u*f;
+}
+
+// ---- THE SEAM -------------------------------------------------------------
+// Swap this for real market data and everything downstream works unchanged.
+// Must return: prices[days+1], ivs[days+1], gaps[] (indices where a jump hit)
+function makePath(p){
+  const dt=1/YR, prices=[S0], ivs=[p.iv], gaps=[];
+  let S=S0, iv=p.iv;
+  for(let i=0;i<p.days;i++){
+    const z1=gauss(), z2=gauss();
+    let ret = -.5*p.rv*p.rv*dt + p.rv*Math.sqrt(dt)*z1;
+    if(Math.random() < p.jumpLam*dt){
+      ret += (Math.random()<.55?-1:1)*Math.abs(gauss())*p.jumpSize;
+      gaps.push(i+1);
+    }
+    S *= Math.exp(ret);
+    // implied vol: mean-reverting, negatively correlated with returns (leverage effect)
+    const shock = -.55*z1 + .835*z2;
+    iv += 4*(p.iv-iv)*dt + p.volvol*p.iv*Math.sqrt(dt)*shock;
+    iv = Math.max(.02, Math.min(3, iv));
+    prices.push(S); ivs.push(iv);
+  }
+  return {prices,ivs,gaps};
+}
+// ---------------------------------------------------------------------------
+
+function simulate(p){
+  const {prices,ivs,gaps}=makePath(p);
+  const T0=p.days/YR, cost=p.tc/1e4;
+  const o0=bs(S0,T0,p.iv);
+  let pos=-o0.d, costs=Math.abs(o0.d)*S0*cost, hedge=0, gamma=0;
+  const pnl=[-costs];
+  let prevMark=o0.c, prevIv=p.iv;
+  for(let i=0;i<p.days;i++){
+    const S=prices[i+1], Sp=prices[i], Tr=(p.days-i-1)/YR;
+    hedge += pos*(S-Sp);
+    // split the option's move into the part from price (gamma) and from vol (vega)
+    const atOldIv = bs(S,Tr,prevIv).c;
+    gamma += (atOldIv-prevMark) + pos*(S-Sp);
+    const mark = bs(S,Tr,ivs[i+1]).c;
+    prevMark = mark; prevIv = ivs[i+1];
+    if((i+1)%p.freq===0 && Tr>0){
+      const want=-bs(S,Tr,ivs[i+1]).d;
+      costs += Math.abs(want-pos)*S*cost;
+      pos=want;
+    }
+    pnl.push((mark-o0.c)+hedge-costs);
+  }
+  const fin=Math.max(prices[p.days]-K,0);
+  const net=(fin-o0.c)+hedge-costs;
+  let sq=0;
+  for(let i=0;i<p.days;i++) sq+=Math.pow(Math.log(prices[i+1]/prices[i]),2);
+  return {prices,ivs,gaps,pnl,net,gamma,costs,
+    vega:net-gamma+costs, realized:Math.sqrt(YR*sq/p.days)};
+}
+
+function fit(cv){
+  const dpr=window.devicePixelRatio||1, w=cv.clientWidth, h=+cv.getAttribute('height');
+  cv.width=w*dpr; cv.height=h*dpr;
+  const x=cv.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,w,h);
+  return {x,w,h};
+}
+function line(cv,data,color,ref,marks,pct){
+  const {x,w,h}=fit(cv), pad=14;
+  let lo=Math.min(...data), hi=Math.max(...data);
+  if(ref!==null){lo=Math.min(lo,ref);hi=Math.max(hi,ref)}
+  if(hi-lo<1e-9){hi+=1;lo-=1}
+  const px=i=>pad+(i/(data.length-1))*(w-2*pad);
+  const py=v=>h-pad-((v-lo)/(hi-lo))*(h-2*pad);
+  if(marks) marks.forEach(m=>{
+    x.strokeStyle='#E4C08A'; x.lineWidth=2; x.beginPath();
+    x.moveTo(px(m),pad-6); x.lineTo(px(m),h-pad); x.stroke();
+  });
+  if(ref!==null){
+    x.strokeStyle='#D3D7DD'; x.lineWidth=1; x.setLineDash([3,4]);
+    x.beginPath(); x.moveTo(pad,py(ref)); x.lineTo(w-pad,py(ref)); x.stroke(); x.setLineDash([]);
+  }
+  x.strokeStyle=color; x.lineWidth=1.6; x.beginPath();
+  data.forEach((v,i)=> i?x.lineTo(px(i),py(v)):x.moveTo(px(i),py(v)));
+  x.stroke();
+  x.fillStyle='#6B7480'; x.font='11px "IBM Plex Mono",monospace';
+  const f=v=>pct?(v*100).toFixed(0)+'%':v.toFixed(1);
+  x.fillText(f(hi),pad,11); x.fillText(f(lo),pad,h-3);
+}
+function hist(cv,vals){
+  const {x,w,h}=fit(cv), pad=14, n=34;
+  let lo=Math.min(...vals), hi=Math.max(...vals);
+  if(hi-lo<1e-9){hi+=1;lo-=1}
+  const b=new Array(n).fill(0);
+  vals.forEach(v=>b[Math.min(n-1,Math.floor((v-lo)/(hi-lo)*n))]++);
+  const mx=Math.max(...b), bw=(w-2*pad)/n;
+  b.forEach((c,i)=>{
+    const mid=lo+(i+.5)/n*(hi-lo), bh=(c/mx)*(h-2*pad-8);
+    x.fillStyle= mid>=0?'#1D6E56':'#A32D2D';
+    x.fillRect(pad+i*bw,h-pad-bh,Math.max(bw-1.5,1),bh);
+  });
+  if(lo<0&&hi>0){
+    const zx=pad+((0-lo)/(hi-lo))*(w-2*pad);
+    x.strokeStyle='#1B1F26'; x.lineWidth=1;
+    x.beginPath(); x.moveTo(zx,pad-4); x.lineTo(zx,h-pad); x.stroke();
+  }
+  x.fillStyle='#6B7480'; x.font='11px "IBM Plex Mono",monospace';
+  x.fillText('$'+lo.toFixed(1),pad,h-3);
+  x.textAlign='right'; x.fillText('$'+hi.toFixed(1),w-pad,h-3); x.textAlign='left';
+}
+function bars(cv,vals,best){
+  const {x,w,h}=fit(cv), pad=18;
+  let lo=Math.min(0,...vals), hi=Math.max(0,...vals);
+  if(hi-lo<1e-9){hi+=1;lo-=1}
+  const bw=(w-2*pad)/vals.length, zy=h-pad-((0-lo)/(hi-lo))*(h-2*pad);
+  vals.forEach((v,i)=>{
+    const y=h-pad-((v-lo)/(hi-lo))*(h-2*pad);
+    x.fillStyle = i===best ? '#4A3FA8' : (v>=0?'#1D6E56':'#A32D2D');
+    x.globalAlpha = i===best?1:.55;
+    x.fillRect(pad+i*bw, Math.min(y,zy), Math.max(bw-2,1), Math.abs(y-zy));
+  });
+  x.globalAlpha=1;
+  x.strokeStyle='#1B1F26'; x.lineWidth=1;
+  x.beginPath(); x.moveTo(pad,zy); x.lineTo(w-pad,zy); x.stroke();
+  x.fillStyle='#6B7480'; x.font='11px "IBM Plex Mono",monospace';
+  x.fillText('1 day',pad,h-4);
+  x.textAlign='right'; x.fillText('20 days',w-pad,h-4); x.textAlign='left';
+  x.fillText('$'+hi.toFixed(2),pad,11);
+}
+
+const money=v=>(v<0?'-$':'$')+Math.abs(v).toFixed(2);
+function P(){return{
+  iv:+$('iv').value/100, rv:+$('rv').value/100, days:+$('dy').value, freq:+$('hf').value,
+  tc:+$('tc').value, volvol:+$('vv').value/100,
+  jumpLam:+$('jp').value/10, jumpSize:+$('js').value/100
+}}
+
+function labels(){
+  $('ivv').textContent=$('iv').value+'%';
+  $('rvv').textContent=$('rv').value+'%';
+  $('dyv').textContent=$('dy').value;
+  $('hfv').textContent=$('hf').value+(+$('hf').value===1?' day':' days');
+  $('tcv').textContent=$('tc').value+' bps';
+  $('vvv').textContent=$('vv').value+'%';
+  $('jpv').textContent=(+$('jp').value/10).toFixed(1);
+  $('jsv').textContent=$('js').value+'%';
+}
+function draw(){
+  labels();
+  const p=P(), r=simulate(p), up=r.net>=0;
+  $('pnl').textContent=money(r.net);
+  $('pnl').className='pnl '+(up?'up':'down');
+  $('vn').textContent='on this path';
+  $('edge').innerHTML='Paid <b>'+(p.iv*100).toFixed(0)+'%</b> · stock actually delivered <b>'
+    +(r.realized*100).toFixed(1)+'%</b> including gaps · '+r.gaps.length+' gap'+(r.gaps.length===1?'':'s')+' hit.';
+  $('lGam').textContent=money(r.gamma);
+  $('lVeg').textContent=money(r.vega);
+  $('lCost').textContent='-$'+r.costs.toFixed(2);
+  $('lNet').textContent=money(r.net);
+  $('lNet').style.color=up?'var(--gain)':'var(--loss)';
+  line($('cStock'),r.prices,'#1B1F26',K,r.gaps,false);
+  line($('cIv'),r.ivs,'#8A5A0B',p.iv,null,true);
+  line($('cPnl'),r.pnl,up?'#1D6E56':'#A32D2D',0,null,false);
+}
+function batch(){
+  const p=P(), out=[]; let rvs=0;
+  for(let i=0;i<300;i++){const r=simulate(p); out.push(r.net); rvs+=r.realized}
+  const avg=out.reduce((a,b)=>a+b,0)/out.length;
+  $('bAvg').textContent=money(avg);
+  $('bAvg').style.color=avg>=0?'var(--gain)':'var(--loss)';
+  $('bWin').textContent=Math.round(out.filter(v=>v>0).length/out.length*100)+'%';
+  $('bWorst').textContent=money(Math.min(...out));
+  $('bRv').textContent=(rvs/300*100).toFixed(1)+'%';
+  $('batch').classList.remove('hidden');
+  hist($('cDist'),out);
+}
+function sweep(){
+  const btn=$('sweep'); btn.disabled=true; btn.textContent='Running…';
+  setTimeout(()=>{
+    const base=P(), res=[];
+    for(let f=1;f<=20;f++){
+      let s=0;
+      for(let i=0;i<150;i++) s+=simulate({...base,freq:f}).net;
+      res.push(s/150);
+    }
+    let best=0; res.forEach((v,i)=>{if(v>res[best])best=i});
+    $('swWrap').classList.remove('hidden');
+    bars($('cSweep'),res,best);
+    const daily=res[0], peak=res[best];
+    $('swFind').innerHTML = base.tc===0
+      ? '<b>Costs are set to zero</b>, so tighter hedging just tracks better and daily wins. Raise the hedging cost slider and run this again — the peak will move right.'
+      : '<b>Best interval: every '+(best+1)+' day'+(best?'s':'')+'</b>, averaging '+money(peak)
+        +'. Daily hedging returns '+money(daily)+'. '
+        +(best===0
+          ? 'At '+base.tc+' bps the costs still don\'t outweigh the tracking benefit — push the cost slider higher.'
+          : 'Hedging daily costs you '+money(peak-daily)+' more than it earns. That gap is the whole reason execution quality is a job title.');
+    btn.disabled=false; btn.textContent='Run sweep';
+  },30);
+}
+['iv','rv','dy','hf','tc','vv','jp','js'].forEach(id=>$(id).addEventListener('input',()=>{
+  draw(); if(!$('batch').classList.contains('hidden')) batch();
+}));
+$('again').addEventListener('click',draw);
+$('run').addEventListener('click',batch);
+$('sweep').addEventListener('click',sweep);
+window.addEventListener('resize',()=>{draw(); if(!$('batch').classList.contains('hidden')) batch()});
+draw();
+</script>
+</body>
+</html>
