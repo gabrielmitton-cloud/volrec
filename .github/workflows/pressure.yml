@@ -1,0 +1,213 @@
+name: pressure
+# TEMPORARY. One-off full-scale verification of the 109-ticker / 24-column
+# recorder against the live API. Delete after reading the log.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pressure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Full-scale pressure test
+        env:
+          ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
+          ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
+        run: |
+          python - <<'PY'
+          import csv, hashlib, sys, time
+          from datetime import date, datetime, timezone
+          from pathlib import Path
+          import record as m
+
+          FAILS = []
+          REAL = Path("data/iv_history.csv")
+          MD5_BEFORE = hashlib.md5(REAL.read_bytes()).hexdigest()
+          with REAL.open(newline="") as f:
+              ORIG_HEADER = next(csv.reader(f))
+          with REAL.open(newline="") as f:
+              ORIG_ROWS = list(csv.DictReader(f))
+          print(f"REAL {REAL}: md5 {MD5_BEFORE}, {len(ORIG_HEADER)} cols x {len(ORIG_ROWS)} rows")
+
+          # ---- 1. redirect OUT at a copy so the real dataset is never touched ----
+          tmp = Path("/tmp/pressure/data"); tmp.mkdir(parents=True, exist_ok=True)
+          COPY = tmp / "iv_history.csv"
+          COPY.write_bytes(REAL.read_bytes())
+          m.OUT = COPY
+          print(f"m.OUT -> {m.OUT}\n")
+
+          # ---- 2/3. session wrapped with an HTTP status counter ----
+          s = m.session()
+          _get = s.get
+          CODES = {}
+          def counting_get(*a, **kw):
+              r = _get(*a, **kw)
+              CODES[r.status_code] = CODES.get(r.status_code, 0) + 1
+              return r
+          s.get = counting_get
+
+          today = date.today()
+          print(f"today {today} ({today:%A})   universe {len(m.WATCHLIST)} tickers   PACE {m.PACE}s")
+          print(f"WATCHLIST unique: {len(set(m.WATCHLIST))}\n")
+
+          t0 = time.perf_counter()
+          try:
+              spots = m.spot_prices(s, m.WATCHLIST)
+          except Exception as e:
+              print(f"spot_prices RAISED: {type(e).__name__}: {e}"); spots = {}
+              FAILS.append("spot_prices raised")
+          t_spot = time.perf_counter() - t0
+          no_spot = [x for x in m.WATCHLIST if x not in spots]
+          print(f"spot_prices: {len(spots)}/{len(m.WATCHLIST)} returned in {t_spot:.1f}s "
+                f"({sum(CODES.values())} request(s))")
+          if no_spot:
+              print(f"  !! NO SPOT ({len(no_spot)}): {', '.join(no_spot)}")
+              FAILS.append(f"spot_prices returned only {len(spots)}/{len(m.WATCHLIST)}")
+          print()
+
+          # ---- snapshot() for every ticker ----
+          rows, failed = [], {}
+          for sym in m.WATCHLIST:
+              try:
+                  if sym not in spots:
+                      raise RuntimeError("no price returned by spot_prices")
+                  rows.append(m.snapshot(s, sym, spots[sym], today))
+              except Exception as e:
+                  failed[sym] = f"{type(e).__name__}: {e}"
+              time.sleep(m.PACE)
+          elapsed = time.perf_counter() - t0
+
+          # ---- 4/5. reporting ----
+          def full(r):
+              return [k for k in m.FIELDS if r.get(k) is None]
+
+          def age_h(qt):
+              if not qt: return None
+              try:
+                  t = datetime.fromisoformat(qt.replace("Z", "+00:00"))
+                  return (datetime.now(timezone.utc) - t).total_seconds() / 3600
+              except Exception:
+                  return None
+
+          def spread_pct(r):
+              b, a, mid = r.get("bid"), r.get("ask"), r.get("mid")
+              if b is None or a is None or not mid: return None
+              return 100.0 * (a - b) / mid
+
+          complete = [r for r in rows if not full(r)]
+          with_put = [r for r in rows if r.get("put_iv") is not None]
+          with_iv  = [r for r in rows if r.get("iv") is not None]
+
+          print("=" * 78)
+          print("RESULTS")
+          print("=" * 78)
+          print(f"elapsed (spot + {len(m.WATCHLIST)} snapshots) : {elapsed:.1f}s")
+          print(f"HTTP status counts                : {dict(sorted(CODES.items()))}")
+          print(f"total requests                    : {sum(CODES.values())}")
+          print(f"HTTP 429 count                    : {CODES.get(429, 0)}   (must be 0)")
+          print(f"rows returned                     : {len(rows)}/{len(m.WATCHLIST)}")
+          print(f"fully populated (all 24 cols)     : {len(complete)}/{len(rows)}")
+          print(f"call iv present                   : {len(with_iv)}/{len(rows)}")
+          print(f"put match (put_iv not None)       : {len(with_put)}/{len(rows)}"
+                f"  = {100.0*len(with_put)/max(len(rows),1):.1f}%")
+          if CODES.get(429, 0): FAILS.append(f"{CODES[429]} HTTP 429s")
+
+          # which columns are responsible for incomplete rows
+          miss = {}
+          for r in rows:
+              for k in full(r): miss[k] = miss.get(k, 0) + 1
+          if miss:
+              print("\nincomplete rows, by column:")
+              for k, n in sorted(miss.items(), key=lambda kv: -kv[1]):
+                  print(f"  {k:14s} missing on {n:3d} ticker(s)")
+
+          if failed:
+              print(f"\nFAILURES BY TICKER ({len(failed)}):")
+              for k, v in failed.items(): print(f"  {k:6s} {v}")
+          else:
+              print("\nFAILURES BY TICKER: none")
+
+          print("\nper-ticker detail (spread% of mid, quote age h, missing cols):")
+          print(f"  {'sym':6s} {'iv':>7s} {'spr%':>7s} {'ageh':>6s} {'vol':>9s}  missing")
+          for r in sorted(rows, key=lambda r: r["symbol"]):
+              sp, ag = spread_pct(r), age_h(r.get("quote_time"))
+              iv = r.get("iv")
+              print(f"  {r['symbol']:6s} {iv if iv is None else f'{iv:.4f}':>7} "
+                    f"{'--' if sp is None else f'{sp:.1f}':>7} "
+                    f"{'--' if ag is None else f'{ag:.1f}':>6} "
+                    f"{str(r.get('volume')):>9}  {','.join(full(r)) or '-'}")
+
+          WATCH = ["HYG", "XLC", "XLRE", "FXE", "XLU", "MDY"]
+          print("\nWATCH LIST (flagged in HANDOFF):")
+          for sym in WATCH:
+              r = next((x for x in rows if x["symbol"] == sym), None)
+              if r is None:
+                  print(f"  {sym:6s} NO ROW - {failed.get(sym, 'absent')}"); continue
+              sp, ag = spread_pct(r), age_h(r.get("quote_time"))
+              print(f"  {sym:6s} iv={r.get('iv')} put_iv={r.get('put_iv')} "
+                    f"bid/ask={r.get('bid')}/{r.get('ask')} "
+                    f"spread={'--' if sp is None else f'{sp:.1f}%'} "
+                    f"dte={r.get('dte')} age={'--' if ag is None else f'{ag:.1f}h'} "
+                    f"missing={','.join(full(r)) or '-'}")
+
+          # ---- 6. append() on the COPY, verify the migration ----
+          print("\n" + "=" * 78)
+          print("MIGRATION (on the /tmp copy)")
+          print("=" * 78)
+          try:
+              m.append(rows)
+              with COPY.open(newline="") as f: new_header = next(csv.reader(f))
+              with COPY.open(newline="") as f: after = list(csv.DictReader(f))
+              added = [c for c in new_header if c not in ORIG_HEADER]
+              print(f"header {len(ORIG_HEADER)} -> {len(new_header)} cols; added {added}")
+              if len(added) != 7: FAILS.append(f"migration added {len(added)} cols, expected 7")
+              if new_header != m.FIELDS: FAILS.append("post-migration header != FIELDS")
+              if new_header[:len(ORIG_HEADER)] != ORIG_HEADER:
+                  FAILS.append("original column order not preserved as a prefix")
+              bad, cells = [], 0
+              for i, o in enumerate(ORIG_ROWS):
+                  for k in ORIG_HEADER:
+                      cells += 1
+                      if after[i].get(k) != o[k]:
+                          bad.append(f"row{i}.{k}: {o[k]!r}->{after[i].get(k)!r}")
+              pad_bad = [f"row{i}.{k}" for i in range(len(ORIG_ROWS)) for k in added
+                         if after[i].get(k) != ""]
+              print(f"original cells checked: {cells} ({len(ORIG_ROWS)}x{len(ORIG_HEADER)}); "
+                    f"mismatches: {len(bad)}")
+              if bad: FAILS.append(f"{len(bad)} original cells changed: {bad[:5]}")
+              if pad_bad: FAILS.append(f"{len(pad_bad)} padded cells not empty: {pad_bad[:5]}")
+              exp = len(ORIG_ROWS) + len(rows)
+              print(f"rows {len(ORIG_ROWS)} + {len(rows)} appended = {len(after)} (expect {exp})")
+              if len(after) != exp: FAILS.append(f"row count {len(after)} != {exp}")
+              bk = COPY.with_name("iv_history.pre-17col.csv")
+              ok_bk = bk.exists() and hashlib.md5(bk.read_bytes()).hexdigest() == MD5_BEFORE
+              print(f"backup {bk.name}: exists={bk.exists()} byte-identical-to-original={ok_bk}")
+              if not ok_bk: FAILS.append("backup missing or not byte-identical")
+          except Exception as e:
+              print(f"MIGRATION RAISED: {type(e).__name__}: {e}")
+              FAILS.append(f"migration raised {type(e).__name__}: {e}")
+
+          # ---- 7. the real file must be untouched ----
+          print("\n" + "=" * 78)
+          MD5_AFTER = hashlib.md5(REAL.read_bytes()).hexdigest()
+          print(f"real file md5 before {MD5_BEFORE}")
+          print(f"real file md5 after  {MD5_AFTER}")
+          if MD5_AFTER != MD5_BEFORE:
+              FAILS.append("REAL data/iv_history.csv WAS MODIFIED")
+          else:
+              print("real dataset UNCHANGED")
+          assert MD5_AFTER == MD5_BEFORE, "REAL DATASET MODIFIED - stop everything"
+
+          print("\n" + "=" * 78)
+          if FAILS:
+              print("HARD FAILURES:")
+              for f_ in FAILS: print(f"  - {f_}")
+              sys.exit(1)
+          print("ALL CHECKS PASSED")
+          PY
