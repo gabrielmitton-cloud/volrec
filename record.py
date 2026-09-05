@@ -59,7 +59,9 @@ WATCHLIST = [
     # --- added 2026-09-05, screened live for populated IV/greeks and quotes
     #     tighter than 60% of mid. Original 52 above are unchanged. ---
     # credit and international - vol driven by spreads and geography
-    "LQD", "FXI",
+    "LQD", "HYG", "FXI",
+    # completes the 11 GICS sector SPDRs
+    "XLC", "XLRE",
     # industry ETFs - regimes the sector SPDRs do not isolate
     "SMH", "XBI", "KRE", "GDX", "IBIT", "XHB", "XOP",
     # tech and semis single names
@@ -94,6 +96,11 @@ FIELDS = [
     "date", "symbol", "spot", "expiration", "dte", "strike", "moneyness",
     "option_symbol", "bid", "ask", "mid", "iv", "delta", "gamma", "theta",
     "vega", "rho",
+    # added 2026-09-05. quote_time detects stale quotes; volume is a liquidity
+    # filter; the put at the SAME strike lets you average call and put IV, which
+    # cancels the dividend/borrow error that biases call IV down on its own.
+    "quote_time", "volume",
+    "put_symbol", "put_bid", "put_ask", "put_mid", "put_iv",
 ]
 
 
@@ -159,7 +166,8 @@ def spot_prices(s, symbols):
 
 def snapshot(s, symbol, spot, today):
     params = dict(
-        feed=OPTION_FEED, type="call", limit=1000,
+        feed=OPTION_FEED, limit=1000,   # no type filter: one request returns
+                                        # both calls and puts for this window
         expiration_date_gte=(today + timedelta(days=DTE_WINDOW[0])).isoformat(),
         expiration_date_lte=(today + timedelta(days=DTE_WINDOW[1])).isoformat(),
         strike_price_gte=round(spot * (1 - STRIKE_BAND), 2),
@@ -204,6 +212,14 @@ def snapshot(s, symbol, spot, today):
     mid = (round((bid + ask) / 2, 4)
            if bid is not None and ask is not None else None)
 
+    # the put at the same strike and expiry, if it came back in the same pages
+    psym = osym.replace(f"{exp:%y%m%d}C", f"{exp:%y%m%d}P", 1)
+    put = snaps.get(psym) or {}
+    pq = put.get("latestQuote") or {}
+    pbid, pask = pq.get("bp"), pq.get("ap")
+    pmid = (round((pbid + pask) / 2, 4)
+            if pbid is not None and pask is not None else None)
+
     return {
         "date": today.isoformat(), "symbol": symbol, "spot": round(spot, 4),
         "expiration": exp.isoformat(), "dte": dte, "strike": strike,
@@ -212,6 +228,11 @@ def snapshot(s, symbol, spot, today):
         "iv": snap.get("impliedVolatility"),
         "delta": g.get("delta"), "gamma": g.get("gamma"),
         "theta": g.get("theta"), "vega": g.get("vega"), "rho": g.get("rho"),
+        "quote_time": q.get("t"),
+        "volume": (snap.get("dailyBar") or {}).get("v"),
+        "put_symbol": psym if put else None,
+        "put_bid": pbid, "put_ask": pask, "put_mid": pmid,
+        "put_iv": put.get("impliedVolatility") if put else None,
     }
 
 
@@ -244,9 +265,53 @@ def already_recorded(today):
                 if r.get("date") == today.isoformat()}
 
 
+def migrate_header():
+    """Bring an existing data file up to the current FIELDS.
+
+    Appending rows whose columns do not match the file's header silently
+    writes misaligned data - the kind of corruption you only notice months
+    later. So check first, and handle the two cases differently:
+
+      - columns only ADDED: rewrite the header and pad existing rows with
+        empty values. Every existing value is preserved; nothing is rewritten
+        in place. A one-time backup is left beside the file.
+      - columns REMOVED or RENAMED: refuse and exit. That would destroy data,
+        and no schema change is worth losing the one artifact that cannot be
+        rebuilt.
+    """
+    if not OUT.exists() or OUT.stat().st_size == 0:
+        return
+    with OUT.open(newline="") as f:
+        header = next(csv.reader(f), None)
+    if not header or header == FIELDS:
+        return
+
+    dropped = [c for c in header if c not in FIELDS]
+    if dropped:
+        sys.exit(f"Refusing to touch {OUT.name}: the file has column(s) "
+                 f"{dropped} that FIELDS no longer declares. Migrating would "
+                 f"discard recorded data. Resolve this by hand.")
+
+    added = [c for c in FIELDS if c not in header]
+    with OUT.open(newline="") as f:
+        old_rows = list(csv.DictReader(f))
+    backup = OUT.with_name(f"{OUT.stem}.pre-{len(header)}col{OUT.suffix}")
+    if not backup.exists():
+        backup.write_bytes(OUT.read_bytes())
+    with OUT.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        w.writeheader()
+        for r in old_rows:
+            w.writerow({k: r.get(k, "") for k in FIELDS})
+    print(f"  migrated {OUT.name}: added {added}; "
+          f"{len(old_rows)} existing row(s) padded, no values changed. "
+          f"Backup at {backup.name}.")
+
+
 def append(rows):
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    new = not OUT.exists()
+    migrate_header()
+    new = not OUT.exists() or OUT.stat().st_size == 0
     with OUT.open("a", newline="") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
         if new:
