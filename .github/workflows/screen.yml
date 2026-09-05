@@ -1,0 +1,135 @@
+name: screen
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  screen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Screen candidate tickers for usable ATM options
+        env:
+          ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
+          ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
+        run: |
+          python - <<'PY'
+          import os, time, requests
+          from datetime import date, datetime, timedelta
+
+          CANDIDATES = [
+            # complete the 11 GICS sector SPDRs (currently missing 2)
+            "XLRE","XLC",
+            # credit - a genuinely different vol driver, absent today
+            "HYG","LQD",
+            # single-country international
+            "EWZ","EWJ","FXI",
+            # industry ETFs with distinct vol regimes
+            "SMH","XBI","KRE","GDX","IBIT","XHB","XOP","IYR","ARKK",
+            # tech / semis single names
+            "AVGO","ORCL","CRM","ADBE","INTC","MU","QCOM","TSM","NFLX","CSCO","TXN",
+            # financials
+            "MS","WFC","C","AXP","SCHW",
+            # healthcare
+            "LLY","ABBV","PFE","MRK","TMO",
+            # consumer
+            "HD","NKE","SBUX","TGT","LOW","DIS",
+            # industrials
+            "GE","HON","DE","LMT","UPS","RTX",
+            # energy
+            "COP","SLB","OXY",
+            # utilities
+            "NEE","SO","DUK",
+            # communication
+            "T","CMCSA",
+            # high-vol / speculative
+            "RIVN","SOFI","HOOD","MARA","RBLX","SNOW","CRWD",
+          ]
+
+          DATA="https://data.alpaca.markets"
+          s=requests.Session()
+          s.headers.update({"APCA-API-KEY-ID":os.environ["ALPACA_KEY"],
+                            "APCA-API-SECRET-KEY":os.environ["ALPACA_SECRET"],
+                            "accept":"application/json"})
+          today=date.today()
+          lo=(today+timedelta(days=21)).isoformat(); hi=(today+timedelta(days=45)).isoformat()
+
+          spots={}
+          for i in range(0,len(CANDIDATES),50):
+              r=s.get(f"{DATA}/v2/stocks/snapshots",
+                      params={"symbols":",".join(CANDIDATES[i:i+50]),"feed":"iex"},timeout=25)
+              j=r.json(); snaps=j.get("snapshots",j)
+              for sym,sn in snaps.items():
+                  if not isinstance(sn,dict): continue
+                  px=((sn.get("latestTrade") or {}).get("p") or (sn.get("dailyBar") or {}).get("c")
+                      or (sn.get("prevDailyBar") or {}).get("c"))
+                  if px: spots[sym]=float(px)
+              time.sleep(0.4)
+
+          def parse_occ(sym):
+              i=0
+              while i<len(sym) and not sym[i].isdigit(): i+=1
+              b=sym[i:]
+              return datetime.strptime(b[:6],"%y%m%d").date(), int(b[7:15])/1000.0, b[6].upper()
+
+          print(f"{'TICK':7s} {'SPOT':>9s} {'DTE':>4s} {'IV':>8s} {'SPREAD%':>8s} {'CALL+PUT':>9s}  VERDICT")
+          print("-"*72)
+          good=[]; bad=[]
+          for sym in CANDIDATES:
+              spot=spots.get(sym)
+              if not spot:
+                  print(f"{sym:7s} {'-':>9s} {'-':>4s} {'-':>8s} {'-':>8s} {'-':>9s}  NO SPOT"); bad.append((sym,"no spot")); continue
+              try:
+                  params={"feed":"indicative","limit":1000,
+                          "expiration_date_gte":lo,"expiration_date_lte":hi,
+                          "strike_price_gte":round(spot*0.92,2),"strike_price_lte":round(spot*1.08,2)}
+                  snaps={}; tok=None
+                  for _ in range(6):
+                      if tok: params["page_token"]=tok
+                      j=s.get(f"{DATA}/v1beta1/options/snapshots/{sym}",params=params,timeout=25).json()
+                      pg=j.get("snapshots") or {}; snaps.update(pg); tok=j.get("next_page_token")
+                      if not tok or not pg: break
+                      time.sleep(0.4)
+                  best=None
+                  for osym,sn in snaps.items():
+                      try: exp,strike,kind=parse_occ(osym)
+                      except Exception: continue
+                      if kind!="C": continue
+                      dte=(exp-today).days
+                      if not (21<=dte<=45): continue
+                      sc=(abs(dte-30),abs(strike-spot))
+                      if best is None or sc<best[0]: best=(sc,osym,sn,exp,strike,dte)
+                  if not best:
+                      print(f"{sym:7s} {spot:9.2f} {'-':>4s} {'-':>8s} {'-':>8s} {'-':>9s}  NO ATM CALL"); bad.append((sym,"no atm call")); continue
+                  _,osym,sn,exp,strike,dte=best
+                  q=sn.get("latestQuote") or {}; g=sn.get("greeks") or {}
+                  iv=sn.get("impliedVolatility"); b=q.get("bp"); a=q.get("ap")
+                  # matching put at same strike+expiry
+                  putsym=osym.replace(f"{exp:%y%m%d}C",f"{exp:%y%m%d}P")
+                  put=snaps.get(putsym); piv=(put or {}).get("impliedVolatility")
+                  mid=((b or 0)+(a or 0))/2
+                  spr=((a-b)/mid*100) if (b is not None and a is not None and mid>0) else None
+                  ok = iv is not None and all(g.get(k) is not None for k in ("delta","gamma","theta","vega","rho")) \
+                       and b is not None and a is not None and spr is not None and spr<60
+                  both = "yes" if piv is not None else "call only"
+                  verdict = "KEEP" if ok else "DROP"
+                  if ok: good.append(sym)
+                  else: bad.append((sym,"iv/greeks/spread"))
+                  ivs=f"{iv:.4f}" if iv is not None else "MISSING"
+                  sprs=f"{spr:.0f}%" if spr is not None else "-"
+                  print(f"{sym:7s} {spot:9.2f} {dte:4d} {ivs:>8s} {sprs:>8s} {both:>9s}  {verdict}")
+              except Exception as e:
+                  print(f"{sym:7s} {spot:9.2f} {'-':>4s} {'-':>8s} {'-':>8s} {'-':>9s}  ERROR {str(e)[:40]}")
+                  bad.append((sym,str(e)[:40]))
+              time.sleep(0.4)
+
+          print()
+          print(f"PASSED ({len(good)}): {','.join(good)}")
+          print()
+          print(f"FAILED ({len(bad)}): {', '.join(f'{s}({r})' for s,r in bad)}")
+          PY
