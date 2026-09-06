@@ -469,6 +469,66 @@ reading off it is the *intraday* spread on HYG, XLC and XLRE - see section 6.
 
 ---
 
+## 11. The term-structure upgrade - APPLIED 6 September 2026
+
+`FIELDS` declares 32 columns. The file migrates itself on the next run, exactly
+as the 17 -> 24 change did.
+
+**Why this could not wait.** Everything else about explaining volatility is
+retroactive - earnings dates, FOMC dates, price history are all permanent public
+record and can be fetched in October. The *shape of the volatility curve on a
+given day* is not. Section 5 is the reason: IV, greeks and quotes exist only in
+the snapshot endpoints, there is no historical option-quote endpoint at any
+price. A day recorded with one expiry is a day whose term structure is gone
+forever. Same argument as the 52 -> 109 expansion, same conclusion: the cheapest
+moment to start is the earliest one.
+
+**It costs nothing.** Measured live on 6 Sep: **219 requests, identical to
+before**, 94.4 s, zero 429s. The chain query already filters to
+`expiration_date` in `DTE_WINDOW` and downloads every contract in that band;
+`snapshot()` was keeping one and discarding the rest. The far leg is picked out
+of a response already paid for.
+
+| measured live, 109 tickers | |
+|---|---|
+| requests | 219 - unchanged |
+| elapsed | 94.4 s, zero 429s |
+| far leg present | 105 / 109 (96%) |
+| no far leg | DUK, FXE, MDY, XLRE |
+| migration | 17 -> 32, all 52x17 original cells preserved |
+
+**Do not widen `DTE_WINDOW` to reach shorter expiries.** Measured: at 7-75 days
+SPY returns 13 expiries and fills page 1 with 1000 contracts, so paging becomes
+load-bearing - the exact failure section 5 designed against. The gain is not
+worth reintroducing that risk.
+
+**Reading the slope - the one trap.** The far leg is the expiry *furthest* from
+the near one inside the window, which for a minority of tickers is
+shorter-dated, not longer. Never read the sign of `far_iv - iv` directly. Divide
+by the maturity gap, which carries the sign correctly in every case:
+
+```
+slope per day = (far_iv - iv) / (far_dte - dte)
+```
+
+Positive is then an upward-sloping curve, always. FXI on 6 Sep is the worked
+example: raw difference +9.05 vol points, but its far leg is 24d against a 33d
+near leg, so the curve is *inverted*, not upward-sloping.
+
+**What it buys.** A single expiry gives a level. Two give a shape, and the shape
+is where a scheduled event shows up: an inverted curve means near-term
+uncertainty exceeds longer-term, which is the signature of an event dated inside
+the near leg but outside the far one. On 6 Sep the spread ran from -6.49
+(NKE) to +9.05 (FXI) vol points with 51 of 105 inverted - real dispersion, not
+noise. It also makes the constant-maturity interpolation section 4.2(b)
+contemplates possible at all; with one point per day there is nothing to
+interpolate between.
+
+**Still open:** open interest (section 10), and joining an event calendar to the
+slope in October - SEC EDGAR 8-K/10-Q dates, free and retroactive.
+
+---
+
 ## 8. Design direction for a future dashboard
 
 The *collection monitor* is built - `tools/monitor.html`, in this aesthetic. It

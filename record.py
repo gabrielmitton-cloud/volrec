@@ -105,6 +105,13 @@ FIELDS = [
     # leg is paid for - zero extra requests. Two points make a term-structure
     # slope, which a single expiry cannot see and which cannot be reconstructed
     # later: there is no historical option-quote endpoint at any price.
+    #
+    # The far leg is the expiry FURTHEST from the near one inside DTE_WINDOW,
+    # which for a minority of tickers is SHORTER-dated, not longer. So never
+    # read the sign of (far_iv - iv) directly. Always divide by the maturity
+    # gap, which carries the sign for you:
+    #     slope per day = (far_iv - iv) / (far_dte - dte)
+    # A positive slope is then an upward-sloping curve in every case.
     "far_symbol", "far_expiration", "far_dte", "far_strike",
     "far_bid", "far_ask", "far_mid", "far_iv",
 ]
