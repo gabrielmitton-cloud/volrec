@@ -35,6 +35,7 @@ questioned about for fifteen minutes, not a résumé line.
 | piece | status |
 |---|---|
 | `record.py` | Working. 109 tickers, ~95 seconds per run (measured live 5 Sep). |
+| `analyze.py` | Written and statistically validated 6 Sep. Blocked on data until ~late Oct; `python analyze.py --status` says how far off. |
 | GitHub Actions | Live. Weekdays 15:30 UTC (8:30am Pacific). First scheduled run: Tue 8 Sep. Mon 7 Sep is Labor Day and is skipped. |
 | Data | Collecting since 2026-09-04. First run: 52/52 rows, all IV populated. |
 | `tools/gamma-lab*.html` | Complete. Educational, not part of the pipeline. |
@@ -151,6 +152,39 @@ per-ticker shortcut looks safe and is worse. Report all three of:
 
 Say out loud that ~T/21 independent episodes is the real sample size. Six
 months of collection is about six independent draws of the market factor.
+
+**This is implemented and validated - `analyze.py`.** Run
+`python analyze.py --simulate` to reproduce it; it needs no market data. An
+independent re-simulation of the design above (400 replications, true null,
+premium zero by construction) reproduces this section closely:
+
+| test | this section claimed | re-simulated |
+|---|---|---|
+| pooled t-test over all rows | 65% (89% w/ factor) | **63.8%** (93.0%) |
+| per-ticker mean, then t-test | 6% (55% w/ factor) | **4.2%** (69.8%) |
+| strictly non-overlapping | 5-7% | **3.8%** (5.5%) |
+
+One correction to this section. **Newey-West over-rejects worse than "roughly
+3x" at the sample size this project will actually have**, and the damage is a
+small-sample effect that shrinks with T:
+
+| trading days collected | NW rejects (nominal 5%) |
+|---|---|
+| 120 (~6 months) | **22.4%** - about 4.5x |
+| 250 (~1 year) | 16.4% |
+| 500 (~2 years) | 9.6% |
+
+So at six months treat the primary p-value as an upper bound by a factor of
+about **4.5, not 3**. The non-overlapping test stays correctly sized (4-6%) at
+every T, which is why it is the one to believe.
+
+A trap worth naming, because it was hit while building `analyze.py`: the
+non-overlapping stride must be at least as long as the window. A 30-*calendar*-day
+option is ~21 *trading* days, so a stride of 21 trading days is exactly
+non-overlapping - but if the window is longer (the ~42-day MDY / FXE / XLRE
+names), a 21-day stride still overlaps and the "honest" test quietly
+over-rejects. `analyze.py` derives the stride from the observed mean `dte`
+rather than assuming 21.
 
 **(b) Horizon mismatch.** The option has 21-45 days to expiry but the realized
 window was specified as a fixed 30. The IV term structure is sloped, so this is
@@ -398,6 +432,7 @@ scrolling log are what make it read as a live system rather than a report.
 README.md                     project document — the question, method, limitations
 HANDOFF.md                    this file
 record.py                     the daily recorder
+analyze.py                    the analyser — `--status`, `--simulate`, or run it
 requirements.txt              one dependency: requests
 .github/workflows/record.yml  the schedule
 .github/workflows/freshness.yml  daily staleness alarm
