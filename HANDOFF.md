@@ -671,6 +671,45 @@ Their weekend spreads (92%, 127%, 85% of mid) are meaningless - PEP, a mega-cap
 staple, read 98% on the same quotes. Only this intraday row settles it. Under
 60% of mid, they stay.
 
+**The 60% line is pre-registered - decided 6 Sep, BEFORE the data landed, and
+it is not to be moved after seeing the three numbers.** Recorded here so the
+write-up can say that honestly. Apply it mechanically.
+
+Why it is worth stating: 60% was set against *weekend* readings of 85-127%, and
+measured against actual intraday quotes it is a very loose line. The 4 Sep
+intraday distribution across the original 52, the only intraday data that
+exists:
+
+| statistic | intraday spread, % of mid |
+|---|---|
+| median | 7.3% |
+| mean | 10.6% |
+| min / max | 0.4% (JNJ 2.5%) / 67.4% (FXE) |
+| names >= 60% | **1 of 52** (FXE alone) |
+
+Only four names clear 25% at all: FXE 67.4, XLU 54.8, PEP 36.8, XRT 29.2. So
+60% sits at roughly **8x the median** - it is not a liquidity screen, it is a
+catastrophe filter, and HYG/XLC/XLRE will very likely pass it whatever they
+print.
+
+That is the intended behaviour, for two reasons. PEP - the name section 6 uses
+as the benchmark for a clean intraday row - reads 36.8%, so 60% leaves real
+headroom above a ticker already trusted. And it matches the philosophy applied
+to `dte` in section 6: *control for it, don't discard the rows*. The three names
+complete the 11 GICS sectors and the credit sleeve; dropping a sector costs more
+than carrying a wide quote you have measured and recorded.
+
+So, mechanically, on Tuesday:
+
+- **>= 60% of mid** - drop from the WATCHLIST, and note it in section 6.
+- **36.8% (PEP's intraday reading) to 60%** - keep, but add to the section 6
+  watch list beside FXE and XLU. Do not treat their IV *levels* as comparable
+  to tight names without controlling for spread.
+- **< 36.8%** - keep, no caveat. The pending decision closes.
+
+Record the actual three numbers in section 6 either way. A screen whose result
+is never written down is not a screen.
+
 Mon 7 Sep is Labor Day. The cron fires, the calendar guard no-ops it, nothing
 commits. A `record` run with no commit that day is correct behaviour.
 
@@ -723,3 +762,13 @@ commits. A `record` run with no commit that day is correct behaviour.
   `$GITHUB_STEP_SUMMARY` - it is far easier to read than the raw log.
 - The safety rule that has held throughout: point `OUT` at a copy under `/tmp`
   and assert `data/iv_history.csv`'s md5 is unchanged at the end of every test.
+- **`python tools/pressure_test.py`** - 30 read-only pre-flight checks: dataset
+  integrity and the protected md5, value sanity, append-only schema, a migration
+  dry run on a copy, analyze/record schema agreement, workflow config, guard
+  ordering, and whether the public monitor survives the column jump. Exits
+  non-zero on any failure. Ran clean 6 Sep. Run it before and after Tuesday.
+- The dataset is **CRLF throughout** - that is `csv.DictWriter`'s default
+  dialect, not the old line-ending mangling. Every writer in `record.py`
+  produces CRLF, `core.autocrlf` is unset, there is no `.gitattributes`, and the
+  committed blob is byte-identical to the worktree. Leave it alone; normalising
+  it would change the md5 for no gain.
