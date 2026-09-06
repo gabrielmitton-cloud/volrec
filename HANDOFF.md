@@ -388,7 +388,22 @@ Anything before then is premature. The recorder needs no further changes.
   *levels* as approximate and time-series *changes* as more trustworthy.
 - **No skew.** Only at-the-money is recorded. Implied vol varies by strike and
   that shape carries information this dataset doesn't capture. A known,
-  deliberate limitation.
+  deliberate limitation - and now a *measured* one. Cboe's indices are
+  model-free (they integrate the whole strike surface, so they include the skew
+  and tail premium), and on 4 Sep every matched pair sat above the ATM reading:
+
+  | ticker | ours (ATM) | Cboe | gap |
+  |---|---|---|---|
+  | QQQ | 16.11% | VXN 20.04 | +3.93 |
+  | IWM | 14.49% | RVX 18.30 | +3.81 |
+  | USO | 40.32% | OVX 44.96 | +4.64 |
+  | GLD | 24.56% | GVZ 26.63 | +2.07 |
+
+  Mean gap +3.61 vol points, correct sign on all four. Say this in the write-up:
+  the ATM reading understates a model-free variance measure by roughly 2-5 vol
+  points, and that gap *is* the skew premium being left on the table. It also
+  doubles as an independent sanity check on the pipeline, from a source with no
+  connection to Alpaca.
 
 ---
 
@@ -523,6 +538,42 @@ the near leg but outside the far one. On 6 Sep the spread ran from -6.49
 noise. It also makes the constant-maturity interpolation section 4.2(b)
 contemplates possible at all; with one point per day there is nothing to
 interpolate between.
+
+### 11.1 The market factor, measured - added 6 September 2026
+
+Cboe publishes the whole market volatility term structure free, with no API key
+and no rate limit, back to 1990: `VIX9D`, `VIX`, `VIX3M`, `VIX6M` at
+`cdn.cboe.com/api/global/us_indices/daily_prices/<NAME>_History.csv`.
+
+This is not another explanatory variable thrown at a small sample. Section
+4.2(a) *names* the shared market factor as the thing that makes a pooled test
+reject a true null 63.8% of the time and the per-ticker test 69.8%. VIX is that
+factor, measured. Removing a confound the design already identifies is the
+opposite of data mining, and it should push the residual closer to independent
+across tickers, which is the binding constraint on this whole study.
+
+`analyze.py` fetches it (cached in `data/market_vol.json`, gitignored - it is
+reconstructable) and reports:
+
+- how much of the day-to-day swing in the premium is the market rather than the
+  individual names, as an R^2
+- the premium **after** the market factor is regressed out. If it survives
+  there, it is not just beta to the market - the harder and better claim.
+- whether the market curve was inverted (`VIX3M < VIX9D`) - a stressed tape
+- the premium split by whether the *ticker's own* curve was inverted, which is
+  the event signature from section 11
+
+Cboe also publishes one-to-one benchmarks for four tickers already in the
+universe - `QQQ/VXN`, `IWM/RVX`, `USO/OVX`, `GLD/GVZ`. Fixed in advance, one per
+ticker, not a net.
+
+**Where the discipline goes.** VVIX, SKEW, and FRED's credit spreads
+(`BAMLH0A0HYM2`) and financial stress index (`STLFSI4`) are all free and equally
+easy to pull. They are deliberately NOT wired in. Fitting a pile of macro
+regressors to about six independent episodes is exactly the failure mode the
+sentiment decision in section 3 rejects, and it would be inconsistent to refuse
+Twitter and then do the same thing with FRED. Recording is harmless; *testing*
+is where the mining happens. Add them only with a hypothesis written down first.
 
 **Still open:** open interest (section 10), and joining an event calendar to the
 slope in October - SEC EDGAR 8-K/10-Q dates, free and retroactive.

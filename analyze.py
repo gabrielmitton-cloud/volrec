@@ -35,9 +35,22 @@ from math import erf, exp, lgamma, sqrt, isfinite
 from pathlib import Path
 
 DATA_URL = "https://data.alpaca.markets"
+CBOE = "https://cdn.cboe.com/api/global/us_indices/daily_prices"
+
+# The market volatility term structure, published free by Cboe with no API key
+# and no rate limit, back to 1990. This is not decoration: HANDOFF section 4.2(a)
+# names the shared market factor as the thing that makes a pooled test reject a
+# true null 63.8% of the time. VIX *is* that factor, measured. Removing a
+# confound the design already identifies is not data mining.
+MARKET_VOL = ["VIX9D", "VIX", "VIX3M", "VIX6M"]
+
+# One-to-one benchmarks, fixed in advance - the Cboe index for that exact
+# underlying. Not a net cast over a small sample.
+BENCH = {"QQQ": "VXN", "IWM": "RVX", "USO": "OVX", "GLD": "GVZ"}
 HERE = Path(__file__).parent
 CSV = HERE / "data" / "iv_history.csv"
 PRICE_CACHE = HERE / "data" / "prices.json"
+VOL_CACHE = HERE / "data" / "market_vol.json"
 TRADING_DAYS = 252
 MIN_DAYS_FOR_ANALYSIS = 40      # section 4: ~40 trading days before this is worth running
 NONOVERLAP_STRIDE = 21          # one independent episode per ~month
@@ -218,7 +231,47 @@ def fetch_closes(symbols, start, end):
     return cache
 
 
-def build_panel(rows, closes):
+def fetch_market_vol(series=None):
+    """Cboe daily closes for the market volatility indices. Free, no key.
+    Returns {index_name: {"YYYY-MM-DD": close}}."""
+    import requests
+    series = series or (MARKET_VOL + sorted(set(BENCH.values())))
+    cache = json.loads(VOL_CACHE.read_text()) if VOL_CACHE.exists() else {}
+    need = [x for x in series if x not in cache]
+    for name in need:
+        r = requests.get(f"{CBOE}/{name}_History.csv", timeout=30)
+        r.raise_for_status()
+        lines = r.text.strip().split("\n")
+        head = [h.strip().upper() for h in lines[0].split(",")]
+        ci = head.index("CLOSE") if "CLOSE" in head else len(head) - 1
+        out = {}
+        for ln in lines[1:]:
+            c = ln.split(",")
+            if len(c) <= ci:
+                continue
+            try:
+                mm, dd, yy = c[0].split("/")
+                out[f"{yy}-{mm}-{dd}"] = float(c[ci])
+            except (ValueError, IndexError):
+                continue
+        cache[name] = out
+        print(f"  {name}: {len(out)} daily closes, {min(out)} to {max(out)}")
+        time.sleep(0.2)
+    if need:
+        VOL_CACHE.write_text(json.dumps(cache))
+    return cache
+
+
+def market_slope(vol, day):
+    """Market term-structure slope in vol points: VIX3M - VIX9D. Positive is the
+    normal upward-sloping curve; negative means near-term fear exceeds
+    longer-term, which is what a stressed or event-driven tape looks like."""
+    a = (vol.get("VIX9D") or {}).get(day)
+    b = (vol.get("VIX3M") or {}).get(day)
+    return None if a is None or b is None else b - a
+
+
+def build_panel(rows, closes, vol=None):
     """One record per usable snapshot row. Drops rows whose forward window is
     not fully covered by available prices - never pads, never annualises a
     partial window."""
@@ -242,7 +295,21 @@ def build_panel(rows, closes):
         rec = dict(date=r["date"], symbol=sym, group=group_of(sym), iv=iv,
                    realized=rv, spread=iv - rv, dte=dte, n=len(rets),
                    vega=num(r.get("vega")), bid=num(r.get("bid")), ask=num(r.get("ask")),
-                   mid=num(r.get("mid")), put_iv=num(r.get("put_iv")))
+                   mid=num(r.get("mid")), put_iv=num(r.get("put_iv")),
+                   far_iv=num(r.get("far_iv")), far_dte=num(r.get("far_dte")))
+        # the ticker's own term-structure slope, per day of maturity. Dividing by
+        # the maturity gap carries the sign: the far leg is the FURTHEST expiry,
+        # which for a minority of tickers is shorter-dated. See record.py.
+        if rec["far_iv"] is not None and rec["far_dte"] and rec["far_dte"] != dte:
+            rec["slope"] = (rec["far_iv"] - iv) / (rec["far_dte"] - dte)
+        else:
+            rec["slope"] = None
+        if vol:
+            rec["vix"] = (vol.get("VIX") or {}).get(r["date"])
+            rec["mkt_slope"] = market_slope(vol, r["date"])
+            bs = BENCH.get(sym)
+            rec["bench"] = (vol.get(bs) or {}).get(r["date"]) if bs else None
+            rec["bench_name"] = bs
         panel.append(rec)
     return panel, dropped
 
@@ -322,6 +389,62 @@ def report(panel):
         series = [mean(byd[d]) * vp for d in sorted(byd)]
         m_, s_, t_, p_ = newey_west(series, lag)
         print(f"   {label:22s} {m_:+7.3f} vol pts   t {t_:+6.2f}   p {p_:.4f}")
+
+    # ---- the market factor, measured and removed ----
+    dmv = [(d, v) for d, v in dm if any(r["date"] == d and r.get("vix") for r in panel)]
+    if dmv:
+        vix_by_day, ms_by_day = {}, {}
+        for r in panel:
+            if r.get("vix"): vix_by_day[r["date"]] = r["vix"]
+            if r.get("mkt_slope") is not None: ms_by_day[r["date"]] = r["mkt_slope"]
+        days_v = [d for d, _ in dm if d in vix_by_day]
+        if len(days_v) >= 6:
+            y = [dict(dm)[d] * vp for d in days_v]
+            x = [vix_by_day[d] for d in days_v]
+            xb, yb = mean(x), mean(y)
+            sxx = sum((v - xb) ** 2 for v in x)
+            beta = (sum((x[i] - xb) * (y[i] - yb) for i in range(len(x))) / sxx) if sxx else 0.0
+            alpha = yb - beta * xb
+            resid = [y[i] - (alpha + beta * x[i]) for i in range(len(x))]
+            sy = sqrt(sum((v - yb) ** 2 for v in y) / max(len(y) - 1, 1))
+            sr = sqrt(sum(v * v for v in resid) / max(len(resid) - 2, 1))
+            r2 = max(0.0, 1 - (sr * sr) / (sy * sy)) if sy > 0 else float("nan")
+            print("\n-- MARKET FACTOR (Cboe VIX, free; section 4.2a names this as the confound)")
+            print(f"   VIX over the sample: {min(x):.2f} to {max(x):.2f}, mean {xb:.2f}")
+            print(f"   daily mean spread on VIX level:  beta {beta:+.3f} vol pts per VIX pt, "
+                  f"R^2 {r2:.2f}")
+            print(f"   -> {100*r2:.0f}% of the day-to-day swing in the premium is the market,")
+            print(f"      not the individual names.")
+            mr, sr_, tr, pr = newey_west([v + yb for v in resid], lag)
+            print(f"   premium AFTER removing the market factor: {mr:+.3f} vol pts  "
+                  f"t {tr:+.2f}  p {pr:.4f}")
+            print(f"   (raw was {mu:+.3f}. If the premium survives here it is not just beta")
+            print(f"    to the market, which is the harder and more interesting claim.)")
+        if ms_by_day:
+            inv = sum(1 for d in ms_by_day if ms_by_day[d] < 0)
+            print(f"\n   market term structure inverted (VIX3M < VIX9D) on "
+                  f"{inv}/{len(ms_by_day)} days - a stressed or event-driven tape")
+
+    # ---- each ticker's own curve shape ----
+    sl = [r for r in panel if r.get("slope") is not None]
+    if sl:
+        print("\n-- TERM STRUCTURE (the ticker's own curve, from the far leg)")
+        invr = [r for r in sl if r["slope"] < 0]
+        print(f"   rows with a usable slope: {len(sl)}/{len(panel)}   inverted: {len(invr)}")
+        for label, sel in (("inverted curve", invr), ("upward curve", [r for r in sl if r["slope"] >= 0])):
+            if not sel: continue
+            byd = {}
+            for r in sel: byd.setdefault(r["date"], []).append(r["spread"])
+            v = [mean(byd[d]) * vp for d in sorted(byd)]
+            m_, s_, t_, p_ = newey_west(v, lag)
+            print(f"   {label:16s} n {len(sel):5d}   premium {m_:+7.3f} vol pts   t {t_:+6.2f}")
+        print("   An inverted curve means near-term uncertainty exceeds longer-term -")
+        print("   the signature of an event dated inside the near leg. If the premium")
+        print("   differs across these two groups, that is the event effect.")
+        bench = [r for r in sl if r.get("bench")]
+        if bench:
+            print(f"\n   matched Cboe benchmarks available on {len(bench)} rows "
+                  f"({', '.join(sorted({r['symbol']+'/'+r['bench_name'] for r in bench}))})")
 
     print("\n-- SANITY (section 4.4)")
     print("   expect roughly +2 to +4 vol pts for equity index ETFs, +1 to +2 single names.")
@@ -411,7 +534,13 @@ def main():
     end = date.today()
     print(f"fetching daily closes for {len(syms)} symbols, {start} -> {end}")
     closes = fetch_closes(syms, start, end)
-    panel, dropped = build_panel(rows, closes)
+    print("fetching the market volatility term structure from Cboe (free, no key)")
+    try:
+        vol = fetch_market_vol()
+    except Exception as e:
+        print(f"  Cboe fetch failed ({e}) - continuing without the market factor")
+        vol = {}
+    panel, dropped = build_panel(rows, closes, vol)
     print(f"\nusable rows: {len(panel)} of {len(rows)}")
     for k, v in dropped.items():
         if v: print(f"  dropped, {k}: {v}")
