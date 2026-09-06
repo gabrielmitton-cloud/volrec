@@ -101,6 +101,12 @@ FIELDS = [
     # cancels the dividend/borrow error that biases call IV down on its own.
     "quote_time", "volume",
     "put_symbol", "put_bid", "put_ask", "put_mid", "put_iv",
+    # added 2026-09-06. A SECOND expiry, already inside the response the near
+    # leg is paid for - zero extra requests. Two points make a term-structure
+    # slope, which a single expiry cannot see and which cannot be reconstructed
+    # later: there is no historical option-quote endpoint at any price.
+    "far_symbol", "far_expiration", "far_dte", "far_strike",
+    "far_bid", "far_ask", "far_mid", "far_iv",
 ]
 
 
@@ -214,6 +220,29 @@ def snapshot(s, symbol, spot, today):
         raise RuntimeError("no call contracts matched after filtering")
 
     _, osym, snap, exp, strike, dte = best
+
+    # The far leg: the expiry furthest from the near one still inside
+    # DTE_WINDOW, at the strike nearest spot. Same response, no extra request.
+    far = None
+    for osym2, snap2 in snaps.items():
+        try:
+            exp2, strike2, kind2 = parse_occ(osym2)
+        except ValueError:
+            continue
+        if kind2 != "C" or exp2 == exp:
+            continue
+        dte2 = (exp2 - today).days
+        if not (DTE_WINDOW[0] <= dte2 <= DTE_WINDOW[1]):
+            continue
+        # furthest expiry from the near leg, then - to break the symmetric tie
+        # deterministically - the LONGER side, then the strike nearest spot.
+        # Without the tie-break, an expiry pair straddling the near leg at equal
+        # distance would be picked by dict order and the far leg could flip
+        # between runs, silently corrupting the slope series.
+        score2 = (-abs(dte2 - dte), -dte2, abs(strike2 - spot))
+        if far is None or score2 < far[0]:
+            far = (score2, osym2, snap2, exp2, strike2, dte2)
+
     q = snap.get("latestQuote") or {}
     g = snap.get("greeks") or {}
     bid, ask = q.get("bp"), q.get("ap")
@@ -241,6 +270,27 @@ def snapshot(s, symbol, spot, today):
         "put_symbol": psym if put else None,
         "put_bid": pbid, "put_ask": pask, "put_mid": pmid,
         "put_iv": put.get("impliedVolatility") if put else None,
+        **_far_fields(far),
+    }
+
+
+def _far_fields(far):
+    """Columns for the second expiry. All None when the underlying has only one
+    expiry in the window - MDY, FXE and XLRE lack weeklies, so they legitimately
+    have no far leg and the slope is simply unavailable for them."""
+    if far is None:
+        return {k: None for k in ("far_symbol", "far_expiration", "far_dte",
+                                  "far_strike", "far_bid", "far_ask",
+                                  "far_mid", "far_iv")}
+    _, fsym, fsnap, fexp, fstrike, fdte = far
+    fq = fsnap.get("latestQuote") or {}
+    fbid, fask = fq.get("bp"), fq.get("ap")
+    return {
+        "far_symbol": fsym, "far_expiration": fexp.isoformat(), "far_dte": fdte,
+        "far_strike": fstrike, "far_bid": fbid, "far_ask": fask,
+        "far_mid": (round((fbid + fask) / 2, 4)
+                    if fbid is not None and fask is not None else None),
+        "far_iv": fsnap.get("impliedVolatility"),
     }
 
 

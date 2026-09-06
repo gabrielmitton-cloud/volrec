@@ -90,6 +90,61 @@ comparison, which the literature says is the real finding, actually testable.
 **The universe is frozen from here.** Only remove a ticker if its data proves
 unreliable.
 
+**Social sentiment (X/Twitter, Reddit, StockTwits) was evaluated and rejected,
+6 September 2026.** Researched properly; do not reopen without new evidence.
+Three independent reasons, any one of which is sufficient:
+
+1. **The causality runs the wrong way.** The one published study that examines
+   Twitter sentiment *and* option-implied volatility in the same model - a panel
+   VAR on S&P/ASX 200 names - finds causality running from implied volatility TO
+   Twitter activity and sentiment, not the reverse. Options markets price
+   volatility risk first and the social narrative follows. Using sentiment to
+   explain IV is using the echo to explain the shout.
+2. **The foundational result does not replicate.** Bollen et al. (2011),
+   "Twitter Mood Predicts the Stock Market", claimed 86.7% accuracy and launched
+   the field. Lachanski & Pavlik (Econ Journal Watch) show it was data-mined
+   across mood dimensions and lags without correction, highly sensitive to the
+   sample window, and built on a proprietary algorithm nobody could audit;
+   independent groups could not reproduce it.
+3. **The data is unobtainable at this budget.** X ended the free tier in
+   February 2026. Self-serve is pay-per-use and its search reaches back only
+   7 days. Full-archive search - which is what matching tweets to an existing
+   dataset requires - is Enterprise-only, from about $42,000/month.
+
+The statistical reason matters most, though. Sentiment studies in this
+literature use *years* of data. This project has roughly T/21 independent
+episodes. Fitting a high-dimensional, researcher-degrees-of-freedom-rich
+predictor to about six independent observations is how a finding gets
+manufactured, and it would destroy the one property that makes this project
+credible: that it is honest about its own sample size.
+
+Alpaca's free News API is available and would give news *volume* as an attention
+proxy. It has the same backwards-causality problem, and is not worth the column.
+
+**What replaces it: scheduled events.** Human institutions decide when
+information is released - companies report quarterly, the Fed meets on a
+published calendar, BLS announces CPI dates a year ahead. The market prices
+uncertainty into those human-chosen moments and it collapses when the
+information lands. That is a humanistic pattern with a mathematical signature,
+and unlike sentiment it is *knowable in advance*.
+
+The evidence is mature: IV ramps into earnings and then crushes (commonly
+30-60%); Johannes et al. find risk-neutral jump volatility uniformly exceeds
+realised around earnings, with long ATM straddles returning about -8% per event;
+Barth et al. and the Stanford GSB study find the excess is largest for bellwether
+firms whose earnings load on aggregate factors, i.e. it is compensation for
+non-diversifiable announcement risk.
+
+It also *increases* statistical power rather than diluting it. Earnings are
+staggered across firms, so the idiosyncratic component dominates and the events
+are far closer to independent than daily observations are. About 73 of the 109
+tickers are single names reporting roughly twice in six months - on the order of
+146 events, scattered in time, against about six independent draws of the market
+factor.
+
+Earnings dates are free and retroactive (SEC EDGAR 8-K/10-Q, no API key), so the
+calendar work waits for the analyser. What does NOT wait is section 11.
+
 **Daily snapshots, not intraday.** The strategy this informs rebalances on a
 daily-to-weekly clock. Higher frequency adds cost and complexity for no
 analytical gain.
