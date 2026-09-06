@@ -39,7 +39,9 @@ questioned about for fifteen minutes, not a résumé line.
 | GitHub Actions | Live. Weekdays 15:30 UTC (8:30am Pacific). First scheduled run: Tue 8 Sep. Mon 7 Sep is Labor Day and is skipped. |
 | Data | Collecting since 2026-09-04. First run: 52/52 rows, all IV populated. |
 | `tools/gamma-lab*.html` | Complete. Educational, not part of the pipeline. |
-| Analysis | Not started. Blocked on data volume until late October. |
+| Analysis | `analyze.py` written and validated 6 Sep. Blocked on data volume until late October. |
+| Monitor | Live at https://gabrielmitton-cloud.github.io/volrec/tools/monitor.html (GitHub Pages, main branch, root). |
+| Watchdog | Weekly Claude routine `trig_01GkVL3mRpGGptXfqoNSR77d`, Wed 09:13 Pacific. Runs OUTSIDE GitHub Actions on purpose - see §5. |
 
 Repo: `github.com/gabrielmitton-cloud/volrec` (public).
 API keys live in GitHub repository secrets — never in code.
@@ -263,9 +265,20 @@ Anything before then is premature. The recorder needs no further changes.
   is still there as a safety net; it just should not normally fire. Plenty of headroom, but don't remove the pacing or the 429
   retry.
 - **GitHub disables scheduled workflows after 60 days of repository
-  inactivity.** Daily commits from the recorder should prevent this, but it
-  fails *silently*. `freshness.yml` runs daily and fails loudly (which emails
-  you) if the newest row is more than 5 days old - that is the tripwire.
+  inactivity.** Confirmed against the docs: it applies to *public* repositories,
+  and GitHub does not define "activity" beyond that. Commits count, so the
+  recorder's daily commit should keep it alive in normal operation.
+  `freshness.yml` runs daily and fails loudly (which emails you) if the newest
+  row is more than 5 days old - that is the tripwire.
+
+  **But `freshness.yml` is itself a scheduled workflow**, so the 60-day rule
+  would disable the recorder and its own alarm together, and the failure is
+  silent by construction. The alarm shares a failure mode with the thing it
+  watches. That is why a weekly Claude routine
+  (`trig_01GkVL3mRpGGptXfqoNSR77d`, Wed 09:13 Pacific) checks the dataset and
+  both workflow states from *outside* GitHub Actions. It has read-only tools -
+  no Write, no Edit - so it structurally cannot touch the dataset. Manage it at
+  https://claude.ai/code/routines
 - **Market holidays are skipped**, checked against Alpaca's calendar rather than
   a hardcoded list. The check fails *open*: if the calendar call errors, the run
   records anyway. A stray holiday row can be dropped in analysis; a real day
@@ -441,6 +454,11 @@ tools/gamma-lab.html          delta-hedging simulator v1
 tools/gamma-lab-v2.html       v2 — adds costs, stochastic IV, jumps, freq sweep
 tools/monitor.html            collection monitor — reads the live CSV from GitHub
 ```
+
+The monitor is published by GitHub Pages from `main` at the repository root, so
+https://gabrielmitton-cloud.github.io/volrec/tools/monitor.html is always
+current - it fetches the CSV client-side and needs no build step. Serving it
+locally still works and is described below.
 
 `tools/monitor.html` needs no build and no server data: it fetches
 `data/iv_history.csv` straight from raw.githubusercontent (which sends
