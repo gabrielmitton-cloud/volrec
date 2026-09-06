@@ -1,0 +1,118 @@
+name: term
+# TEMPORARY. Measures how many expiries the existing chain query already returns
+# and whether the term-structure slope carries signal. Delete after reading.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  term:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Probe
+        env:
+          ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
+          ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
+        run: |
+          python - <<'PY'
+          import atexit, collections, os, sys, time
+          from datetime import date, timedelta
+          import record as m
+
+          _S=os.environ.get("GITHUB_STEP_SUMMARY")
+          if _S:
+              _sf=open(_S,"a",buffering=1);_sf.write("```text\n")
+              class _T:
+                  def __init__(s,*f):s.f=f
+                  def write(s,x):
+                      for g in s.f:g.write(x)
+                      return len(x)
+                  def flush(s):
+                      for g in s.f:g.flush()
+              sys.stdout=_T(sys.__stdout__,_sf)
+              @atexit.register
+              def _c():
+                  try:_sf.write("\n```\n");_sf.flush()
+                  except Exception:pass
+
+          s=m.session()
+          CODES={}
+          _g=s.get
+          def cg(*a,**kw):
+              r=_g(*a,**kw);CODES[r.status_code]=CODES.get(r.status_code,0)+1;return r
+          s.get=cg
+          today=date.today()
+          SAMPLE=["SPY","QQQ","AAPL","NVDA","TSLA","JPM","KO","XLU","MDY","FXE","HYG","XLRE","MSTR","LLY"]
+          spots=m.spot_prices(s,SAMPLE)
+
+          def expiries(sym,spot,lo,hi):
+              p=dict(feed=m.OPTION_FEED,limit=1000,type="call",
+                     expiration_date_gte=(today+timedelta(days=lo)).isoformat(),
+                     expiration_date_lte=(today+timedelta(days=hi)).isoformat(),
+                     strike_price_gte=round(spot*(1-m.STRIKE_BAND),2),
+                     strike_price_lte=round(spot*(1+m.STRIKE_BAND),2))
+              j=m.get(s,f"{m.DATA}/v1beta1/options/snapshots/{sym}",**p)
+              snaps=j.get("snapshots") or {}
+              byexp=collections.defaultdict(int)
+              iv={}
+              for osym,sn in snaps.items():
+                  try: exp,strike,kind=m.parse_occ(osym)
+                  except ValueError: continue
+                  if kind!="C": continue
+                  byexp[(exp-today).days]+=1
+                  v=sn.get("impliedVolatility")
+                  if v is not None:
+                      cur=iv.get((exp-today).days)
+                      if cur is None or abs(strike-spot)<cur[0]: iv[(exp-today).days]=(abs(strike-spot),v)
+              return byexp, {k:v[1] for k,v in iv.items()}, len(snaps), j.get("next_page_token")
+
+          print(f"today {today} ({today:%A})   window currently used: {m.DTE_WINDOW}\n")
+          print("="*76)
+          print("A. HOW MANY EXPIRIES ARE ALREADY IN THE CURRENT 21-45 DAY RESPONSE?")
+          print("   (these are downloaded today and discarded - a second one costs 0 requests)")
+          print("="*76)
+          print(f"  {'sym':6s} {'expiries':>9s}  {'dte values (contracts)':<44s} {'page1':>6s} {'more?':>6s}")
+          free_ok=0
+          for sym in SAMPLE:
+              if sym not in spots: print(f"  {sym:6s} no spot"); continue
+              be,iv,n,tok=expiries(sym,spots[sym],*m.DTE_WINDOW)
+              ds=sorted(be)
+              txt=", ".join(f"{d}d({be[d]})" for d in ds)[:44]
+              print(f"  {sym:6s} {len(ds):>9d}  {txt:<44s} {n:>6d} {'YES' if tok else 'no':>6s}")
+              if len(ds)>=2: free_ok+=1
+              time.sleep(m.PACE)
+          print(f"\n  -> {free_ok}/{len([x for x in SAMPLE if x in spots])} tickers already carry 2+ expiries in the existing response")
+
+          print("\n"+"="*76)
+          print("B. TERM STRUCTURE SLOPE - is there real signal between those expiries?")
+          print("="*76)
+          print(f"  {'sym':6s} {'near':>16s} {'far':>16s} {'slope':>10s}")
+          for sym in SAMPLE:
+              if sym not in spots: continue
+              be,iv,n,tok=expiries(sym,spots[sym],*m.DTE_WINDOW)
+              ds=sorted(iv)
+              if len(ds)<2: print(f"  {sym:6s} only one expiry with IV"); time.sleep(m.PACE); continue
+              a,b=ds[0],ds[-1]
+              print(f"  {sym:6s} {f'{a}d {iv[a]*100:.2f}%':>16s} {f'{b}d {iv[b]*100:.2f}%':>16s} "
+                    f"{(iv[b]-iv[a])*100:>+9.2f}pt")
+              time.sleep(m.PACE)
+
+          print("\n"+"="*76)
+          print("C. WHAT A WIDER WINDOW WOULD COST (7-75 days, one request per ticker)")
+          print("="*76)
+          for sym in ["SPY","AAPL","NVDA"]:
+              if sym not in spots: continue
+              be,iv,n,tok=expiries(sym,spots[sym],7,75)
+              print(f"  {sym:6s} {len(be):>2d} expiries, {n:>4d} contracts on page 1, paging needed: {'YES' if tok else 'no'}")
+              print(f"         dte: {', '.join(str(d) for d in sorted(be))}")
+              time.sleep(m.PACE)
+
+          print(f"\nHTTP {dict(sorted(CODES.items()))}  total {sum(CODES.values())} requests")
+          print("ALL PROBES DONE")
+          PY
