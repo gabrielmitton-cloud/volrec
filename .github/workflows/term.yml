@@ -1,6 +1,5 @@
 name: term
-# TEMPORARY. Verifies the far-leg columns against the live API at full scale
-# before the first scheduled run on Tue 8 Sep. Delete after reading.
+# TEMPORARY. Verifies the far-leg columns against the live API at full scale.
 on:
   workflow_dispatch:
 permissions:
@@ -78,7 +77,8 @@ jobs:
           if sum(CODES.values())>230: FAILS.append(f"{sum(CODES.values())} requests - the far leg should cost none")
 
           print("\n"+"="*74); print("TERM STRUCTURE SLOPE  (far_iv - iv, volatility points)"); print("="*74)
-          sl=sorted(((r["far_iv"]-r["iv"])*100, r) for r in withfar if r.get("iv") is not None)
+          sl=sorted((((r["far_iv"]-r["iv"])*100, r) for r in withfar if r.get("iv") is not None),
+                    key=lambda t: t[0])   # key= or tied slopes make Python compare dicts
           print(f"  n={len(sl)}   most inverted -> most upward sloping")
           for v,r in sl[:8]:
               print(f"    {r['symbol']:6s} {r['dte']:>2}d {r['iv']*100:6.2f}%  ->  {r['far_dte']:>2}d {r['far_iv']*100:6.2f}%   {v:+6.2f}pt")
