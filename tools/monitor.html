@@ -4,225 +4,351 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 :root{
-  --bg:#000; --surface:#0a0a0b; --surface2:#101013; --line:#1e1e22;
-  --ink:#e7e7ea; --ink2:#9b9ba3; --ink3:#5a5a63;
-  /* status: validated (OKLCH band, protan dE 24.1) - always paired with a glyph */
-  --ok:#0284c7; --warn:#a16207; --absent:#3f3f46;
-  --seq:#0284c7;
+  --void:#000; --panel:#09090b; --panel2:#101014; --rule:#1d1d22;
+  --ink:#e9e9ee; --ink2:#9a9aa5; --ink3:#57575f;
+  --live:#0284c7; --flag:#a16207; --absent:#3f3f46;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  --sans:"Inter","Söhne",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font:12px/1.5 ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
-  padding:20px;max-width:1180px;margin:0 auto}
-h1,h2{font-weight:500;margin:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto} *{transition:none!important;animation:none!important}}
+body{margin:0;background:var(--void);color:var(--ink);font:12px/1.5 var(--mono);
+  padding:0 20px 60px;max-width:1140px;margin:0 auto;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--live);outline-offset:2px}
+
 .lbl{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
-h2.sec{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);
-  margin:26px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
-h2.sec::before{content:"// ";color:var(--ink3)}
+h2{font:500 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);
+  margin:38px 0 12px;border-bottom:1px solid var(--rule);padding-bottom:7px}
+h2::before{content:"// "}
+p.prose{font:14px/1.65 var(--sans);color:var(--ink2);max-width:66ch;margin:0 0 14px}
+p.prose b{color:var(--ink);font-weight:550}
 
-/* status strip */
-.strip{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-  border:1px solid var(--line);background:var(--surface);padding:10px 14px}
-.strip .nm{font-size:13px;letter-spacing:.1em}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;
-  margin-right:6px;vertical-align:middle}
-.strip .sp{margin-left:auto}
+/* status rail */
+.rail{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:16px 0 14px;
+  border-bottom:1px solid var(--rule)}
+.rail .nm{font-size:14px;letter-spacing:.18em}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--live);display:inline-block;
+  margin-right:8px;vertical-align:middle;box-shadow:0 0 0 0 rgba(2,132,199,.7);
+  animation:p 2.6s infinite}
+@keyframes p{70%{box-shadow:0 0 0 7px rgba(2,132,199,0)}100%{box-shadow:0 0 0 0 rgba(2,132,199,0)}}
+.rail .r{margin-left:auto}
 
-/* kpi */
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;
-  background:var(--line);border:1px solid var(--line);margin-top:1px}
-.kpi{background:var(--surface);padding:12px 14px}
-.kpi .v{font-size:22px;line-height:1.15;margin-top:5px;font-variant-numeric:tabular-nums}
-.kpi .sub{font-size:10px;color:var(--ink3);margin-top:3px}
+/* hero */
+.hero{padding:30px 0 6px}
+.hero h1{font:400 clamp(19px,3.4vw,30px)/1.25 var(--mono);letter-spacing:-.015em;margin:0 0 10px}
+.hero h1 .n{color:var(--live)}
+#swarmwrap{touch-action:none}
+.axis text{fill:var(--ink3);font:9.5px var(--mono)}
+.axis line{stroke:var(--rule)}
+.bee{cursor:pointer}
+.bee circle{transition:r .12s}
+.bee:hover circle,.bee.on circle{stroke:var(--ink);stroke-width:1.5}
+.endlbl{fill:var(--ink2);font:10px var(--mono)}
+
+/* controls */
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:16px 0 6px}
+.chip{font:10px var(--mono);letter-spacing:.06em;background:var(--panel);color:var(--ink2);
+  border:1px solid var(--rule);padding:5px 11px;cursor:pointer;border-radius:2px}
+.chip:hover{color:var(--ink);border-color:#2c2c33}
+.chip[aria-pressed=true]{background:var(--live);border-color:var(--live);color:#fff}
+input[type=search]{font:11px var(--mono);background:var(--panel);border:1px solid var(--rule);
+  color:var(--ink);padding:5px 10px;width:150px;border-radius:2px}
+input[type=search]::placeholder{color:var(--ink3)}
+.count{font-size:10px;color:var(--ink3);margin-left:auto}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
+  background:var(--rule);border:1px solid var(--rule)}
+.stat{background:var(--panel);padding:13px 15px}
+.stat .v{font-size:19px;line-height:1.2;margin-top:6px;font-variant-numeric:tabular-nums}
+.stat .g{font:11px/1.45 var(--sans);color:var(--ink3);margin-top:5px}
 
 table{border-collapse:collapse;width:100%;font-size:11px}
 th{text-align:left;font-weight:500;color:var(--ink3);font-size:9.5px;letter-spacing:.12em;
-  text-transform:uppercase;padding:5px 8px;border-bottom:1px solid var(--line)}
-td{padding:3px 8px;border-bottom:1px solid #141417;font-variant-numeric:tabular-nums}
-tr:hover td{background:var(--surface2)}
-.scroll{max-height:340px;overflow-y:auto;overflow-x:auto;border:1px solid var(--line)}
+  text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--rule);
+  cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{color:var(--ink2)}
+td{padding:4px 8px;border-bottom:1px solid #141417;font-variant-numeric:tabular-nums}
+tr:hover td{background:var(--panel2)}
+.scroll{max-height:360px;overflow:auto;border:1px solid var(--rule)}
+.barcell{height:6px;border-radius:0 2px 2px 0;background:var(--live);display:block}
 
-.bar{height:7px;border-radius:0 2px 2px 0;background:var(--seq);display:block}
-.legend{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 4px;font-size:10px;color:var(--ink2)}
-.legend i{width:9px;height:9px;display:inline-block;margin-right:5px;vertical-align:-1px;font-style:normal}
-
-/* roster */
-.roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:2px}
-.tile{background:var(--surface);border-left:2px solid var(--absent);padding:4px 5px;font-size:9.5px;
-  display:flex;justify-content:space-between;align-items:center;gap:3px;cursor:default}
-.tile:hover{background:var(--surface2)}
+.roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:2px}
+.tile{background:var(--panel);border-left:2px solid var(--absent);padding:5px 6px;font-size:9.5px;
+  display:flex;justify-content:space-between;gap:3px;cursor:pointer;border-radius:0 2px 2px 0}
+.tile:hover{background:var(--panel2)}
 .tile .g{color:var(--ink3);font-size:9px}
-.tile.ok{border-left-color:var(--ok)} .tile.ok .g{color:var(--ok)}
-.tile.warn{border-left-color:var(--warn)} .tile.warn .g{color:var(--warn)}
+.tile.ok{border-left-color:var(--live)} .tile.ok .g{color:var(--live)}
+.tile.flag{border-left-color:var(--flag)} .tile.flag .g{color:var(--flag)}
 
-.log{border:1px solid var(--line);background:var(--surface);max-height:190px;overflow-y:auto;
-  padding:8px 12px;font-size:10.5px;line-height:1.75}
-.log .t{color:var(--ink3);margin-right:9px}
-.note{border:1px solid var(--line);border-left:2px solid var(--warn);background:var(--surface);
-  padding:10px 13px;margin-top:10px;color:var(--ink2);font-size:11px}
-.err{border-left-color:var(--warn)}
+.log{border:1px solid var(--rule);background:var(--panel);max-height:180px;overflow:auto;
+  padding:10px 14px;font-size:10.5px;line-height:1.8}
+.log .t{color:var(--ink3);margin-right:10px}
+.note{border:1px solid var(--rule);border-left:2px solid var(--flag);background:var(--panel);
+  padding:14px 16px;margin:14px 0}
+.note p{font:13px/1.6 var(--sans);color:var(--ink2);margin:0;max-width:64ch}
+.note b{color:var(--ink)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin:6px 0 10px;font-size:10px;color:var(--ink2)}
+.legend i{width:9px;height:9px;display:inline-block;margin-right:6px;vertical-align:-1px;font-style:normal;border-radius:1px}
+#tip{position:fixed;pointer-events:none;background:#16161b;border:1px solid #2c2c33;
+  padding:7px 10px;font:10.5px/1.5 var(--mono);display:none;z-index:20;white-space:pre;color:var(--ink)}
 a{color:var(--ink2)}
-#tt{position:fixed;pointer-events:none;background:#17171b;border:1px solid #2a2a30;padding:5px 8px;
-  font-size:10.5px;display:none;z-index:9;white-space:pre;color:var(--ink)}
-button{font:inherit;background:var(--surface2);color:var(--ink2);border:1px solid var(--line);
-  padding:3px 9px;cursor:pointer}
-button:hover{color:var(--ink)}
 </style>
 
-<div class="strip">
-  <span class="nm"><span class="dot"></span>VOLREC</span>
-  <span class="lbl">monitor</span>
+<div class="rail">
+  <span class="nm"><span class="pulse"></span>VOLREC</span>
   <span class="lbl" id="src">reading…</span>
-  <span class="sp lbl" id="asof"></span>
+  <span class="r lbl" id="asof"></span>
 </div>
-<div class="kpis" id="kpis"></div>
-<div id="body"></div>
-<div id="tt"></div>
+<div id="app"></div>
+<div id="tip"></div>
 
 <script>
 const RAW="https://raw.githubusercontent.com/gabrielmitton-cloud/volrec/main/data/iv_history.csv";
 const WATCHLIST=["SPY", "DIA", "QQQ", "IWM", "MDY", "GLD", "SLV", "TLT", "IEF", "USO", "UNG", "FXE", "EEM", "EFA", "XLK", "XLF", "XLE", "XLV", "XLP", "XLU", "XLI", "XLY", "XLB", "XRT", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AMD", "PLTR", "COIN", "MSTR", "SMCI", "JNJ", "PG", "KO", "PEP", "WMT", "MCD", "VZ", "JPM", "BAC", "GS", "XOM", "CVX", "CAT", "BA", "UNH", "COST", "LQD", "HYG", "FXI", "XLC", "XLRE", "SMH", "XBI", "KRE", "GDX", "IBIT", "XHB", "XOP", "AVGO", "ORCL", "CRM", "ADBE", "INTC", "MU", "QCOM", "TSM", "NFLX", "CSCO", "TXN", "MS", "WFC", "C", "AXP", "SCHW", "LLY", "ABBV", "PFE", "MRK", "TMO", "HD", "NKE", "TGT", "LOW", "DIS", "GE", "DE", "LMT", "UPS", "RTX", "COP", "SLB", "OXY", "NEE", "DUK", "T", "CMCSA", "RIVN", "SOFI", "HOOD", "MARA", "RBLX", "SNOW", "CRWD"];
-const ANALYSIS_DAYS=40;                 // HANDOFF section 4: analyser needs ~40 trading days
-const SPREAD_LIMIT=60;                  // the screen threshold, % of mid
-const $=(s)=>document.querySelector(s);
-const esc=(s)=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const NEED_DAYS=40, LIMIT=60;
+const INDEX=new Set(["SPY","DIA","QQQ","IWM","MDY","EEM","EFA","FXI"]);
+const SECTOR=new Set(["XLK","XLF","XLE","XLV","XLP","XLU","XLI","XLY","XLB","XRT","XLC","XLRE","SMH","XBI","KRE","GDX","XHB","XOP"]);
+const NONEQ=new Set(["GLD","SLV","TLT","IEF","USO","UNG","FXE","LQD","HYG","IBIT"]);
+const grp=s=>INDEX.has(s)?"index ETF":NONEQ.has(s)?"non-equity":SECTOR.has(s)?"sector ETF":"single name";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num=v=>{const n=parseFloat(v);return Number.isFinite(n)?n:null};
+let STATE={filter:"all",q:"",sort:"iv",dir:-1,latest:[],last:"",pinned:null};
+
+const tip=$("#tip");
+function wire(el,txt){
+  const show=e=>{tip.style.display="block";tip.textContent=txt;
+    const x=(e.clientX??0)+13,y=(e.clientY??0)+13;
+    tip.style.left=Math.min(x,innerWidth-tip.offsetWidth-8)+"px";
+    tip.style.top=Math.min(y,innerHeight-tip.offsetHeight-8)+"px";};
+  el.addEventListener("mousemove",show);
+  el.addEventListener("mouseleave",()=>tip.style.display="none");
+}
+const spread=r=>{const b=num(r.bid),a=num(r.ask),m=num(r.mid);return(b===null||a===null||!m)?null:100*(a-b)/m};
 
 function parseCSV(t){
-  const L=t.trim().split(/\r?\n/); if(!L.length) return [];
+  const L=t.trim().split(/\r?\n/);if(!L.length)return[];
   const h=L[0].split(",");
-  return L.slice(1).map(l=>{const c=l.split(","),o={};h.forEach((k,i)=>o[k]=c[i]);return o;});
-}
-const num=(v)=>{const n=parseFloat(v);return Number.isFinite(n)?n:null;};
-
-const tt=$("#tt");
-function hover(el,text){
-  el.addEventListener("mousemove",e=>{tt.style.display="block";tt.textContent=text;
-    const p=12;let x=e.clientX+p,y=e.clientY+p;
-    if(x+tt.offsetWidth>innerWidth)x=e.clientX-tt.offsetWidth-p;
-    if(y+tt.offsetHeight>innerHeight)y=e.clientY-tt.offsetHeight-p;
-    tt.style.left=x+"px";tt.style.top=y+"px";});
-  el.addEventListener("mouseleave",()=>tt.style.display="none");
+  return L.slice(1).map(l=>{const c=l.split(","),o={};h.forEach((k,i)=>o[k]=c[i]);return o});
 }
 
-function render(rows,srcLabel){
-  $("#src").textContent=srcLabel;
-  $("#asof").textContent="rendered "+new Date().toISOString().replace("T"," ").slice(0,16)+"Z";
+/* ---- hero: implied-vol beeswarm. one dot per ticker, packed vertically where
+   neighbours collide, because the low end is crowded and a flat strip would hide it. ---- */
+function swarm(rows){
+  const host=$("#swarmwrap")||$("#app");
+  const W=(host&&host.clientWidth)||Math.min(1100,(document.body.clientWidth||940)-40),
+        PAD=34,TOP=26;
+  const pts=rows.filter(r=>num(r.iv)!==null).map(r=>({s:r.symbol,v:num(r.iv),r}))
+                .sort((a,b)=>a.v-b.v);
+  if(!pts.length)return"";
+  const lo=pts[0].v,hi=pts[pts.length-1].v,R=5.2;
+  const X=v=>PAD+(W-2*PAD)*(v-lo)/((hi-lo)||1);
+  const rowsY=[];
+  pts.forEach(p=>{p.x=X(p.v);let k=0;
+    while(rowsY[k]!==undefined&&p.x-rowsY[k]<R*2.05)k++;
+    rowsY[k]=p.x;p.k=k;});
+  const maxK=Math.max(...pts.map(p=>p.k));
+  const step=12;
+  const H=TOP+maxK*step+56;          // fit the swarm, no floating dead space
+  const base=H-42;
+  let g="";
+  pts.forEach(p=>{
+    const y=base-p.k*step, t=(p.v-lo)/((hi-lo)||1);
+    const on=STATE.pinned===p.s?" on":"";
+    g+=`<g class="bee${on}" data-sym="${p.s}" tabindex="0" role="button"
+        aria-label="${p.s}, implied volatility ${(p.v*100).toFixed(1)} percent">
+        <circle cx="${p.x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"
+        fill="var(--live)" fill-opacity="${(0.34+0.62*t).toFixed(2)}"/></g>`;
+  });
+  const ticks=[];for(let i=0;i<=4;i++)ticks.push(lo+(hi-lo)*i/4);
+  let ax=`<g class="axis"><line x1="${PAD}" y1="${base+14}" x2="${W-PAD}" y2="${base+14}"/>`;
+  ticks.forEach(v=>{const x=X(v);
+    ax+=`<line x1="${x}" y1="${base+14}" x2="${x}" y2="${base+19}"/>
+         <text x="${x}" y="${base+31}" text-anchor="middle">${(v*100).toFixed(0)}%</text>`;});
+  ax+=`</g>`;
+  const a=pts[0],b=pts[pts.length-1];
+  ax+=`<text class="endlbl" x="${PAD}" y="16">${a.s} ${(a.v*100).toFixed(1)}%</text>
+       <text class="endlbl" x="${W-PAD}" y="16" text-anchor="end">${b.s} ${(b.v*100).toFixed(1)}%</text>`;
+  return `<svg id="swarmsvg" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block">${ax}${g}</svg>`;
+}
+
+function render(rows,label){
+  $("#src").textContent=label;
+  $("#asof").textContent=new Date().toISOString().replace("T"," ").slice(0,16)+"Z";
   const days=[...new Set(rows.map(r=>r.date))].sort();
   const cols=rows.length?Object.keys(rows[0]).length:0;
   const last=days[days.length-1];
   const latest=rows.filter(r=>r.date===last);
-  const ageDays=Math.floor((Date.now()-Date.parse(last+"T20:00:00Z"))/864e5);
-  const migrated=cols>=24;
-  const spread=(r)=>{const b=num(r.bid),a=num(r.ask),m=num(r.mid);
-    return (b===null||a===null||!m)?null:100*(a-b)/m;};
-
+  STATE.latest=latest;STATE.last=last;
+  const age=Math.floor((Date.now()-Date.parse(last+"T20:00:00Z"))/864e5);
   const present=new Set(latest.map(r=>r.symbol));
   const missing=WATCHLIST.filter(s=>!present.has(s));
-  const wide=latest.filter(r=>{const s=spread(r);return s!==null&&s>SPREAD_LIMIT;});
-  const remaining=Math.max(0,ANALYSIS_DAYS-days.length);
+  const wide=latest.filter(r=>{const s=spread(r);return s!==null&&s>LIMIT});
+  const left=Math.max(0,NEED_DAYS-days.length);
+  const ivs=latest.map(r=>num(r.iv)).filter(v=>v!==null).sort((a,b)=>a-b);
 
-  // ---- KPIs (hero numbers - no chart needed for a single value) ----
-  const kpi=(l,v,s)=>`<div class="kpi"><div class="lbl">${l}</div><div class="v">${v}</div><div class="sub">${s}</div></div>`;
-  $("#kpis").innerHTML=
-    kpi("trading days",days.length,days.length===1?days[0]:days[0]+" → "+last)+
-    kpi("rows",rows.length,latest.length+" on "+last)+
-    kpi("universe",WATCHLIST.length,missing.length?missing.length+" absent on "+last:"all present")+
-    kpi("schema",cols+" col",migrated?"migrated":"pre-migration (17)")+
-    kpi("last snapshot",ageDays+"d",ageDays>5?"STALE — check Actions":"fresh")+
-    kpi("analysis in",remaining,remaining?"more trading days":"ready — build the analyser");
+  let h=`<div class="hero">
+    <h1>${WATCHLIST.length} tickers, implied volatility from
+      <span class="n">${(ivs[0]*100).toFixed(1)}%</span> to
+      <span class="n">${(ivs[ivs.length-1]*100).toFixed(1)}%</span></h1>
+    <div id="swarmwrap">${swarm(latest)}</div>
+    <p class="prose" style="margin-top:14px">Every dot is one ticker on ${last} — what the options
+      market expects it to move over the coming month. The <b>range is the point</b>: a universe of
+      ${WATCHLIST.length} correlated tech names would be one observation repeated
+      ${WATCHLIST.length} times. Hover a dot to identify it; click to pin it below.</p>
+  </div>`;
 
-  let h="";
+  h+=`<h2>what this is measuring</h2>
+  <p class="prose">Implied volatility is the market's forecast. <b>Realised volatility</b> is what
+    actually happened afterwards. The gap between them — the <b>volatility risk premium</b> — is
+    generally positive, because option sellers charge for bearing risk. This project tests whether
+    that holds, on data collected first-hand rather than bought.</p>
+  <p class="prose">One snapshot a day, per ticker: the at-the-money call about 30 days out, plus the
+    put at the same strike. Nothing here can be reconstructed later, which is why the recorder
+    matters more than the analysis.</p>`;
 
-  // ---- collection continuity: state over time, legible at n=1 ----
-  h+=`<h2 class="sec">collection continuity</h2>`;
-  h+=`<div class="legend"><span><i style="background:var(--ok)"></i>collected</span></div>`;
-  h+=`<div style="display:flex;gap:2px;flex-wrap:wrap">`;
-  days.forEach(d=>{const n=rows.filter(r=>r.date===d).length;
-    h+=`<span class="tile ok" data-tip="${d}\n${n} rows" style="min-width:96px">${d.slice(5)}<span class="g">${n}</span></span>`;});
-  h+=`</div>`;
-  if(days.length<ANALYSIS_DAYS)
-    h+=`<div class="note"><b>The volatility-risk-premium analysis is not runnable yet.</b><br>
-      ${days.length} of ~${ANALYSIS_DAYS} trading days collected. Overlapping 30-day forward
-      windows mean the effective sample is about T/21 independent episodes, so a
-      spread computed today would be one draw of the market factor, not a result.
-      See <code>HANDOFF.md</code> §4. This page monitors <i>collection</i> until then.</div>`;
-
-  // ---- IV cross-section: magnitude across many entities -> sorted bars ----
-  const iv=latest.filter(r=>num(r.iv)!==null).sort((a,b)=>num(b.iv)-num(a.iv));
-  if(iv.length){
-    const mx=num(iv[0].iv);
-    h+=`<h2 class="sec">implied volatility cross-section &mdash; ${last}</h2>`;
-    h+=`<div class="legend"><span>one bar per ticker, sorted. range ${(num(iv[iv.length-1].iv)*100).toFixed(1)}% (${iv[iv.length-1].symbol}) → ${(mx*100).toFixed(1)}% (${iv[0].symbol})</span></div>`;
-    h+=`<div class="scroll"><table><thead><tr><th style="width:58px">sym</th><th style="width:56px">iv</th><th>&nbsp;</th><th style="width:64px">spread</th><th style="width:44px">dte</th></tr></thead><tbody>`;
-    iv.forEach(r=>{const v=num(r.iv),sp=spread(r);
-      const w=Math.max(1,100*v/mx);
-      h+=`<tr data-tip="${r.symbol}\niv ${(v*100).toFixed(2)}%\nspread ${sp===null?"n/a":sp.toFixed(1)+"% of mid"}\ndte ${r.dte}\nstrike ${r.strike}">
-        <td>${esc(r.symbol)}</td><td>${(v*100).toFixed(1)}%</td>
-        <td><span class="bar" style="width:${w}%;opacity:${(0.45+0.55*v/mx).toFixed(2)}"></span></td>
-        <td style="color:${sp!==null&&sp>SPREAD_LIMIT?'var(--warn)':'var(--ink2)'}">${sp===null?"—":sp.toFixed(0)+"%"}</td>
-        <td style="color:var(--ink3)">${esc(r.dte)}</td></tr>`;});
-    h+=`</tbody></table></div>`;
+  if(days.length<NEED_DAYS){
+    h+=`<div class="note"><p><b>The premium is not measurable yet — ${days.length} of ~${NEED_DAYS}
+      trading days.</b> Looking forward 30 days from every day means consecutive observations share
+      almost the same path, so the real sample size is about one independent episode per month, not
+      one per row. Measuring today would produce a number, and it would be noise.
+      This page tracks <b>collection</b> until then.</p></div>`;
   }
 
-  // ---- quote quality ----
+  const stat=(l,v,g)=>`<div class="stat"><div class="lbl">${l}</div><div class="v">${v}</div><div class="g">${g}</div></div>`;
+  h+=`<h2>collection</h2><div class="stats">
+    ${stat("trading days",days.length,days.length===1?`since ${days[0]}`:`${days[0]} to ${last}`)}
+    ${stat("rows",rows.length,`${latest.length} recorded on ${last}`)}
+    ${stat("coverage",`${latest.length}/${WATCHLIST.length}`,missing.length?`${missing.length} absent that day`:"every ticker present")}
+    ${stat("schema",`${cols} col`,cols>=24?"migrated — puts and volume included":"17 col; migrates on the next run")}
+    ${stat("freshness",`${age}d`,age>5?"stale — check the Actions tab":"newest row is recent")}
+    ${stat("analysis in",left,left?"more trading days":"ready to run")}
+  </div>`;
+
+  h+=`<h2>the universe</h2>
+  <div class="bar" role="group" aria-label="filter">
+    ${["all","index ETF","sector ETF","non-equity","single name"].map(g=>
+      `<button class="chip" data-f="${g}" aria-pressed="${STATE.filter===g}">${g}</button>`).join("")}
+    <input type="search" id="q" placeholder="find a ticker" value="${esc(STATE.q)}" aria-label="find a ticker">
+    <span class="count" id="cnt"></span>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--live)"></i>&#9679; recorded</span>
+    <span><i style="background:var(--flag)"></i>&#9650; spread over ${LIMIT}% of mid</span>
+    <span><i style="background:var(--absent)"></i>&#9675; no row on ${last}</span>
+  </div>
+  <div class="roster" id="roster"></div>
+  <div id="detail"></div>`;
+
   const sp=latest.map(r=>({s:r.symbol,v:spread(r)})).filter(x=>x.v!==null).sort((a,b)=>b.v-a.v);
   if(sp.length){
-    h+=`<h2 class="sec">quote quality &mdash; widest spreads</h2>`;
-    h+=`<div class="legend">
-        <span><i style="background:var(--ok)"></i>&#9679; under ${SPREAD_LIMIT}% of mid</span>
-        <span><i style="background:var(--warn)"></i>&#9650; over ${SPREAD_LIMIT}% — mid unreliable</span>
-        <span style="color:var(--ink3)">weekend readings run 1.5–14× wider than intraday; judge only on a trading day</span></div>`;
+    h+=`<h2>quote quality</h2>
+    <p class="prose">A wide bid–ask makes the mid-price unreliable, so this decides which tickers stay.
+      <b>Weekend readings run 1.5–14× wider than intraday</b> — on a Saturday even PEP, a mega-cap
+      staple, reads 98%. Only a real trading-day row settles it.</p>
+    <div style="border:1px solid var(--rule);padding:10px 12px"><table><tbody>`;
     const mx=sp[0].v;
-    h+=`<div style="border:1px solid var(--line);padding:8px 10px"><table><tbody>`;
-    sp.slice(0,12).forEach(x=>{const bad=x.v>SPREAD_LIMIT;
-      h+=`<tr data-tip="${x.s}\n${x.v.toFixed(1)}% of mid">
-        <td style="width:58px">${esc(x.s)}</td>
-        <td style="width:52px;color:${bad?'var(--warn)':'var(--ink2)'}">${bad?"▲":"●"} ${x.v.toFixed(0)}%</td>
-        <td><span class="bar" style="width:${100*x.v/mx}%;background:${bad?'var(--warn)':'var(--seq)'}"></span></td></tr>`;});
+    sp.slice(0,10).forEach(x=>{const bad=x.v>LIMIT;
+      h+=`<tr data-tip="${x.s}\n${x.v.toFixed(1)}% of mid"><td style="width:62px">${x.s}</td>
+        <td style="width:64px;color:${bad?"var(--flag)":"var(--ink2)"}">${bad?"▲":"●"} ${x.v.toFixed(0)}%</td>
+        <td><span class="barcell" style="width:${100*x.v/mx}%;background:${bad?"var(--flag)":"var(--live)"}"></span></td></tr>`;});
     h+=`</tbody></table></div>`;
   }
 
-  // ---- roster ----
-  h+=`<h2 class="sec">universe roster &mdash; ${WATCHLIST.length} tickers</h2>`;
-  h+=`<div class="legend">
-      <span><i style="background:var(--ok)"></i>&#9679; row recorded</span>
-      <span><i style="background:var(--warn)"></i>&#9650; spread over ${SPREAD_LIMIT}%</span>
-      <span><i style="background:var(--absent)"></i>&#9675; no row on ${last}</span></div>`;
-  h+=`<div class="roster">`;
-  WATCHLIST.forEach(s=>{const r=latest.find(x=>x.symbol===s);
-    if(!r){h+=`<span class="tile" data-tip="${s}\nno row on ${last}"><span>${s}</span><span class="g">&#9675;</span></span>`;return;}
-    const v=spread(r),bad=v!==null&&v>SPREAD_LIMIT;
-    h+=`<span class="tile ${bad?"warn":"ok"}" data-tip="${s}\niv ${(num(r.iv)*100||0).toFixed(1)}%\nspread ${v===null?"n/a":v.toFixed(0)+"%"}">
-      <span>${s}</span><span class="g">${bad?"&#9650;":"&#9679;"}</span></span>`;});
-  h+=`</div>`;
-
-  // ---- log ----
-  h+=`<h2 class="sec">activity</h2><div class="log">`;
-  const ev=[];
-  days.forEach(d=>{const n=rows.filter(r=>r.date===d).length;
-    ev.push([d+" 15:30Z","recorded "+n+" rows"]);});
-  if(!migrated) ev.push([last+" —","schema is 17 col; migrate_header() adds 7 on the next run"]);
-  if(missing.length) ev.push([last+" —","absent: "+missing.join(", ")]);
-  if(wide.length) ev.push([last+" —","spread over "+SPREAD_LIMIT+"%: "+wide.map(r=>r.symbol).join(", ")]);
-  if(ageDays>5) ev.push(["now","STALE: newest row is "+ageDays+" days old — the recorder may be disabled"]);
+  h+=`<h2>activity</h2><div class="log">`;
+  const ev=days.map(d=>[`${d} 15:30Z`,`recorded ${rows.filter(r=>r.date===d).length} rows`]);
+  if(cols<24)ev.push([last,"schema is 17 col — migrate_header() adds 7 on the next run"]);
+  if(missing.length)ev.push([last,`absent: ${missing.join(", ")}`]);
+  if(wide.length)ev.push([last,`spread over ${LIMIT}%: ${wide.map(r=>r.symbol).join(", ")}`]);
+  if(age>5)ev.push(["now",`STALE: newest row is ${age} days old — the recorder may be disabled`]);
   ev.reverse().forEach(([t,m])=>h+=`<div><span class="t">${esc(t)}</span>${esc(m)}</div>`);
   h+=`</div>`;
 
-  $("#body").innerHTML=h;
-  document.querySelectorAll("[data-tip]").forEach(el=>hover(el,el.dataset.tip));
+  $("#app").innerHTML=h;
+  bind();paintRoster();
 }
 
+function bind(){
+  document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
+    STATE.filter=b.dataset.f;
+    document.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c.dataset.f===STATE.filter));
+    paintRoster();});
+  const q=$("#q");if(q)q.oninput=e=>{STATE.q=e.target.value;paintRoster()};
+  document.querySelectorAll("[data-tip]").forEach(el=>wire(el,el.dataset.tip));
+  document.querySelectorAll(".bee").forEach(g=>{
+    const s=g.dataset.sym,r=STATE.latest.find(x=>x.symbol===s);
+    const v=spread(r);
+    wire(g,`${s}  ${grp(s)}\niv ${(num(r.iv)*100).toFixed(2)}%\nspread ${v===null?"n/a":v.toFixed(1)+"% of mid"}\ndte ${r.dte}`);
+    const pick=()=>{STATE.pinned=STATE.pinned===s?null:s;
+      $("#swarmwrap").innerHTML=swarm(STATE.latest);bind();detail();};
+    g.onclick=pick;
+    g.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick()}};
+  });
+  detail();
+}
+
+function detail(){
+  const d=$("#detail");if(!d)return;
+  if(!STATE.pinned){d.innerHTML="";return}
+  const r=STATE.latest.find(x=>x.symbol===STATE.pinned);
+  if(!r){d.innerHTML="";return}
+  const v=spread(r);
+  d.innerHTML=`<div class="note" style="border-left-color:var(--live)"><p>
+    <b>${r.symbol}</b> · ${grp(r.symbol)} · ${STATE.last}<br>
+    implied volatility <b>${(num(r.iv)*100).toFixed(2)}%</b> ·
+    strike ${r.strike} · ${r.dte} days to expiry ·
+    bid/ask ${r.bid}/${r.ask}${v===null?"":` · spread <b>${v.toFixed(1)}%</b> of mid`}
+    ${num(r.put_iv)!==null?` · put iv ${(num(r.put_iv)*100).toFixed(2)}%`:""}
+    </p></div>`;
+}
+
+function paintRoster(){
+  const el=$("#roster");if(!el)return;
+  const q=STATE.q.trim().toUpperCase();
+  const list=WATCHLIST.filter(s=>(STATE.filter==="all"||grp(s)===STATE.filter)&&(!q||s.includes(q)));
+  let h="";
+  list.forEach(s=>{
+    const r=STATE.latest.find(x=>x.symbol===s);
+    if(!r){h+=`<span class="tile" data-sym="${s}" data-tip="${s}\n${grp(s)}\nno row on ${STATE.last}"><span>${s}</span><span class="g">&#9675;</span></span>`;return}
+    const v=spread(r),bad=v!==null&&v>LIMIT;
+    h+=`<span class="tile ${bad?"flag":"ok"}" data-sym="${s}"
+      data-tip="${s}\n${grp(s)}\niv ${(num(r.iv)*100).toFixed(1)}%\nspread ${v===null?"n/a":v.toFixed(0)+"%"}">
+      <span>${s}</span><span class="g">${bad?"&#9650;":"&#9679;"}</span></span>`;});
+  el.innerHTML=h;
+  $("#cnt").textContent=`${list.length} of ${WATCHLIST.length}`;
+  el.querySelectorAll(".tile").forEach(t=>{
+    wire(t,t.dataset.tip);
+    t.onclick=()=>{STATE.pinned=STATE.pinned===t.dataset.sym?null:t.dataset.sym;
+      $("#swarmwrap").innerHTML=swarm(STATE.latest);bind();};
+  });
+}
+
+let ROWS=null;
+addEventListener("resize",()=>{if(ROWS&&$("#swarmwrap")){$("#swarmwrap").innerHTML=swarm(STATE.latest);bind()}});
 (async()=>{
   try{
     const r=await fetch(RAW+"?cb="+Date.now(),{cache:"no-store"});
-    if(!r.ok) throw new Error("HTTP "+r.status);
-    render(parseCSV(await r.text()),"live · raw.githubusercontent");
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    ROWS=parseCSV(await r.text());
+    try{ render(ROWS,"live · github"); }
+    catch(err){
+      $("#src").textContent="render failed";
+      $("#app").innerHTML=`<div class="note"><p><b>The data loaded, but the page failed to draw it.</b>
+        ${esc(err.message)}<br><br>${ROWS.length} rows were read. This is a bug in monitor.html,
+        not a problem with the dataset.</p></div>`;
+      throw err;
+    }
   }catch(e){
+    if($("#src").textContent==="render failed")return;
     $("#src").textContent="fetch failed";
-    $("#body").innerHTML=`<div class="note err"><b>Could not read the dataset.</b> ${esc(e.message)}<br><br>
-      Some browsers block <code>fetch</code> from a <code>file://</code> page. Serve it locally instead:<br><br>
+    $("#app").innerHTML=`<div class="note"><p><b>Could not read the dataset.</b> ${esc(e.message)}<br><br>
+      Browsers block <code>fetch</code> from a <code>file://</code> page. Serve it instead:<br>
       <code>cd ~/Desktop/Archive/Volrec &amp;&amp; python3 -m http.server 8000</code><br>
-      then open <a href="http://localhost:8000/tools/monitor.html">localhost:8000/tools/monitor.html</a>.</div>`;
+      then open <a href="http://localhost:8000/tools/monitor.html">localhost:8000/tools/monitor.html</a>,
+      or use the published copy at
+      <a href="https://gabrielmitton-cloud.github.io/volrec/tools/monitor.html">GitHub Pages</a>.</p></div>`;
   }
 })();
 </script>
