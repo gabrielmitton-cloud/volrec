@@ -4,7 +4,11 @@ Context for anyone (or any assistant session) picking this project up cold.
 Read this before proposing changes. It records not just the current state but
 the reasoning behind decisions already made, so they don't get re-argued.
 
-Last updated: 5 September 2026.
+Last updated: 6 September 2026.
+
+**Start at §12 (Roadmap)** if you are picking this up to do work. §1-§3 are the
+framing and the decisions that are closed. §4 is the analysis spec and is the
+densest part - read it before writing any analysis code.
 
 ---
 
@@ -35,11 +39,11 @@ questioned about for fifteen minutes, not a résumé line.
 | piece | status |
 |---|---|
 | `record.py` | Working. 109 tickers, ~95 seconds per run (measured live 5 Sep). |
-| `analyze.py` | Written and statistically validated 6 Sep. Blocked on data until ~late Oct; `python analyze.py --status` says how far off. |
+| `analyze.py` | Written and statistically validated 6 Sep. Includes the free Cboe market factor (§11.1). Run `python analyze.py --status` for the countdown. |
 | GitHub Actions | Live. Weekdays 15:30 UTC (8:30am Pacific). First scheduled run: Tue 8 Sep. Mon 7 Sep is Labor Day and is skipped. |
 | Data | Collecting since 2026-09-04. First run: 52/52 rows, all IV populated. |
 | `tools/gamma-lab*.html` | Complete. Educational, not part of the pipeline. |
-| Analysis | `analyze.py` written and validated 6 Sep. Blocked on data volume until late October. |
+| Schema | 32 columns as of 6 Sep. The file is still 17 and migrates itself on the first run after that - expect the jump on Tue 8 Sep. |
 | Monitor | Live at https://gabrielmitton-cloud.github.io/volrec/tools/monitor.html (GitHub Pages, main branch, root). |
 | Watchdog | Weekly Claude routine `trig_01GkVL3mRpGGptXfqoNSR77d`, Wed 09:13 Pacific. Runs OUTSIDE GitHub Actions on purpose - see §5. |
 
@@ -421,10 +425,72 @@ moved off deprecated Node 20, and `freshness.yml` added as a staleness alarm.
 
 ---
 
+## 8. Design direction for a future dashboard
+
+The *collection monitor* is built - `tools/monitor.html`, in this aesthetic. It
+tracks continuity, schema state, staleness, the IV cross-section, quote quality
+and per-ticker coverage, and it says plainly that the analysis is not runnable
+yet. What is still unbuilt is the **analysis** dashboard below - that one waits
+on ~40 trading days, so late October.
+
+Reference: a Polymarket trading-bot dashboard. Terminal / mission-control
+aesthetic:
+
+- Pure black background, near-monochrome
+- Monospace throughout; labels small, uppercase, wide letter-spacing, dimmed
+- Section headers prefixed `//` — e.g. `// BALANCE HISTORY`
+- Top status strip: name, mode, live indicator, then uptime / cycle / PID
+- Row of KPI cards — tiny dim label above a large figure
+- Sparse white line chart with faint gradient fill, endpoint labelled
+- Dense timestamped activity log alongside it; green for gains, red for losses
+- Numbered roster tiles along the bottom, active one highlighted
+
+The telemetry is the point, not decoration — uptime, cycle count, and a
+scrolling log are what make it read as a live system rather than a report.
+
+---
+
+## 9. Files
+
+```
+README.md                     project document — the question, method, limitations
+HANDOFF.md                    this file
+record.py                     the daily recorder
+analyze.py                    the analyser — `--status`, `--simulate`, or run it
+requirements.txt              one dependency: requests
+.github/workflows/record.yml  the schedule
+.github/workflows/freshness.yml  daily staleness alarm
+data/iv_history.csv           the dataset — the only irreplaceable artifact
+tools/gamma-lab.html          delta-hedging simulator v1
+tools/gamma-lab-v2.html       v2 — adds costs, stochastic IV, jumps, freq sweep
+tools/monitor.html            collection monitor — reads the live CSV from GitHub
+```
+
+The monitor is published by GitHub Pages from `main` at the repository root, so
+https://gabrielmitton-cloud.github.io/volrec/tools/monitor.html is always
+current - it fetches the CSV client-side and needs no build step. Serving it
+locally still works and is described below.
+
+`tools/monitor.html` needs no build and no server data: it fetches
+`data/iv_history.csv` straight from raw.githubusercontent (which sends
+`access-control-allow-origin: *`), so it always shows what the recorder last
+committed. Browsers block `fetch` from `file://`, so serve it:
+
+```
+cd ~/Desktop/Archive/Volrec && python3 -m http.server 8000
+# then open localhost:8000/tools/monitor.html
+```
+
+If anything here has to be prioritized: the dataset is the only thing that can't
+be rebuilt. Everything else is code.
+
+---
+
 ## 10. The schema upgrade - APPLIED 5 Sep 2026
 
-`FIELDS` now declares 24 columns. The data file still has 17 and **migrates
-itself on the next run** - `migrate_header()` runs inside `append()` before any
+`FIELDS` declared 24 columns as of this change. It is **32 now** - see §11,
+which added the term-structure leg on 6 Sep. The data file still has 17 and
+**migrates itself on the next run**, straight from 17 to 32 in one step - `migrate_header()` runs inside `append()` before any
 row is written.
 
 Why it works that way rather than being committed by hand: the safety layer
@@ -580,61 +646,80 @@ slope in October - SEC EDGAR 8-K/10-Q dates, free and retroactive.
 
 ---
 
-## 8. Design direction for a future dashboard
+## 12. Roadmap - what to do, and when
 
-The *collection monitor* is built - `tools/monitor.html`, in this aesthetic. It
-tracks continuity, schema state, staleness, the IV cross-section, quote quality
-and per-ticker coverage, and it says plainly that the analysis is not runnable
-yet. What is still unbuilt is the **analysis** dashboard below - that one waits
-on ~40 trading days, so late October.
+Sequenced by trigger, not by wishlist. Everything above this line is done.
 
-Reference: a Polymarket trading-bot dashboard. Terminal / mission-control
-aesthetic:
+### Tue 8 Sep 2026 - the first full run. Check it.
 
-- Pure black background, near-monochrome
-- Monospace throughout; labels small, uppercase, wide letter-spacing, dimmed
-- Section headers prefixed `//` — e.g. `// BALANCE HISTORY`
-- Top status strip: name, mode, live indicator, then uptime / cycle / PID
-- Row of KPI cards — tiny dim label above a large figure
-- Sparse white line chart with faint gradient fill, endpoint labelled
-- Dense timestamped activity log alongside it; green for gains, red for losses
-- Numbered roster tiles along the bottom, active one highlighted
-
-The telemetry is the point, not decoration — uptime, cycle count, and a
-scrolling log are what make it read as a live system rather than a report.
-
----
-
-## 9. Files
+The single most important day so far: the first scheduled run of the 109-ticker,
+32-column recorder. Nothing here needs doing in advance; it should all happen by
+itself. Verify it did:
 
 ```
-README.md                     project document — the question, method, limitations
-HANDOFF.md                    this file
-record.py                     the daily recorder
-analyze.py                    the analyser — `--status`, `--simulate`, or run it
-requirements.txt              one dependency: requests
-.github/workflows/record.yml  the schedule
-.github/workflows/freshness.yml  daily staleness alarm
-data/iv_history.csv           the dataset — the only irreplaceable artifact
-tools/gamma-lab.html          delta-hedging simulator v1
-tools/gamma-lab-v2.html       v2 — adds costs, stochastic IV, jumps, freq sweep
-tools/monitor.html            collection monitor — reads the live CSV from GitHub
+cd ~/Desktop/Archive/Volrec && git pull -q && python analyze.py --status
+gh run list --workflow=record.yml --limit 3
 ```
 
-The monitor is published by GitHub Pages from `main` at the repository root, so
-https://gabrielmitton-cloud.github.io/volrec/tools/monitor.html is always
-current - it fetches the CSV client-side and needs no build step. Serving it
-locally still works and is described below.
+Expect: **109 rows** dated 2026-09-08, **32 columns**, and
+`data/iv_history.pre-17col.csv` appearing in the repo - that is the migration's
+one-time backup and it committing is correct, not a mistake. The far leg should
+populate on ~96% of rows; DUK, FXE, MDY and XLRE legitimately have none.
 
-`tools/monitor.html` needs no build and no server data: it fetches
-`data/iv_history.csv` straight from raw.githubusercontent (which sends
-`access-control-allow-origin: *`), so it always shows what the recorder last
-committed. Browsers block `fetch` from `file://`, so serve it:
+Then make the call that has been pending since 5 Sep: **HYG, XLC and XLRE**.
+Their weekend spreads (92%, 127%, 85% of mid) are meaningless - PEP, a mega-cap
+staple, read 98% on the same quotes. Only this intraday row settles it. Under
+60% of mid, they stay.
 
-```
-cd ~/Desktop/Archive/Volrec && python3 -m http.server 8000
-# then open localhost:8000/tools/monitor.html
-```
+Mon 7 Sep is Labor Day. The cron fires, the calendar guard no-ops it, nothing
+commits. A `record` run with no commit that day is correct behaviour.
 
-If anything here has to be prioritized: the dataset is the only thing that can't
-be rebuilt. Everything else is code.
+### Rolling, until ~late October
+
+- The Wednesday watchdog reports on its own. Quiet means healthy.
+- **FXE and XLU** are the two names with genuine *intraday* evidence against
+  them (67% and 55% of mid on 4 Sep). Watch whether it persists; §6.
+- **1 Nov 2026**: the snapshot time shifts an hour when daylight saving ends.
+  Do not change the cron - it would break comparability. Control for it or split
+  the sample. §6.
+
+### At ~40 trading days (~late October) - the main event
+
+1. `python analyze.py` - it refuses to run below 40 days unless forced.
+2. **Join an event calendar.** SEC EDGAR 8-K/10-Q filing dates: free, no API
+   key, authoritative, fully retroactive. About 73 of the 109 tickers are single
+   names reporting roughly twice over the sample - on the order of 146 events,
+   staggered across firms, so far closer to independent than the daily panel.
+   Cross it with the term-structure slope from §11: an inverted curve with an
+   earnings date inside the near leg is the cleanest event signature available.
+3. **Build the results page.** This is where design effort finally pays, and
+   where the Vercel account earns its place - by then the CSV is ~0.8 MB and
+   parsing it client-side is wasteful, and the page stops being a health monitor
+   and becomes the artifact handed to an interviewer. §8 has the direction.
+
+### Deferred, with reasons
+
+- **Open interest** - §10. Trading API, a handful of extra calls, T+2 stale so
+  store `open_interest_date` alongside it.
+- **VVIX, SKEW, FRED credit spreads and financial stress** - §11.1. All free,
+  all verified working, all deliberately unwired. Add one only with a hypothesis
+  written down *first*.
+- **Vercel** - connected and idle. Revisit at the results page, not before.
+
+### Operational notes for whoever picks this up
+
+- The working directory is a real git clone (converted 5 Sep) and is in sync
+  with origin. It was previously loose files, which had silently mangled the
+  dataset's line endings.
+- `gh` is installed at `~/.local/bin/gh` and authenticated. Use
+  `gh run view <id> --log` to read Actions output - the browser route cost a
+  duplicate workflow run before this was set up.
+- **`python3` on this Mac is 3.9 and has no `requests`.** Use
+  `/Library/Frameworks/Python.framework/Versions/3.14/bin/python3` for anything
+  that imports it. This wasted time once already.
+- Temporary workflows are the established pattern for testing against the live
+  API: commit one, `gh workflow run`, read the job summary, delete it. Five have
+  been used and removed this way. Always tee output into
+  `$GITHUB_STEP_SUMMARY` - it is far easier to read than the raw log.
+- The safety rule that has held throughout: point `OUT` at a copy under `/tmp`
+  and assert `data/iv_history.csv`'s md5 is unchanged at the end of every test.
