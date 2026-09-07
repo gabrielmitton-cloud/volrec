@@ -6,6 +6,9 @@ the reasoning behind decisions already made, so they don't get re-argued.
 
 Last updated: 6 September 2026.
 
+**If it is Wednesday 9 September 2026 or later, start at `WEDNESDAY.md`** -
+it is the work queue and it records what has already been verified.
+
 **Start at §12 (Roadmap)** if you are picking this up to do work. §1-§3 are the
 framing and the decisions that are closed. §4 is the analysis spec and is the
 densest part - read it before writing any analysis code.
