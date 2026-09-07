@@ -744,6 +744,36 @@ commits. A `record` run with no commit that day is correct behaviour.
   all verified working, all deliberately unwired. Add one only with a hypothesis
   written down *first*.
 - **Vercel** - connected and idle. Revisit at the results page, not before.
+- **Intraday day-trading signal scanners** (Trade Ideas "Oracle" and similar) -
+  assessed 6 Sep 2026 and rejected. Three collisions, any one sufficient: the
+  clock (§3 froze daily snapshots), the universe (§3 chose 109 tickers for
+  spread; these tools scan low-float small caps, most of which have no options
+  liquid enough to quote an ATM IV), and the purpose (§1 - this is not a search
+  for alpha, and that sentence is what makes the honest sample-size accounting
+  read as rigor rather than excuse-making). Also not buildable at $0: it needs
+  real-time Level II and time & sales across thousands of names. Note if it
+  resurfaces: those tools' "Delta" column is price-distance-to-level, NOT
+  options delta.
+
+### One idea worth keeping - added 6 September 2026
+
+Salvaged from that assessment, and the one thing here with a hypothesis already
+written down, per the rule above:
+
+> **Does implied volatility forecast realized range better than a
+> technical-levels scanner does?**
+
+A scanner's resistance/target levels are a prediction of range. Implied
+volatility is *also* a prediction of range - the market's own, priced in dollars
+by people with capital at risk. The two are directly comparable.
+
+It needs no new data source, no API and no intraday feed: it runs on the daily
+clock §3 froze, over the frozen 109, using columns already recorded. And it is a
+*test between two methods* rather than an advertisement for one, which is the
+version that survives hostile questioning.
+
+Sequence it with the late-October analyser work, not before - it needs the same
+~40 trading days everything else does.
 
 ### Operational notes for whoever picks this up
 
