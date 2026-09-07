@@ -648,6 +648,9 @@ slope in October - SEC EDGAR 8-K/10-Q dates, free and retroactive.
 
 ## 12. Roadmap - what to do, and when
 
+**See also §13** - the two-sample architecture, decided 6 Sep 2026, which changes
+what the late-October work should be.
+
 Sequenced by trigger, not by wishlist. Everything above this line is done.
 
 ### Tue 8 Sep 2026 - the first full run. Check it.
@@ -802,3 +805,102 @@ Sequence it with the late-October analyser work, not before - it needs the same
   produces CRLF, `core.autocrlf` is unset, there is no `.gitattributes`, and the
   committed blob is byte-identical to the worktree. Leave it alone; normalising
   it would change the md5 for no gain.
+
+---
+
+## 13. The two-sample architecture - decided 6 September 2026
+
+A research brief on free data sources was commissioned and returned
+(`volrec-data-layer-brief.md`, 7 Sep 2026). Its central finding is a correction
+to this document's own reasoning and is worth stating plainly.
+
+**The retroactivity trap.** §3 held that retroactive sources beat real-time
+ones. True, but incomplete: **the IV panel begins 4 September 2026, so a
+retroactive event calendar joins to nothing before that date.** Retroactivity in
+the *event* source buys nothing unless the *dependent variable* also reaches
+back. An event calendar adds columns; it does not add observations, and
+observations are the binding constraint.
+
+**The fix: two samples, one codebase.**
+
+- **Sample A (long validation).** Cboe volatility indices as the IV measure,
+  1990-2026, joined to realised volatility of the underlyings. Hundreds of
+  non-overlapping monthly episodes. This is where the method is validated and
+  where any explanatory variable must earn its place first.
+- **Sample B (own panel).** `data/iv_history.csv`, N≈6 independent episodes.
+  The **same frozen code** is applied and the result reported with sample size
+  stated.
+
+The interview sentence this buys: *"my method finds the known result on decades
+of history, and here is what it finds on the data I collected myself."*
+
+**Sample A costs almost nothing to start.** `analyze.py` already fetches the
+Cboe CDN (§11.1) - no key, no rate limit, back to 1990. Verified 6 Sep: all 12
+of the brief's index series map to a ticker in the frozen watchlist, 12 of 12.
+Full manifest with ranges, gaps and licence terms in `samples/long/SOURCES.md`.
+
+**The bridge between the samples is already measured.** §6 records the Cboe-vs-
+our-ATM gap on four matched pairs: +3.93, +3.81, +4.64, +2.07, mean +3.61 vol
+points. Cboe indices are variance-swap-style and integrate the whole strike
+surface; this project records ATM. **Different estimands - say so, never
+splice.** As the panel grows, that four-pair comparison becomes ten pairs by
+many days, which is a small honest study in its own right.
+
+### 13.1 What is blocking Sample A
+
+**Realised volatility needs daily closes of the underlyings back to each index's
+start, and the brief catalogues thirteen sources providing none of them.** That
+is the critical path. Stooq was checked and rejected on 6 Sep - it now serves a
+JavaScript proof-of-work bot challenge, and a pipeline depending on defeating
+bot protection is neither durable nor defensible. Alpaca is the leading
+candidate: the key is held and `fetch_closes` exists, but free-plan history
+depth is unverified. One call settles it.
+
+If nothing free reaches 1990, shorten Sample A and say so. Ten years of
+non-overlapping monthly observations is ~120 episodes against six; the
+validation argument survives a shorter window, not a fabricated one.
+
+### 13.2 Structure and the rules that come with it
+
+```
+/hypotheses/     pre-registered, dated, committed BEFORE the join is run
+/features/       numeric columns eligible to enter a regression
+/annotations/    LLM prose, keyed by (date, ticker) - NEVER a feature
+/samples/long/   Sample A
+/samples/panel/  Sample B
+```
+
+`H1` is registered at `hypotheses/2026-09-06-h1-vrp-long-sample.md`. Read
+`hypotheses/README.md` and `annotations/README.md` before adding anything - the
+non-negotiable rule is that nothing moves from `/annotations/` to `/features/`
+without a hypothesis dated before the join.
+
+### 13.3 The highest-value action is not code
+
+Pepperdine subscribes to WRDS. **If that subscription includes OptionMetrics
+IvyDB, it is decades of single-name implied volatility, free to the user, and it
+moots the entire N problem** - which is the constraint every other decision in
+this document bends around. Undergraduate access typically runs through a
+faculty-sponsored class or research-assistant account.
+
+Cost: one email to a finance professor. Expected value: higher than everything
+else in this section combined. **Do this before writing any Sample A code.**
+
+### 13.4 Sequencing - deliberately narrow
+
+1. **Ask about WRDS.** Email, not code.
+2. **Settle the price-history dependency.** One Alpaca call.
+3. **Sample A v1 = H1 alone.** VRP on the Cboe family. No media, no events, no
+   positioning. Prove the method recovers the known result.
+4. Only then consider EDGAR 8-K item 2.02 dates, and the macro media layer.
+5. The annotation bot last - it is the deliverable, but it needs data to
+   annotate and it is the easiest thing here to start p-hacking with.
+
+**What the evidence says about steps 4-5, so they are not oversold:** Bodilsen
+(2025, *J. Applied Econometrics*) finds firm-specific news adds nothing over a
+HAR baseline once daily/weekly/monthly volatility components are included -
+macro news, by contrast, is useful. Gains in the wider literature are real but
+economically modest, concentrated at 5-22 day horizons in liquid names, at the
+aggregate rather than firm level. The 21-45 DTE window sits in that region. So
+**if a media layer is built, build it at the macro level**, and expect a small
+effect.
