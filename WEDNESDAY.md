@@ -23,7 +23,53 @@ do not need re-checking; re-running them wastes a session.
 
 ---
 
-## 1. FIRST: verify Tuesday's run. This is the one irreplaceable thing.
+## 1. DONE - Tuesday's run verified 2026-09-08 20:07 UTC
+
+All predictions held. **Do not re-verify; read this and move on.**
+
+- 109 rows dated 2026-09-08, total 161 over 2 trading days
+- schema jumped **17 to 32 columns**, `data/iv_history.pre-17col.csv` present
+- far leg on **105/109 = 96%**, missing exactly DUK, FXE, MDY, XLRE as predicted
+- put leg on 109/109 = 100%
+
+### 1.1 THE PENDING DECISION IS SETTLED - all three STAY
+
+Applying the pre-registered thresholds mechanically to the 2026-09-08 rows:
+
+| ticker | weekend | intraday | verdict |
+|---|---|---|---|
+| HYG | 92.3% | **46.2%** | KEEP + flag (36.8-60% band) |
+| XLC | 127.4% | **21.3%** | KEEP, clean, no caveat |
+| XLRE | 85.3% | **53.8%** | KEEP + flag (36.8-60% band) |
+
+**Nothing hit the 60% drop line. 0 of 109 tickers did.** Distribution: median
+11.8%, mean 12.9%. Worst five: FXE 58.8, XLRE 53.8, HYG 46.2, XHB 36.7,
+XBI 30.9.
+
+This vindicates §6's refusal to act on the weekend screen. PEP read 98% on
+weekend quotes and **17.1% intraday**. XLC went from worst-in-list to clean.
+Adding the three back despite the weekend screen was correct.
+
+**Action for Wednesday:** add HYG and XLRE to the §6 watch list beside FXE and
+XLU, note XLC as clean, and record these numbers. No WATCHLIST change.
+
+### 1.2 TWO NEW ISSUES worth a look
+
+**(a) The scheduled run was ~3h20m late.** Cron is 15:30 UTC; `quote_time` on
+the 2026-09-08 rows spans **18:15 to 18:52 UTC**. GitHub delays scheduled
+workflows under load. §6 already worries a *one hour* DST shift breaks
+comparability, and this is three times that, and it is variable rather than
+systematic. One observation so far, so watch it rather than act. This is
+exactly what `quote_time` was added for, and it earned its column on day one.
+
+**(b) `freshness.yml` assumes it runs after `record.yml`.** Its cron is 17:00
+UTC, commented "90 min after the recorder". But on 8 Sep the recorder ran at
+18:50 and freshness at 19:42, both delayed. If the delays ever invert, freshness
+checks the dataset *before* the recorder writes and reports a stale day that is
+not stale. It also only catches staleness over 5 days, never "the run fired but
+committed nothing". Worth hardening.
+
+## 1.3 Original verification steps, kept for reference
 
 ```bash
 cd ~/Desktop/Archive/Volrec && git pull -q
