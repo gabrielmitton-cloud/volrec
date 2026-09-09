@@ -82,12 +82,53 @@ Notes:
 **"Is there any free or student-accessible source of historical option-implied
 volatility? I looked at OptionMetrics but wasn't sure it was open to me."**
 
-**"Does the school have anything else I should know about, a Bloomberg terminal,
-Capital IQ, Refinitiv? I don't know what's actually available to undergraduates."**
-
 Already settled, no need to ask: Cboe index history is free and in use back to
 1990, FRED adds about 26 more years across VXD, VXN and RVX, SEC EDGAR gives
 free filing dates.
+
+Notes:
+
+
+---
+
+## 5b. Bloomberg - this is the big one now
+
+Pepperdine has a terminal. Bloomberg holds historical implied volatility on
+single names, which is exactly the thing that is missing, and it may make the
+whole six-observation problem go away.
+
+**"How do undergraduates get terminal time, and is there a booking system?"**
+
+**"What's the right way to pull historical implied volatility? I've seen OVDV
+for the surface and HIVG for a history, and I think BDH in the Excel add-in
+with a field like 30DAY_IMPVOL_100.0%MNY_DF would give me a daily series. Is
+that the approach you'd use?"**
+
+**"How far back does implied vol go for ordinary large caps?"**
+
+**"What are the export limits? I'd want a daily series for something like 100
+tickers over several years, and I don't know if that's reasonable or absurd."**
+
+### The question most students would not think to ask, and the one that matters most
+
+Bloomberg data almost certainly **cannot be redistributed**, and this project
+lives in a public GitHub repository.
+
+**"If I pull data from the terminal, what am I allowed to publish? I assume I
+can't put the raw series in a public repo, but can I publish derived results,
+regression output and summary statistics, with a citation?"**
+
+Why this matters more than it sounds: if the answer is derived-results-only,
+then the design becomes two layers rather than one. The free Alpaca data stays
+as the **public, reproducible core** that anyone can rebuild from scratch, and
+Bloomberg becomes a **larger validation sample that is described but not
+shipped**. That is a perfectly respectable structure and it is how a lot of
+academic work handles licensed data, but it has to be a deliberate decision
+made up front rather than something discovered after committing a file that
+should not have been committed.
+
+If the answer is that even derived output is restricted, that is worth knowing
+before spending terminal hours.
 
 Notes:
 
@@ -136,3 +177,29 @@ to look at it again once there's more data. Offer the repo, it's public.
 
 - Don't defend a decision in the room. Take the note, reopen it properly later.
 - Don't promise to build something before understanding why it helps.
+
+
+---
+
+# What I need answered to keep building
+
+Each of these changes actual code. Ordered by how much they change.
+
+| # | Answer needed | What it changes |
+|---|---|---|
+| 1 | **Variance or volatility?** `IV - RV` or `IV^2 - RV^2` | The premium definition itself, in `analyze.py` and `build_sample_a.py`. Everything downstream. |
+| 2 | **Overlapping windows: discard, or correct?** If correct, which estimator and what lag rule? | The headline test. Recovering the discarded ~95% of rows would be the single biggest gain available. |
+| 3 | **Realised vol estimator.** Close-to-close, or Parkinson / Garman-Klass / realised range? | `analyze.py:realized_vol`. Both samples use it, so it must change in one place. |
+| 4 | **Annualisation.** 252 trading days is assumed. Is that his convention? | A constant, but it shifts every number reported. |
+| 5 | **Is ATM enough?** | Whether the recorder needs to start capturing multiple strikes, which is a schema change and the sooner the better. |
+| 6 | **Bloomberg fields and depth.** Exact field names, history length, export limits. | Whether a single-name Sample A is buildable at all. |
+| 7 | **Bloomberg publishing rules.** Raw, derived, or nothing. | Whether the repo stays reproducible end to end, or splits into a public core plus a described-not-shipped layer. |
+| 8 | **Clustering.** Demean the cross-section by date and cluster standard errors on the event date, for anything pooled. | Currently assumed correct. If he disagrees, the pooled tests need rebuilding. |
+
+**Numbers 1, 3 and 4 are cheap now and expensive in November,** because they
+change the definition of every value already computed. If you get nothing else,
+get those three.
+
+**Number 5 is the one with a deadline.** If he says ATM alone is not defensible,
+the recorder should start capturing more strikes as soon as possible, since
+every day of single-strike data is a day that cannot be re-collected later.
