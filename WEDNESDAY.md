@@ -1,5 +1,11 @@
 # Punch list for Wed 9 September 2026
 
+> **STATUS 9 Sep 07:20 UTC: everything mechanical on this list is done.**
+> Pressure test rewritten and passing 39/39. FRED key verified live. README
+> brought current. Friday prep written to `FRIDAY-MEETING.md`.
+> **Two things remain, both needing a human:** the git-history question in
+> section 3.1, and the Friday meeting itself. Nothing else here is blocking.
+
 Written Mon 7 Sep by the session that built Sample A, for whoever picks this up
 Wednesday. **Read `HANDOFF.md` §12 and §13 first.** This file is the work queue,
 not the context.
