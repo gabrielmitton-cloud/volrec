@@ -99,15 +99,32 @@ That sentence is the whole project. If he only hears that, it is enough.
 
 ---
 
-## 1. Am I measuring the right thing?
+## 1. Variance rather than volatility - now a CONFIRMATION, not an open question
 
-I compute the premium as **IV minus RV, in volatility points**. A lot of the
-literature works in **variance** terms, IV squared minus RV squared, because
-that is what a variance swap actually pays and because variance is additive
-over time and volatility is not.
+**Updated 9 Sep.** Marc Vinyard sent Carr & Wu (2009), *"Variance Risk
+Premiums,"* RFS 22(3), as methodology guidance. It largely answers this. Read
+it before Friday if you read one thing.
 
-**"Should I be working in variance rather than volatility? And if so, does that
-change how I should read what I've already collected?"**
+What it establishes: the premium belongs in **variance**, the variance swap rate
+is the right risk-neutral quantity, and **VIX approximates the 30-day variance
+swap rate on the S&P 500**. That last point matters, because it means Sample A
+can implement the paper almost exactly using `VIX^2`, rather than loosely.
+
+So do not ask whether variance is right. Ask the sharper version:
+
+**"I'm moving to a variance formulation after reading Carr and Wu. Since I only
+record at-the-money rather than a full strike surface, I can't synthesise a real
+variance swap rate from my own data. Is using VIX squared as the swap rate proxy
+in my long sample defensible, and what am I giving up by not having the surface?"**
+
+**"They note the premium looks closer to an independent series in log terms than
+in dollar terms. Given my whole problem is dependence between observations, is
+the log formulation the right response, or am I reading too much into that?"**
+
+**One thing to be careful about out loud:** Carr and Wu define the premium as
+realised minus swap rate, so theirs is **negative** when insurance is
+overpriced. Mine is IV minus RV, so mine is **positive**. Same phenomenon,
+opposite sign. Do not quote one next to the other without saying which is which.
 
 Notes:
 
@@ -171,7 +188,37 @@ Notes:
 
 ---
 
-## 5b. Bloomberg - this is the big one now
+## 5b. Bloomberg - Marc has already answered the mechanics
+
+**Updated 9 Sep.** Marc confirmed Bloomberg is the route, daily history is
+available, and gave the exact syntax:
+
+```
+HIVG                     then select Table, the default is a graph
+=BDH("AAPL US Equity", {"30DAY_IMPVOL_100.0%MNY_DF", "VOLATILITY_30D"},
+     "20210101", "20260901", "Days=A")
+```
+
+**That formula returns both sides of the premium in one call.**
+`30DAY_IMPVOL_100.0%MNY_DF` is 30-day implied vol at 100% moneyness, which is
+at-the-money implied vol. `VOLATILITY_30D` is 30-day realised. Implied and
+realised, per ticker, daily, from one function.
+
+So the remaining Bloomberg questions are narrow:
+
+**"How far back does 30DAY_IMPVOL go for ordinary large caps? Marc's example
+started in 2021 but I don't know if that was the limit or just an example."**
+
+**"Is pulling this for something like 100 tickers over several years reasonable,
+or will I hit export limits?"**
+
+**"What am I allowed to publish? My repo is public. I assume the raw series
+can't go in it, but can derived results and regression output, with a citation?"**
+
+That last one still matters most. If the answer is derived-results-only, the
+design becomes a free reproducible public core plus a larger Bloomberg layer
+that is described but not shipped. That has to be decided before pulling
+anything, not after committing a file that should not have been committed.
 
 Pepperdine has a terminal. Bloomberg holds historical implied volatility on
 single names, which is exactly the thing that is missing, and it may make the
