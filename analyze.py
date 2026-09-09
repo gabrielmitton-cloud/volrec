@@ -193,12 +193,34 @@ def group_of(sym):
     return "single name"
 
 
-def fetch_closes(symbols, start, end):
-    """Daily closes from Alpaca, cached on disk. Free tier serves stock bars."""
+def fetch_closes(symbols, start, end, feed="sip"):
+    """Daily closes from Alpaca, cached on disk. Free tier serves stock bars.
+
+    feed defaults to "sip", the consolidated tape. Verified free on this plan
+    2026-09-07, and it matters twice over: "iex" is a single venue carrying a
+    low single-digit share of volume, so its close is not the official closing
+    print; and iex history is both shallower and ragged (SPY 2018-11-01, USO
+    2020-04-21, everything else 2020-07-27) where sip reaches 2016-01-04
+    uniformly. Cache keys include the feed, so switching does not serve stale
+    iex bars. sip carries a 15-minute delay on the most recent data, which is
+    irrelevant for closes already in the past.
+    """
     import requests
+    # The free plan serves sip history but refuses the most recent day:
+    #   403 {"message":"subscription does not permit querying recent SIP data"}
+    # Verified 2026-09-07. end=today 403s; end=today-1 returns 2684 bars for SPY
+    # through the latest session, so nothing is lost by clamping. Without this
+    # every sip call dies the moment it asks through today, which is exactly
+    # what the analyser will do in October.
+    if feed == "sip":
+        end = min(end, date.today() - timedelta(days=1))
     cache = json.loads(PRICE_CACHE.read_text()) if PRICE_CACHE.exists() else {}
     key, sec = os.environ.get("ALPACA_KEY"), os.environ.get("ALPACA_SECRET")
-    need = [s for s in symbols if s not in cache or cache[s].get("_end", "") < end.isoformat()]
+    need = [s for s in symbols
+            if s not in cache
+            or cache[s].get("_end", "") < end.isoformat()
+            or cache[s].get("_feed") != feed
+            or cache[s].get("_start", "9999") > start.isoformat()]
     if need:
         if not key or not sec:
             sys.exit("ALPACA_KEY / ALPACA_SECRET not set - needed to fetch daily closes.")
@@ -209,7 +231,7 @@ def fetch_closes(symbols, start, end):
             batch = need[i:i + 50]
             token, got = None, {b: {} for b in batch}
             while True:
-                p = dict(symbols=",".join(batch), timeframe="1Day", feed="iex",
+                p = dict(symbols=",".join(batch), timeframe="1Day", feed=feed,
                          start=start.isoformat(), end=end.isoformat(), limit=10000,
                          adjustment="all")
                 if token: p["page_token"] = token
@@ -223,7 +245,9 @@ def fetch_closes(symbols, start, end):
                 if not token: break
                 time.sleep(0.4)
             for sym in batch:
-                d = got.get(sym, {}); d["_end"] = end.isoformat(); cache[sym] = d
+                d = got.get(sym, {})
+                d["_end"], d["_start"], d["_feed"] = end.isoformat(), start.isoformat(), feed
+                cache[sym] = d
             print(f"  fetched closes for {', '.join(batch[:4])}"
                   f"{'...' if len(batch) > 4 else ''} ({i+len(batch)}/{len(need)})")
             time.sleep(0.4)

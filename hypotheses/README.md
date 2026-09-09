@@ -24,4 +24,4 @@ that it was pre-registered; that is the whole point of this directory.
 
 | id | hypothesis | registered | tested | outcome |
 |---|---|---|---|---|
-| H1 | VRP is positive on Cboe vol indices, 1990-2026 | 2026-09-06 | not yet | - |
+| H1 | VRP is positive on Cboe vol indices, 2016-2026 | 2026-09-06 | 2026-09-07 | H1a holds (9/11, p<0.05); H1b holds but mixed, read the caveat; H1c holds |
