@@ -99,3 +99,82 @@ is acceptable, and whether the log form is the right response to dependence.
 ## Adjustment log
 
 - *(none yet)*
+
+---
+
+# Result — tested 2026-09-09, same day as registration, before the meeting
+
+Run: `samples/long/test_h2_variance.py` via a temporary workflow. Sample A,
+2016-2026, 21-day non-overlapping windows. Dataset untouched.
+
+Equity indices pooled (n=508). Positive = insurance overpriced, our convention.
+
+| formulation | mean | t | p |
+|---|---|---|---|
+| `IV - RV` volatility, current | 3.14 vol pts | **9.28** | 5.1e-19 |
+| `IV^2 - RV^2` variance, raw | 62.16 | **2.14** | 3.3e-02 |
+| `ln(IV^2) - ln(RV^2)` log variance | 47.94 | **16.26** | 3.6e-48 |
+
+## H2a — HOLDS, but with a result that was not anticipated
+
+The variance form is significant, so the direction agrees with Carr & Wu. But
+**raw variance is by far the weakest of the three** (t = 2.14 against 9.28 for
+plain volatility), and **log variance is by far the strongest** (t = 16.26).
+
+The reason is visible per pair. Squaring amplifies the tails, so a handful of
+volatility spikes dominate the mean and inflate the dispersion. OVX/USO shows a
+large raw-variance mean of 304.8 at t = 1.94, which is a big number carrying
+almost no statistical weight. Worse, **VXGDX/GDX flips sign** under raw
+variance, -336.0, while remaining positive under both volatility (+0.15) and log
+variance (+13.8). A single formulation choice reversing the sign on a pair is
+exactly the kind of fragility worth knowing about before building on it.
+
+So "move to variance" is too coarse an instruction. **In levels it is worse than
+what this project already does. In logs it is much better.**
+
+## H2b — NOT SUPPORTED, and the reason is informative
+
+Predicted: the log form would be less correlated with the volatility level.
+
+| form | corr(premium, IV level) | lag-1 autocorrelation |
+|---|---|---|
+| vol | 0.044 | 0.147 |
+| var | -0.048 | 0.101 |
+| logvar | -0.063 | 0.154 |
+
+All three correlations are tiny and the log form is marginally the *largest* in
+absolute terms. **H2b is not supported on this sample.**
+
+The likely reason is worth stating rather than hiding: Carr & Wu's observation
+concerns dollar-denominated premiums on overlapping data. This project already
+samples **non-overlapping** 21-day windows, so the dependence the log form was
+meant to reduce has largely been removed by the sampling design before the
+formulation ever gets a chance to matter. There is nothing left for it to fix.
+
+That is a mildly reassuring null: it suggests the existing non-overlapping
+design is already doing the job the log transform was proposed for.
+
+**H2b therefore does not rescue the discarded 95% of rows.** That remains open,
+and it remains Friday question 2.
+
+## H2c — not tested
+
+Variance beta needs a longer cross-section than Sample B currently has.
+
+## What this changes, and what it does not
+
+**Does not change anything yet.** H2 remains registered and unadopted. Nothing
+in `analyze.py` or `build_sample_a.py` was modified; the test computes the three
+forms alongside each other and reports.
+
+**Changes the Friday question.** It is no longer "should I use variance." It is:
+
+> *"I tested three formulations. Raw variance is outlier-dominated and barely
+> significant, t = 2.1, and it flips the sign on one pair. Log variance is much
+> stronger than plain volatility, t = 16.3 against 9.3. Is the log form what you
+> would use, and does raw variance being that weak suggest I have made an error
+> somewhere?"*
+
+That last clause matters. The raw-variance weakness could equally mean the
+implementation is wrong, and it should be offered as a possibility rather than
+presented as a finding.
