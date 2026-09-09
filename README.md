@@ -101,9 +101,12 @@ vol, and jumps, and sweeps rebalance frequency to find where net profit peaks.
 
 ## Data notes and limitations
 
-- **Feed**: Alpaca's free `indicative` options feed and `iex` stock feed. Quotes
-  are indicative, not exact NBBO. Fine for daily snapshots; worth stating in any
-  write-up.
+- **Feed**: Alpaca's free `indicative` options feed for quotes, and the `sip`
+  consolidated tape for stock closes. Options quotes are indicative, not exact
+  NBBO. Fine for daily snapshots; worth stating in any write-up. Stock closes
+  moved from `iex` to `sip` on 7 Sep 2026: `iex` is a single venue carrying a
+  low single-digit share of volume, so its close is not the official closing
+  print, and its free history is both shallower and ragged.
 - **Snapshot timing**: one reading per day at a fixed time, so intraday
   volatility is invisible. The schedule is fixed at 15:30 UTC, which is
   11:30am ET while daylight saving is in effect but 10:30am ET once it ends
@@ -127,6 +130,49 @@ vol, and jumps, and sweeps rebalance frequency to find where net profit peaks.
   variance swap rate that VIX-style measures use — which understates the
   premium, and understates it more for index ETFs than for single names.
 
+## Two samples, one codebase
+
+The binding constraint here is not data, it is **independent observations**. By
+late October there will be ~40 trading days but only about six independent
+episodes of the market factor, because most days move together. `analyze.py
+--simulate` demonstrates the consequence: under a true null with zero premium
+by construction, a pooled test across tickers rejects 63.8% of the time, while
+a non-overlapping test sits near its nominal 5%.
+
+No additional column fixes that. Only additional observations do. So there are
+two samples running **identical code**:
+
+- **Sample A** (`samples/long/`) uses free Cboe volatility indices as the
+  implied-vol measure, 2016-2026, ~127 non-overlapping episodes per pair. This
+  is where the method is validated. Tested 7 Sep 2026: the premium is
+  significantly positive on **9 of 11** underlyings, VIX/SPY at +3.52
+  volatility points, t = 5.14.
+- **Sample B** (`samples/panel/`) is `data/iv_history.csv`, N ≈ 6. The same
+  frozen code runs on it and the result is reported with its sample size
+  stated.
+
+Sample A is a **different estimand** and is never presented as a result about
+the collected panel: Cboe's indices are variance-swap-style and integrate the
+whole strike surface, while this project records at-the-money implied vol. The
+measured gap across four matched pairs on 4 Sep 2026 was 3.61 volatility
+points, and that gap is the skew premium.
+
+### Repo structure
+
+```
+data/iv_history.csv        the recorder's sole output, append-only
+data/iv_history.pre-17col.csv   one-time migration backup, immutable
+hypotheses/                pre-registered, dated, committed BEFORE the join
+features/                  numeric columns eligible to enter a model
+annotations/               prose about specific observations, NEVER a feature
+samples/long/              Sample A
+samples/panel/             Sample B
+tools/pressure_test.py     39 read-only integrity checks
+```
+
+The rule that holds the rest together: **nothing becomes a model variable
+without a hypothesis in `hypotheses/` dated before the join that tests it.**
+
 ## Running it
 
 ```bash
@@ -144,6 +190,8 @@ Automated via `.github/workflows/record.yml`; keys live in repository secrets.
 
 - [x] Recorder built and running daily
 - [x] Universe selected, first clean run 2026-09-04
+- [x] Schema migrated 17 -> 32 columns, first full 109-ticker run 2026-09-08
+- [x] Sample A built and H1 tested, 9 of 11 pairs significant
 - [ ] ~40 trading days accumulated (late October)
 - [ ] Realized-vs-implied analysis
 - [ ] Write-up (February 2027)
