@@ -5,3 +5,4 @@ log.txt
 .DS_Store
 data/prices.json
 data/market_vol.json
+data/fred_cache.json

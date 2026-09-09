@@ -1,0 +1,30 @@
+name: fredcheck
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fredcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
+      - name: FRED key and backfill coverage
+        env:
+          FRED_KEY: ${{ secrets.FRED_KEY }}
+        run: |
+          {
+            echo '## FRED key check'
+            echo '```'
+            python tools/fred.py --check
+            echo '```'
+            echo '## Backfill candidates vs the Cboe CDN'
+            echo '```'
+            python tools/fred.py VXDCLS VXNCLS RVXCLS VXSLVCLS VXGDXCLS
+            echo '```'
+          } 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Assert nothing was written to the dataset
+        run: |
+          git diff --exit-code -- data/ && echo "data/ clean" >> "$GITHUB_STEP_SUMMARY"

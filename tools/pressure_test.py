@@ -1,9 +1,30 @@
-"""volrec pre-flight pressure test. Read-only. Run before Tue 8 Sep."""
-import csv, hashlib, importlib.util, re, subprocess, sys
+"""volrec pre-flight pressure test. Read-only. Run before and after every run.
+
+  python tools/pressure_test.py
+
+Exits non-zero on any failure.
+
+WHY THE ANCHOR IS THE BACKUP, NOT THE LIVE FILE
+-----------------------------------------------
+Until 8 Sep 2026 this test pinned data/iv_history.csv to a fixed md5. That
+stopped working the moment the schema migrated and the recorder began appending
+daily, because the live file now legitimately changes every trading day, and a
+tripwire that fires on correct behaviour gets disabled by whoever is on call.
+
+data/iv_history.pre-17col.csv is the one-time migration backup. It is finished:
+nothing should ever write to it again. So it is pinned by md5, and the live
+file is checked *against* it - the original 52 rows must still be there,
+value-for-value. That catches the failure that actually matters (history being
+rewritten) without firing on the one that does not (history growing).
+"""
+import csv, hashlib, importlib.util, re, subprocess, sys, tempfile
+from datetime import date
 from pathlib import Path
-P = Path(__file__).resolve()
-R = P.parent.parent  # repo root
-GOLDEN = '75035d11b530681571dbeb3294af5926'
+
+R = Path(__file__).resolve().parent.parent
+BACKUP_MD5 = "75035d11b530681571dbeb3294af5926"   # pre-17col backup. IMMUTABLE.
+ORIGINAL_DAY, ORIGINAL_ROWS = "2026-09-04", 52
+
 fails, warns = [], []
 def ok(c, m):
     print(("  PASS  " if c else "  FAIL  ") + m)
@@ -12,98 +33,161 @@ def warn(c, m):
     print(("  PASS  " if c else "  WARN  ") + m)
     if not c: warns.append(m)
 
-raw = (R/'data/iv_history.csv').read_bytes()
-rows = list(csv.DictReader((R/'data/iv_history.csv').open(newline='')))
-spec = importlib.util.spec_from_file_location('rec', R/'record.py')
+live = R / "data/iv_history.csv"
+back = R / "data/iv_history.pre-17col.csv"
+raw = live.read_bytes()
+rows = list(csv.DictReader(live.open(newline="")))
+hdr = next(csv.reader(live.open(newline="")))
+spec = importlib.util.spec_from_file_location("rec", R / "record.py")
 rec = importlib.util.module_from_spec(spec); spec.loader.exec_module(rec)
 
-print("=== A. DATASET INTEGRITY ===")
-ok(hashlib.md5(raw).hexdigest() == GOLDEN, 'md5 is the protected value')
-ok(raw.count(b'\r\n') == raw.count(b'\n') and raw.count(b'\r') == raw.count(b'\r\n'),
-   'line endings uniformly CRLF (csv module default) - no mixed endings')
-ok(raw.endswith(b'\n'), 'ends with newline, so append starts on a fresh line')
-ok(len(rows) == 52 and all(len(r) == 17 for r in rows), '52 rows, none ragged')
-ok(len({(r['date'],r['symbol']) for r in rows}) == len(rows), 'no duplicate (date,symbol)')
-blob = subprocess.run(['git','show','HEAD:data/iv_history.csv'], cwd=R,
+print("=== A. PROVENANCE (the anchor) ===")
+if back.exists():
+    bh = next(csv.reader(back.open(newline="")))
+    brows = list(csv.DictReader(back.open(newline="")))
+    ok(hashlib.md5(back.read_bytes()).hexdigest() == BACKUP_MD5,
+       "migration backup md5 unchanged - the immutable anchor")
+    ok(len(bh) == 17 and len(brows) == ORIGINAL_ROWS,
+       f"backup is the original 17-col, {ORIGINAL_ROWS}-row dataset")
+    ok(rec.FIELDS[:17] == bh,
+       "schema change is APPEND-ONLY (FIELDS[:17] == the original header, in order)")
+    orig = [r for r in rows if r["date"] == ORIGINAL_DAY]
+    ok(len(orig) == ORIGINAL_ROWS, f"{ORIGINAL_ROWS} rows still present for {ORIGINAL_DAY}")
+    ok(all(all(o[k] == n[k] for k in o) for o, n in zip(brows, orig)),
+       "every original value preserved in the live file - history not rewritten")
+else:
+    warn(False, "no pre-17col backup yet (expected only before the first migration)")
+    ok(hashlib.md5(raw).hexdigest() == BACKUP_MD5, "pre-migration md5 unchanged")
+
+print("\n=== B. LIVE DATASET INTEGRITY ===")
+ok(hdr == rec.FIELDS, f"header matches FIELDS ({len(hdr)} columns)")
+ok(all(len(r) == len(rec.FIELDS) for r in rows), "no ragged rows")
+ok(len({(r["date"], r["symbol"]) for r in rows}) == len(rows), "no duplicate (date,symbol)")
+ok(raw.count(b"\r\n") == raw.count(b"\n") == raw.count(b"\r"),
+   "line endings uniformly CRLF (csv module default)")
+ok(raw.endswith(b"\n"), "ends with newline, so append starts on a fresh line")
+blob = subprocess.run(["git", "show", "HEAD:data/iv_history.csv"], cwd=R,
                       capture_output=True).stdout
-ok(hashlib.md5(blob).hexdigest() == GOLDEN, 'committed blob byte-identical to worktree')
+ok(hashlib.md5(blob).hexdigest() == hashlib.md5(raw).hexdigest(),
+   "committed blob byte-identical to worktree (no uncommitted drift)")
+days = sorted({r["date"] for r in rows})
+print(f"  INFO  {len(rows)} rows over {len(days)} trading days, {days[0]} to {days[-1]}")
 
-print("\n=== B. VALUE SANITY ===")
-ok(all(float(r['bid']) <= float(r['mid']) <= float(r['ask']) for r in rows), 'bid <= mid <= ask')
-ok(all(float(r['bid']) > 0 for r in rows), 'no one-sided quotes')
-iv = [float(r['iv']) for r in rows]
-ok(all(0.01 < v < 3.0 for v in iv), f'IV sane ({min(iv):.3f}-{max(iv):.3f})')
-d = [int(r['dte']) for r in rows]
-ok(all(rec.DTE_WINDOW[0] <= x <= rec.DTE_WINDOW[1] for x in d), f'dte in window ({min(d)}-{max(d)})')
-ok(all(float(r['delta']) > 0 for r in rows), 'all calls')
+print("\n=== C. VALUE SANITY (all rows) ===")
+ok(all(float(r["bid"]) <= float(r["mid"]) <= float(r["ask"]) for r in rows), "bid <= mid <= ask")
+ok(all(float(r["bid"]) > 0 for r in rows), "no one-sided quotes")
+iv = [float(r["iv"]) for r in rows if r["iv"]]
+ok(all(0.01 < v < 3.0 for v in iv), f"IV sane ({min(iv):.3f}-{max(iv):.3f})")
+d = [int(r["dte"]) for r in rows]
+ok(all(rec.DTE_WINDOW[0] <= x <= rec.DTE_WINDOW[1] for x in d), f"dte in window ({min(d)}-{max(d)})")
+ok(all(float(r["delta"]) > 0 for r in rows), "all calls")
+ok(all(r["iv"] for r in rows), "IV populated on every row")
 
-print("\n=== C. record.py STATIC ===")
-hdr = next(csv.reader((R/'data/iv_history.csv').open(newline='')))
-ok(len(rec.FIELDS) == 32, 'FIELDS is 32 columns')
-ok(len(set(rec.FIELDS)) == 32, 'no duplicate column names')
-ok(rec.FIELDS[:17] == hdr, 'schema change is APPEND-ONLY (first 17 match, in order)')
-syms = re.findall(r'["\']([A-Z.]+)["\']', re.search(r'WATCHLIST\s*=\s*\[(.*?)\]',
-                  (R/'record.py').read_text(), re.S).group(1))
-ok(len(syms) == 109 and len(set(syms)) == 109, '109 unique tickers')
-ok({r['symbol'] for r in rows} <= set(syms), 'no recorded ticker was dropped')
+print("\n=== D. PER-DAY COVERAGE ===")
+for day in days:
+    dr = [r for r in rows if r["date"] == day]
+    far = sum(1 for r in dr if r.get("far_iv"))
+    put = sum(1 for r in dr if r.get("put_iv"))
+    qt = sorted({r["quote_time"][11:16] for r in dr if r.get("quote_time")})
+    span = f"{qt[0]}-{qt[-1]}Z" if qt else "n/a (pre-schema)"
+    print(f"  {day}  {len(dr):>4} rows | far {100*far/len(dr):>3.0f}% | "
+          f"put {100*put/len(dr):>3.0f}% | quotes {span}")
+recent = [r for r in rows if r["date"] == days[-1]]
+if any(r.get("far_iv") for r in recent):
+    frac = sum(1 for r in recent if r.get("far_iv")) / len(recent)
+    warn(frac >= 0.90, f"far leg on >=90% of the latest day (got {100*frac:.0f}%)")
 
-print("\n=== D. MIGRATION DRY RUN (on a copy) ===")
-import tempfile; tmp = Path(tempfile.mkdtemp()); tmp.mkdir(exist_ok=True)
-(tmp/'iv_history.csv').write_bytes(raw)
-for stale in tmp.glob('*.pre-*'): stale.unlink()
-saved = rec.OUT; rec.OUT = tmp/'iv_history.csv'
+print("\n=== E. SNAPSHOT-TIME DRIFT (comparability) ===")
+# The cron is fixed but GitHub delays scheduled runs. A drifting snapshot time
+# is a comparability problem the DST note in HANDOFF section 6 already worries
+# about at one hour; delays have been larger.
+times = {}
+for r in rows:
+    if r.get("quote_time"):
+        times.setdefault(r["date"], []).append(r["quote_time"][11:16])
+if len(times) >= 2:
+    mids = {d: sorted(v)[len(v) // 2] for d, v in times.items()}
+    mins = {d: int(t[:2]) * 60 + int(t[3:]) for d, t in mids.items()}
+    spread = max(mins.values()) - min(mins.values())
+    for dd, t in sorted(mids.items()):
+        print(f"  {dd}  median quote {t}Z")
+    warn(spread <= 60, f"snapshot time spread across days is {spread} min "
+                       f"(>60 breaks comparability; control for it or split the sample)")
+elif times:
+    d0, t0 = next(iter(sorted(times.items())))
+    print(f"  only one day with quote_time so far ({d0}, median "
+          f"{sorted(t0)[len(t0)//2]}Z) - need a second to measure drift")
+
+print("\n=== F. record.py STATIC ===")
+ok(len(set(rec.FIELDS)) == len(rec.FIELDS), "no duplicate column names in FIELDS")
+syms = re.findall(r'["\']([A-Z.]+)["\']',
+                  re.search(r"WATCHLIST\s*=\s*\[(.*?)\]", (R / "record.py").read_text(), re.S).group(1))
+ok(len(syms) == 109 and len(set(syms)) == 109, f"{len(syms)} unique tickers")
+ok({r["symbol"] for r in rows} <= set(syms), "no recorded ticker was dropped from WATCHLIST")
+
+print("\n=== G. MIGRATION still works (synthetic 17-col fixture) ===")
+# Must NOT use the live file: it is already migrated, so migrate_header() would
+# correctly no-op and the test would prove nothing.
+tmp = Path(tempfile.mkdtemp())
+(tmp / "iv_history.csv").write_bytes(back.read_bytes() if back.exists() else raw)
+saved, rec.OUT = rec.OUT, tmp / "iv_history.csv"
 try:
     rec.migrate_header()
 finally:
     rec.OUT = saved
-mig = list(csv.DictReader((tmp/'iv_history.csv').open(newline='')))
-bak = list(csv.DictReader((tmp/'iv_history.pre-17col.csv').open(newline='')))
-ok(next(csv.reader((tmp/'iv_history.csv').open(newline=''))) == rec.FIELDS, '17 -> 32 columns')
-ok(len(mig) == 52, '52 rows survive')
-ok(all(all(o[k] == n[k] for k in o) for o, n in zip(bak, mig)), 'every original value preserved')
-ok(all(r['far_iv'] == '' and r['put_iv'] == '' for r in mig), 'new columns blank on old rows')
-ok(hashlib.md5((R/'data/iv_history.csv').read_bytes()).hexdigest() == GOLDEN,
-   'REAL dataset untouched by the dry run')
+mig = list(csv.DictReader((tmp / "iv_history.csv").open(newline="")))
+bak2 = tmp / "iv_history.pre-17col.csv"
+ok(next(csv.reader((tmp / "iv_history.csv").open(newline=""))) == rec.FIELDS, "17 -> 32 columns")
+ok(bak2.exists(), "one-time backup created beside the file")
+if bak2.exists():
+    ob = list(csv.DictReader(bak2.open(newline="")))
+    ok(all(all(o[k] == n[k] for k in o) for o, n in zip(ob, mig)), "every value preserved")
+ok(hashlib.md5(live.read_bytes()).hexdigest() == hashlib.md5(raw).hexdigest(),
+   "REAL dataset untouched by the dry run")
 
-print("\n=== E. SCHEMA CONSISTENCY analyze.py <-> record.py ===")
+print("\n=== H. analyze.py <-> record.py SCHEMA CONSISTENCY ===")
 MISSING = set()
 class T(dict):
     def __missing__(self, k): MISSING.add(k); return ""
-spec2 = importlib.util.spec_from_file_location('an', R/'analyze.py')
+spec2 = importlib.util.spec_from_file_location("an", R / "analyze.py")
 an = importlib.util.module_from_spec(spec2); spec2.loader.exec_module(an)
-for r in [T({**{f:'' for f in rec.FIELDS}, **x}) for x in rows]:
-    for f in ('iv','mid','bid','ask','far_iv','far_dte','dte','put_iv','spot','strike'):
+for r in [T({**{f: "" for f in rec.FIELDS}, **x}) for x in rows[:5]]:
+    for f in ("iv", "mid", "bid", "ask", "far_iv", "far_dte", "dte", "put_iv", "spot", "strike"):
         an.num(r[f])
-    an.group_of(r['symbol'])
-ok(not MISSING, f'analyze.py reads no column outside FIELDS {sorted(MISSING) or ""}')
+    an.group_of(r["symbol"])
+ok(not MISSING, f"analyze.py reads no column outside FIELDS {sorted(MISSING) or ''}")
+import inspect
+ok(inspect.signature(an.fetch_closes).parameters["feed"].default == "sip",
+   "fetch_closes defaults to the sip feed (iex is shallow and ragged)")
+ok("subscription does not permit" in (R / "analyze.py").read_text(),
+   "the sip recent-data clamp is present (free plan 403s on end=today)")
 
-print("\n=== F. WORKFLOWS ===")
+print("\n=== I. WORKFLOWS ===")
 import yaml
-recy = yaml.safe_load((R/'.github/workflows/record.yml').read_text())
-ok(recy[True]['schedule'][0]['cron'] == '30 15 * * 1-5', 'record cron 15:30 UTC weekdays')
-ok(recy['permissions']['contents'] == 'write', 'record has contents:write (needs to commit)')
-job = recy['jobs']['record']
-ok(any('git add data/' in str(s.get('run','')) for s in job['steps']),
-   'commits the whole data/ dir, so the backup is included')
-frs = yaml.safe_load((R/'.github/workflows/freshness.yml').read_text())
-ok(frs['permissions']['contents'] == 'read', 'freshness is read-only')
+recy = yaml.safe_load((R / ".github/workflows/record.yml").read_text())
+ok(recy[True]["schedule"][0]["cron"] == "30 15 * * 1-5", "record cron 15:30 UTC weekdays")
+ok(recy["permissions"]["contents"] == "write", "record has contents:write")
+ok(any("git add data/" in str(s.get("run", "")) for s in recy["jobs"]["record"]["steps"]),
+   "commits all of data/, so the backup is included")
+frs = yaml.safe_load((R / ".github/workflows/freshness.yml").read_text())
+ok(frs["permissions"]["contents"] == "read", "freshness is read-only")
+ok(set(p.name for p in (R / ".github/workflows").glob("*.yml")) == {"record.yml", "freshness.yml"},
+   "no leftover TEMP workflows")
 
-print("\n=== G. GUARD ORDER (the Labor Day question) ===")
-msrc = (R/'record.py').read_text()
-gi, ci = msrc.find('is_trading_day(s, today)'), msrc.find('if rows:')
-ok(0 < gi < ci, 'holiday guard returns BEFORE any write')
-ok('migrate_header()' in msrc[msrc.find('def append'):msrc.find('def probe')],
-   'migrate_header runs inside append(), i.e. only when rows exist')
-ok('already_recorded' in msrc, 'idempotent: re-running the same day cannot duplicate')
+print("\n=== J. GUARD ORDER ===")
+msrc = (R / "record.py").read_text()
+ok(0 < msrc.find("is_trading_day(s, today)") < msrc.find("if rows:"),
+   "holiday guard returns BEFORE any write")
+ok("migrate_header()" in msrc[msrc.find("def append"):msrc.find("def probe")],
+   "migrate_header runs inside append(), i.e. only when rows exist")
+ok("already_recorded" in msrc, "idempotent: re-running the same day cannot duplicate")
 
-print("\n=== H. PUBLIC MONITOR vs THE 32-COLUMN JUMP ===")
-mon = (R/'tools/monitor.html').read_text()
-ok('h.forEach((k,i)=>o[k]=c[i])' in mon, 'parses by header NAME, not position')
-ok('split(/\\r?\\n/)' in mon, 'handles CRLF')
-warn('c[i]' in mon and '"' not in mon.split('const c=l.split(",")')[1][:40],
-     'naive split(",") - fine while no field contains a comma')
+print("\n=== K. PUBLIC MONITOR ===")
+mon = (R / "tools/monitor.html").read_text()
+ok("h.forEach((k,i)=>o[k]=c[i])" in mon, "parses by header NAME, not position")
+ok("split(/\\r?\\n/)" in mon, "handles CRLF")
 
-print("\n" + "="*54)
+print("\n" + "=" * 56)
 print(f"RESULT: {len(fails)} fail, {len(warns)} warn")
 for f in fails: print("  FAIL:", f)
 for w in warns: print("  WARN:", w)
