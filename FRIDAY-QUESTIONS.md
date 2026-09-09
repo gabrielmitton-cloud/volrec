@@ -1,5 +1,85 @@
 # Friday questions - the page to actually bring
 
+> **READ THIS FIRST - added 9 Sep after verifying the Pepperdine research.**
+>
+> Your Friday professor is very likely **Clemens Kownatzki** (Graziadio).
+> His PhD dissertation was *"Examination of implied volatility as a proxy for
+> financial risk."* He co-authored a 2025 paper in *Risks* on volatility
+> forecasting. If it is him, sections 1-7 below are still right, but **lead
+> with section 0**, which is new and much stronger.
+>
+> Note the org chart: he is **Graziadio**, you are **Seaver**. You may need an
+> introduction rather than a cold approach.
+
+---
+
+## 0. Open with his own paper. Verified, not secondhand.
+
+Qiu, Kownatzki, Scalzo & Cha (2025), *"Historical Perspectives in Volatility
+Forecasting Methods with Machine Learning,"* Risks 13(5), 98.
+
+**I checked their public data repository myself** at
+`github.com/WithAnOrchid0513/VolData`. It contains exactly two data files:
+
+- `VIX_data.csv` - header `DATE,OPEN,HIGH,LOW,CLOSE`, 8,509 rows,
+  **02 Jan 1990 to 29 Sep 2023**. That is the *identical* Cboe file format and
+  start date this project already pulls from `cdn.cboe.com`.
+- `SPY_data.csv` - Yahoo Finance format with an Adj Close column, 7,552 rows,
+  **01 Oct 1993 to 29 Sep 2023**.
+
+**Two things follow, and both are worth saying out loud.**
+
+**First, you independently built the same design he published.** Sample A uses
+Cboe VIX index history as the implied-vol measure and ETF prices for realised
+vol. So does his paper. You did not copy it; you arrived at it. That is a
+genuinely good thing to be able to say, and it is verifiable in your git log.
+
+> *"I built a validation sample from Cboe's VIX history against ETF prices
+> before I found your paper, and it looks like that's the same shape as what
+> you did in the Risks paper. Did you land there because the licensed options
+> data isn't available here, or because it's the better measure anyway?"*
+
+**Second, and this is the practical one: they used Yahoo Finance for prices.**
+
+The single thing blocking this project from extending past 2016 is *price*
+history, not volatility history. Cboe gives VIX back to 1990 for free, but the
+free Alpaca plan only serves stock closes back to 2016-01-04, which caps the
+whole long sample. Their SPY series reaches 1993.
+
+> *"For the SPY series you used Yahoo Finance rather than a licensed feed. Is
+> that something you'd consider defensible for my project? My volatility data
+> goes back to 1990 but my price data stops at 2016, and that's the only thing
+> capping my sample."*
+
+If the answer is yes, the long sample roughly **triples**, from about 127
+non-overlapping episodes per pair to somewhere near 380. That is the largest
+single improvement available to this project right now, and it costs nothing.
+
+**Be honest about the caveat when you ask:** Yahoo has no official API and the
+usual Python client is unofficial, which is why I ruled out a similar scraped
+source earlier. But a peer-reviewed paper by his own group used it, so the
+question is fair and worth his judgement rather than mine.
+
+## 0b. The two follow-ups worth having ready
+
+> *"You have a theta-scaling project listed as in progress. That needs real
+> option chains with greeks. Is there a path for an undergraduate to work on
+> something like that, and is there a data source behind it I could learn from?"*
+
+> *"The Keck Institute funded the Risks paper through an undergraduate research
+> grant, and Fabien Scalzo co-authored it. Is a Seaver student eligible, and
+> would a faculty sponsor change what data I could get access to?"*
+
+That second one matters because it reframes the whole problem. Library access
+is a wall: WRDS excludes undergraduates and nothing else Pepperdine publishes
+carries options data. **A funded project with a faculty sponsor can buy data.**
+That is a different door entirely.
+
+Caveat: the Keck pages are more than two years stale, so confirm the current
+cycle by email rather than trusting what is posted.
+
+---
+
 One page. Ask 1 to 3 even if time runs short: those change the design. The rest
 only add to it. Leave room to write, and write in the room, not after.
 
