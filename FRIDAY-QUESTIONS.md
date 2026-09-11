@@ -1,81 +1,60 @@
 # Friday questions - the page to actually bring
 
-> **READ THIS FIRST - added 9 Sep after verifying the Pepperdine research.**
+> **CORRECTED 11 Sep, morning of the meeting.** The meeting is with
+> **Levon Goukasian** (Seaver, Singleton Chair in Finance), not Kownatzki.
+> Checked his page directly: his research is asset pricing, portfolio
+> management, hedging via Monte Carlo simulation, and he teaches Financial
+> Derivatives. No published work found on options, implied vol, or the
+> variance risk premium specifically - do not open with the Risks paper or
+> the dissertation, they are not his. Everything below still works; open
+> with the plain version instead of section 0's paper-specific hook:
 >
-> Your Friday professor is very likely **Clemens Kownatzki** (Graziadio).
-> His PhD dissertation was *"Examination of implied volatility as a proxy for
-> financial risk."* He co-authored a 2025 paper in *Risks* on volatility
-> forecasting. If it is him, sections 1-7 below are still right, but **lead
-> with section 0**, which is new and much stronger.
+> *"I'm doing independent research on options and volatility, testing
+> whether implied volatility overshoots realized volatility. I've been
+> recording my own daily data since early September. Marc Vinyard in the
+> library pointed me your way given your background in derivatives and
+> risk management."*
 >
-> Note the org chart: he is **Graziadio**, you are **Seaver**. You may need an
-> introduction rather than a cold approach.
+> He is Seaver, same as you, so no introduction-needed friction either.
 
 ---
 
-## 0. Open with his own paper. Verified, not secondhand.
+## 0. Sample A - state it plainly, no paper hook needed
 
-Qiu, Kownatzki, Scalzo & Cha (2025), *"Historical Perspectives in Volatility
-Forecasting Methods with Machine Learning,"* Risks 13(5), 98.
+Sample A uses Cboe's VIX-family index history (free since 1990) as the implied
+vol measure and ETF prices for realised vol, run through the same code that
+will run on the collected panel. It is a validation step, not a discovery.
 
-**I checked their public data repository myself** at
-`github.com/WithAnOrchid0513/VolData`. It contains exactly two data files:
+> *"I built a validation sample from Cboe's VIX history against ETF prices to
+> prove my method before trusting it on my own six-observation panel. It
+> found the premium significant on 9 of 11 pairs. Does that seem like a sound
+> way to validate the approach?"*
 
-- `VIX_data.csv` - header `DATE,OPEN,HIGH,LOW,CLOSE`, 8,509 rows,
-  **02 Jan 1990 to 29 Sep 2023**. That is the *identical* Cboe file format and
-  start date this project already pulls from `cdn.cboe.com`.
-- `SPY_data.csv` - Yahoo Finance format with an Adj Close column, 7,552 rows,
-  **01 Oct 1993 to 29 Sep 2023**.
-
-**Two things follow, and both are worth saying out loud.**
-
-**First, you independently built the same design he published.** Sample A uses
-Cboe VIX index history as the implied-vol measure and ETF prices for realised
-vol. So does his paper. You did not copy it; you arrived at it. That is a
-genuinely good thing to be able to say, and it is verifiable in your git log.
-
-> *"I built a validation sample from Cboe's VIX history against ETF prices
-> before I found your paper, and it looks like that's the same shape as what
-> you did in the Risks paper. Did you land there because the licensed options
-> data isn't available here, or because it's the better measure anyway?"*
-
-**Second, and this is the practical one: they used Yahoo Finance for prices.**
-
-The single thing blocking this project from extending past 2016 is *price*
+**The practical ask - still worth making, independent of who is in the room:**
+the single thing blocking this project from extending past 2016 is *price*
 history, not volatility history. Cboe gives VIX back to 1990 for free, but the
-free Alpaca plan only serves stock closes back to 2016-01-04, which caps the
-whole long sample. Their SPY series reaches 1993.
+free Alpaca plan only serves stock closes back to 2016-01-04.
 
-> *"For the SPY series you used Yahoo Finance rather than a licensed feed. Is
-> that something you'd consider defensible for my project? My volatility data
-> goes back to 1990 but my price data stops at 2016, and that's the only thing
-> capping my sample."*
+> *"My volatility data goes back to 1990 but my price data stops at 2016 on
+> the free plan I'm using. Is there a defensible free source that reaches
+> further back? I looked at Yahoo Finance but it has no official API, so I'm
+> wary of building on it without a second opinion."*
 
-If the answer is yes, the long sample roughly **triples**, from about 127
-non-overlapping episodes per pair to somewhere near 380. That is the largest
-single improvement available to this project right now, and it costs nothing.
+If a defensible source exists, the long sample could triple, from about 127
+non-overlapping episodes per pair to somewhere near 380, at no cost.
 
-**Be honest about the caveat when you ask:** Yahoo has no official API and the
-usual Python client is unofficial, which is why I ruled out a similar scraped
-source earlier. But a peer-reviewed paper by his own group used it, so the
-question is fair and worth his judgement rather than mine.
+## 0b. Keck funding - ask in general terms
 
-## 0b. The two follow-ups worth having ready
+> *"I understand Pepperdine's Keck Institute funds undergraduate data science
+> research. Would a project like this be eligible, and would a faculty sponsor
+> change what data I could realistically get access to?"*
 
-> *"You have a theta-scaling project listed as in progress. That needs real
-> option chains with greeks. Is there a path for an undergraduate to work on
-> something like that, and is there a data source behind it I could learn from?"*
+This matters because it reframes the whole problem. Library access is a wall:
+WRDS excludes undergraduates and nothing else Pepperdine publishes carries
+options data. A funded project with a faculty sponsor can buy data. That is a
+different door entirely.
 
-> *"The Keck Institute funded the Risks paper through an undergraduate research
-> grant, and Fabien Scalzo co-authored it. Is a Seaver student eligible, and
-> would a faculty sponsor change what data I could get access to?"*
-
-That second one matters because it reframes the whole problem. Library access
-is a wall: WRDS excludes undergraduates and nothing else Pepperdine publishes
-carries options data. **A funded project with a faculty sponsor can buy data.**
-That is a different door entirely.
-
-Caveat: the Keck pages are more than two years stale, so confirm the current
+Caveat: the Keck pages were stale when last checked, so confirm the current
 cycle by email rather than trusting what is posted.
 
 ---
