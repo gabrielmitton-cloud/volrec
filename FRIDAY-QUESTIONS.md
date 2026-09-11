@@ -64,6 +64,75 @@ only add to it. Leave room to write, and write in the room, not after.
 
 ---
 
+## The opener - say this first, word for word if it helps
+
+> *"I'm testing whether options are systematically overpriced, whether the
+> volatility implied by option prices overshoots the volatility that actually
+> shows up afterward. Since early September I've been recording my own daily
+> data on 109 tickers, at-the-money, about 30 days out, running automatically
+> through GitHub Actions so I never miss a session. The honest problem is that
+> my tickers move together and my windows overlap, so I have closer to two
+> genuinely independent observations than four thousand, which is why I built a
+> validation sample on ten years of Cboe index data before trusting anything my
+> own panel says."*
+
+Three sentences: what you are testing, how you collect it, and the limitation
+you already understand. That last clause does the heavy lifting. It tells him in
+six seconds that you know where the bodies are buried.
+
+---
+
+## THE THREE QUESTIONS THAT MAKE THIS UNIQUE - added 11 Sep
+
+Everything else in this file asks "am I doing the standard thing correctly?"
+Necessary, but answering all of it perfectly produces a competent replication of
+known results. These three ask what would make the project *distinctive*, which
+is the more interesting conversation for a professor and the one almost no
+student starts. **If time is short, these beat everything below.**
+
+### U1. The blunt one
+
+> *"I think I can execute the standard version correctly. What would make this
+> interesting rather than just correct?"*
+
+### U2. The term structure - the thing that genuinely cannot be bought
+
+Verified in the data 11 Sep: the recorder captures a second expiry on every row,
+giving a term-structure slope per ticker per day. Over three days, **315 slopes,
+103 inverted, 33%**, with large cross-sectional spread on the same dates (ORCL
+deeply inverted while NFLX was steeply upward).
+
+Two things make this rare. **It cannot be bought** - there is no historical
+option-quote endpoint at any price, so this exists only because the recording
+started. VIX history is free and everyone has it; a per-ticker term structure
+across 109 names spanning asset classes is not purchasable retroactively at any
+budget. And **there is already a result on it**: H1c found the premium collapses
+from +3.87 to +1.22 vol points when the market curve is inverted, roughly a
+third. That is at the index level. Nobody has checked whether it holds
+ticker-by-ticker.
+
+> *"I record a second expiry on every ticker, so I have a term-structure slope
+> per name per day. About a third are inverted, with big cross-sectional spread.
+> At the index level I found the premium is roughly a third as large when the
+> curve is inverted. Is testing whether that holds ticker-by-ticker worth
+> pursuing, and is it worth more that this data can't be bought retroactively?"*
+
+### U3. The cross-section - his home turf, lead with this if the talk drifts there
+
+Goukasian's field is asset pricing, not derivatives microstructure. This is the
+question best matched to what he actually knows.
+
+> *"Carr and Wu found large cross-sectional variation across individual stocks,
+> with bigger premiums for names more sensitive to market variance. I have 109
+> tickers spanning indices, sectors, commodities, FX and single names. Given
+> your work is in asset pricing, is the index-versus-single-name comparison a
+> more promising angle than adding more time series?"*
+
+HANDOFF section 3 already notes the literature treats index-vs-single-name as
+the real finding. This is the question that connects that to his expertise.
+
+---
+
 ## Opening, about 30 seconds
 
 "I'm recording at-the-money implied volatility daily on 109 tickers, 21 to 45
