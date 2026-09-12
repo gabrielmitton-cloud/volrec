@@ -1066,7 +1066,7 @@ a single day.
 
 ---
 
-## 16. Current state and what to do next — 13 September 2026
+## 16. Current state and what to do next — 12 September 2026
 
 ### What is running, unattended
 
@@ -1105,9 +1105,17 @@ pressure test.
 ### The immediate next actions, in order
 
 1. **Check Monday's surface run.** `gh run list --workflow=surface.yml`. The
-   commit path has never executed with a real file, so it is the most likely
-   thing to break. A green run that commits *nothing* is the silent failure
-   worth catching; check that `data/surface.csv` exists and has Monday rows.
+   commit path has still never executed with a real file in CI, but it is no
+   longer unproven: on 12 Sep it was run verbatim against a throwaway local
+   repo, under the conditions Monday will present - a depth-1 checkout like
+   `actions/checkout@v5` produces, a real `surface.csv`, and a concurrent
+   `record.yml` push landing on origin in between. The rebase resolved, the
+   push landed, both data files coexisted, and the ATM row survived. So the
+   remaining risk is not the git plumbing; it is whether `surface.py` writes a
+   file at all. **A green run that commits *nothing* is the silent failure
+   worth catching**, because the no-data guard exits 0 with a message and a
+   holiday looks identical to a collection failure. Judge the run by whether
+   `data/surface.csv` exists with Monday rows, not by the green check.
 2. **Once two consecutive days exist**, run `python hedged.py` and `python
    modelfree.py`. H4 becomes testable; H3 starts becoming a series rather than
    a calibration.
