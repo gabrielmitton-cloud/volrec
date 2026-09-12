@@ -72,8 +72,25 @@ SURFACE = ["SPY", "QQQ", "IWM", "GLD", "USO", "TSLA", "NVDA", "AAPL"]
 
 TARGET_DTE = 30
 DTE_WINDOW = (21, 45)
-STRIKE_BAND = 0.10          # matches the advice: within ~10% of spot
-STRIKE_COUNT = 20           # ~20 strikes across the band, per the advice
+# Measured against Cboe's published indices on 2026-09-11, comparing the
+# model-free estimate built from this file against VIX/VXN/RVX/GVZ/OVX:
+#
+#     band x strikes    mean |gap|   worst    rows/day   MB/yr
+#     +/-10% x 20          3.97      -12.37      532       23
+#     +/-20% x 30          1.31       -4.39      846       36
+#     +/-30% x 40          0.59       -1.84     1158       50
+#
+# The advice was +/-10% and twenty strikes. That truncates badly, and it
+# truncates WORST where volatility is highest: a +/-10% band is about 2.2
+# standard deviations on a 16-vol name but only 0.6 on a 59-vol name like USO,
+# which is why oil was 12 points light. Cboe integrates until it sees two
+# consecutive zero bids, which reaches far further into the tails.
+#
+# At +/-30% the estimate matches the published index to 0.01 points on SPY and
+# 0.59 on average. That accuracy is the whole basis of the comparison study, so
+# it is worth the storage.
+STRIKE_BAND = 0.30
+STRIKE_COUNT = 40
 # Target moneyness levels, evenly spaced across the band. The nearest available
 # strike to each target is kept, so coverage is comparable across underlyings
 # regardless of how finely that underlying's strikes are spaced.
