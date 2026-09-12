@@ -40,7 +40,7 @@ jobs:
                   bid  = sum(1 for x in r if x["bid"] not in ("", None))
                   ks   = [float(x["strike"]) for x in r]
                   print(f"  {sym:5s} spot {spots[sym]:>8.2f} | {len(r):>3d} rows | "
-                        f"exp {r[0]['expiration']} dte {r[0]['dte']:>2s} | "
+                        f"exp {r[0]['expiration']} dte {r[0]["dte"]} | "
                         f"iv {ivs:>3d} greeks {grk:>3d} quotes {bid:>3d} | "
                         f"vol>0 {sum(1 for v in vols if v>0):>3d} tot {sum(vols):>8,} | "
                         f"K {min(ks):.0f}-{max(ks):.0f}")
