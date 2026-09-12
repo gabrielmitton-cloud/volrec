@@ -1,3 +1,7 @@
+> **HISTORICAL — prep for the 11 September 2026 meeting, which happened.**
+> Kept for the record. What the meeting actually changed is in HANDOFF §14.
+> Current state is HANDOFF §16.
+
 # Friday questions - the page to actually bring
 
 > **CORRECTED 11 Sep, morning of the meeting.** The meeting is with

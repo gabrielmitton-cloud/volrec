@@ -1,3 +1,7 @@
+> **HISTORICAL — prep for the 11 September 2026 meeting, which happened.**
+> The meeting ran ten minutes and none of these questions were asked; they went
+> into a follow-up email instead. Kept for the record. Current state is HANDOFF §16.
+
 # Friday 11 September 2026 - meeting prep
 
 A volatility researcher is going to point toward databases, calculations and

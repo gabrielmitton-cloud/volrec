@@ -4,14 +4,24 @@ Context for anyone (or any assistant session) picking this project up cold.
 Read this before proposing changes. It records not just the current state but
 the reasoning behind decisions already made, so they don't get re-argued.
 
-Last updated: 6 September 2026.
+Last updated: 13 September 2026.
 
-**If it is Wednesday 9 September 2026 or later, start at `WEDNESDAY.md`** -
-it is the work queue and it records what has already been verified.
+**START AT §16.** It is the current state and the next actions, and it is the
+only section guaranteed to be current. Everything before it is either settled
+history or reasoning you should not re-argue.
 
-**Start at §12 (Roadmap)** if you are picking this up to do work. §1-§3 are the
-framing and the decisions that are closed. §4 is the analysis spec and is the
-densest part - read it before writing any analysis code.
+Then, as needed:
+- **§1-§3** the framing and the closed decisions. Do not reopen without new,
+  dated evidence. §3 in particular records why social sentiment was rejected.
+- **§4** the analysis spec. Dense. Read before writing analysis code.
+- **§13-§15** the two-sample architecture, what the 11 Sep meeting retired, and
+  what Bloomberg is actually for.
+- **`hypotheses/`** four registered hypotheses. Read `hypotheses/README.md`
+  before adding a fifth.
+
+**Historical, do not act on:** `WEDNESDAY.md` (a 9 Sep punch list, complete),
+`FRIDAY-MEETING.md` and `FRIDAY-QUESTIONS.md` (prep for a meeting that
+happened on 11 Sep). They are kept for the record, not as instructions.
 
 ---
 
@@ -1053,3 +1063,78 @@ there.
 first has collected a single real row is how both end up unfinished. Revisit
 once the surface has accumulated and H3 has been tested on a series rather than
 a single day.
+
+---
+
+## 16. Current state and what to do next — 13 September 2026
+
+### What is running, unattended
+
+| workflow | cron (UTC) | writes | notes |
+|---|---|---|---|
+| `record.yml` | 15:30 weekdays | `data/iv_history.csv` | 109 tickers, ATM. The irreplaceable one. |
+| `surface.yml` | 15:40 weekdays | `data/surface.csv` | 8 underlyings, full strike surface. **First real run: Mon 15 Sep.** |
+| `freshness.yml` | 17:00 daily | nothing | Fails loudly if the panel goes stale. |
+
+GitHub delays scheduled runs; both have landed around 18:45-19:00 UTC in
+practice, which is systematic rather than drifting and is measured by the
+pressure test.
+
+### What is built
+
+| file | what it does |
+|---|---|
+| `record.py` | the daily ATM recorder. **Do not modify the WATCHLIST.** |
+| `surface.py` | the daily strike-surface recorder, with volume and open interest |
+| `analyze.py` | shared estimators. Both samples import from here, deliberately. |
+| `modelfree.py` | Cboe's variance methodology, and the gap against the published index |
+| `hedged.py` | per-contract delta-hedged P&L, the strike-specific outcome |
+| `tools/pressure_test.py` | 49 read-only integrity checks. Run before and after anything. |
+| `tools/test_hedged.py` | 18 hand-computed cases for the hedging math |
+| `tools/fred.py` | FRED client, used for the discount rate |
+
+### Hypotheses
+
+| id | status | where it stands |
+|---|---|---|
+| H1 | **tested** | VRP positive on 9 of 11 Cboe pairs, VIX/SPY t=5.14 |
+| H2 | **tested** | log variance strongest (t=16.3), raw variance weakest (t=2.1). Registered, **not adopted**. |
+| H3 | **calibrated, not tested** | free-data model-free estimate matched the published VIX to 0.01 pts on one day. Needs a series. |
+| H4 | **registered, untestable yet** | needs two consecutive days of surface data. Earliest Tue 16 Sep. |
+
+### The immediate next actions, in order
+
+1. **Check Monday's surface run.** `gh run list --workflow=surface.yml`. The
+   commit path has never executed with a real file, so it is the most likely
+   thing to break. A green run that commits *nothing* is the silent failure
+   worth catching; check that `data/surface.csv` exists and has Monday rows.
+2. **Once two consecutive days exist**, run `python hedged.py` and `python
+   modelfree.py`. H4 becomes testable; H3 starts becoming a series rather than
+   a calibration.
+3. **The Bloomberg session.** `BLOOMBERG-MONDAY.md` is the checklist. It is a
+   validation exercise, not a collection exercise, and it is the only way to
+   separate feed quality from strike coverage inside H3's residual gap.
+4. **Goukasian has not replied** to the follow-up sent 11 Sep. Six questions,
+   four practical and two marked no-rush. The publishing question matters most:
+   whether Bloomberg-derived output may appear in a public repo.
+
+### What is dead. Do not revive.
+
+- **Bloomberg as a history source** - 90 calendar days only. §14.1.
+- **OptionMetrics via WRDS** - faculty, staff and doctoral only at Pepperdine.
+- **"This data cannot be bought"** - false. §14.1.
+- **Within-day cross-strike differencing** - cancels the realised term. §14.2.
+- **Social sentiment** - §3.
+- **Day-trading signal scanners** - §12 deferred list.
+
+### Things that were true and are worth not relearning
+
+- The recorder already fetches every strike within the band and discards all but
+  one. That is why the surface costs no extra API calls.
+- Alpaca's free plan serves `sip` back to 2016-01-04 but **403s on recent SIP
+  data**, so `fetch_closes` clamps `end` to T-1. Do not "fix" this by reverting
+  to `iex`.
+- FRED's DISCONTINUED tags are stale for VXSLV and VXGDX; both relaunched in
+  2025. Check Cboe, not FRED, for whether a series still publishes.
+- A fixed percentage strike band truncates worst where volatility is highest.
+  ±10% is ~2.2 sigma on a 16-vol name and ~0.6 on 59-vol oil.

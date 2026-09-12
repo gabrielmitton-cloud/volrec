@@ -1,3 +1,6 @@
+> **HISTORICAL — a punch list for Wednesday 9 September 2026, completed.**
+> Kept for the record. Do not act on it. Current state is HANDOFF §16.
+
 # Punch list for Wed 9 September 2026
 
 > **STATUS 9 Sep 07:20 UTC: everything mechanical on this list is done.**
