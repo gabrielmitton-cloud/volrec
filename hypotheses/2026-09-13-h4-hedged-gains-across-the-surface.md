@@ -1,0 +1,99 @@
+# H4 — Delta-hedged gains are negative, vary across the strike surface, and relate to where volume sits
+
+**Registered:** 2026-09-13, **before `data/surface.csv` contains a single row.**
+The surface begins recording on 2026-09-14. This file exists specifically so
+that the predictions below are on record before any of the data that tests them
+exists, which is the only thing separating a prediction from a description.
+**Status:** registered, untestable until at least two consecutive trading days
+of surface data exist (2026-09-15 at the earliest).
+**Sample:** `data/surface.csv`, via `hedged.py`.
+
+## Why this is registered now rather than after the first run
+
+`hedged.py` already prints delta-hedged gains broken out by moneyness bucket and
+by volume tercile. Those breakdowns answer a question. Running them first and
+writing the hypothesis afterwards would make this file a summary of results
+dressed as a prediction, which is precisely what `hypotheses/README.md` exists
+to prevent. So the predictions go down first, with their directions, while the
+file they apply to is empty.
+
+## Honest position relative to the literature
+
+**This is close to a replication, and should be described that way.** The
+novelty is the data, not the question: a single name, own-collected, at zero
+budget, with volume and open interest per contract. The findings below are all
+predicted *from published work*, so confirming them is a validation of the
+pipeline more than a discovery, and failing to confirm them is more likely to
+indicate a problem here than a new fact about markets.
+
+- Bakshi & Kapadia (2003, RFS 16(2) 527-566): delta-hedged gains on index
+  options are significantly negative, and the underperformance is **smaller
+  away from the money**.
+- Bollen & Whaley (2004, JF 59(2) 711-753): delta-neutral writing abnormal
+  returns **decrease monotonically across exercise prices**.
+- Yuan, Liu, Chen & Hu (2024, *NAJEF* 74, 102233): option trading volume
+  **negatively and significantly predicts** the cross-section of delta-hedged
+  option returns, across moneyness and maturity.
+
+## The predictions
+
+**H4a — the baseline.** Mean delta-hedged gain, scaled by spot, is **negative**
+across the pooled sample. Under this project's convention a negative hedged gain
+means the option buyer lost, which is a positive variance risk premium.
+
+**H4b — shape across the surface.** The gain is **most negative at the money**
+and **less negative in both wings**, following Bakshi & Kapadia. Stated as an
+ordering: `at the money` is more negative than both `OTM put` and `OTM call`,
+which are in turn more negative than the two deep buckets.
+
+**H4c — volume.** The **high-volume tercile shows a more negative mean hedged
+gain than the low-volume tercile**, following Yuan et al. Directional, stated in
+advance.
+
+**H4d — the one that is actually mine.** Because this project records volume and
+open interest per contract, the two can be separated. **Prediction: volume
+carries the relationship in H4c and open interest adds little once volume is
+controlled for**, because volume is flow, meaning active demand, while open
+interest is an accumulated stock that includes stale positions. I have found no
+published work separating them this way and am not claiming it is unexplored,
+only that I have not found it.
+
+## What would falsify each
+
+- **H4a** fails if the pooled mean gain is positive. That would most likely mean
+  a sign error in `hedged.py`, not a market finding, and the first response
+  should be to re-run `tools/test_hedged.py` rather than to write it up.
+- **H4b** fails if the ordering is absent or reversed.
+- **H4c** fails if high-volume contracts show gains equal to or less negative
+  than low-volume ones.
+- **H4d** fails if open interest predicts as well as or better than volume.
+
+## Specification — frozen here
+
+- Outcome: `hedged.py`'s scaled delta-hedged gain, P&L divided by the spot at
+  run start, reported in basis points of spot.
+- A run is one contract observed on consecutive trading days, gaps over four
+  calendar days breaking the run so a holiday weekend is not spliced.
+- Buckets: deep OTM put below 0.90 moneyness, OTM put 0.90-0.97, at the money
+  0.97-1.03, OTM call 1.03-1.10, deep OTM call above 1.10.
+- Volume terciles computed within the pooled sample, on contract volume at run
+  start.
+- Both the volatility and the log-variance formulations from H2 remain available
+  but are **not** used here. This hypothesis is about hedged gains, which is a
+  strike-specific outcome, and that is the whole point per HANDOFF 14.2.
+
+## The inference limit, stated before any number is seen
+
+Runs overlap in calendar time and share underlyings. **They are not independent
+observations**, and the pooled t-statistic `hedged.py` prints is descriptive
+only. `hedged.py` says so in its own output and `tools/pressure_test.py` asserts
+that the warning is present.
+
+Any inferential claim requires demeaning the cross-section by date and
+clustering standard errors on date, per HANDOFF 14.3. **Until that is
+implemented, H4 results are reported as descriptive patterns and nothing is
+called significant.**
+
+## Adjustment log
+
+- *(none yet)*
