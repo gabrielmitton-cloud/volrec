@@ -12,36 +12,51 @@ jobs:
       - uses: actions/setup-python@v6
         with: { python-version: "3.12" }
       - run: pip install requests
-      - name: Probe the surface recorder
+      - name: Probe the surface recorder (bypassing the weekend guard)
         env:
           ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
           ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
         run: |
           python - <<'PY' 2>&1 | tee /tmp/o.txt
-          from pathlib import Path
-          import surface, csv, os
-          surface.OUT = Path("/tmp/surface.csv")     # never the real file
-          surface.main()
-          if surface.OUT.exists():
-              rows = list(csv.DictReader(surface.OUT.open(newline="")))
-              print(f"\n=== MEASURED ===")
-              print(f"rows written: {len(rows)}")
-              print(f"bytes: {surface.OUT.stat().st_size:,}")
-              print(f"est. per trading day: {surface.OUT.stat().st_size:,} B")
-              print(f"est. per year (252d): {surface.OUT.stat().st_size*252/1e6:.1f} MB")
-              by = {}
-              for r in rows: by.setdefault(r["symbol"], []).append(r)
-              print("\nper ticker:")
-              for k, v in by.items():
-                  vols = [int(x["volume"]) for x in v if str(x["volume"]).isdigit()]
-                  iv_ok = sum(1 for x in v if x["iv"])
-                  print(f"  {k:5s} {len(v):>3d} rows | iv on {iv_ok:>3d} | "
-                        f"volume>0 on {sum(1 for x in vols if x>0):>3d} | "
-                        f"total vol {sum(vols):>9,} | "
-                        f"strikes {min(float(x['strike']) for x in v):.0f}-"
-                        f"{max(float(x['strike']) for x in v):.0f}")
+          # Quotes are stale on a weekend. That is fine: this test is about
+          # plumbing - row counts, columns, whether volume and greeks populate -
+          # not about data quality.
+          import record as R, surface, time
+          from datetime import date, timedelta
+          today = date.today()
+          while today.weekday() >= 5:          # step back to the last weekday
+              today -= timedelta(days=1)
+          print(f"probing as of {today} ({today.strftime('%A')})\n")
+          s = R.session()
+          spots = R.spot_prices(s, surface.SURFACE)
+          allrows, tot = [], 0
+          for sym in surface.SURFACE:
+              try:
+                  r = surface.rows_for(s, sym, spots[sym], today)
+                  allrows += r
+                  vols = [int(x["volume"]) for x in r if str(x["volume"]).isdigit()]
+                  ivs  = sum(1 for x in r if x["iv"] not in ("", None))
+                  grk  = sum(1 for x in r if x["delta"] not in ("", None))
+                  bid  = sum(1 for x in r if x["bid"] not in ("", None))
+                  ks   = [float(x["strike"]) for x in r]
+                  print(f"  {sym:5s} spot {spots[sym]:>8.2f} | {len(r):>3d} rows | "
+                        f"exp {r[0]['expiration']} dte {r[0]['dte']:>2s} | "
+                        f"iv {ivs:>3d} greeks {grk:>3d} quotes {bid:>3d} | "
+                        f"vol>0 {sum(1 for v in vols if v>0):>3d} tot {sum(vols):>8,} | "
+                        f"K {min(ks):.0f}-{max(ks):.0f}")
+              except Exception as e:
+                  print(f"  {sym:5s} FAILED: {type(e).__name__}: {e}")
+              time.sleep(1.0)
+          import csv, io
+          buf = io.StringIO()
+          w = csv.DictWriter(buf, fieldnames=surface.FIELDS); w.writeheader(); w.writerows(allrows)
+          n = len(buf.getvalue().encode())
+          print(f"\n=== SIZING ===")
+          print(f"rows/day {len(allrows)}   bytes/day {n:,}   "
+                f"per year (252d) {n*252/1e6:.1f} MB")
+          if allrows:
               print("\nsample row:")
-              for k, x in list(rows[0].items()): print(f"  {k:15s} {x}")
+              for k, v in allrows[0].items(): print(f"  {k:14s} {v}")
           PY
           cat /tmp/o.txt >> "$GITHUB_STEP_SUMMARY"
       - name: Assert the real dataset was untouched
