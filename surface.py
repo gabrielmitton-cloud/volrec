@@ -51,6 +51,7 @@ import time
 from datetime import date, timedelta
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # importable from anywhere
 import record as R
 
 # Names to collect. Deliberately small: the file grows every trading day and

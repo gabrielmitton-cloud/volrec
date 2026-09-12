@@ -162,6 +162,45 @@ ok(inspect.signature(an.fetch_closes).parameters["feed"].default == "sip",
 ok("subscription does not permit" in (R / "analyze.py").read_text(),
    "the sip recent-data clamp is present (free plan 403s on end=today)")
 
+print("\n=== H2. SURFACE FILE (strike surface, separate from the ATM panel) ===")
+surf = R / "data/surface.csv"
+import importlib.util as _iu
+_ss = _iu.spec_from_file_location("surf", R / "surface.py")
+_sm = _iu.module_from_spec(_ss); _ss.loader.exec_module(_sm)
+if surf.exists():
+    srows = list(csv.DictReader(surf.open(newline="")))
+    shdr = next(csv.reader(surf.open(newline="")))
+    ok(shdr == _sm.FIELDS, f"surface header matches its FIELDS ({len(shdr)} cols)")
+    ok(all(len(r) == len(_sm.FIELDS) for r in srows), "no ragged surface rows")
+    ok(len({(r["date"], r["option_symbol"]) for r in srows}) == len(srows),
+       "no duplicate (date, option_symbol)")
+    sdays = sorted({r["date"] for r in srows})
+    print(f"  INFO  {len(srows)} rows over {len(sdays)} days, "
+          f"{sdays[0]} to {sdays[-1]}")
+    last = [r for r in srows if r["date"] == sdays[-1]]
+    volpop = sum(1 for r in last if str(r.get("volume", "")).strip() not in ("", "0"))
+    warn(volpop / max(len(last), 1) >= 0.80,
+         f"volume populated on >=80% of the latest day ({100*volpop/max(len(last),1):.0f}%)")
+    mny = [float(r["moneyness"]) for r in last if r.get("moneyness")]
+    if mny:
+        warn(max(mny) - min(mny) > 0.10,
+             f"latest day spans a real moneyness range ({min(mny):.2f}-{max(mny):.2f})")
+    mb = surf.stat().st_size / 1e6
+    warn(mb < 200, f"surface file under 200 MB (currently {mb:.1f} MB)")
+else:
+    print("  INFO  no surface.csv yet (expected before the first surface run)")
+# Check the CODE, not the docstring: surface.py documents that it stays away
+# from the ATM panel, so a plain substring search matches its own prose.
+import ast as _ast
+_tree = _ast.parse((R / "surface.py").read_text())
+_body = [n for n in _tree.body
+         if not (isinstance(n, _ast.Expr) and isinstance(n.value, _ast.Constant)
+                 and isinstance(n.value.value, str))]
+_code = "\n".join(_ast.unparse(n) for n in _body)
+ok("iv_history" not in _code,
+   "surface.py code never touches the protected ATM panel (docstring aside)")
+ok(_sm.OUT.name == "surface.csv", f"surface.py writes only to surface.csv (OUT={_sm.OUT.name})")
+
 print("\n=== I. WORKFLOWS ===")
 import yaml
 recy = yaml.safe_load((R / ".github/workflows/record.yml").read_text())
@@ -171,8 +210,17 @@ ok(any("git add data/" in str(s.get("run", "")) for s in recy["jobs"]["record"][
    "commits all of data/, so the backup is included")
 frs = yaml.safe_load((R / ".github/workflows/freshness.yml").read_text())
 ok(frs["permissions"]["contents"] == "read", "freshness is read-only")
-ok(set(p.name for p in (R / ".github/workflows").glob("*.yml")) == {"record.yml", "freshness.yml"},
+ok(set(p.name for p in (R / ".github/workflows").glob("*.yml"))
+   == {"record.yml", "freshness.yml", "surface.yml"},
    "no leftover TEMP workflows")
+srf = yaml.safe_load((R / ".github/workflows/surface.yml").read_text())
+ok(srf[True]["schedule"][0]["cron"] == "40 15 * * 1-5", "surface cron staggered 10 min after record")
+ok(any("git add data/surface.csv" in str(st.get("run", ""))
+       for st in srf["jobs"]["surface"]["steps"]),
+   "surface workflow stages ONLY data/surface.csv")
+ok(any("git diff --exit-code -- data/iv_history.csv" in str(st.get("run", ""))
+       for st in srf["jobs"]["surface"]["steps"]),
+   "surface workflow aborts if the ATM panel was touched")
 
 print("\n=== J. GUARD ORDER ===")
 msrc = (R / "record.py").read_text()

@@ -1,0 +1,41 @@
+name: surface
+on:
+  schedule:
+    - cron: "40 15 * * 1-5"    # 10 min after record.yml, to avoid a rate-limit
+                               # collision. Both are delayed by GitHub anyway;
+                               # the stagger is belt and braces, not a guarantee.
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  surface:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - run: python surface.py
+        env:
+          ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
+          ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
+      - name: Refuse to proceed if the ATM panel was touched
+        run: |
+          git diff --exit-code -- data/iv_history.csv data/iv_history.pre-17col.csv
+      - name: Commit only the surface file
+        run: |
+          git config user.name "recorder"
+          git config user.email "recorder@users.noreply.github.com"
+          git add data/surface.csv
+          git diff --staged --quiet && exit 0
+          git commit -m "surface $(date +%F)"
+          # record.yml may be committing at the same time. Rebase and retry
+          # rather than failing: the two jobs touch different files, so a
+          # rebase resolves cleanly.
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin main && exit 0
+            sleep 10
+          done
+          exit 1
