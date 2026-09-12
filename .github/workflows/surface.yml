@@ -26,6 +26,13 @@ jobs:
           git diff --exit-code -- data/iv_history.csv data/iv_history.pre-17col.csv
       - name: Commit only the surface file
         run: |
+          # On a market holiday the calendar guard writes nothing, so the file
+          # may legitimately not exist. `git add` on a missing path exits 128,
+          # which would turn every holiday into a failed run.
+          if [ ! -f data/surface.csv ]; then
+            echo "no surface file today (weekend, holiday, or first run) - nothing to commit"
+            exit 0
+          fi
           git config user.name "recorder"
           git config user.email "recorder@users.noreply.github.com"
           git add data/surface.csv
