@@ -157,17 +157,72 @@ whole strike surface, while this project records at-the-money implied vol. The
 measured gap across four matched pairs on 4 Sep 2026 was 3.61 volatility
 points, and that gap is the skew premium.
 
+## The strike surface, and what free data actually costs
+
+Recording at-the-money implied volatility answers how large the premium is. It
+cannot answer **where in the strike surface it sits**, which needs the whole
+smile and, to say anything about liquidity, the volume at each strike.
+
+Since 14 September 2026 a second recorder captures that: eight underlyings, two
+expiries, forty strikes spanning +/-30% of spot, with **bid, ask, implied
+volatility, all five greeks, volume and open interest per contract**. It costs
+no additional API calls, because the original recorder was already fetching
+those strikes and discarding all but one.
+
+**The measurement question this makes possible.** Cboe publishes the
+authoritative model-free volatility index for five of those underlyings
+(SPY/VIX, QQQ/VXN, IWM/RVX, GLD/GVZ, USO/OVX). So a model-free estimate built
+from a *free, indicative, non-OPRA* feed can be checked against the
+authoritative number, same underlying, same day. Nobody with a research budget
+measures what free data costs, because they buy OptionMetrics instead.
+
+Calibrated 11 September 2026, implementing Cboe's own methodology:
+
+| strike band | mean absolute gap vs Cboe | worst |
+|---|---|---|
+| +/-10% x 20 strikes | 3.97 vol pts | -12.37 |
+| +/-20% x 30 strikes | 1.31 | -4.39 |
+| **+/-30% x 40 strikes** | **0.59** | **-1.84** |
+
+At the widest band **SPY comes in at 15.83 against a published VIX of 15.84.**
+
+The gap was never data quality. It was strike truncation, and it bites hardest
+where volatility is highest: a fixed +/-10% band spans about 2.2 standard
+deviations on a 16-vol name but only 0.6 on 59-vol crude oil, which is why USO
+was twelve points light. **Any study using a fixed percentage strike band is
+therefore most biased on exactly the high-volatility names most likely to be
+interesting.**
+
+### Measuring the premium across strikes, without cancelling it
+
+The obvious approach does not work, and the arithmetic is worth stating. If the
+premium at strike K is `IV(K)^2 - RV` and `RV` is one number shared by every
+strike that day, then differencing two strikes cancels the realised term
+exactly and leaves the shape of the implied volatility surface, which is the
+volatility smile, which Bollen & Whaley published in 2004.
+
+So the outcome here is **strike-specific**: the delta-hedged gain of Bakshi &
+Kapadia (2003). Buy the option, short delta shares, rebalance daily, see what is
+left. The hedging path depends on the contract's own gamma, so it does not
+cancel. A negative hedged gain means the buyer paid for more movement than
+arrived, which is a positive variance risk premium.
+
 ### Repo structure
 
 ```
-data/iv_history.csv        the recorder's sole output, append-only
+record.py                  the daily ATM recorder, 109 tickers
+surface.py                 the daily strike-surface recorder, 8 underlyings
+analyze.py                 shared estimators, used by both samples
+modelfree.py               Cboe's variance methodology, and the gap against it
+hedged.py                  per-contract delta-hedged P&L
+data/iv_history.csv        the ATM panel, append-only, never written elsewhere
 data/iv_history.pre-17col.csv   one-time migration backup, immutable
-hypotheses/                pre-registered, dated, committed BEFORE the join
-features/                  numeric columns eligible to enter a model
-annotations/               prose about specific observations, NEVER a feature
+data/surface.csv           the strike surface
+hypotheses/                pre-registered, dated, committed BEFORE the test
 samples/long/              Sample A
 samples/panel/             Sample B
-tools/pressure_test.py     39 read-only integrity checks
+tools/pressure_test.py     49 read-only integrity checks
+tools/test_hedged.py       18 hand-computed cases for the hedging math
 ```
 
 The rule that holds the rest together: **nothing becomes a model variable
@@ -192,6 +247,9 @@ Automated via `.github/workflows/record.yml`; keys live in repository secrets.
 - [x] Universe selected, first clean run 2026-09-04
 - [x] Schema migrated 17 -> 32 columns, first full 109-ticker run 2026-09-08
 - [x] Sample A built and H1 tested, 9 of 11 pairs significant
+- [x] Strike surface recording, with volume and open interest, from 2026-09-14
+- [x] Model-free estimator matching the published VIX to 0.01 vol points
+- [x] Delta-hedged P&L estimator, 18 unit tests
 - [ ] ~40 trading days accumulated (late October)
 - [ ] Realized-vs-implied analysis
 - [ ] Write-up (February 2027)
