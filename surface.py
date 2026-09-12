@@ -46,6 +46,14 @@ DESIGN NOTES
 - `volume` is recorded per contract and is the point of the exercise. Standard
   variance measures like VIX weight every strike by a fixed mathematical rule
   regardless of whether anyone traded it.
+- Contracts recorded on the previous day are CARRIED FORWARD if they are still
+  inside the DTE window, on top of whatever the moneyness grid selects today.
+  Without this the grid recentres on each day's spot, so a contract silently
+  drops out when the underlying drifts, and any measure that needs a contract
+  observed on consecutive days - delta-hedged profit and loss, most obviously -
+  loses the run at that point. Carrying forward costs nothing: the chain request
+  already returns those contracts. It is bounded naturally, because a contract
+  leaves the window once it falls under the minimum DTE.
 - `open_interest` comes from a different endpoint, since the snapshot does not
   carry it. It is fetched in bulk, filtered to the same strikes and expiries, so
   it costs two extra requests per ticker rather than one per contract. Volume is
@@ -134,6 +142,28 @@ def chain(s, symbol, spot, today, kind):
     return out
 
 
+def previous_contracts(symbol, today):
+    """Option symbols recorded for `symbol` on the most recent earlier date.
+
+    Returns an empty set on the first run, or if the file is unreadable. This is
+    an enhancement to continuity, never a precondition for recording.
+    """
+    if not OUT.exists():
+        return set()
+    try:
+        seen = {}
+        with OUT.open(newline="") as f:
+            for row in csv.DictReader(f):
+                if row.get("symbol") != symbol:
+                    continue
+                d = row.get("date", "")
+                if d and d < today.isoformat():
+                    seen.setdefault(d, set()).add(row["option_symbol"])
+        return seen[max(seen)] if seen else set()
+    except Exception:
+        return set()
+
+
 def open_interest(s, symbol, spot, today):
     """{option_symbol: (open_interest, as_of_date)} for the same query window.
 
@@ -216,9 +246,14 @@ def rows_for(s, symbol, spot, today):
             ks.add(min(available, key=lambda k: abs(k - spot * m)))
         keep[e] = ks
 
+    # Anything recorded yesterday that is still quotable today stays in, whatever
+    # the grid says. This is what preserves per-contract runs across days.
+    carried = previous_contracts(symbol, today)
+
     out = []
-    for exp, dte, strike, kind, osym, snap in at_exp:
-        if strike not in keep.get(exp, ()):
+    for exp, dte, strike, kind, osym, snap in parsed:
+        on_grid = exp in keep and strike in keep[exp]
+        if not (on_grid or osym in carried):
             continue
         q = snap.get("latestQuote") or {}
         g = snap.get("greeks") or {}
@@ -303,8 +338,11 @@ def main():
             vol = sum(int(x["volume"]) for x in r if str(x["volume"]).isdigit())
             exps = sorted({x["expiration"] for x in r})
             oi_n = sum(1 for x in r if str(x["open_interest"]).strip() != "")
+            prev = previous_contracts(sym, today)
+            kept = len({x["option_symbol"] for x in r} & prev) if prev else 0
             print(f"  {sym:6s} spot {spots[sym]:>9.2f}  {len(r):>3d} contracts  "
-                  f"exp {'/'.join(exps)}  volume {vol:,}  oi on {oi_n}/{len(r)}")
+                  f"exp {'/'.join(exps)}  volume {vol:,}  oi {oi_n}/{len(r)}"
+                  + (f"  carried {kept}/{len(prev)}" if prev else ""))
         except Exception as e:
             failed.append(sym)
             print(f"  {sym:6s} FAILED: {e}")

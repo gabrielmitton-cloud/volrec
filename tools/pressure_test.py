@@ -207,6 +207,26 @@ ok("iv_history" not in _code,
    "surface.py code never touches the protected ATM panel (docstring aside)")
 ok(_sm.OUT.name == "surface.csv", f"surface.py writes only to surface.csv (OUT={_sm.OUT.name})")
 
+print("\n=== H3. DELTA-HEDGED P&L ESTIMATOR ===")
+import subprocess as _sp
+_t = _sp.run([sys.executable, str(R / "tools/test_hedged.py")],
+             capture_output=True, text=True)
+_nfail = 0
+for _ln in _t.stdout.splitlines():
+    if _ln.strip().startswith("FAIL"):
+        _nfail += 1
+ok(_t.returncode == 0 and _nfail == 0,
+   f"hedged.py unit tests pass ({_nfail} failures)" if _nfail
+   else "hedged.py unit tests pass (18 hand-computed cases)")
+_hsrc = (R / "hedged.py").read_text()
+ok("iv_history" not in _hsrc, "hedged.py never touches the ATM panel")
+ok("cluster" in _hsrc.lower() and "demean" in _hsrc.lower(),
+   "hedged.py warns that its pooled t is descriptive, not inferential")
+_mf = (R / "modelfree.py").read_text()
+ok("SystemExit" in _mf,
+   "risk_free catches SystemExit (fred._key calls sys.exit, which bypasses "
+   "except Exception)")
+
 print("\n=== I. WORKFLOWS ===")
 import yaml
 recy = yaml.safe_load((R / ".github/workflows/record.yml").read_text())

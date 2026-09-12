@@ -168,13 +168,26 @@ def model_free_30d(day_rows, r_annual):
 
 
 def risk_free():
-    """1-month Treasury, annualised decimal. Falls back to 0 if FRED is absent."""
+    """1-month Treasury, annualised decimal. Falls back to 0 if FRED is absent.
+
+    The key is checked up front rather than relied on to raise: `fred._key()`
+    calls `sys.exit()`, which raises SystemExit, which does NOT inherit from
+    Exception and would therefore sail straight through a bare `except
+    Exception` and kill the run. The discount rate is a refinement, never a
+    reason to lose a day's analysis.
+    """
+    import os
+    if not os.environ.get("FRED_KEY"):
+        print("  (FRED_KEY not set; using r=0. The discount term is small at "
+              "30 days but this is a real approximation, not a no-op.)")
+        return 0.0
     try:
         import fred
         obs = fred.series("DGS1MO")
         if obs:
             return obs[max(obs)] / 100.0
-    except Exception as e:
+        print("  (FRED returned no observations; using r=0)")
+    except (Exception, SystemExit) as e:
         print(f"  (FRED unavailable: {type(e).__name__}; using r=0)")
     return 0.0
 
