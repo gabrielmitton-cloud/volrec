@@ -1,0 +1,60 @@
+name: mftest
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mftest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
+      - run: pip install requests
+      - name: Fetch a surface, then estimate model-free variance from it
+        env:
+          ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
+          ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
+          FRED_KEY: ${{ secrets.FRED_KEY }}
+        run: |
+          python - <<'PY' 2>&1 | tee /tmp/o.txt
+          import csv, time
+          from datetime import date, timedelta
+          from pathlib import Path
+          import record as R, surface, modelfree
+
+          today = date.today()
+          while today.weekday() >= 5:
+              today -= timedelta(days=1)
+          print(f"surface as of {today} ({today.strftime('%A')})\n")
+
+          s = R.session()
+          spots = R.spot_prices(s, surface.SURFACE)
+          rows = []
+          for sym in surface.SURFACE:
+              try:
+                  r = surface.rows_for(s, sym, spots[sym], today)
+                  rows += r
+                  exps = sorted({x["expiration"] for x in r})
+                  dtes = sorted({int(x["dte"]) for x in r})
+                  print(f"  {sym:5s} {len(r):>3d} rows | expiries {len(exps)} "
+                        f"dte {dtes} | K {min(float(x['strike']) for x in r):.0f}"
+                        f"-{max(float(x['strike']) for x in r):.0f}")
+              except Exception as e:
+                  print(f"  {sym:5s} FAILED {type(e).__name__}: {e}")
+              time.sleep(1.0)
+
+          out = Path("/tmp/surface.csv")
+          with out.open("w", newline="") as f:
+              w = csv.DictWriter(f, fieldnames=surface.FIELDS)
+              w.writeheader(); w.writerows(rows)
+          print(f"\nrows/day {len(rows)}  bytes {out.stat().st_size:,}  "
+                f"per year {out.stat().st_size*252/1e6:.1f} MB\n")
+
+          modelfree.SURF = out
+          modelfree.main()
+          PY
+          cat /tmp/o.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Assert nothing was written to data/
+        run: git diff --exit-code -- data/ && echo "data/ clean"

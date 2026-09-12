@@ -29,9 +29,13 @@ and nothing here is allowed to put it at risk.
 
 DESIGN NOTES
 ------------
-- One expiry per ticker per day, the one nearest TARGET_DTE. The term structure
-  is already captured by the far leg in the main recorder; this file is about
-  the smile at a single maturity.
+- TWO expiries per ticker per day, bracketing 30 days where both exist. This
+  is not decoration: Cboe's model-free variance calculation uses a near and a
+  next term and interpolates between them to a constant 30 days. Recording one
+  expiry would leave a maturity mismatch permanently baked into any comparison
+  against the published indices, and that mismatch would be impossible to
+  separate from the gaps the comparison is meant to measure. Two expiries is
+  the same API call and roughly twice the rows.
 - Strikes are chosen on a MONEYNESS GRID, not by taking the N nearest to spot.
   Strike density varies enormously by underlying: SPY has dollar strikes, so
   the twenty nearest span barely 1.3% of spot, while GLD's twenty span the whole
@@ -59,7 +63,12 @@ import record as R
 # named and because its option market went from nothing in 2010 to one of the
 # most heavily retail-traded in the market, which makes it the closest thing to
 # a natural experiment available.
-SURFACE = ["TSLA", "NVDA", "AAPL", "SPY", "GLD"]
+# Five of these have a Cboe model-free index published against them, which is
+# the point: SPY/VIX, QQQ/VXN, IWM/RVX, GLD/GVZ, USO/OVX. Those pairs let the
+# estimator built from this file be checked against the authoritative number for
+# the same underlying on the same day. TSLA, NVDA and AAPL have no published
+# index and are carried for the single-name work.
+SURFACE = ["SPY", "QQQ", "IWM", "GLD", "USO", "TSLA", "NVDA", "AAPL"]
 
 TARGET_DTE = 30
 DTE_WINDOW = (21, 45)
@@ -122,24 +131,36 @@ def rows_for(s, symbol, spot, today):
     if not parsed:
         raise RuntimeError("nothing inside the DTE window")
 
-    # One expiry: the one nearest TARGET_DTE. Ties break to the shorter side so
-    # the choice is deterministic and cannot flip between runs.
-    exp_pick = min({(abs(d - TARGET_DTE), d, e) for e, d, _, _, _, _ in parsed})[2]
-    at_exp = [p for p in parsed if p[0] == exp_pick]
+    # Two expiries bracketing TARGET_DTE, so the pair can be interpolated to a
+    # constant 30 days the way Cboe does. Prefer one below and one above; if the
+    # window only offers expiries on one side, take the two nearest to the
+    # target. Sorted deterministically so the choice cannot flip between runs.
+    expiries = sorted({(e, d) for e, d, _, _, _, _ in parsed}, key=lambda x: x[1])
+    below = [x for x in expiries if x[1] <= TARGET_DTE]
+    above = [x for x in expiries if x[1] > TARGET_DTE]
+    if below and above:
+        picks = [below[-1][0], above[0][0]]
+    else:
+        picks = [e for e, _ in sorted(expiries, key=lambda x: abs(x[1] - TARGET_DTE))[:2]]
+    at_exp = [p for p in parsed if p[0] in set(picks)]
 
     # Walk the moneyness grid and keep the nearest available strike to each
     # target. A strike may be nearest to two adjacent targets when the
     # underlying's strikes are sparse; the set collapses those, so sparse names
     # simply yield fewer rows rather than duplicates.
-    available = sorted({p[2] for p in at_exp})
-    keep = set()
-    for m in MONEYNESS_GRID:
-        target = spot * m
-        keep.add(min(available, key=lambda k: abs(k - target)))
+    keep = {}
+    for e in set(picks):
+        available = sorted({p[2] for p in at_exp if p[0] == e})
+        if not available:
+            continue
+        ks = set()
+        for m in MONEYNESS_GRID:
+            ks.add(min(available, key=lambda k: abs(k - spot * m)))
+        keep[e] = ks
 
     out = []
     for exp, dte, strike, kind, osym, snap in at_exp:
-        if strike not in keep:
+        if strike not in keep.get(exp, ()):
             continue
         q = snap.get("latestQuote") or {}
         g = snap.get("greeks") or {}
@@ -161,7 +182,7 @@ def rows_for(s, symbol, spot, today):
             "theta": g.get("theta", ""), "vega": g.get("vega", ""),
             "rho": g.get("rho", ""),
         })
-    return sorted(out, key=lambda r: (r["type"], r["strike"]))
+    return sorted(out, key=lambda r: (r["expiration"], r["type"], r["strike"]))
 
 
 def already_recorded(today):
@@ -220,8 +241,9 @@ def main():
             r = rows_for(s, sym, spots[sym], today)
             rows.extend(r)
             vol = sum(int(x["volume"]) for x in r if str(x["volume"]).isdigit())
+            exps = sorted({x["expiration"] for x in r})
             print(f"  {sym:6s} spot {spots[sym]:>9.2f}  {len(r):>3d} contracts  "
-                  f"exp {r[0]['expiration']}  total volume {vol:,}")
+                  f"exp {'/'.join(exps)}  total volume {vol:,}")
         except Exception as e:
             failed.append(sym)
             print(f"  {sym:6s} FAILED: {e}")
