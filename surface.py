@@ -46,6 +46,12 @@ DESIGN NOTES
 - `volume` is recorded per contract and is the point of the exercise. Standard
   variance measures like VIX weight every strike by a fixed mathematical rule
   regardless of whether anyone traded it.
+- `open_interest` comes from a different endpoint, since the snapshot does not
+  carry it. It is fetched in bulk, filtered to the same strikes and expiries, so
+  it costs two extra requests per ticker rather than one per contract. Volume is
+  flow and open interest is stock, and a liquidity story needs both. It is
+  published with a lag, so `open_interest_date` is recorded beside it: never
+  assume it is same-day.
 
 Run:  ALPACA_KEY=... ALPACA_SECRET=... python surface.py
 """
@@ -102,7 +108,7 @@ OUT = Path(__file__).parent / "data" / "surface.csv"
 FIELDS = [
     "date", "symbol", "spot", "quote_time",
     "expiration", "dte", "type", "strike", "moneyness", "option_symbol",
-    "bid", "ask", "mid", "volume",
+    "bid", "ask", "mid", "volume", "open_interest", "open_interest_date",
     "iv", "delta", "gamma", "theta", "vega", "rho",
 ]
 
@@ -128,6 +134,35 @@ def chain(s, symbol, spot, today, kind):
     return out
 
 
+def open_interest(s, symbol, spot, today):
+    """{option_symbol: (open_interest, as_of_date)} for the same query window.
+
+    The snapshot endpoint does not carry open interest; the contracts endpoint
+    does, and returns contracts in bulk rather than one per request. Failure
+    here is non-fatal: the surface is still worth recording without it.
+    """
+    out = {}
+    p = dict(
+        underlying_symbols=symbol, limit=10000,
+        expiration_date_gte=(today + timedelta(days=DTE_WINDOW[0])).isoformat(),
+        expiration_date_lte=(today + timedelta(days=DTE_WINDOW[1])).isoformat(),
+        strike_price_gte=round(spot * (1 - STRIKE_BAND), 2),
+        strike_price_lte=round(spot * (1 + STRIKE_BAND), 2))
+    for _ in range(R.MAX_PAGES):
+        j = R.get(s, f"{R.TRADING}/v2/options/contracts", **p)
+        got = j.get("option_contracts") or []
+        for c in got:
+            oi = c.get("open_interest")
+            if oi not in (None, ""):
+                out[c["symbol"]] = (oi, c.get("open_interest_date", ""))
+        token = j.get("next_page_token")
+        if not token or not got:
+            break
+        p["page_token"] = token
+        time.sleep(PACE)
+    return out
+
+
 def rows_for(s, symbol, spot, today):
     """Every contract at the chosen expiry, both types, nearest STRIKE_COUNT."""
     snaps = chain(s, symbol, spot, today, "call")
@@ -135,6 +170,12 @@ def rows_for(s, symbol, spot, today):
     snaps.update(chain(s, symbol, spot, today, "put"))
     if not snaps:
         raise RuntimeError("no contracts in the strike/expiry window")
+    time.sleep(PACE)
+    try:
+        oi_map = open_interest(s, symbol, spot, today)
+    except Exception as e:
+        print(f"    (open interest unavailable for {symbol}: {type(e).__name__})")
+        oi_map = {}
 
     parsed = []
     for osym, snap in snaps.items():
@@ -194,6 +235,8 @@ def rows_for(s, symbol, spot, today):
             "bid": bid, "ask": ask,
             "mid": round(mid, 6) if mid is not None else "",
             "volume": day.get("v", ""),
+            "open_interest": oi_map.get(osym, ("", ""))[0],
+            "open_interest_date": oi_map.get(osym, ("", ""))[1],
             "iv": snap.get("impliedVolatility", ""),
             "delta": g.get("delta", ""), "gamma": g.get("gamma", ""),
             "theta": g.get("theta", ""), "vega": g.get("vega", ""),
@@ -259,8 +302,9 @@ def main():
             rows.extend(r)
             vol = sum(int(x["volume"]) for x in r if str(x["volume"]).isdigit())
             exps = sorted({x["expiration"] for x in r})
+            oi_n = sum(1 for x in r if str(x["open_interest"]).strip() != "")
             print(f"  {sym:6s} spot {spots[sym]:>9.2f}  {len(r):>3d} contracts  "
-                  f"exp {'/'.join(exps)}  total volume {vol:,}")
+                  f"exp {'/'.join(exps)}  volume {vol:,}  oi on {oi_n}/{len(r)}")
         except Exception as e:
             failed.append(sym)
             print(f"  {sym:6s} FAILED: {e}")
