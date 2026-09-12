@@ -239,6 +239,9 @@ ok(frs["permissions"]["contents"] == "read", "freshness is read-only")
 ok(any("panel_health.py" in str(st.get("run", ""))
        for st in frs["jobs"]["freshness"]["steps"]),
    "freshness actually runs panel_health.py (not a silently emptied job)")
+_crons = {c["cron"] for c in frs[True]["schedule"]}
+ok(_crons == {"0 17 * * *", "0 21 * * *"},
+   "freshness runs twice: 17:00 for the ATM panel, 21:00 once the surface lands")
 ok(set(p.name for p in (R / ".github/workflows").glob("*.yml"))
    == {"record.yml", "freshness.yml", "surface.yml"},
    "no leftover TEMP workflows")
@@ -259,8 +262,13 @@ ok("import requests" not in phsrc and "import surface" not in phsrc,
    "parses that list instead of importing it: no third-party dependency")
 ok(not re.search(r"\.write_text\(|\bopen\([^)]*[\"']w[\"']|writer\(", phsrc),
    "panel_health is read-only: it never opens a file for writing")
-ok("SURFACE_GRACE_DAYS" in phsrc and "toordinal" in phsrc,
-   "a missing surface.csv before the first run is PEND, not FAIL")
+ok("SURFACE_LANDED_HOUR_UTC" in phsrc and "SURFACE_START" in phsrc,
+   "a missing surface.csv before the first run has landed is PEND, not FAIL")
+ok("def now_utc" in phsrc and "date.today()" not in phsrc,
+   "one clock seam in UTC: same verdict on a runner and on a laptop")
+ok(int(re.search(r"SURFACE_LANDED_HOUR_UTC = (\d+)", phsrc).group(1))
+   <= max(int(c["cron"].split()[1]) for c in frs[True]["schedule"]),
+   "the checker starts judging no later than the last freshness cron of the day")
 ok("sys.exit(main())" in phsrc and "return 1" in phsrc,
    "exits non-zero on failure, which is what actually sends the email")
 ok(phsrc.count("warns.append") == 1 and "return 1" not in phsrc.split("def warn")[1].split("def ")[0],

@@ -20,7 +20,7 @@ ordinary days stops being read.
 import ast
 import csv
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -57,10 +57,19 @@ STALE_DAYS = 5
 # correct rather than broken, and must not fail the check.
 SURFACE_START = date(2026, 9, 15)
 
-# Grace after that first run before a missing file counts as a failure. The
-# surface job is scheduled 15:40 UTC but GitHub delays it to ~18:45, which is
-# after this check's own 17:00 slot, so same-day absence proves nothing.
-SURFACE_GRACE_DAYS = 1
+# The hour (UTC) by which a weekday's surface rows should have landed. The job
+# is scheduled 15:40 but GitHub delays it to ~18:45 in practice, so before this
+# hour a same-day absence proves nothing and must not fail. freshness.yml runs
+# twice daily for exactly this reason: 17:00 is too early to judge the surface
+# and 21:00 is late enough.
+SURFACE_LANDED_HOUR_UTC = 20
+
+
+def now_utc():
+    """Single clock seam. Everything derives from this, so the checker behaves
+    identically on a UTC runner and on a laptop in California, and so the tests
+    can pin a moment without touching the system clock."""
+    return datetime.now(timezone.utc)
 
 fails, warns = [], []
 
@@ -85,7 +94,7 @@ def rows_of(path):
 def day_span(rows):
     """Sorted distinct dates, and how many days old the newest one is."""
     days = sorted({date.fromisoformat(r["date"]) for r in rows if r.get("date")})
-    return days, ((date.today() - days[-1]).days if days else None)
+    return days, ((now_utc().date() - days[-1]).days if days else None)
 
 
 def check_atm():
@@ -108,19 +117,27 @@ def check_atm():
 def check_surface():
     print("\nSurface panel  data/surface.csv")
     rows = rows_of(SURFACE)
-    today = date.today()
+    now = now_utc()
+    today = now.date()
 
     if rows is None:
-        due = SURFACE_START.toordinal() + SURFACE_GRACE_DAYS
-        if today.toordinal() <= due:
-            print(f"  PEND  not collected yet; first run due {SURFACE_START}")
+        # Judge only once the day's run has had time to land. Before the first
+        # scheduled run, and before the landing hour on the day itself, an
+        # absent file is the expected state rather than evidence of anything.
+        undue = (today < SURFACE_START or
+                 (today == SURFACE_START and now.hour < SURFACE_LANDED_HOUR_UTC))
+        if undue:
+            print(f"  PEND  not collected yet; first run due {SURFACE_START} "
+                  f"(judged from {SURFACE_LANDED_HOUR_UTC:02d}:00 UTC)")
             return
+        late = (today - SURFACE_START).days
         return fail(
-            f"surface.csv still does not exist, {(today - SURFACE_START).days} "
-            f"days after the first scheduled run on {SURFACE_START}. A green "
-            f"surface run that commits nothing looks exactly like this: the "
-            f"no-data guard exits 0. Check whether surface.py wrote a file, "
-            f"not whether the run was green.")
+            f"surface.csv still does not exist, "
+            f"{'later the same day as' if late == 0 else f'{late} days after'} "
+            f"the first scheduled run on {SURFACE_START}. A green surface run "
+            f"that commits nothing looks exactly like this: the no-data guard "
+            f"exits 0. Check whether surface.py wrote a file, not whether the "
+            f"run was green.")
 
     if not rows:
         return fail("surface.csv exists but has no rows.")
@@ -162,7 +179,7 @@ def check_surface():
 
 
 def main():
-    print(f"panel health  {date.today()}\n")
+    print(f"panel health  {now_utc():%Y-%m-%d %H:%M} UTC\n")
     check_atm()
     check_surface()
 

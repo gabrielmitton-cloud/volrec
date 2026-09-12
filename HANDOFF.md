@@ -1074,7 +1074,7 @@ a single day.
 |---|---|---|---|
 | `record.yml` | 15:30 weekdays | `data/iv_history.csv` | 109 tickers, ATM. The irreplaceable one. |
 | `surface.yml` | 15:40 weekdays | `data/surface.csv` | 8 underlyings, full strike surface. **First real run: Mon 15 Sep.** |
-| `freshness.yml` | 17:00 daily | nothing | Runs `tools/panel_health.py`. Fails loudly if **either** panel is stale, empty, duplicated or missing underlyings. |
+| `freshness.yml` | 17:00 **and 21:00** daily | nothing | Runs `tools/panel_health.py`. Fails loudly if **either** panel is stale, empty, duplicated or missing underlyings. The 21:00 slot exists because 17:00 is before the surface job lands. |
 
 GitHub delays scheduled runs; both have landed around 18:45-19:00 UTC in
 practice, which is systematic rather than drifting and is measured by the
@@ -1089,7 +1089,7 @@ pressure test.
 | `analyze.py` | shared estimators. Both samples import from here, deliberately. |
 | `modelfree.py` | Cboe's variance methodology, and the gap against the published index |
 | `hedged.py` | per-contract delta-hedged P&L, the strike-specific outcome |
-| `tools/pressure_test.py` | 56 read-only integrity checks. Run before and after anything. |
+| `tools/pressure_test.py` | 59 read-only integrity checks. Run before and after anything. |
 | `tools/panel_health.py` | did the *data* arrive? Run daily by `freshness.yml`; also runnable by hand. |
 | `tools/test_hedged.py` | 18 hand-computed cases for the hedging math |
 | `tools/fred.py` | FRED client, used for the discount rate |
@@ -1118,8 +1118,8 @@ pressure test.
    holiday looks identical to a collection failure. Judge the run by whether
    `data/surface.csv` exists with Monday rows, not by the green check.
    **You no longer have to remember this.** `freshness.yml` now runs
-   `tools/panel_health.py` daily and fails, which emails you, if surface.csv is
-   still absent more than a day after the first scheduled run. Run it by hand
+   `tools/panel_health.py` twice daily and fails, which emails you, if
+   surface.csv is still absent at 21:00 UTC on the day of the run itself. Run it by hand
    any time with `python tools/panel_health.py`; it needs no credentials and
    touches nothing.
 2. **Once two consecutive days exist**, run `python hedged.py` and `python

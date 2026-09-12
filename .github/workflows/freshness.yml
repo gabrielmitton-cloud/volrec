@@ -2,6 +2,10 @@ name: freshness
 on:
   schedule:
     - cron: "0 17 * * *"      # daily, 90 min after the recorder
+    - cron: "0 21 * * *"      # daily, after the surface job lands (~18:45 UTC).
+                              # The 17:00 slot is too early to judge the surface
+                              # panel, so without this one a green-but-empty
+                              # surface run is not caught until the next day.
   workflow_dispatch:
 permissions:
   contents: read
