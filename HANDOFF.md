@@ -986,3 +986,70 @@ angle, already published, on a broad cross-sectional panel.
 What appears to survive is narrower and is recorded here without being claimed:
 a single-name, long-horizon treatment, and the measurement question in section
 15.2. Neither is settled.
+
+---
+
+## 15. Bloomberg's actual job, and TimesFM
+
+### 15.1 Bloomberg is a validation instrument now, not a data source
+
+The 90-day wall kills it as a history source. It does not kill it as a
+**cross-check**, and that is a better fit for what this project became.
+
+`surface.csv` is built from Alpaca's free **indicative** feed, which is not
+consolidated OPRA. H3 asks what that costs. Strike truncation has been measured
+and largely eliminated by widening the band; **feed quality has not been
+separated out at all** and is still sitting inside the residual gap.
+
+Bloomberg can separate it. Ninety days is far more than enough, because the
+surface only started accumulating on 2026-09-14.
+
+**What to pull, on any day the surface also has data for:**
+
+- `OMON` for SPY, TSLA and USO, using the "As of" field on a date already in
+  `data/surface.csv`. One low-vol index, one high-vol single name, one
+  high-vol commodity, which is where truncation bit hardest.
+- Per contract, across the strikes recorded that day: **bid, ask, implied
+  volatility, volume, open interest.**
+- Enough strikes to cover roughly +/-30% of spot, matching what is recorded.
+
+**What that buys.** A contract-by-contract comparison of a free indicative
+quote against a professional one, on identical contracts and identical days.
+That decomposes the residual gap in H3 into feed quality versus everything
+else, which is currently the weakest link in that hypothesis.
+
+**Two or three days is enough.** This is a calibration exercise, not a
+collection exercise. Do not try to build a dataset out of the terminal; that is
+what the 90-day wall and the redistribution licence both forbid. Pull a few
+days, compute the comparison, publish the derived numbers only.
+
+### 15.2 TimesFM - a good idea for a different project
+
+Google's TimesFM (ICML 2024, 200-500M parameters, Apache-2.0 code with
+non-commercial weights on 3.0, runs on Apple silicon through MLX) is a
+pretrained time-series foundation model.
+
+**It does not belong in this project as it stands.** The binding constraint
+here is independent observations, not model capacity. Pointing a 330M-parameter
+model at roughly two independent episodes is precisely the failure mode
+`analyze.py --simulate` exists to demonstrate, and section 3's whole discipline
+forbids it.
+
+**Where it would genuinely fit, recorded so the idea is not lost.** Qiu,
+Kownatzki, Scalzo & Cha (2025), *Risks* 13(5) 98, benchmark volatility
+forecasting methods - GARCH, LSTM, Transformer - and **open-sourced both data
+and code** at `github.com/WithAnOrchid0513/VolData`: SPY and VIX daily, 1990 to
+2023. A zero-shot foundation model post-dates every method in that benchmark.
+
+> **Does TimesFM, zero-shot, beat the published benchmarks in Qiu et al. (2025)
+> on their own data?**
+
+That is well posed, uses a public benchmark with public code, needs no new data,
+has no overfitting exposure because nothing is trained, runs locally, and is a
+natural thing to discuss with Pepperdine faculty since one of the authors is
+there.
+
+**It is still a separate project.** Starting a second workstream before the
+first has collected a single real row is how both end up unfinished. Revisit
+once the surface has accumulated and H3 has been tested on a series rather than
+a single day.
