@@ -236,6 +236,9 @@ ok(any("git add data/" in str(s.get("run", "")) for s in recy["jobs"]["record"][
    "commits all of data/, so the backup is included")
 frs = yaml.safe_load((R / ".github/workflows/freshness.yml").read_text())
 ok(frs["permissions"]["contents"] == "read", "freshness is read-only")
+ok(any("panel_health.py" in str(st.get("run", ""))
+       for st in frs["jobs"]["freshness"]["steps"]),
+   "freshness actually runs panel_health.py (not a silently emptied job)")
 ok(set(p.name for p in (R / ".github/workflows").glob("*.yml"))
    == {"record.yml", "freshness.yml", "surface.yml"},
    "no leftover TEMP workflows")
@@ -247,6 +250,24 @@ ok(any("git add data/surface.csv" in str(st.get("run", ""))
 ok(any("git diff --exit-code -- data/iv_history.csv" in str(st.get("run", ""))
        for st in srf["jobs"]["surface"]["steps"]),
    "surface workflow aborts if the ATM panel was touched")
+
+print("\n=== I2. PANEL HEALTH (did the data arrive, not just: is the code right) ===")
+phsrc = (R / "tools" / "panel_health.py").read_text()
+ok("ast.literal_eval" in phsrc and '"SURFACE"' in phsrc,
+   "reads the watchlist out of surface.py, so the two cannot drift apart")
+ok("import requests" not in phsrc and "import surface" not in phsrc,
+   "parses that list instead of importing it: no third-party dependency")
+ok(not re.search(r"\.write_text\(|\bopen\([^)]*[\"']w[\"']|writer\(", phsrc),
+   "panel_health is read-only: it never opens a file for writing")
+ok("SURFACE_GRACE_DAYS" in phsrc and "toordinal" in phsrc,
+   "a missing surface.csv before the first run is PEND, not FAIL")
+ok("sys.exit(main())" in phsrc and "return 1" in phsrc,
+   "exits non-zero on failure, which is what actually sends the email")
+ok(phsrc.count("warns.append") == 1 and "return 1" not in phsrc.split("def warn")[1].split("def ")[0],
+   "warnings never change the exit code (an alert that cries wolf stops being read)")
+_ph = subprocess.run([sys.executable, str(R / "tools" / "panel_health.py")],
+                     capture_output=True, text=True)
+ok(_ph.returncode == 0, f"panel_health passes against the live panels (exit {_ph.returncode})")
 
 print("\n=== J. GUARD ORDER ===")
 msrc = (R / "record.py").read_text()
