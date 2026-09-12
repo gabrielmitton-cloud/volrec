@@ -32,10 +32,13 @@ DESIGN NOTES
 - One expiry per ticker per day, the one nearest TARGET_DTE. The term structure
   is already captured by the far leg in the main recorder; this file is about
   the smile at a single maturity.
-- A fixed STRIKE_COUNT centred on spot rather than a fixed percentage band.
-  Strike density varies enormously by underlying (SPY has dollar strikes, a
-  $40 stock has $2.50 strikes), so a percentage band would give 120 contracts
-  for one name and 6 for another. A strike count is bounded and comparable.
+- Strikes are chosen on a MONEYNESS GRID, not by taking the N nearest to spot.
+  Strike density varies enormously by underlying: SPY has dollar strikes, so
+  the twenty nearest span barely 1.3% of spot, while GLD's twenty span the whole
+  band. Measured 12 Sep 2026, nearest-N gave SPY strikes 755-774 on a 764 spot
+  and GLD 389-408 on 398 - one is a point, the other is a smile, and they are
+  not comparable. A moneyness grid fixes the economic location of each strike
+  so the same row means the same thing across every underlying.
 - `volume` is recorded per contract and is the point of the exercise. Standard
   variance measures like VIX weight every strike by a fixed mathematical rule
   regardless of whether anyone traded it.
@@ -60,7 +63,12 @@ SURFACE = ["TSLA", "NVDA", "AAPL", "SPY", "GLD"]
 TARGET_DTE = 30
 DTE_WINDOW = (21, 45)
 STRIKE_BAND = 0.10          # matches the advice: within ~10% of spot
-STRIKE_COUNT = 20           # ~20 strikes centred on spot, per the advice
+STRIKE_COUNT = 20           # ~20 strikes across the band, per the advice
+# Target moneyness levels, evenly spaced across the band. The nearest available
+# strike to each target is kept, so coverage is comparable across underlyings
+# regardless of how finely that underlying's strikes are spaced.
+MONEYNESS_GRID = [1 - STRIKE_BAND + i * (2 * STRIKE_BAND) / (STRIKE_COUNT - 1)
+                  for i in range(STRIKE_COUNT)]
 PACE = 1.0                  # slower than record.py: this may run alongside it
 OUT = Path(__file__).parent / "data" / "surface.csv"
 
@@ -118,9 +126,15 @@ def rows_for(s, symbol, spot, today):
     exp_pick = min({(abs(d - TARGET_DTE), d, e) for e, d, _, _, _, _ in parsed})[2]
     at_exp = [p for p in parsed if p[0] == exp_pick]
 
-    # Keep the STRIKE_COUNT strikes nearest spot, then take both types at each.
-    strikes = sorted({p[2] for p in at_exp}, key=lambda k: abs(k - spot))[:STRIKE_COUNT]
-    keep = {k: True for k in strikes}
+    # Walk the moneyness grid and keep the nearest available strike to each
+    # target. A strike may be nearest to two adjacent targets when the
+    # underlying's strikes are sparse; the set collapses those, so sparse names
+    # simply yield fewer rows rather than duplicates.
+    available = sorted({p[2] for p in at_exp})
+    keep = set()
+    for m in MONEYNESS_GRID:
+        target = spot * m
+        keep.add(min(available, key=lambda k: abs(k - target)))
 
     out = []
     for exp, dte, strike, kind, osym, snap in at_exp:
