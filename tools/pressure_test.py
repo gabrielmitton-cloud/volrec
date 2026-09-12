@@ -181,6 +181,12 @@ if surf.exists():
     volpop = sum(1 for r in last if str(r.get("volume", "")).strip() not in ("", "0"))
     warn(volpop / max(len(last), 1) >= 0.80,
          f"volume populated on >=80% of the latest day ({100*volpop/max(len(last),1):.0f}%)")
+    oipop = sum(1 for r in last if str(r.get("open_interest", "")).strip() != "")
+    warn(oipop / max(len(last), 1) >= 0.70,
+         f"open interest populated on >=70% of the latest day ({100*oipop/max(len(last),1):.0f}%)")
+    oidates = {r.get("open_interest_date", "") for r in last if r.get("open_interest_date")}
+    warn(all(d < sdays[-1] for d in oidates) if oidates else True,
+         f"open interest is lagged, never same-day (dates {sorted(oidates)[:2]})")
     mny = [float(r["moneyness"]) for r in last if r.get("moneyness")]
     if mny:
         warn(max(mny) - min(mny) > 0.10,
