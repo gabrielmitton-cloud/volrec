@@ -907,3 +907,82 @@ economically modest, concentrated at 5-22 day horizons in liquid names, at the
 aggregate rather than firm level. The 21-45 DTE window sits in that region. So
 **if a media layer is built, build it at the macro level**, and expect a small
 effect.
+
+---
+
+## 14. What the 11 Sep meeting and the literature check changed
+
+### 14.1 Three things are now retired. Do not revive them.
+
+**Bloomberg as a historical options source - DEAD.** It holds only the last
+**90 calendar days** of historical equity and equity-index option data, via
+OMON's "As of" field. Verified 11-12 Sep 2026 against the University of
+Manchester library help pages and the University of Iowa libraries guide;
+Penn's guide routes historical options work to OptionMetrics instead. The
+fifteen-year Tesla pull suggested in the meeting is impossible in principle,
+not merely difficult. Bloomberg's licence is also restrictive enough that
+publishing derived output from it to a public repo is not safe to assume.
+
+**OptionMetrics via WRDS - CLOSED at Pepperdine.** Restricted to faculty, staff
+and doctoral students. Confirmed twice. A faculty member could extract data,
+but that is a request, not a plan, and the project must stand without it.
+
+**"This data cannot be bought" - FALSE, and it was my claim to make and
+withdraw.** OptionMetrics IvyDB holds end-of-day US equity and index option
+data, with volume and open interest, from January 1996. The honest version is
+"cannot be bought *by me, at zero budget*," which is a real constraint but a
+much weaker distinction and must not be presented as a moat.
+
+### 14.2 A design error, caught before it was built
+
+The proposed angle was to compare strikes within the same day, on the reasoning
+that this controls for the day and therefore sidesteps the small-sample problem.
+It controls for the day so completely that it removes the object of study.
+
+If the premium at strike K is `IV(K)^2 - RV`, and `RV` is one number shared by
+every strike that day, then
+
+    premium(K1) - premium(K2) = IV(K1)^2 - IV(K2)^2
+
+The realised variance cancels exactly. What remains is the shape of the implied
+volatility surface, which is the volatility smile, and Bollen & Whaley
+(2004, JF 59(2)) covered it.
+
+**The fix, which the literature already uses:** define the outcome as a
+*strike-specific realised quantity*. Per-contract delta-hedged profit and loss
+(Bakshi & Kapadia 2003), leverage-adjusted per-contract returns (Constantinides,
+Jackwerth & Savov 2013), or corridor realised variance matched to the strike
+range (Andersen, Bondarenko & Gonzalez-Perez 2015). Those do not cancel, because
+the hedging path depends on the strike.
+
+**Any future strike-level work must use a strike-specific outcome. Never
+`IV(K)` minus a common realised variance.**
+
+### 14.3 Where the level results may be reported from
+
+Sample A carries about 127 non-overlapping episodes per pair and is a defensible
+place to report the level of the premium. The ATM panel carries roughly two and
+is not. This was already the working rule; the literature check confirms it, and
+`analyze.py --simulate` remains the right headline robustness exhibit, since
+comparing an observed statistic against a simulated null distribution is exactly
+what Broadie, Chernov & Johannes (2009) ask for.
+
+### 14.4 What was added instead
+
+`surface.py` and `data/surface.csv`, recording the strike surface with **volume
+per contract** for a small set of names, on a moneyness grid spanning +/-10% of
+spot, at zero additional API cost, from data the recorder was already fetching
+and discarding. See section 15.
+
+### 14.5 Open, and genuinely undecided
+
+The remaining novelty question. The volume-versus-option-returns space is more
+occupied than it first appeared: Yuan, Liu, Chen & Hu (2024, *North American
+Journal of Economics and Finance* 74, 102233) find option trading volume
+negatively predicts delta-hedged option returns **across moneyness and
+maturity**, verified 12 Sep 2026. That is close to the corrected version of the
+angle, already published, on a broad cross-sectional panel.
+
+What appears to survive is narrower and is recorded here without being claimed:
+a single-name, long-horizon treatment, and the measurement question in section
+15.2. Neither is settled.
