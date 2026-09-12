@@ -1,0 +1,45 @@
+name: oiprobe
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  oiprobe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
+      - run: pip install requests
+      - name: Is open interest available, and how expensive?
+        env:
+          ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
+          ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
+        run: |
+          python - <<'PY' 2>&1 | tee /tmp/o.txt
+          import json, record as R
+          s = R.session()
+          print("## 1. Full snapshot structure for one contract\n")
+          j = R.get(s, f"{R.DATA}/v1beta1/options/snapshots/SPY",
+                    feed="indicative", limit=2, type="call")
+          snaps = j.get("snapshots") or {}
+          k = sorted(snaps)[0]
+          print(f"contract: {k}")
+          print(json.dumps(snaps[k], indent=2)[:1400])
+          print(f"\ntop-level keys present: {sorted(snaps[k].keys())}")
+          oi_here = any("open" in str(x).lower() for x in snaps[k])
+          print(f"open interest in snapshot? {oi_here}")
+
+          print("\n## 2. The contracts endpoint (one call, many contracts)\n")
+          try:
+              c = R.get(s, f"{R.TRADING}/v2/options/contracts",
+                        underlying_symbols="SPY", limit=3)
+              lst = c.get("option_contracts") or []
+              print(f"returned {len(lst)} contracts, keys: {sorted(lst[0].keys()) if lst else 'none'}")
+              if lst:
+                  print(json.dumps(lst[0], indent=2))
+          except Exception as e:
+              print(f"contracts endpoint: {type(e).__name__}: {e}")
+          PY
+          cat /tmp/o.txt >> "$GITHUB_STEP_SUMMARY"
