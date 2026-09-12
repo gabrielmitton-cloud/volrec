@@ -6,54 +6,70 @@ permissions:
 jobs:
   mftest:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with: { python-version: "3.12" }
       - run: pip install requests
-      - name: Fetch a surface, then estimate model-free variance from it
+      - name: Which strike band tracks Cboe best?
         env:
           ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
           ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
           FRED_KEY: ${{ secrets.FRED_KEY }}
         run: |
           python - <<'PY' 2>&1 | tee /tmp/o.txt
-          import csv, time
+          import time
           from datetime import date, timedelta
-          from pathlib import Path
-          import record as R, surface, modelfree
+          import record as R, surface, modelfree, analyze
 
           today = date.today()
           while today.weekday() >= 5:
               today -= timedelta(days=1)
-          print(f"surface as of {today} ({today.strftime('%A')})\n")
-
           s = R.session()
           spots = R.spot_prices(s, surface.SURFACE)
-          rows = []
-          for sym in surface.SURFACE:
-              try:
-                  r = surface.rows_for(s, sym, spots[sym], today)
-                  rows += r
-                  exps = sorted({x["expiration"] for x in r})
-                  dtes = sorted({int(x["dte"]) for x in r})
-                  print(f"  {sym:5s} {len(r):>3d} rows | expiries {len(exps)} "
-                        f"dte {dtes} | K {min(float(x['strike']) for x in r):.0f}"
-                        f"-{max(float(x['strike']) for x in r):.0f}")
-              except Exception as e:
-                  print(f"  {sym:5s} FAILED {type(e).__name__}: {e}")
-              time.sleep(1.0)
+          r = modelfree.risk_free()
+          vol = analyze.fetch_market_vol(sorted(set(modelfree.BENCH.values())))
+          print(f"\n{today}  risk-free {r*100:.2f}%\n")
 
-          out = Path("/tmp/surface.csv")
-          with out.open("w", newline="") as f:
-              w = csv.DictWriter(f, fieldnames=surface.FIELDS)
-              w.writeheader(); w.writerows(rows)
-          print(f"\nrows/day {len(rows)}  bytes {out.stat().st_size:,}  "
-                f"per year {out.stat().st_size*252/1e6:.1f} MB\n")
-
-          modelfree.SURF = out
-          modelfree.main()
+          CONFIGS = [(0.10, 20), (0.20, 30), (0.30, 40)]
+          results = {}
+          for band, count in CONFIGS:
+              surface.STRIKE_BAND = band
+              surface.STRIKE_COUNT = count
+              surface.MONEYNESS_GRID = [
+                  1 - band + i * (2 * band) / (count - 1) for i in range(count)]
+              print(f"=== band +/-{band:.0%}, {count} strikes ===")
+              print(f"{'sym':<6}{'ours':>8}{'cboe':>8}{'gap':>8}{'rows':>6}{'K range':>16}")
+              gaps, rows_tot = [], 0
+              for sym in surface.SURFACE:
+                  try:
+                      rr = surface.rows_for(s, sym, spots[sym], today)
+                      rows_tot += len(rr)
+                      got = modelfree.model_free_30d(rr, r)
+                      idx = modelfree.BENCH.get(sym)
+                      cb = (vol.get(idx) or {}).get(today.isoformat()) if idx else None
+                      ks = [float(x["strike"]) for x in rr]
+                      if got and cb:
+                          gap = got[0] - cb
+                          gaps.append(gap)
+                          print(f"{sym:<6}{got[0]:>8.2f}{cb:>8.2f}{gap:>+8.2f}"
+                                f"{len(rr):>6}{f'{min(ks):.0f}-{max(ks):.0f}':>16}")
+                      elif got:
+                          print(f"{sym:<6}{got[0]:>8.2f}{'n/a':>8}{'':>8}"
+                                f"{len(rr):>6}{f'{min(ks):.0f}-{max(ks):.0f}':>16}")
+                  except Exception as e:
+                      print(f"{sym:<6} FAILED {type(e).__name__}")
+                  time.sleep(0.8)
+              if gaps:
+                  mae = sum(abs(g) for g in gaps) / len(gaps)
+                  results[(band, count)] = (mae, rows_tot)
+                  print(f"  mean |gap| {mae:.2f} pts | worst {min(gaps):+.2f} | "
+                        f"{rows_tot} rows/day | {rows_tot*170*252/1e6:.0f} MB/yr\n")
+          print("=== SUMMARY (lower mean |gap| is closer to Cboe) ===")
+          for (b, c), (mae, rt) in sorted(results.items(), key=lambda x: x[1][0]):
+              print(f"  +/-{b:.0%} x{c:<3} mean |gap| {mae:>6.2f} pts  "
+                    f"{rt:>4} rows/day  ~{rt*170*252/1e6:>3.0f} MB/yr")
           PY
           cat /tmp/o.txt >> "$GITHUB_STEP_SUMMARY"
       - name: Assert nothing was written to data/
