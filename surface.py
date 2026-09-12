@@ -1,0 +1,223 @@
+"""Record the option strike surface for a small set of names.
+
+WHY THIS EXISTS
+---------------
+`record.py` already fetches every strike within +/-8% of spot, calls and puts,
+for all 109 tickers, every day. It then keeps ONE contract per ticker and
+discards the rest. That discarded data is the strike surface, and it is the
+thing a volatility study actually needs in order to say anything about *where*
+the premium lives rather than only how big it is at the money.
+
+On 11 Sep 2026 a finance professor advised collecting raw option prices and
+volume across roughly twenty strikes within about ten percent of spot, daily,
+rather than treating implied volatility as the primary quantity. Bloomberg was
+suggested as the source. That turned out to be impossible: Bloomberg holds only
+the last 90 calendar days of historical equity option data via OMON's "As of"
+field (University of Manchester and University of Iowa library guides, verified
+11 Sep 2026), and OptionMetrics via WRDS is restricted to faculty, staff and
+doctoral students at Pepperdine.
+
+So the surface gets collected here instead, from the feed already in use, at
+zero additional cost, starting the day the decision was made. Every day not
+recorded is a day that cannot be recovered.
+
+WHAT IT DOES NOT DO
+-------------------
+It does not touch `data/iv_history.csv`, `record.py`, or `record.yml`. It writes
+only to `data/surface.csv`. The daily ATM panel is the irreplaceable artifact
+and nothing here is allowed to put it at risk.
+
+DESIGN NOTES
+------------
+- One expiry per ticker per day, the one nearest TARGET_DTE. The term structure
+  is already captured by the far leg in the main recorder; this file is about
+  the smile at a single maturity.
+- A fixed STRIKE_COUNT centred on spot rather than a fixed percentage band.
+  Strike density varies enormously by underlying (SPY has dollar strikes, a
+  $40 stock has $2.50 strikes), so a percentage band would give 120 contracts
+  for one name and 6 for another. A strike count is bounded and comparable.
+- `volume` is recorded per contract and is the point of the exercise. Standard
+  variance measures like VIX weight every strike by a fixed mathematical rule
+  regardless of whether anyone traded it.
+
+Run:  ALPACA_KEY=... ALPACA_SECRET=... python surface.py
+"""
+import csv
+import sys
+import time
+from datetime import date, timedelta
+from pathlib import Path
+
+import record as R
+
+# Names to collect. Deliberately small: the file grows every trading day and
+# lives in a public git repo. TSLA is here because it is the name the professor
+# named and because its option market went from nothing in 2010 to one of the
+# most heavily retail-traded in the market, which makes it the closest thing to
+# a natural experiment available.
+SURFACE = ["TSLA", "NVDA", "AAPL", "SPY", "GLD"]
+
+TARGET_DTE = 30
+DTE_WINDOW = (21, 45)
+STRIKE_BAND = 0.10          # matches the advice: within ~10% of spot
+STRIKE_COUNT = 20           # ~20 strikes centred on spot, per the advice
+PACE = 1.0                  # slower than record.py: this may run alongside it
+OUT = Path(__file__).parent / "data" / "surface.csv"
+
+FIELDS = [
+    "date", "symbol", "spot", "quote_time",
+    "expiration", "dte", "type", "strike", "moneyness", "option_symbol",
+    "bid", "ask", "mid", "volume",
+    "iv", "delta", "gamma", "theta", "vega", "rho",
+]
+
+
+def chain(s, symbol, spot, today, kind):
+    """One side of the chain inside the strike band and DTE window."""
+    p = dict(
+        feed=R.OPTION_FEED, limit=1000, type=kind,
+        expiration_date_gte=(today + timedelta(days=DTE_WINDOW[0])).isoformat(),
+        expiration_date_lte=(today + timedelta(days=DTE_WINDOW[1])).isoformat(),
+        strike_price_gte=round(spot * (1 - STRIKE_BAND), 2),
+        strike_price_lte=round(spot * (1 + STRIKE_BAND), 2))
+    out = {}
+    for _ in range(R.MAX_PAGES):
+        j = R.get(s, f"{R.DATA}/v1beta1/options/snapshots/{symbol}", **p)
+        page = j.get("snapshots") or {}
+        out.update(page)
+        token = j.get("next_page_token")
+        if not token or not page:
+            break
+        p["page_token"] = token
+        time.sleep(PACE)
+    return out
+
+
+def rows_for(s, symbol, spot, today):
+    """Every contract at the chosen expiry, both types, nearest STRIKE_COUNT."""
+    snaps = chain(s, symbol, spot, today, "call")
+    time.sleep(PACE)
+    snaps.update(chain(s, symbol, spot, today, "put"))
+    if not snaps:
+        raise RuntimeError("no contracts in the strike/expiry window")
+
+    parsed = []
+    for osym, snap in snaps.items():
+        try:
+            exp, strike, kind = R.parse_occ(osym)
+        except ValueError:
+            continue
+        dte = (exp - today).days
+        if DTE_WINDOW[0] <= dte <= DTE_WINDOW[1]:
+            parsed.append((exp, dte, strike, kind, osym, snap))
+    if not parsed:
+        raise RuntimeError("nothing inside the DTE window")
+
+    # One expiry: the one nearest TARGET_DTE. Ties break to the shorter side so
+    # the choice is deterministic and cannot flip between runs.
+    exp_pick = min({(abs(d - TARGET_DTE), d, e) for e, d, _, _, _, _ in parsed})[2]
+    at_exp = [p for p in parsed if p[0] == exp_pick]
+
+    # Keep the STRIKE_COUNT strikes nearest spot, then take both types at each.
+    strikes = sorted({p[2] for p in at_exp}, key=lambda k: abs(k - spot))[:STRIKE_COUNT]
+    keep = {k: True for k in strikes}
+
+    out = []
+    for exp, dte, strike, kind, osym, snap in at_exp:
+        if strike not in keep:
+            continue
+        q = snap.get("latestQuote") or {}
+        g = snap.get("greeks") or {}
+        bid, ask = q.get("bp"), q.get("ap")
+        mid = (bid + ask) / 2 if (bid is not None and ask is not None) else None
+        day = snap.get("dailyBar") or {}
+        out.append({
+            "date": today.isoformat(), "symbol": symbol, "spot": round(spot, 4),
+            "quote_time": q.get("t", ""),
+            "expiration": exp.isoformat(), "dte": dte,
+            "type": kind, "strike": strike,
+            "moneyness": round(strike / spot, 6) if spot else "",
+            "option_symbol": osym,
+            "bid": bid, "ask": ask,
+            "mid": round(mid, 6) if mid is not None else "",
+            "volume": day.get("v", ""),
+            "iv": snap.get("impliedVolatility", ""),
+            "delta": g.get("delta", ""), "gamma": g.get("gamma", ""),
+            "theta": g.get("theta", ""), "vega": g.get("vega", ""),
+            "rho": g.get("rho", ""),
+        })
+    return sorted(out, key=lambda r: (r["type"], r["strike"]))
+
+
+def already_recorded(today):
+    if not OUT.exists():
+        return set()
+    with OUT.open(newline="") as f:
+        return {r["symbol"] for r in csv.DictReader(f)
+                if r.get("date") == today.isoformat()}
+
+
+def append(rows):
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    new = not OUT.exists() or OUT.stat().st_size == 0
+    if not new:
+        with OUT.open(newline="") as f:
+            header = next(csv.reader(f), None)
+        if header and header != FIELDS:
+            sys.exit(f"Refusing to append: {OUT.name} header does not match "
+                     f"FIELDS. Resolve by hand rather than writing misaligned "
+                     f"rows.")
+    with OUT.open("a", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        if new:
+            w.writeheader()
+        w.writerows(rows)
+
+
+def main():
+    today = date.today()
+    if today.weekday() >= 5:
+        print(f"{today} is a weekend - nothing to record.")
+        return
+    done = already_recorded(today)
+    todo = [s for s in SURFACE if s not in done]
+    for s in [x for x in SURFACE if x in done]:
+        print(f"  {s:6s} already recorded for {today}, skipping")
+    if not todo:
+        print("Nothing to do.")
+        return
+
+    s = R.session()
+    if not R.is_trading_day(s, today):
+        print(f"{today} is a market holiday - nothing to record.")
+        return
+
+    try:
+        spots = R.spot_prices(s, todo)
+    except Exception as e:
+        sys.exit(f"Could not fetch spot prices: {e}")
+
+    rows, failed = [], []
+    for sym in todo:
+        try:
+            if sym not in spots:
+                raise RuntimeError("no price returned")
+            r = rows_for(s, sym, spots[sym], today)
+            rows.extend(r)
+            vol = sum(int(x["volume"]) for x in r if str(x["volume"]).isdigit())
+            print(f"  {sym:6s} spot {spots[sym]:>9.2f}  {len(r):>3d} contracts  "
+                  f"exp {r[0]['expiration']}  total volume {vol:,}")
+        except Exception as e:
+            failed.append(sym)
+            print(f"  {sym:6s} FAILED: {e}")
+        time.sleep(PACE)
+
+    if rows:
+        append(rows)
+        print(f"\nWrote {len(rows)} row(s) to {OUT}")
+    if failed:
+        print(f"Failed: {', '.join(failed)} - a gap is not fatal.")
+
+
+if __name__ == "__main__":
+    main()

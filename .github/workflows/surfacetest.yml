@@ -1,0 +1,51 @@
+name: surfacetest
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  surfacetest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
+      - run: pip install requests
+      - name: Probe the surface recorder
+        env:
+          ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
+          ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
+        run: |
+          python - <<'PY' 2>&1 | tee /tmp/o.txt
+          from pathlib import Path
+          import surface, csv, os
+          surface.OUT = Path("/tmp/surface.csv")     # never the real file
+          surface.main()
+          if surface.OUT.exists():
+              rows = list(csv.DictReader(surface.OUT.open(newline="")))
+              print(f"\n=== MEASURED ===")
+              print(f"rows written: {len(rows)}")
+              print(f"bytes: {surface.OUT.stat().st_size:,}")
+              print(f"est. per trading day: {surface.OUT.stat().st_size:,} B")
+              print(f"est. per year (252d): {surface.OUT.stat().st_size*252/1e6:.1f} MB")
+              by = {}
+              for r in rows: by.setdefault(r["symbol"], []).append(r)
+              print("\nper ticker:")
+              for k, v in by.items():
+                  vols = [int(x["volume"]) for x in v if str(x["volume"]).isdigit()]
+                  iv_ok = sum(1 for x in v if x["iv"])
+                  print(f"  {k:5s} {len(v):>3d} rows | iv on {iv_ok:>3d} | "
+                        f"volume>0 on {sum(1 for x in vols if x>0):>3d} | "
+                        f"total vol {sum(vols):>9,} | "
+                        f"strikes {min(float(x['strike']) for x in v):.0f}-"
+                        f"{max(float(x['strike']) for x in v):.0f}")
+              print("\nsample row:")
+              for k, x in list(rows[0].items()): print(f"  {k:15s} {x}")
+          PY
+          cat /tmp/o.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Assert the real dataset was untouched
+        run: |
+          echo "75035d11b530681571dbeb3294af5926  data/iv_history.pre-17col.csv" > /tmp/s
+          md5sum -c /tmp/s
+          git diff --exit-code -- data/ && echo "data/ clean"
