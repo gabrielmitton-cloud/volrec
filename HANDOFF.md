@@ -347,8 +347,10 @@ Anything before then is premature. The recorder needs no further changes.
   would disable the recorder and its own alarm together, and the failure is
   silent by construction. The alarm shares a failure mode with the thing it
   watches. That is why a weekly Claude routine
-  (`trig_01GkVL3mRpGGptXfqoNSR77d`, Wed 09:13 Pacific) checks the dataset and
-  both workflow states from *outside* GitHub Actions. It has read-only tools -
+  (`trig_01GkVL3mRpGGptXfqoNSR77d`, Wed 09:13 Pacific) checks both panels
+  (through `tools/panel_health.py`), all three workflow states, recent runs and
+  the pressure test from *outside* GitHub Actions. Updated 13 Sep 2026: it had
+  still expected 24 columns and two workflows. It has read-only tools -
   no Write, no Edit - so it structurally cannot touch the dataset. Manage it at
   https://claude.ai/code/routines
 - **Market holidays are skipped**, checked against Alpaca's calendar rather than
