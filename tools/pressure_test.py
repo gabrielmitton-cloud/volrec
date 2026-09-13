@@ -285,10 +285,26 @@ ok("migrate_header()" in msrc[msrc.find("def append"):msrc.find("def probe")],
    "migrate_header runs inside append(), i.e. only when rows exist")
 ok("already_recorded" in msrc, "idempotent: re-running the same day cannot duplicate")
 
-print("\n=== K. PUBLIC MONITOR ===")
+print("\n=== K. PUBLIC SITE (index.html, tools/monitor.html, tools/volrec.js) ===")
+site = (R / "tools/volrec.js").read_text()
 mon = (R / "tools/monitor.html").read_text()
-ok("h.forEach((k,i)=>o[k]=c[i])" in mon, "parses by header NAME, not position")
-ok("split(/\\r?\\n/)" in mon, "handles CRLF")
+idx = (R / "index.html").read_text()
+ok("h.forEach((k,i)=>o[k]=c[i])" in site, "parses by header NAME, not position")
+ok("split(/\\r?\\n/)" in site, "handles CRLF")
+ok('src="volrec.js"' in mon and 'src="tools/volrec.js"' in idx, "both pages load the shared runtime")
+_js = lambda name: re.findall(r'"([A-Z.]+)"', re.search(re.escape(name) + r"\s*=\s*\[(.*?)\]", site, re.S).group(1))
+ok(sorted(_js("V.WATCHLIST")) == sorted(syms) and len(_js("V.WATCHLIST")) == len(syms),
+   "site watchlist matches record.py (a new ticker would otherwise show as absent)")
+ok(_js("V.SURFACE") == re.findall(r'"([A-Z.]+)"', re.search(r"^SURFACE\s*=\s*\[(.*?)\]", (R / "surface.py").read_text(), re.S | re.M).group(1)),
+   "site surface list matches surface.py")
+_ph = (R / "tools/panel_health.py").read_text()
+_start = re.search(r"SURFACE_START = date\((\d+), (\d+), (\d+)\)", _ph).groups()
+ok(f'V.SURFACE_START = "{int(_start[0]):04d}-{int(_start[1]):02d}-{int(_start[2]):02d}"' in site
+   and f"V.STALE_DAYS = {re.search(r'STALE_DAYS = (\d+)', _ph).group(1)};" in site
+   and f"V.SURFACE_LANDED_HOUR_UTC = {re.search(r'SURFACE_LANDED_HOUR_UTC = (\d+)', _ph).group(1)};" in site,
+   "site health rules use the same constants as panel_health.py")
+ok(not re.search(r"bloomberg", site + mon + idx.replace("derived from Bloomberg", ""), re.I),
+   "the site reads no Bloomberg-derived data")
 
 print("\n" + "=" * 56)
 print(f"RESULT: {len(fails)} fail, {len(warns)} warn")

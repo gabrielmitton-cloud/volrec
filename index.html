@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>What Free Options Data Costs</title>
+<meta name="description" content="A zero-budget measurement of free, retail-grade option quotes against Cboe's published volatility indices. Gabriel Mitton, Pepperdine University.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Cpath d='M3 23C9 23 11 8 16 8s7 15 13 15' fill='none' stroke='%232396C4' stroke-width='2.6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,300..700&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&display=swap">
+<link rel="stylesheet" href="tools/volrec.css">
+</head>
+<body>
+<header class="rail" id="rail"></header>
+
+<main class="paper">
+
+  <section class="masthead">
+    <div>
+      <h1 class="title">What does free options data cost?</h1>
+      <p class="dek">Anyone without a research budget prices options from free, indicative quotes. This project measures how far those quotes land from Cboe's published volatility indices, and finds that most of the gap was never the data.</p>
+    </div>
+    <dl class="meta">
+      <div><dt>Author</dt><dd class="byline">Gabriel Mitton</dd><dd>Pepperdine University</dd></div>
+      <div><dt>Status</dt><dd>Working paper. The recorder adds a day of data every weekday.</dd></div>
+      <div><dt>Data on this page</dt><dd id="meta-data">Reading the repository</dd></div>
+      <div><dt>Code and data</dt><dd><a href="https://github.com/gabrielmitton-cloud/volrec">github.com/gabrielmitton-cloud/volrec</a></dd></div>
+    </dl>
+  </section>
+
+  <!-- Figure 1 ------------------------------------------------------------ -->
+  <figure class="fig" id="fig1">
+    <div class="fig-frame">
+      <div class="fig-head"><span class="fig-no">Fig. 1</span><h2 class="fig-title">How much of the distribution a fixed band of strikes can see</h2></div>
+      <div class="scope">
+        <div class="scope-screen" id="scope"></div>
+        <div class="readout">
+          <div>
+            <p class="ctl-k">Underlying, volatility set to its Cboe index on 11 September</p>
+            <div class="seg" id="u-seg" role="group" aria-label="underlying"></div>
+          </div>
+          <div>
+            <p class="ctl-k">Strike band, as measured on 11 September</p>
+            <div class="seg" id="b-seg" role="group" aria-label="strike band"></div>
+            <p class="hint">Or drag across the screen to set any band.</p>
+          </div>
+          <div class="meas">
+            <div class="meas-row">
+              <span class="meas-k">Band covers</span>
+              <span class="meas-v hero" id="r-sd">…</span>
+              <span class="meas-sub" id="r-miss"></span>
+            </div>
+            <div class="meas-row">
+              <span class="meas-k"><i class="sw-line" style="background:var(--model)"></i>Model gap to Cboe</span>
+              <span class="meas-v" id="r-model">…</span>
+            </div>
+            <div class="meas-row">
+              <span class="meas-k"><i class="sw-dot" style="background:var(--free)"></i>Measured gap to Cboe</span>
+              <span class="meas-v" id="r-meas">…</span>
+            </div>
+          </div>
+          <p class="r-note" id="r-note"></p>
+        </div>
+      </div>
+    </div>
+    <figcaption class="fig-cap">
+      <p>A lognormal forward 30 days out, with no skew, and volatility set to the underlying's Cboe index close. Cyan is the part of the distribution a band of strikes can price. Magenta is the tail beyond it, which Cboe's variance formula still counts. Each grid division is 10% of spot, and the curve's height is scaled to the screen: its width is the point.</p>
+      <div class="src">Model: Cboe's variance formula applied to Black-Scholes prices, computed in <a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/tools/volrec.js">tools/volrec.js</a>.<br>Measured: calibration of 11 September 2026, one day, in <a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/hypotheses/2026-09-12-h3-free-data-model-free.md">hypotheses/H3</a>.</div>
+    </figcaption>
+  </figure>
+
+  <!-- Section 1 ----------------------------------------------------------- -->
+  <section class="section">
+    <h2>The gap that looked like bad data</h2>
+    <div class="prose">
+      <p>On 4 September, the project's at-the-money readings sat below Cboe's published index for every matched pair, by <span class="m">3.61</span> volatility points on average. The obvious explanation was the feed. Alpaca's free options data is indicative rather than consolidated OPRA, and its own staff describe it as meant for debugging code, not testing strategies.</p>
+      <p>The obvious explanation was premature. An at-the-money quote is a single point on the volatility smile, while Cboe's indices integrate every strike. Rebuilding Cboe's own model-free method on the same free feed, across a wide enough band of strikes, closes almost all of the gap. SPY came in at <span class="m">15.83</span> against a published VIX of <span class="m">15.84</span>.</p>
+      <p>Figure 2 shows the same comparisons both ways. Switch between them.</p>
+    </div>
+    <aside class="aside">
+      <div><b>One day, five underlyings.</b> The model-free numbers are a calibration that set the configuration. They are not a test of the hypothesis, which runs on the series that starts collecting on 14 September 2026.</div>
+      <div><b>No SPY comparison on 4 September.</b> The at-the-money check that day matched four pairs.</div>
+    </aside>
+    <figure class="fig" id="fig2">
+      <div class="fig-frame">
+        <div class="fig-head"><span class="fig-no">Fig. 2</span><h2 class="fig-title">The same free feed, read two ways against Cboe</h2></div>
+        <div class="fig-tools">
+          <div class="seg" id="d-seg" role="group" aria-label="method"></div>
+          <div class="legend">
+            <span><i class="sw-dot" style="background:var(--free)"></i>Free feed, this project</span>
+            <span><i class="sw-dot" style="background:var(--cboe)"></i>Cboe index</span>
+          </div>
+        </div>
+        <div class="fig-body">
+          <div id="dumb"></div>
+          <details class="tv"><summary>Show the numbers as a table</summary><div class="tv-wrap" id="dumb-table"></div></details>
+        </div>
+      </div>
+      <figcaption class="fig-cap">
+        <p>Each row joins this project's reading to Cboe's for the same underlying on the same day. The mean absolute gap falls from 3.61 points at the money to 0.59 with the model-free method at ±30%. The Cboe levels differ between the two views because they are a week apart.</p>
+        <div class="src">At the money, 4 September 2026: <a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/HANDOFF.md">HANDOFF.md</a>, known data issues.<br>Model-free, 11 September 2026: <a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/hypotheses/2026-09-12-h3-free-data-model-free.md">hypotheses/H3</a>.</div>
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- Section 2 ----------------------------------------------------------- -->
+  <section class="section">
+    <h2>Where the gap came from</h2>
+    <div class="prose">
+      <p>The error was strike truncation. Cboe's formula sums out-of-the-money option prices across every strike until quotes run out, and the tails carry real weight. Stop the sum at a fixed percentage of spot and whatever lies beyond it is lost. How much is lost depends on how wide the distribution is, which is to say on volatility.</p>
+      <p>A <span class="m">±10%</span> band covers <span class="m">2.2</span> standard deviations of a 16-volatility index and only <span class="m">0.6</span> of 59-volatility crude oil. That is why USO read twelve points light. The lognormal model in Figure 1 predicts nearly the same shortfall with no market data at all: <span class="m">11.43</span> points against <span class="m">12.37</span> measured.</p>
+      <p>The model has no skew, so it should understate the real shortfall, and it does at every band. The practical consequence is uncomfortable: <strong>any study using a fixed percentage strike band is most biased on exactly the high-volatility names most likely to be interesting.</strong></p>
+    </div>
+    <aside class="aside">
+      <div><b>Band in standard deviations</b> is the half-width of the band divided by σ√T, with T of 30 days.</div>
+      <div><b>At ±20% and ±10%</b>, only the mean and the worst of the five underlyings were recorded, not each one.</div>
+    </aside>
+    <figure class="fig" id="fig3">
+      <div class="fig-frame">
+        <div class="fig-head"><span class="fig-no">Fig. 3</span><h2 class="fig-title">Widening the band closes the gap, as the model says it should</h2></div>
+        <div class="fig-tools">
+          <div class="legend">
+            <span><i class="sw-line" style="background:var(--free)"></i>Measured, worst of five</span>
+            <span><i class="sw-line" style="background:var(--ink-3)"></i>Measured, mean of five</span>
+            <span><i class="sw-line" style="background:var(--model)"></i>Lognormal model, USO</span>
+          </div>
+        </div>
+        <div class="fig-body">
+          <div id="trunc"></div>
+          <details class="tv"><summary>Show the numbers as a table</summary><div class="tv-wrap" id="trunc-table"></div></details>
+        </div>
+      </div>
+      <figcaption class="fig-cap">
+        <p>Absolute gap between the model-free estimate and Cboe's index, in volatility points, at the three strike bands calibrated on 11 September. The worst reading at ±10% and at ±30% was USO. The model line is computed, not fitted.</p>
+        <div class="src">Measured: <a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/hypotheses/2026-09-12-h3-free-data-model-free.md">hypotheses/H3</a>, calibration table.<br>Model: <a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/tools/volrec.js">tools/volrec.js</a>, OVX close of 58.92.</div>
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- Section 3 ----------------------------------------------------------- -->
+  <section class="section">
+    <h2>Why a month of daily rows is not a month of evidence</h2>
+    <div class="prose">
+      <p>The volatility risk premium compares what options implied with what the market then did. With 30-day windows, consecutive daily observations share almost the same future, so a month of rows is closer to one observation than to twenty.</p>
+      <p>The project's simulator makes the cost concrete. Give it a premium that is zero by construction, and a test that treats every day as independent reports a significant premium <span class="m">63.8%</span> of the time, or <span class="m">93.0%</span> once a common market factor is added. A test on non-overlapping windows stays near its nominal <span class="m">5%</span>.</p>
+      <p>That is why the live panel on this page reports collection and never a premium. The level of the premium is reported only from the long Cboe sample, which carries about <span class="m">127</span> non-overlapping episodes per pair.</p>
+    </div>
+    <aside class="aside">
+      <div><b>Run it yourself</b> with <span class="m">python analyze.py --simulate</span>.</div>
+      <div><b>Market factor</b> means a shared shock with correlation 0.5 across names, the case that matters for a universe of related tickers.</div>
+    </aside>
+    <figure class="fig" id="fig4">
+      <div class="fig-frame">
+        <div class="fig-head"><span class="fig-no">Fig. 4</span><h2 class="fig-title">A hundred studies of a premium that does not exist</h2></div>
+        <div class="fig-tools"><div class="seg" id="s-seg" role="group" aria-label="test"></div></div>
+        <div class="fig-body">
+          <div class="sim">
+            <div class="waffle" id="waffle" role="img"></div>
+            <div><div class="sim-v" id="sim-v">…</div><div class="sim-k" id="sim-k"></div></div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="fig-cap">
+        <p>Each square is one simulated study run under a true null, with the premium set to zero. A lit square is a study that reports a significant premium anyway. The non-overlapping test is described as near its nominal 5%, so it is drawn at five.</p>
+        <div class="src">Simulation: <span class="m">analyze.py --simulate</span>. Rates as recorded in <a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/hypotheses/2026-09-06-h1-vrp-long-sample.md">hypotheses/H1</a>.</div>
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- Section 4 ----------------------------------------------------------- -->
+  <section class="section">
+    <h2>The premium, where it can be measured</h2>
+    <div class="prose">
+      <p>Before trusting any estimator on a short sample, the project pointed it at a decade of Cboe index data. The premium is a documented phenomenon, so this was a test of the code rather than a discovery. If the estimators could not find it there, nothing they reported about a few weeks of collection would be worth reading.</p>
+      <p>They found it on <span class="m">9</span> of <span class="m">11</span> pairs. The two that fail are sector indices Cboe discontinued in February 2022, which have the fewest observations. Measured in log variance rather than volatility, the same premium is stronger still, with <span class="m">t = 16.26</span> against <span class="m">9.28</span>. That result is registered but not adopted.</p>
+    </div>
+    <aside class="aside">
+      <div><b>Intervals</b> are approximate: the mean plus or minus 1.96 standard errors, with the standard error recovered from the reported t-statistic.</div>
+      <div><b>Premium</b> is implied minus realised volatility, in annualised points. Positive means the insurance was overpriced.</div>
+    </aside>
+    <figure class="fig" id="fig5">
+      <div class="fig-frame">
+        <div class="fig-head"><span class="fig-no">Fig. 5</span><h2 class="fig-title">The volatility risk premium across eleven Cboe index pairs, 2016 to 2026</h2></div>
+        <div class="fig-tools">
+          <div class="legend">
+            <span><i class="sw-dot" style="background:var(--free)"></i>Significant at 5%</span>
+            <span><i class="sw-ring"></i>Not significant</span>
+          </div>
+        </div>
+        <div class="fig-body">
+          <div id="forest"></div>
+          <details class="tv"><summary>Show the numbers as a table</summary><div class="tv-wrap" id="forest-table"></div></details>
+        </div>
+      </div>
+      <figcaption class="fig-cap">
+        <p>Mean premium per pair on non-overlapping 21-trading-day windows, with an approximate 95% interval. Pairs are sorted by the size of the premium. N is the number of independent windows.</p>
+        <div class="src">Sample A, 4 January 2016 to 16 July 2026: <a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/hypotheses/2026-09-06-h1-vrp-long-sample.md">hypotheses/H1</a>.</div>
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- Ledger -------------------------------------------------------------- -->
+  <section class="section">
+    <h2>Written down before the data arrived</h2>
+    <div class="prose">
+      <p>Every hypothesis is committed to the repository before the data that tests it is examined, and the commit date is the evidence. Post-hoc adjustments are logged in the same file, and a third adjustment means abandoning the hypothesis.</p>
+    </div>
+    <div class="fig" style="grid-column:1/-1;margin-top:28px">
+      <div class="ledger-wrap"><table class="ledger" id="ledger"></table></div>
+    </div>
+  </section>
+
+  <!-- Live instrument ----------------------------------------------------- -->
+  <section class="live" aria-labelledby="live-h">
+    <div class="live-head">
+      <h2 id="live-h" class="slash">The instrument, live</h2>
+      <a class="btn" href="tools/monitor.html">Open the instrument</a>
+    </div>
+    <div class="kpis" id="live-kpis"></div>
+    <div class="live-grid">
+      <div>
+        <p class="ctl-k" id="swarm-k">Implied volatility, one dot per ticker</p>
+        <div id="mini"></div>
+      </div>
+      <div>
+        <p class="ctl-k">Panel health, the same rules as the daily check</p>
+        <div class="health-rows" id="health"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Limits -------------------------------------------------------------- -->
+  <section class="section">
+    <h2>What this cannot show</h2>
+    <ul class="limits">
+      <li><b>One day is calibration.</b> The model-free comparison has been run on a single day. H3 is tested on the series that begins collecting on 14 September 2026.</li>
+      <li><b>The feed is indicative.</b> Alpaca's free options data is not consolidated OPRA. Levels are approximate, and changes over time are more trustworthy than any single reading.</li>
+      <li><b>The daily panel is short.</b> It carries roughly two independent episodes so far, so it reports collection, not a premium.</li>
+      <li><b>H4 is close to a replication.</b> Its predictions come from published work. What is new is the data: collected first-hand, at zero budget, with volume and open interest per contract.</li>
+      <li><b>No licensed data is redistributed.</b> Nothing on this site is derived from Bloomberg, and no Cboe or FRED series is mirrored. Index levels are quoted only where a result depends on them.</li>
+    </ul>
+  </section>
+
+  <footer class="colophon">
+    <div><h3>Gabriel Mitton</h3>Pepperdine University.<br>Built and maintained in public.</div>
+    <div><h3>Hypotheses</h3><ul>
+      <li><a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/hypotheses/2026-09-06-h1-vrp-long-sample.md">H1, the premium on Cboe indices</a></li>
+      <li><a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/hypotheses/2026-09-09-h2-variance-formulation.md">H2, variance versus volatility</a></li>
+      <li><a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/hypotheses/2026-09-12-h3-free-data-model-free.md">H3, free data against Cboe</a></li>
+      <li><a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/hypotheses/2026-09-13-h4-hedged-gains-across-the-surface.md">H4, hedged gains across the surface</a></li>
+    </ul></div>
+    <div><h3>Tools</h3><ul>
+      <li><a href="tools/monitor.html">The instrument</a></li>
+      <li><a href="tools/gamma-lab-v2.html">Gamma Lab, delta-hedging under friction</a></li>
+      <li><a href="tools/gamma-lab.html">Gamma Lab, the first version</a></li>
+    </ul></div>
+    <div><h3>Source</h3><ul>
+      <li><a href="https://github.com/gabrielmitton-cloud/volrec">Repository</a></li>
+      <li><a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/README.md">README</a></li>
+      <li><a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/data/iv_history.csv">The daily dataset</a></li>
+    </ul></div>
+  </footer>
+</main>
+
+<script src="tools/volrec.js"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const LINKS = [["Paper", "./", "paper"], ["Instrument", "tools/monitor.html", "monitor"], ["Code", V.REPO, "code"]];
+  V.rail($("rail"), { home: "./", here: "paper", state: "loading", links: LINKS });
+
+  /* ---------------------------------------------------- documented results */
+
+  const CBOE = [
+    { sym: "SPY", idx: "VIX", level: 15.84 },
+    { sym: "QQQ", idx: "VXN", level: 21.02 },
+    { sym: "IWM", idx: "RVX", level: 19.98 },
+    { sym: "GLD", idx: "GVZ", level: 25.68 },
+    { sym: "USO", idx: "OVX", level: 58.92 }
+  ];
+  const BANDS = [
+    { b: 0.10, strikes: 20, mean: 3.97, worst: -12.37 },
+    { b: 0.20, strikes: 30, mean: 1.31, worst: -4.39 },
+    { b: 0.30, strikes: 40, mean: 0.59, worst: -1.84 }
+  ];
+  const AT30 = { SPY: [15.83, 15.84], QQQ: [20.79, 21.02], IWM: [20.51, 19.98], GLD: [25.36, 25.68], USO: [57.08, 58.92] };
+  const ATM4 = { QQQ: [16.11, 20.04], IWM: [14.49, 18.30], GLD: [24.56, 26.63], USO: [40.32, 44.96] };
+  const H1 = [
+    ["VIX/SPY", 127, 3.52, 5.14, 0.0000], ["VXN/QQQ", 127, 2.70, 3.68, 0.0003], ["RVX/IWM", 127, 3.07, 4.80, 0.0000],
+    ["VXD/DIA", 127, 3.26, 5.02, 0.0000], ["OVX/USO", 127, 5.24, 4.40, 0.0000], ["GVZ/GLD", 127, 1.80, 3.97, 0.0001],
+    ["VXEEM/EEM", 127, 3.38, 5.43, 0.0000], ["VXSLV/SLV", 89, 3.14, 2.46, 0.0159], ["EVZ/FXE", 110, 0.83, 5.63, 0.0000],
+    ["VXXLE/XLE", 74, 1.80, 1.32, 0.1904], ["VXGDX/GDX", 85, 0.15, 0.08, 0.9347]
+  ].map(([pair, n, mean, t, p]) => ({ pair, n, mean, t, p, se: mean / t }));
+  const SIMS = [
+    { key: "pooled", label: "Every day independent", rate: 63.8, lit: 64, text: "of studies report a premium that is not there, when every overlapping day is counted as independent." },
+    { key: "factor", label: "With a market factor", rate: 93.0, lit: 93, text: "report one once the tickers share a common market shock, which a universe of related names does." },
+    { key: "nonoverlap", label: "Non-overlapping windows", rate: 5, lit: 5, approx: true, text: "report one when each window is independent. That is the nominal rate a 5% test is supposed to have." }
+  ];
+
+  // Redraw a figure at its container's real width, so text stays at its real size.
+  function mount(host, draw) {
+    let w = 0;
+    const run = force => {
+      const nw = Math.round(host.clientWidth);
+      if (!nw || (!force && Math.abs(nw - w) < 2)) return;
+      w = nw; draw(nw);
+    };
+    run(true);
+    if ("ResizeObserver" in window) new ResizeObserver(() => run(false)).observe(host);
+    else addEventListener("resize", () => run(false));
+    return () => run(true);
+  }
+  function segmented(host, items, isOn, onPick) {
+    V.clear(host);
+    const btns = items.map(it => {
+      const b = V.h("button", { type: "button", "aria-pressed": String(isOn(it)) }, host, it.label);
+      b.addEventListener("click", () => { onPick(it); btns.forEach((x, i) => x.setAttribute("aria-pressed", String(isOn(items[i])))); });
+      return b;
+    });
+    return () => btns.forEach((x, i) => x.setAttribute("aria-pressed", String(isOn(items[i]))));
+  }
+  function table(host, head, rows) {
+    V.clear(host);
+    const t = V.h("table", { class: "data" }, host);
+    const tr = V.h("tr", null, V.h("thead", null, t));
+    head.forEach(h => V.h("th", null, tr, h));
+    const tb = V.h("tbody", null, t);
+    rows.forEach(r => { const row = V.h("tr", null, tb); r.forEach(c => V.h("td", null, row, c)); });
+  }
+
+  /* ---------------------------------------------------- Fig. 1, the scope */
+
+  const F1 = { u: 4, b: 0.10, first: true };
+  const bandRedraw = segmented($("b-seg"), BANDS.map(x => ({ b: x.b, label: "±" + Math.round(x.b * 100) + "%" })),
+    it => Math.abs(F1.b - it.b) < 0.004, it => { F1.b = it.b; paint1(); });
+  segmented($("u-seg"), CBOE.map((c, i) => ({ i, label: c.sym })), it => it.i === F1.u, it => { F1.u = it.i; paint1(); });
+
+  mount($("scope"), function (W) {
+    const host = V.clear($("scope"));
+    const H = Math.round(Math.max(300, Math.min(540, W * 0.6)));
+    const m = { l: 10, r: 10, t: 34, b: 42 };
+    const svg = V.s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, tabindex: 0, role: "img",
+      "aria-label": "Lognormal distribution of the forward price with the strike band marked. Use the left and right arrow keys to change the band." }, host);
+    V.glowFilter(svg, "glow1");
+    const px = m.l, py = m.t, pw = W - m.l - m.r, ph = H - m.t - m.b, cols = 12;
+    V.graticule(svg, px, py, pw, ph, cols, 8, true);
+    const X = V.lin(0.4, 1.6, px, px + pw);
+    const every = pw / cols < 46 ? 2 : 1;
+    for (let i = 0; i <= cols; i += every) {
+      const k = 0.4 + i * 0.1;
+      V.s("text", { x: X(k), y: py + ph + 17, "text-anchor": i === 0 ? "start" : i === cols ? "end" : "middle", class: i === 6 ? "lab" : "" }, svg, Math.round(k * 100) + "%");
+    }
+    V.s("text", { x: px + pw, y: py + ph + 34, "text-anchor": "end", class: "lab-dim" }, svg, "strike as a share of spot");
+    F1.svg = svg; F1.X = X; F1.px = px; F1.py = py; F1.pw = pw; F1.ph = ph; F1.W = W;
+    F1.g = V.s("g", null, svg);
+    paint1();
+
+    let drag = false;
+    const setFrom = e => {
+      const r = svg.getBoundingClientRect();
+      const k = X.inv((e.clientX - r.left) * (W / r.width));
+      F1.b = Math.min(0.58, Math.max(0.02, Math.round(Math.abs(k - 1) * 200) / 200));
+      paint1();
+    };
+    svg.addEventListener("pointerdown", e => { drag = true; svg.setPointerCapture(e.pointerId); setFrom(e); });
+    svg.addEventListener("pointermove", e => { if (drag) setFrom(e); });
+    svg.addEventListener("pointerup", () => { drag = false; });
+    svg.addEventListener("pointercancel", () => { drag = false; });
+    svg.addEventListener("keydown", e => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      F1.b = Math.min(0.58, Math.max(0.02, Math.round((F1.b + (e.key === "ArrowRight" ? 0.01 : -0.01)) * 100) / 100));
+      paint1();
+    });
+  });
+
+  function paint1() {
+    const { g, X, py, ph, pw } = F1;
+    if (!g) return;
+    V.clear(g);
+    const u = CBOE[F1.u], s = u.level / 100, b = F1.b, T = V.T30, v = s * Math.sqrt(T);
+    const lo = 1 - b, hi = 1 + b;
+
+    const ks = [];
+    for (let i = 0; i <= 600; i++) ks.push(0.4 + 1.2 * i / 600);
+    ks.push(lo, hi);
+    ks.sort((a, z) => a - z);
+    const pts = ks.map(k => [k, V.lognPdf(k, s, T)]);
+    const mx = Math.max(...pts.map(p => p[1]));
+    const Y = d => py + ph - (d / mx) * ph * 0.84;
+    const between = (a, z) => pts.filter(p => p[0] >= a - 1e-12 && p[0] <= z + 1e-12);
+
+    V.s("rect", { x: X(lo), y: py, width: X(hi) - X(lo), height: ph, fill: "var(--free-wash)" }, g);
+    for (const [a, z] of [[0.4, lo], [hi, 1.6]]) {
+      const seg = between(a, z);
+      if (seg.length < 2) continue;
+      let d = `M${X(seg[0][0]).toFixed(1)},${py + ph}`;
+      seg.forEach(p => { d += `L${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`; });
+      d += `L${X(seg[seg.length - 1][0]).toFixed(1)},${py + ph}Z`;
+      V.s("path", { d, fill: "var(--model-wash)" }, g);
+    }
+
+    // standard-deviation ticks on the centre axis
+    for (const n of [1, 2, 3]) for (const sg of [-1, 1]) {
+      const k = 1 + sg * n * v;
+      if (k <= 0.42 || k >= 1.58) continue;
+      const x = X(k);
+      V.s("line", { x1: x, y1: py + ph / 2 - 8, x2: x, y2: py + ph / 2 + 8, class: "sig-tick" }, g);
+      V.s("text", { x, y: py + ph / 2 - 13, "text-anchor": "middle", class: "sig-lab" }, g, (sg < 0 ? "−" : "+") + n + "σ");
+    }
+
+    const traces = [];
+    for (const [a, z, cls] of [[0.4, lo, "tr-model"], [lo, hi, "tr-free"], [hi, 1.6, "tr-model"]]) {
+      const seg = between(a, z);
+      if (seg.length < 2) continue;
+      traces.push(V.s("path", { d: "M" + seg.map(p => X(p[0]).toFixed(1) + "," + Y(p[1]).toFixed(1)).join("L"),
+        class: cls, fill: "none", "stroke-width": 2.2, "stroke-linejoin": "round", "stroke-linecap": "round", filter: "url(#glow1)" }, g));
+    }
+
+    const pct = Math.round(b * 1000) / 10;
+    for (const [k, lab] of [[lo, "−" + pct + "%"], [hi, "+" + pct + "%"]]) {
+      const x = X(k);
+      V.s("line", { x1: x, y1: py, x2: x, y2: py + ph, stroke: "var(--free)", "stroke-width": 1.5 }, g);
+      const tag = V.s("g", { transform: `translate(${Math.min(Math.max(x, 30), F1.W - 30)},${py})` }, g);
+      V.s("rect", { x: -27, y: -26, width: 54, height: 19, fill: "var(--panel)", stroke: "var(--free)" }, tag);
+      V.s("text", { x: 0, y: -12.5, "text-anchor": "middle", class: "cur-lab" }, tag, lab);
+    }
+
+    // One orchestrated moment: the trace sweeps in, left to right, on first load.
+    if (F1.first && !V.calm) {
+      let delay = 0;
+      traces.forEach(p => {
+        const L = p.getTotalLength();
+        p.style.strokeDasharray = L; p.style.strokeDashoffset = L;
+        p.getBoundingClientRect();
+        p.style.transition = `stroke-dashoffset ${0.45 + L / 2400}s cubic-bezier(.35,.55,.25,1) ${delay}s`;
+        p.style.strokeDashoffset = 0;
+        delay += 0.45 + L / 2400 - 0.1;
+      });
+    }
+    F1.first = false;
+
+    // readouts
+    const tv = V.truncVol(s, b, T, 1000), gap = (tv - s) * 100, miss = Math.max(0, 1 - (tv / s) ** 2);
+    const sd = V.clear($("r-sd"));
+    sd.append(document.createTextNode(V.fx(b / v, 2)));
+    V.h("small", null, sd, "standard deviations");
+    $("r-miss").textContent = (miss < 0.0005 ? "under 0.05%" : (miss * 100).toFixed(1) + "%") + " of the variance lies outside the band";
+    const mod = V.clear($("r-model"));
+    mod.append(document.createTextNode(V.sgn(gap, 2)));
+    V.h("small", null, mod, "vol points");
+    const doc = BANDS.find(x => Math.abs(x.b - b) < 0.004);
+    const meas = V.clear($("r-meas"));
+    let note;
+    if (doc && doc.b === 0.30) {
+      const [ours, cb] = AT30[u.sym];
+      meas.append(document.createTextNode(V.sgn(ours - cb, 2)));
+      V.h("small", null, meas, "vol points");
+      note = `${u.sym} read ${ours.toFixed(2)} against ${u.idx} ${cb.toFixed(2)} on 11 September, using 40 strikes.`;
+    } else if (doc) {
+      meas.append(document.createTextNode(V.sgn(doc.worst, 2)));
+      V.h("small", null, meas, "worst of five");
+      note = `At ±${Math.round(b * 100)}% the five underlyings missed Cboe by ${doc.mean.toFixed(2)} points on average, and by ${Math.abs(doc.worst).toFixed(2)} at worst. Each underlying's own gap was not recorded at this band.`;
+    } else {
+      meas.append(document.createTextNode("n/a"));
+      V.h("small", null, meas, "not measured");
+      note = "Only ±10%, ±20% and ±30% were measured. Choose one to compare the model with the data.";
+    }
+    $("r-note").textContent = note;
+    bandRedraw();
+  }
+
+  /* ------------------------------------------------ Fig. 2, the dumbbells */
+
+  const F2 = { mode: "atm" };
+  const MODES = [
+    { key: "atm", label: "At the money, 4 Sep", data: ATM4, mean: 3.61, n: "four pairs" },
+    { key: "mf", label: "Model-free ±30%, 11 Sep", data: AT30, mean: 0.59, n: "five underlyings" }
+  ];
+  const ORDER = ["SPY", "IWM", "QQQ", "GLD", "USO"];
+  const IDX = Object.fromEntries(CBOE.map(c => [c.sym, c.idx]));
+  let update2 = () => {};
+  segmented($("d-seg"), MODES, it => it.key === F2.mode, it => { F2.mode = it.key; update2(true); });
+
+  mount($("dumb"), function (W) {
+    const host = V.clear($("dumb"));
+    const narrow = W < 620;
+    const m = { l: narrow ? 64 : 118, r: narrow ? 58 : 96, t: 64, b: 34 }, rh = narrow ? 44 : 52;
+    const H = m.t + m.b + rh * ORDER.length;
+    const svg = V.s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": "Dumbbell chart comparing this project's volatility readings with Cboe's index for five underlyings" }, host);
+    const X = V.lin(10, 65, m.l, W - m.r);
+    for (const t of V.ticks(10, 60, 5)) {
+      V.s("line", { x1: X(t), y1: m.t - 14, x2: X(t), y2: H - m.b, class: "grat-line" }, svg);
+      V.s("text", { x: X(t), y: H - m.b + 18, "text-anchor": "middle" }, svg, t);
+    }
+    V.s("text", { x: W - m.r, y: H - 2, "text-anchor": "end", class: "lab-dim" }, svg, "volatility, annualised points");
+
+    const sum = V.s("g", { transform: `translate(${m.l},24)` }, svg);
+    const sumV = V.s("text", { x: 0, y: 0, class: "lab-strong", style: "font-size:22px" }, sum);
+    const sumK = V.s("text", { x: 0, y: 20, class: "lab" }, sum);
+    V.s("text", { x: W - m.r + (narrow ? 50 : 80), y: m.t - 18, "text-anchor": "end", class: "lab-dim" }, svg, "gap");
+
+    const rows = ORDER.map((sym, i) => {
+      const y = m.t + rh * i + rh / 2;
+      V.s("text", { x: 0, y: y - 2, class: "lab-strong" }, svg, sym);
+      V.s("text", { x: 0, y: y + 13, class: "lab-dim" }, svg, IDX[sym]);
+      const bar = V.s("rect", { x: 0, y: -1, width: 1, height: 2, fill: "var(--ink-4)", class: "mv" }, svg);
+      const dO = V.s("g", { class: "mv" }, svg), dC = V.s("g", { class: "mv" }, svg);
+      V.s("circle", { r: 6.5, fill: "var(--free)", stroke: "var(--panel)", "stroke-width": 2 }, dO);
+      V.s("circle", { r: 6.5, fill: "var(--cboe)", stroke: "var(--panel)", "stroke-width": 2 }, dC);
+      const gap = V.s("text", { x: W - m.r + (narrow ? 50 : 80), y: y + 4, "text-anchor": "end", class: "lab-strong" }, svg);
+      const none = V.s("text", { x: X(10) + 4, y: y + 4, class: "lab-dim" }, svg, "no matched reading that day");
+      const hit = V.s("rect", { x: 0, y: y - rh / 2, width: W, height: rh, fill: "transparent", tabindex: 0 }, svg);
+      V.hover(hit, () => {
+        const mo = MODES.find(x => x.key === F2.mode), vals = mo.data[sym];
+        if (!vals) return [`${sym}, ${mo.label}`, [{ v: "n/a", k: "no matched reading" }]];
+        return [`${sym} against ${IDX[sym]}, ${mo.label}`, [
+          { v: vals[0].toFixed(2), k: "free feed", c: "var(--free)" },
+          { v: vals[1].toFixed(2), k: "Cboe", c: "var(--cboe)" },
+          { v: V.sgn(vals[0] - vals[1], 2), k: "gap, vol points" }]];
+      });
+      return { sym, y, bar, dO, dC, gap, none };
+    });
+
+    update2 = function (animate) {
+      const mo = MODES.find(x => x.key === F2.mode);
+      sumV.textContent = mo.mean.toFixed(2);
+      sumK.textContent = narrow ? `mean absolute gap, ${mo.n}` : `mean absolute gap to Cboe, vol points, across ${mo.n}`;
+      rows.forEach(r => {
+        const vals = mo.data[r.sym];
+        [r.bar, r.dO, r.dC].forEach(el => { el.style.transition = animate && !V.calm ? "" : "none"; });
+        if (!vals) {
+          [r.bar, r.dO, r.dC].forEach(el => { el.style.opacity = 0; });
+          r.gap.textContent = "";
+          r.none.style.opacity = 1;
+          return;
+        }
+        const [o, c] = vals, a = Math.min(o, c), z = Math.max(o, c);
+        r.none.style.opacity = 0;
+        r.bar.style.opacity = 1; r.dO.style.opacity = 1; r.dC.style.opacity = 1;
+        r.bar.style.transform = `translate(${X(a)}px, ${r.y}px) scale(${Math.max(1, X(z) - X(a))}, 1)`;
+        r.dO.style.transform = `translate(${X(o)}px, ${r.y}px)`;
+        r.dC.style.transform = `translate(${X(c)}px, ${r.y}px)`;
+        r.gap.textContent = V.sgn(o - c, 2);
+      });
+    };
+    update2(false);
+  });
+  table($("dumb-table"), ["underlying", "index", "free feed, 4 Sep", "Cboe, 4 Sep", "free feed, 11 Sep", "Cboe, 11 Sep"],
+    ORDER.map(s => [s, IDX[s], ATM4[s] ? ATM4[s][0].toFixed(2) : "n/a", ATM4[s] ? ATM4[s][1].toFixed(2) : "n/a", AT30[s][0].toFixed(2), AT30[s][1].toFixed(2)]));
+
+  /* ------------------------------------------- Fig. 3, gap against the band */
+
+  const usoModel = BANDS.map(x => Math.abs((V.truncVol(0.5892, x.b, V.T30, 1600) - 0.5892) * 100));
+  const S3 = [
+    { label: "Measured, worst of five", color: "var(--free)", vals: BANDS.map(x => Math.abs(x.worst)) },
+    { label: "Lognormal model, USO", color: "var(--model)", vals: usoModel },
+    { label: "Measured, mean of five", color: "var(--ink-3)", vals: BANDS.map(x => x.mean) }
+  ];
+  mount($("trunc"), function (W) {
+    const host = V.clear($("trunc"));
+    const narrow = W < 620;
+    const m = { l: 40, r: narrow ? 16 : 180, t: 18, b: 40 };
+    const H = Math.round(Math.max(280, Math.min(400, W * 0.42)));
+    const svg = V.s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": "Line chart of the gap to Cboe against strike band width" }, host);
+    const X = V.lin(0.1, 0.3, m.l + 24, W - m.r - 24), Y = V.lin(0, 14, H - m.b, m.t);
+    for (const t of [0, 2, 4, 6, 8, 10, 12, 14]) {
+      V.s("line", { x1: m.l, y1: Y(t), x2: W - m.r, y2: Y(t), class: t ? "grat-line" : "zero" }, svg);
+      V.s("text", { x: m.l - 8, y: Y(t) + 3, "text-anchor": "end" }, svg, t);
+    }
+    BANDS.forEach(x => V.s("text", { x: X(x.b), y: H - m.b + 18, "text-anchor": "middle", class: "lab" }, svg, `±${Math.round(x.b * 100)}%  ${x.strikes} strikes`));
+    V.s("text", { x: m.l - 8, y: m.t - 6, "text-anchor": "end", class: "lab-dim" }, svg, "pts");
+
+    const cross = V.s("line", { x1: 0, y1: m.t, x2: 0, y2: H - m.b, stroke: "var(--rule-2)", "stroke-width": 1, opacity: 0 }, svg);
+    S3.forEach(s => {
+      V.s("path", { d: "M" + BANDS.map((x, i) => X(x.b).toFixed(1) + "," + Y(s.vals[i]).toFixed(1)).join("L"),
+        fill: "none", stroke: s.color, "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+      BANDS.forEach((x, i) => V.s("circle", { cx: X(x.b), cy: Y(s.vals[i]), r: 4.5, fill: s.color, stroke: "var(--panel)", "stroke-width": 2 }, svg));
+    });
+    if (!narrow) {
+      // direct labels at the right end, with leader lines where the values bunch up
+      const ends = S3.map(s => ({ s, y: Y(s.vals[2]) })).sort((a, z) => a.y - z.y);
+      let last = -1e9;
+      ends.forEach(e => {
+        const ly = Math.max(e.y, last + 16); last = ly;
+        const x0 = X(0.3) + 8, x1 = X(0.3) + 34;
+        V.s("path", { d: `M${x0},${e.y}L${x1 - 6},${ly}L${x1},${ly}`, fill: "none", stroke: "var(--ink-4)" }, svg);
+        V.s("text", { x: x1 + 4, y: ly + 3.5, class: "lab" }, svg, `${e.s.label}  ${e.s.vals[2].toFixed(2)}`);
+      });
+    }
+    const hit = V.s("rect", { x: m.l, y: m.t, width: W - m.r - m.l, height: H - m.b - m.t, fill: "transparent", tabindex: 0 }, svg);
+    let focusI = 0;
+    const show = (i, cx, cy) => {
+      const x = BANDS[i];
+      cross.setAttribute("x1", X(x.b)); cross.setAttribute("x2", X(x.b)); cross.setAttribute("opacity", 1);
+      V.tipShow(cx, cy, `±${Math.round(x.b * 100)}% band, ${x.strikes} strikes`, S3.map(s => ({ v: s.vals[i].toFixed(2), k: s.label, c: s.color })));
+    };
+    hit.addEventListener("pointermove", e => {
+      const r = svg.getBoundingClientRect(), bx = X.inv((e.clientX - r.left) * (W / r.width));
+      let i = 0; BANDS.forEach((x, j) => { if (Math.abs(x.b - bx) < Math.abs(BANDS[i].b - bx)) i = j; });
+      show(i, e.clientX, e.clientY);
+    });
+    hit.addEventListener("pointerleave", () => { cross.setAttribute("opacity", 0); V.tipHide(); });
+    hit.addEventListener("focus", () => { const r = hit.getBoundingClientRect(); show(focusI, r.left + r.width / 2, r.top); });
+    hit.addEventListener("keydown", e => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault(); focusI = Math.max(0, Math.min(2, focusI + (e.key === "ArrowRight" ? 1 : -1)));
+      const r = hit.getBoundingClientRect(); show(focusI, r.left + r.width / 2, r.top);
+    });
+    hit.addEventListener("blur", () => { cross.setAttribute("opacity", 0); V.tipHide(); });
+  });
+  table($("trunc-table"), ["band", "strikes", "measured mean", "measured worst", "model, USO"],
+    BANDS.map((x, i) => ["±" + Math.round(x.b * 100) + "%", x.strikes, x.mean.toFixed(2), V.sgn(x.worst, 2), V.sgn(-usoModel[i], 2)]));
+
+  /* ------------------------------------------------------ Fig. 4, the waffle */
+
+  const F4 = { key: "pooled" };
+  const waffle = $("waffle");
+  const cells = Array.from({ length: 100 }, () => V.h("i", null, waffle));
+  // A fixed shuffle, so switching tests lights and dims the same squares in a stable order.
+  const order = Array.from({ length: 100 }, (_, i) => i);
+  let seed = 7;
+  for (let i = 99; i > 0; i--) { seed = (seed * 16807) % 2147483647; const j = seed % (i + 1); [order[i], order[j]] = [order[j], order[i]]; }
+  function paint4() {
+    const s = SIMS.find(x => x.key === F4.key);
+    const on = new Set(order.slice(0, s.lit));
+    cells.forEach((c, i) => c.classList.toggle("on", on.has(i)));
+    waffle.setAttribute("aria-label", `${s.lit} of 100 simulated studies report a significant premium`);
+    $("sim-v").textContent = (s.approx ? "about " : "") + (s.approx ? s.rate : s.rate.toFixed(1)) + "%";
+    $("sim-k").textContent = s.text;
+  }
+  segmented($("s-seg"), SIMS, it => it.key === F4.key, it => { F4.key = it.key; paint4(); });
+  paint4();
+
+  /* ---------------------------------------------- Fig. 5, the forest plot */
+
+  const H1s = [...H1].sort((a, z) => z.mean - a.mean);
+  mount($("forest"), function (W) {
+    const host = V.clear($("forest"));
+    const narrow = W < 620;
+    const m = { l: narrow ? 84 : 104, r: narrow ? 64 : 150, t: 14, b: 40 }, rh = 30;
+    const H = m.t + m.b + rh * H1s.length;
+    const svg = V.s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": "Forest plot of the volatility risk premium for eleven Cboe index pairs" }, host);
+    const X = V.lin(-4, 8, m.l, W - m.r);
+    for (const t of V.ticks(-4, 8, 6)) {
+      V.s("line", { x1: X(t), y1: m.t, x2: X(t), y2: H - m.b, class: t === 0 ? "grat-axis" : "grat-line" }, svg);
+      V.s("text", { x: X(t), y: H - m.b + 17, "text-anchor": "middle", class: t === 0 ? "lab" : "" }, svg, t > 0 ? "+" + t : String(t).replace("-", "−"));
+    }
+    V.s("text", { x: W - m.r, y: H - 3, "text-anchor": "end", class: "lab-dim" }, svg, "premium, annualised vol points");
+    if (!narrow) {
+      V.s("text", { x: W - m.r + 24, y: m.t + 2, class: "lab-dim" }, svg, "t");
+      V.s("text", { x: W - m.r + 84, y: m.t + 2, class: "lab-dim" }, svg, "N");
+    }
+    H1s.forEach((r, i) => {
+      const y = m.t + rh * i + rh / 2 + 6, lo = r.mean - 1.96 * r.se, hi = r.mean + 1.96 * r.se, sig = r.p < 0.05;
+      V.s("text", { x: 0, y: y + 3.5, class: sig ? "lab-strong" : "lab" }, svg, r.pair);
+      V.s("line", { x1: X(Math.max(-4, lo)), y1: y, x2: X(Math.min(8, hi)), y2: y, stroke: "var(--ink-3)", "stroke-width": 2, "stroke-linecap": "round" }, svg);
+      V.s("circle", { cx: X(r.mean), cy: y, r: 5, fill: sig ? "var(--free)" : "var(--panel)", stroke: sig ? "var(--panel)" : "var(--free)", "stroke-width": 2 }, svg);
+      if (!narrow) {
+        V.s("text", { x: W - m.r + 24, y: y + 3.5, class: "lab" }, svg, r.t.toFixed(2));
+        V.s("text", { x: W - m.r + 84, y: y + 3.5, class: "lab" }, svg, r.n);
+      }
+      const hit = V.s("rect", { x: 0, y: y - rh / 2, width: W, height: rh, fill: "transparent", tabindex: 0 }, svg);
+      V.hover(hit, () => [r.pair, [
+        { v: V.sgn(r.mean, 2), k: "mean premium, vol points", c: "var(--free)" },
+        { v: `${V.sgn(lo, 2)} to ${V.sgn(hi, 2)}`, k: "approx. 95% interval" },
+        { v: r.t.toFixed(2), k: "t-statistic" },
+        { v: r.p < 0.0001 ? "< 0.0001" : r.p.toFixed(4), k: "p-value" },
+        { v: String(r.n), k: "independent windows" }]]);
+    });
+  });
+  table($("forest-table"), ["pair", "N", "mean premium", "t", "p"], H1s.map(r => [r.pair, r.n, V.sgn(r.mean, 2), r.t.toFixed(2), r.p.toFixed(4)]));
+
+  /* ------------------------------------------------------------ the ledger */
+
+  function ledger(h) {
+    const t = V.clear($("ledger"));
+    const hr = V.h("tr", null, V.h("thead", null, t));
+    ["", "Hypothesis", "Registered", "Where it stands", "Evidence", "File"].forEach(x => V.h("th", null, hr, x));
+    const tb = V.h("tbody", null, t);
+    const surf = h && h.surface;
+    const h4 = !surf ? ["waiting", "Waiting for data", "Needs two consecutive days of strike-surface data, from Tuesday 15 September at the earliest."]
+      : surf.h4ready ? ["ready", "Testable now", surf.h4] : ["waiting", "Waiting for data", surf.h4 || surf.msg];
+    const rows = [
+      ["H1", "The volatility risk premium is positive on the Cboe index family, 2016 to 2026.", "6 Sep 2026", ["tested", "Tested, holds"], ["9 of 11 pairs", "VIX/SPY t = 5.14"], "2026-09-06-h1-vrp-long-sample.md"],
+      ["H2", "The premium is better measured in variance than in volatility, following Carr and Wu (2009).", "9 Sep 2026", ["tested", "Tested, not adopted"], ["log variance t = 16.26", "volatility 9.28, raw variance 2.14"], "2026-09-09-h2-variance-formulation.md"],
+      ["H3", "A model-free estimate built from free data reproduces the published Cboe index.", "12 Sep 2026", ["calibrated", "Calibrated on one day"], ["0.59 mean gap at ±30%", "tested on the series from 14 Sep"], "2026-09-12-h3-free-data-model-free.md"],
+      ["H4", "Delta-hedged gains are negative, vary across the strike surface, and relate to where volume sits.", "13 Sep 2026", [h4[0], h4[1]], ["registered before any data", h4[2]], "2026-09-13-h4-hedged-gains-across-the-surface.md"]
+    ];
+    rows.forEach(([id, claim, reg, st, ev, file]) => {
+      const tr = V.h("tr", null, tb);
+      V.h("td", { class: "hid" }, tr, id);
+      V.h("td", { class: "claim" }, tr, claim);
+      V.h("td", null, tr, reg);
+      V.h("span", { class: "hs", "data-h": st[0] }, V.h("td", null, tr), st[1]);
+      const e = V.h("td", { class: "ev" }, tr, ev[0]);
+      V.h("span", null, e, ev[1]);
+      V.h("a", { href: `${V.REPO}/blob/main/hypotheses/${file}` }, V.h("td", null, tr), "Read");
+    });
+  }
+  ledger(null);
+
+  /* ------------------------------------------------- live data from the repo */
+
+  (async function () {
+    const [atm, surf] = await Promise.all([V.load("data/iv_history.csv", ""), V.load("data/surface.csv", "")]);
+    const kp = V.clear($("live-kpis"));
+    const kpi = (k, v, g) => { const d = V.h("div", { class: "kpi" }, kp); V.h("div", { class: "kpi-k" }, d, k); V.h("div", { class: "kpi-v" }, d, v); V.h("div", { class: "kpi-g" }, d, g); };
+
+    if (!atm.rows) {
+      V.rail($("rail"), { home: "./", here: "paper", state: "offline", links: LINKS });
+      $("meta-data").textContent = "The repository could not be reached";
+      kpi("feed", "offline", `The dataset could not be read (${atm.error || "unknown error"}). Everything above this panel is documented and still stands.`);
+      return;
+    }
+    const rows = atm.rows, h = V.health(rows, surf.rows), days = V.days(rows), last = days[days.length - 1];
+    const latest = rows.filter(r => r.date === last);
+    V.rail($("rail"), { home: "./", here: "paper", state: h.atm.state === "ok" ? "live" : "stale", links: LINKS,
+      days: days.length, rows: rows.length, snapshot: V.lastSnapshot(rows), surface: h.surface });
+    $("meta-data").textContent = `${days.length} trading days, newest ${last}, read ${atm.src === "github" ? "from GitHub" : "from this site"} just now`;
+
+    const ivs = latest.map(r => V.num(r.iv)).filter(v => v != null).sort((a, z) => a - z);
+    const ts = latest.filter(r => V.num(r.far_iv) != null && V.num(r.iv) != null);
+    const inverted = ts.filter(r => V.num(r.far_iv) < V.num(r.iv)).length;
+    kpi("trading days", String(days.length), `${days[0]} to ${last}`);
+    kpi("tickers on " + last.slice(5), `${latest.length}/${V.WATCHLIST.length}`, latest.length === V.WATCHLIST.length ? "every ticker recorded" : `${V.WATCHLIST.length - latest.length} absent that day`);
+    kpi("implied vol range", ivs.length ? `${V.pct(ivs[0])} to ${V.pct(ivs[ivs.length - 1])}` : "n/a", "30 days out, at the money");
+    kpi("inverted term structure", ts.length ? `${inverted} of ${ts.length}` : "n/a", "names where the near expiry is richer than the far one");
+    kpi("strike surface", h.surface.label, h.surface.days ? `${h.surface.days.length} days collected` : `first run ${V.SURFACE_START}`);
+    kpi("premium estimable in", String(Math.max(0, V.NEED_DAYS - days.length)), "more trading days, and not before");
+
+    const hr = V.clear($("health"));
+    [["ATM panel", h.atm], ["Strike surface", h.surface]].forEach(([k, s]) => {
+      const d = V.h("div", null, hr);
+      V.h("span", { class: "st", "data-state": s.state }, d, `${k}: ${s.label}`);
+      V.h("p", null, d, s.msg);
+    });
+    ledger(h);
+
+    mount($("mini"), function (W) {
+      const host = V.clear($("mini"));
+      const pts = latest.map(r => ({ s: r.symbol, v: V.num(r.iv) })).filter(p => p.v != null).sort((a, z) => a.v - z.v);
+      if (!pts.length) return;
+      const lo = pts[0].v, hi = pts[pts.length - 1].v, R = 4, pad = 16;
+      const X = V.lin(lo, hi, pad, W - pad), stack = [];
+      pts.forEach(p => { p.x = X(p.v); let k = 0; while (stack[k] !== undefined && p.x - stack[k] < R * 2.1) k++; stack[k] = p.x; p.k = k; });
+      const maxK = Math.max(...pts.map(p => p.k)), step = 9, H = 24 + maxK * step + 40, base = H - 34;
+      const svg = V.s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": `Implied volatility of ${pts.length} tickers on ${last}` }, host);
+      V.s("line", { x1: pad, y1: base + 12, x2: W - pad, y2: base + 12, class: "grat-axis" }, svg);
+      V.ticks(lo * 100, hi * 100, 5).forEach(t => {
+        const x = X(t / 100);
+        if (x < pad - 1 || x > W - pad + 1) return;
+        V.s("line", { x1: x, y1: base + 12, x2: x, y2: base + 16, class: "grat-axis" }, svg);
+        V.s("text", { x, y: base + 29, "text-anchor": "middle" }, svg, t + "%");
+      });
+      pts.forEach(p => {
+        const t = (p.v - lo) / ((hi - lo) || 1);
+        const c = V.s("circle", { cx: p.x, cy: base - p.k * step, r: R, tabindex: 0 }, svg);
+        c.style.fill = `color-mix(in oklab, var(--free) ${Math.round(38 + 62 * t)}%, #06222b)`;
+        V.hover(c, () => [p.s, [{ v: V.pct(p.v, 2), k: "implied volatility", c: "var(--free)" }, { v: V.group(p.s), k: "group" }]]);
+      });
+      V.s("text", { x: pad, y: 12, class: "lab" }, svg, `${pts[0].s} ${V.pct(lo)}`);
+      V.s("text", { x: W - pad, y: 12, "text-anchor": "end", class: "lab" }, svg, `${pts[pts.length - 1].s} ${V.pct(hi)}`);
+    });
+    $("swarm-k").textContent = `Implied volatility on ${last}, one dot per ticker`;
+  })();
+})();
+</script>
+</body>
+</html>

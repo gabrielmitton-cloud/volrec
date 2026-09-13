@@ -57,7 +57,7 @@ questioned about for fifteen minutes, not a résumé line.
 | Data | Collecting since 2026-09-04. First run: 52/52 rows, all IV populated. |
 | `tools/gamma-lab*.html` | Complete. Educational, not part of the pipeline. |
 | Schema | 32 columns as of 6 Sep. The file is still 17 and migrates itself on the first run after that - expect the jump on Tue 8 Sep. |
-| Monitor | Live at https://gabrielmitton-cloud.github.io/volrec/tools/monitor.html (GitHub Pages, main branch, root). |
+| Site | The paper at https://gabrielmitton-cloud.github.io/volrec/ and the live instrument at https://gabrielmitton-cloud.github.io/volrec/tools/monitor.html (GitHub Pages, main branch, root). |
 | Watchdog | Weekly Claude routine `trig_01GkVL3mRpGGptXfqoNSR77d`, Wed 09:13 Pacific. Runs OUTSIDE GitHub Actions on purpose - see §5. |
 
 Repo: `github.com/gabrielmitton-cloud/volrec` (public).
@@ -440,11 +440,29 @@ moved off deprecated Node 20, and `freshness.yml` added as a staleness alarm.
 
 ## 8. Design direction for a future dashboard
 
-The *collection monitor* is built - `tools/monitor.html`, in this aesthetic. It
-tracks continuity, schema state, staleness, the IV cross-section, quote quality
-and per-ticker coverage, and it says plainly that the analysis is not runnable
-yet. What is still unbuilt is the **analysis** dashboard below - that one waits
-on ~40 trading days, so late October.
+**Rebuilt 13 September 2026 as a two-page site, in this aesthetic.**
+`index.html` is the paper: the free-data measurement question, argued in five
+figures with sources on every documented number, a ledger of the pre-registered
+hypotheses, and a live strip of the instrument. `tools/monitor.html` is the
+instrument: everything the old collection monitor tracked, plus term structure,
+put against call, a day-by-ticker coverage heatmap, panel health and the strike
+surface, which draws itself once `data/surface.csv` has rows.
+
+What was added to the aesthetic, so it is not relearned: Newsreader carries the
+argument and Martian Mono carries anything measured; an oscilloscope graticule
+is the one recurring device (on the paper's first figure each division is 10%
+of spot); and three channel colours mean the same thing on both pages - cyan
+`#2396C4` for this project's free-feed measurement, yellow `#B08500` for Cboe,
+magenta `#CF4F97` for the lognormal model. Those three were run through a
+colour-vision validator against the panel surface, all pairs, and pass. Status
+colours are separate and never appear without a glyph, because green and red
+cannot be told apart under deuteranopia.
+
+Two rules the pages enforce: no live premium figure appears anywhere (section
+14.3), and every documented number carries its date and source file.
+
+What is still unbuilt is the **analysis** dashboard below - that one waits on
+~40 trading days, so late October.
 
 Reference: a Polymarket trading-bot dashboard. Terminal / mission-control
 aesthetic:
@@ -476,18 +494,25 @@ requirements.txt              one dependency: requests
 data/iv_history.csv           the dataset — the only irreplaceable artifact
 tools/gamma-lab.html          delta-hedging simulator v1
 tools/gamma-lab-v2.html       v2 — adds costs, stochastic IV, jumps, freq sweep
-tools/monitor.html            collection monitor — reads the live CSV from GitHub
+index.html                    the paper — the free-data question, with live data from the repo
+tools/monitor.html            the instrument — live telemetry for both panels
+tools/volrec.js               shared runtime: loading, health rules, the truncation model
+tools/volrec.css              shared styles for both pages
 ```
 
-The monitor is published by GitHub Pages from `main` at the repository root, so
-https://gabrielmitton-cloud.github.io/volrec/tools/monitor.html is always
-current - it fetches the CSV client-side and needs no build step. Serving it
-locally still works and is described below.
+The site is published by GitHub Pages from `main` at the repository root: the
+paper at https://gabrielmitton-cloud.github.io/volrec/ and the instrument at
+https://gabrielmitton-cloud.github.io/volrec/tools/monitor.html. Both are always
+current, because they fetch the data client-side and need no build step.
+Serving them locally still works and is described below.
 
-`tools/monitor.html` needs no build and no server data: it fetches
-`data/iv_history.csv` straight from raw.githubusercontent (which sends
-`access-control-allow-origin: *`), so it always shows what the recorder last
-committed. Browsers block `fetch` from `file://`, so serve it:
+Neither page needs a build or server data: `tools/volrec.js` fetches
+`data/iv_history.csv` and `data/surface.csv` straight from raw.githubusercontent
+(which sends `access-control-allow-origin: *`), so the pages always show what the
+recorders last committed. A 404 there is treated as "not collected yet", not as
+an error. The watchlists and health constants in `volrec.js` are duplicated from
+`record.py`, `surface.py` and `tools/panel_health.py`, and the pressure test fails
+if they drift. Browsers block `fetch` from `file://`, so serve it:
 
 ```
 cd ~/Desktop/Archive/Volrec && python3 -m http.server 8000
@@ -1089,8 +1114,10 @@ pressure test.
 | `analyze.py` | shared estimators. Both samples import from here, deliberately. |
 | `modelfree.py` | Cboe's variance methodology, and the gap against the published index |
 | `hedged.py` | per-contract delta-hedged P&L, the strike-specific outcome |
-| `tools/pressure_test.py` | 59 read-only integrity checks. Run before and after anything. |
+| `tools/pressure_test.py` | 64 read-only integrity checks. Run before and after anything. |
 | `tools/panel_health.py` | did the *data* arrive? Run daily by `freshness.yml`; also runnable by hand. |
+| `index.html`, `tools/monitor.html` | the public site: the paper and the live instrument. Both read the repository client-side. |
+| `tools/volrec.js` | the site's shared runtime. It mirrors the health rules, and the pressure test catches drift. |
 | `tools/test_hedged.py` | 18 hand-computed cases for the hedging math |
 | `tools/fred.py` | FRED client, used for the discount rate |
 

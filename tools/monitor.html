@@ -1,354 +1,673 @@
 <!doctype html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
-<title>volrec // monitor</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-:root{
-  --void:#000; --panel:#09090b; --panel2:#101014; --rule:#1d1d22;
-  --ink:#e9e9ee; --ink2:#9a9aa5; --ink3:#57575f;
-  --live:#0284c7; --flag:#a16207; --absent:#3f3f46;
-  --mono:ui-monospace,"SF Mono","Cascadia Mono","JetBrains Mono",Menlo,Consolas,monospace;
-  --sans:"Inter","Söhne",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto} *{transition:none!important;animation:none!important}}
-body{margin:0;background:var(--void);color:var(--ink);font:12px/1.5 var(--mono);
-  padding:0 20px 60px;max-width:1140px;margin:0 auto;-webkit-font-smoothing:antialiased}
-:focus-visible{outline:2px solid var(--live);outline-offset:2px}
+<title>Volrec Instrument</title>
+<meta name="description" content="The live recorder behind 'What does free options data cost?': daily implied volatility for 109 tickers and the strike surface for eight, read straight from the repository.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Cpath d='M3 23C9 23 11 8 16 8s7 15 13 15' fill='none' stroke='%232396C4' stroke-width='2.6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,300..700&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&display=swap">
+<link rel="stylesheet" href="volrec.css">
+</head>
+<body>
+<header class="rail" id="rail"></header>
 
-.lbl{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
-h2{font:500 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);
-  margin:38px 0 12px;border-bottom:1px solid var(--rule);padding-bottom:7px}
-h2::before{content:"// "}
-p.prose{font:14px/1.65 var(--sans);color:var(--ink2);max-width:66ch;margin:0 0 14px}
-p.prose b{color:var(--ink);font-weight:550}
+<main class="inst">
+  <header class="inst-head">
+    <div>
+      <h1 class="inst-title">The instrument</h1>
+      <p class="inst-dek">The recorder behind the paper. Every figure here is recomputed from the repository when the page loads: one at-the-money snapshot per ticker every weekday, and from 14 September the full strike surface for eight underlyings.</p>
+    </div>
+    <div class="inst-links">
+      <a class="btn" href="../">Read the paper</a>
+      <a class="btn" href="https://github.com/gabrielmitton-cloud/volrec/blob/main/data/iv_history.csv">Open the dataset</a>
+    </div>
+  </header>
 
-/* status rail */
-.rail{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:16px 0 14px;
-  border-bottom:1px solid var(--rule)}
-.rail .nm{font-size:14px;letter-spacing:.18em}
-.pulse{width:6px;height:6px;border-radius:50%;background:var(--live);display:inline-block;
-  margin-right:8px;vertical-align:middle;box-shadow:0 0 0 0 rgba(2,132,199,.7);
-  animation:p 2.6s infinite}
-@keyframes p{70%{box-shadow:0 0 0 7px rgba(2,132,199,0)}100%{box-shadow:0 0 0 0 rgba(2,132,199,0)}}
-.rail .r{margin-left:auto}
+  <div class="kpis" id="kpis" style="border:1px solid var(--rule)"></div>
+  <div id="note"></div>
 
-/* hero */
-.hero{padding:30px 0 6px}
-.hero h1{font:400 clamp(19px,3.4vw,30px)/1.25 var(--mono);letter-spacing:-.015em;margin:0 0 10px}
-.hero h1 .n{color:var(--live)}
-#swarmwrap{touch-action:none}
-.axis text{fill:var(--ink3);font:9.5px var(--mono)}
-.axis line{stroke:var(--rule)}
-.bee{cursor:pointer}
-.bee circle{transition:r .12s}
-.bee:hover circle,.bee.on circle{stroke:var(--ink);stroke-width:1.5}
-.endlbl{fill:var(--ink2);font:10px var(--mono)}
+  <div class="daybar" id="daybar">
+    <p class="ctl-k">Trading day</p>
+    <div class="seg" id="day-seg" role="group" aria-label="trading day"></div>
+    <span class="aux" id="daybar-aux">Reading the repository</span>
+  </div>
 
-/* controls */
-.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:16px 0 6px}
-.chip{font:10px var(--mono);letter-spacing:.06em;background:var(--panel);color:var(--ink2);
-  border:1px solid var(--rule);padding:5px 11px;cursor:pointer;border-radius:2px}
-.chip:hover{color:var(--ink);border-color:#2c2c33}
-.chip[aria-pressed=true]{background:var(--live);border-color:var(--live);color:#fff}
-input[type=search]{font:11px var(--mono);background:var(--panel);border:1px solid var(--rule);
-  color:var(--ink);padding:5px 10px;width:150px;border-radius:2px}
-input[type=search]::placeholder{color:var(--ink3)}
-.count{font-size:10px;color:var(--ink3);margin-left:auto}
+  <section class="panel">
+    <div class="panel-head"><h2>implied volatility, cross-section</h2><span class="aux" id="swarm-aux"></span></div>
+    <div class="panel-body">
+      <div id="swarm"></div>
+      <div id="detail"></div>
+      <p class="panel-cap">Every dot is one ticker: what the options market expects it to move over the coming month, read from the at-the-money call about 30 days out. <b>The range is the point.</b> A universe of correlated tech names would be one observation repeated many times. Hover a dot to identify it, click to pin it, and step through the trading days to watch the cross-section move.</p>
+      <details class="tv"><summary>Show the numbers as a table</summary><div class="tv-wrap" id="swarm-table"></div></details>
+    </div>
+  </section>
 
-/* stats */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
-  background:var(--rule);border:1px solid var(--rule)}
-.stat{background:var(--panel);padding:13px 15px}
-.stat .v{font-size:19px;line-height:1.2;margin-top:6px;font-variant-numeric:tabular-nums}
-.stat .g{font:11px/1.45 var(--sans);color:var(--ink3);margin-top:5px}
+  <div class="two">
+    <section class="panel">
+      <div class="panel-head"><h2>term structure</h2><span class="aux" id="term-aux"></span></div>
+      <div class="panel-body">
+        <div id="term"></div>
+        <p class="panel-cap">Near-expiry implied volatility against the far expiry for the same name. Above the diagonal the market charges more for the longer horizon, which is the usual shape. <b>Below it the curve is inverted</b>, and near-term risk is priced above longer-term risk.</p>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>put against call</h2><span class="aux" id="pc-aux"></span></div>
+      <div class="panel-body">
+        <div id="pc"></div>
+        <p class="panel-cap">Put minus call implied volatility at the same strike, in volatility points, for the names furthest from parity in each direction. At the money the two should nearly agree, so a large gap often says more about quote quality than about sentiment.</p>
+      </div>
+    </section>
+  </div>
 
-table{border-collapse:collapse;width:100%;font-size:11px}
-th{text-align:left;font-weight:500;color:var(--ink3);font-size:9.5px;letter-spacing:.12em;
-  text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--rule);
-  cursor:pointer;user-select:none;white-space:nowrap}
-th:hover{color:var(--ink2)}
-td{padding:4px 8px;border-bottom:1px solid #141417;font-variant-numeric:tabular-nums}
-tr:hover td{background:var(--panel2)}
-.scroll{max-height:360px;overflow:auto;border:1px solid var(--rule)}
-.barcell{height:6px;border-radius:0 2px 2px 0;background:var(--live);display:block}
+  <section class="panel">
+    <div class="panel-head"><h2>strike surface</h2><span class="aux" id="surf-aux"></span></div>
+    <div class="panel-body" id="surface"></div>
+  </section>
 
-.roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:2px}
-.tile{background:var(--panel);border-left:2px solid var(--absent);padding:5px 6px;font-size:9.5px;
-  display:flex;justify-content:space-between;gap:3px;cursor:pointer;border-radius:0 2px 2px 0}
-.tile:hover{background:var(--panel2)}
-.tile .g{color:var(--ink3);font-size:9px}
-.tile.ok{border-left-color:var(--live)} .tile.ok .g{color:var(--live)}
-.tile.flag{border-left-color:var(--flag)} .tile.flag .g{color:var(--flag)}
+  <section class="panel">
+    <div class="panel-head"><h2>coverage, every day and every ticker</h2><span class="aux" id="heat-aux"></span></div>
+    <div class="panel-body">
+      <div class="legend">
+        <span><i class="sw-sq" style="background:color-mix(in oklab, var(--free) 72%, var(--panel))"></i>recorded</span>
+        <span><i class="sw-sq" style="background:var(--warn)"></i>▲ spread over 60% of mid</span>
+        <span><i class="sw-sq" style="box-shadow:inset 0 0 0 1px var(--ink-4)"></i>○ no row</span>
+      </div>
+      <div class="heat-wrap" id="heat" style="margin-top:12px"></div>
+    </div>
+  </section>
 
-.log{border:1px solid var(--rule);background:var(--panel);max-height:180px;overflow:auto;
-  padding:10px 14px;font-size:10.5px;line-height:1.8}
-.log .t{color:var(--ink3);margin-right:10px}
-.note{border:1px solid var(--rule);border-left:2px solid var(--flag);background:var(--panel);
-  padding:14px 16px;margin:14px 0}
-.note p{font:13px/1.6 var(--sans);color:var(--ink2);margin:0;max-width:64ch}
-.note b{color:var(--ink)}
-.legend{display:flex;gap:18px;flex-wrap:wrap;margin:6px 0 10px;font-size:10px;color:var(--ink2)}
-.legend i{width:9px;height:9px;display:inline-block;margin-right:6px;vertical-align:-1px;font-style:normal;border-radius:1px}
-#tip{position:fixed;pointer-events:none;background:#16161b;border:1px solid #2c2c33;
-  padding:7px 10px;font:10.5px/1.5 var(--mono);display:none;z-index:20;white-space:pre;color:var(--ink)}
-a{color:var(--ink2)}
-</style>
+  <div class="two">
+    <section class="panel">
+      <div class="panel-head"><h2>panel health</h2><span class="aux">same rules as the daily check</span></div>
+      <div class="panel-body"><div class="health-rows" id="health"></div></div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>quote quality</h2><span class="aux" id="qq-aux"></span></div>
+      <div class="panel-body">
+        <div id="qq"></div>
+        <p class="panel-cap">A wide bid-ask spread makes the mid price unreliable, so this decides which tickers stay. <b>Weekend readings run 1.5 to 14 times wider than intraday</b>: on a Saturday even PEP, a mega-cap staple, reads 98%. Only a trading-day row settles it.</p>
+      </div>
+    </section>
+  </div>
 
-<div class="rail">
-  <span class="nm"><span class="pulse"></span>VOLREC</span>
-  <span class="lbl" id="src">reading…</span>
-  <span class="r lbl" id="asof"></span>
-</div>
-<div id="app"></div>
-<div id="tip"></div>
+  <section class="panel">
+    <div class="panel-head"><h2>the universe</h2><span class="aux" id="cnt"></span></div>
+    <div class="panel-body">
+      <div class="chips" id="chips"></div>
+      <div class="roster" id="roster"></div>
+      <div id="roster-detail"></div>
+    </div>
+  </section>
 
+  <section class="panel">
+    <div class="panel-head"><h2>what this is measuring</h2></div>
+    <div class="panel-body">
+      <p class="panel-cap">Implied volatility is the market's forecast. <b>Realised volatility</b> is what actually happened afterwards. The gap between them, the <b>volatility risk premium</b>, is generally positive, because option sellers charge for bearing risk. This project tests whether that holds on data collected first-hand rather than bought.</p>
+      <p class="panel-cap">One snapshot a day per ticker: the at-the-money call about 30 days out, the put at the same strike, and a second, further expiry. Nothing here can be reconstructed later, which is why the recorder matters more than the analysis.</p>
+      <p class="panel-cap">The strike surface adds every strike within 30% of spot for eight underlyings, with volume and open interest per contract. It is what lets a free-data estimate be checked against Cboe's published index, which is <a href="../">the question the paper asks</a>.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>activity</h2></div>
+    <div class="log" id="log"></div>
+  </section>
+
+  <footer class="inst-foot">
+    <span>Gabriel Mitton, Pepperdine University</span>
+    <a href="../">The paper</a>
+    <a href="https://github.com/gabrielmitton-cloud/volrec">Repository</a>
+    <a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/tools/panel_health.py">tools/panel_health.py</a>
+    <a href="gamma-lab-v2.html">Gamma Lab</a>
+  </footer>
+</main>
+
+<script src="volrec.js"></script>
 <script>
-const RAW="https://raw.githubusercontent.com/gabrielmitton-cloud/volrec/main/data/iv_history.csv";
-const WATCHLIST=["SPY", "DIA", "QQQ", "IWM", "MDY", "GLD", "SLV", "TLT", "IEF", "USO", "UNG", "FXE", "EEM", "EFA", "XLK", "XLF", "XLE", "XLV", "XLP", "XLU", "XLI", "XLY", "XLB", "XRT", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AMD", "PLTR", "COIN", "MSTR", "SMCI", "JNJ", "PG", "KO", "PEP", "WMT", "MCD", "VZ", "JPM", "BAC", "GS", "XOM", "CVX", "CAT", "BA", "UNH", "COST", "LQD", "HYG", "FXI", "XLC", "XLRE", "SMH", "XBI", "KRE", "GDX", "IBIT", "XHB", "XOP", "AVGO", "ORCL", "CRM", "ADBE", "INTC", "MU", "QCOM", "TSM", "NFLX", "CSCO", "TXN", "MS", "WFC", "C", "AXP", "SCHW", "LLY", "ABBV", "PFE", "MRK", "TMO", "HD", "NKE", "TGT", "LOW", "DIS", "GE", "DE", "LMT", "UPS", "RTX", "COP", "SLB", "OXY", "NEE", "DUK", "T", "CMCSA", "RIVN", "SOFI", "HOOD", "MARA", "RBLX", "SNOW", "CRWD"];
-const NEED_DAYS=40, LIMIT=60;
-const INDEX=new Set(["SPY","DIA","QQQ","IWM","MDY","EEM","EFA","FXI"]);
-const SECTOR=new Set(["XLK","XLF","XLE","XLV","XLP","XLU","XLI","XLY","XLB","XRT","XLC","XLRE","SMH","XBI","KRE","GDX","XHB","XOP"]);
-const NONEQ=new Set(["GLD","SLV","TLT","IEF","USO","UNG","FXE","LQD","HYG","IBIT"]);
-const grp=s=>INDEX.has(s)?"index ETF":NONEQ.has(s)?"non-equity":SECTOR.has(s)?"sector ETF":"single name";
-const $=s=>document.querySelector(s);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const num=v=>{const n=parseFloat(v);return Number.isFinite(n)?n:null};
-let STATE={filter:"all",q:"",sort:"iv",dir:-1,latest:[],last:"",pinned:null};
+(function () {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const LINKS = [["Paper", "../", "paper"], ["Instrument", "monitor.html", "monitor"], ["Code", V.REPO, "code"]];
+  V.rail($("rail"), { home: "../", here: "monitor", state: "loading", links: LINKS });
 
-const tip=$("#tip");
-function wire(el,txt){
-  const show=e=>{tip.style.display="block";tip.textContent=txt;
-    const x=(e.clientX??0)+13,y=(e.clientY??0)+13;
-    tip.style.left=Math.min(x,innerWidth-tip.offsetWidth-8)+"px";
-    tip.style.top=Math.min(y,innerHeight-tip.offsetHeight-8)+"px";};
-  el.addEventListener("mousemove",show);
-  el.addEventListener("mouseleave",()=>tip.style.display="none");
-}
-const spread=r=>{const b=num(r.bid),a=num(r.ask),m=num(r.mid);return(b===null||a===null||!m)?null:100*(a-b)/m};
+  const S = { rows: [], days: [], byDay: new Map(), day: null, pinned: null, filter: "all", q: "", surf: null, h: null };
+  const redraw = {};
+  let swarmUpdate = () => {};
+  const dayRows = () => S.byDay.get(S.day) || [];
+  const short = d => new Date(d + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
-function parseCSV(t){
-  const L=t.trim().split(/\r?\n/);if(!L.length)return[];
-  const h=L[0].split(",");
-  return L.slice(1).map(l=>{const c=l.split(","),o={};h.forEach((k,i)=>o[k]=c[i]);return o});
-}
-
-/* ---- hero: implied-vol beeswarm. one dot per ticker, packed vertically where
-   neighbours collide, because the low end is crowded and a flat strip would hide it. ---- */
-function swarm(rows){
-  const host=$("#swarmwrap")||$("#app");
-  const W=(host&&host.clientWidth)||Math.min(1100,(document.body.clientWidth||940)-40),
-        PAD=34,TOP=26;
-  const pts=rows.filter(r=>num(r.iv)!==null).map(r=>({s:r.symbol,v:num(r.iv),r}))
-                .sort((a,b)=>a.v-b.v);
-  if(!pts.length)return"";
-  const lo=pts[0].v,hi=pts[pts.length-1].v,R=5.2;
-  const X=v=>PAD+(W-2*PAD)*(v-lo)/((hi-lo)||1);
-  const rowsY=[];
-  pts.forEach(p=>{p.x=X(p.v);let k=0;
-    while(rowsY[k]!==undefined&&p.x-rowsY[k]<R*2.05)k++;
-    rowsY[k]=p.x;p.k=k;});
-  const maxK=Math.max(...pts.map(p=>p.k));
-  const step=12;
-  const H=TOP+maxK*step+56;          // fit the swarm, no floating dead space
-  const base=H-42;
-  let g="";
-  pts.forEach(p=>{
-    const y=base-p.k*step, t=(p.v-lo)/((hi-lo)||1);
-    const on=STATE.pinned===p.s?" on":"";
-    g+=`<g class="bee${on}" data-sym="${p.s}" tabindex="0" role="button"
-        aria-label="${p.s}, implied volatility ${(p.v*100).toFixed(1)} percent">
-        <circle cx="${p.x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"
-        fill="var(--live)" fill-opacity="${(0.34+0.62*t).toFixed(2)}"/></g>`;
-  });
-  const ticks=[];for(let i=0;i<=4;i++)ticks.push(lo+(hi-lo)*i/4);
-  let ax=`<g class="axis"><line x1="${PAD}" y1="${base+14}" x2="${W-PAD}" y2="${base+14}"/>`;
-  ticks.forEach(v=>{const x=X(v);
-    ax+=`<line x1="${x}" y1="${base+14}" x2="${x}" y2="${base+19}"/>
-         <text x="${x}" y="${base+31}" text-anchor="middle">${(v*100).toFixed(0)}%</text>`;});
-  ax+=`</g>`;
-  const a=pts[0],b=pts[pts.length-1];
-  ax+=`<text class="endlbl" x="${PAD}" y="16">${a.s} ${(a.v*100).toFixed(1)}%</text>
-       <text class="endlbl" x="${W-PAD}" y="16" text-anchor="end">${b.s} ${(b.v*100).toFixed(1)}%</text>`;
-  return `<svg id="swarmsvg" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block">${ax}${g}</svg>`;
-}
-
-function render(rows,label){
-  $("#src").textContent=label;
-  $("#asof").textContent=new Date().toISOString().replace("T"," ").slice(0,16)+"Z";
-  const days=[...new Set(rows.map(r=>r.date))].sort();
-  const cols=rows.length?Object.keys(rows[0]).length:0;
-  const last=days[days.length-1];
-  const latest=rows.filter(r=>r.date===last);
-  STATE.latest=latest;STATE.last=last;
-  const age=Math.floor((Date.now()-Date.parse(last+"T20:00:00Z"))/864e5);
-  const present=new Set(latest.map(r=>r.symbol));
-  const missing=WATCHLIST.filter(s=>!present.has(s));
-  const wide=latest.filter(r=>{const s=spread(r);return s!==null&&s>LIMIT});
-  const left=Math.max(0,NEED_DAYS-days.length);
-  const ivs=latest.map(r=>num(r.iv)).filter(v=>v!==null).sort((a,b)=>a-b);
-
-  let h=`<div class="hero">
-    <h1>${WATCHLIST.length} tickers, implied volatility from
-      <span class="n">${(ivs[0]*100).toFixed(1)}%</span> to
-      <span class="n">${(ivs[ivs.length-1]*100).toFixed(1)}%</span></h1>
-    <div id="swarmwrap">${swarm(latest)}</div>
-    <p class="prose" style="margin-top:14px">Every dot is one ticker on ${last} — what the options
-      market expects it to move over the coming month. The <b>range is the point</b>: a universe of
-      ${WATCHLIST.length} correlated tech names would be one observation repeated
-      ${WATCHLIST.length} times. Hover a dot to identify it; click to pin it below.</p>
-  </div>`;
-
-  h+=`<h2>what this is measuring</h2>
-  <p class="prose">Implied volatility is the market's forecast. <b>Realised volatility</b> is what
-    actually happened afterwards. The gap between them — the <b>volatility risk premium</b> — is
-    generally positive, because option sellers charge for bearing risk. This project tests whether
-    that holds, on data collected first-hand rather than bought.</p>
-  <p class="prose">One snapshot a day, per ticker: the at-the-money call about 30 days out, plus the
-    put at the same strike. Nothing here can be reconstructed later, which is why the recorder
-    matters more than the analysis.</p>`;
-
-  if(days.length<NEED_DAYS){
-    h+=`<div class="note"><p><b>The premium is not measurable yet — ${days.length} of ~${NEED_DAYS}
-      trading days.</b> Looking forward 30 days from every day means consecutive observations share
-      almost the same path, so the real sample size is about one independent episode per month, not
-      one per row. Measuring today would produce a number, and it would be noise.
-      This page tracks <b>collection</b> until then.</p></div>`;
+  function mount(host, draw) {
+    let w = 0;
+    const run = force => {
+      const nw = Math.round(host.clientWidth);
+      if (!nw || (!force && Math.abs(nw - w) < 2)) return;
+      w = nw; draw(nw);
+    };
+    run(true);
+    if ("ResizeObserver" in window) new ResizeObserver(() => run(false)).observe(host);
+    else addEventListener("resize", () => run(false));
+    return () => run(true);
+  }
+  function table(host, head, rows) {
+    V.clear(host);
+    const t = V.h("table", { class: "data" }, host);
+    const tr = V.h("tr", null, V.h("thead", null, t));
+    head.forEach(h => V.h("th", null, tr, h));
+    const tb = V.h("tbody", null, t);
+    rows.forEach(r => { const row = V.h("tr", null, tb); r.forEach(c => V.h("td", null, row, c)); });
   }
 
-  const stat=(l,v,g)=>`<div class="stat"><div class="lbl">${l}</div><div class="v">${v}</div><div class="g">${g}</div></div>`;
-  h+=`<h2>collection</h2><div class="stats">
-    ${stat("trading days",days.length,days.length===1?`since ${days[0]}`:`${days[0]} to ${last}`)}
-    ${stat("rows",rows.length,`${latest.length} recorded on ${last}`)}
-    ${stat("coverage",`${latest.length}/${WATCHLIST.length}`,missing.length?`${missing.length} absent that day`:"every ticker present")}
-    ${stat("schema",`${cols} col`,cols>=24?"migrated — puts and volume included":"17 col; migrates on the next run")}
-    ${stat("freshness",`${age}d`,age>5?"stale — check the Actions tab":"newest row is recent")}
-    ${stat("analysis in",left,left?"more trading days":"ready to run")}
-  </div>`;
+  (async function () {
+    const [a, s] = await Promise.all([V.load("data/iv_history.csv", "../"), V.load("data/surface.csv", "../")]);
+    if (!a.rows || !a.rows.length) { offline(a.error); return; }
+    S.rows = a.rows; S.surf = s.rows; S.days = V.days(a.rows); S.day = S.days[S.days.length - 1];
+    S.days.forEach(d => S.byDay.set(d, []));
+    a.rows.forEach(r => { if (S.byDay.has(r.date)) S.byDay.get(r.date).push(r); });
+    S.h = V.health(a.rows, s.rows);
+    V.rail($("rail"), { home: "../", here: "monitor", state: S.h.atm.state === "ok" ? "live" : "stale", links: LINKS,
+      days: S.days.length, rows: a.rows.length, snapshot: V.lastSnapshot(a.rows), surface: S.h.surface });
+    $("daybar-aux").textContent = `Read ${a.src === "github" ? "from GitHub" : "from this site"} at ${V.utc(new Date())}`;
+    kpis(); note(); dayBar(); swarm(); term(); putCall(); surface(); heat(); health(); quality(); universe(); activity();
+  })();
 
-  h+=`<h2>the universe</h2>
-  <div class="bar" role="group" aria-label="filter">
-    ${["all","index ETF","sector ETF","non-equity","single name"].map(g=>
-      `<button class="chip" data-f="${g}" aria-pressed="${STATE.filter===g}">${g}</button>`).join("")}
-    <input type="search" id="q" placeholder="find a ticker" value="${esc(STATE.q)}" aria-label="find a ticker">
-    <span class="count" id="cnt"></span>
-  </div>
-  <div class="legend">
-    <span><i style="background:var(--live)"></i>&#9679; recorded</span>
-    <span><i style="background:var(--flag)"></i>&#9650; spread over ${LIMIT}% of mid</span>
-    <span><i style="background:var(--absent)"></i>&#9675; no row on ${last}</span>
-  </div>
-  <div class="roster" id="roster"></div>
-  <div id="detail"></div>`;
-
-  const sp=latest.map(r=>({s:r.symbol,v:spread(r)})).filter(x=>x.v!==null).sort((a,b)=>b.v-a.v);
-  if(sp.length){
-    h+=`<h2>quote quality</h2>
-    <p class="prose">A wide bid–ask makes the mid-price unreliable, so this decides which tickers stay.
-      <b>Weekend readings run 1.5–14× wider than intraday</b> — on a Saturday even PEP, a mega-cap
-      staple, reads 98%. Only a real trading-day row settles it.</p>
-    <div style="border:1px solid var(--rule);padding:10px 12px"><table><tbody>`;
-    const mx=sp[0].v;
-    sp.slice(0,10).forEach(x=>{const bad=x.v>LIMIT;
-      h+=`<tr data-tip="${x.s}\n${x.v.toFixed(1)}% of mid"><td style="width:62px">${x.s}</td>
-        <td style="width:64px;color:${bad?"var(--flag)":"var(--ink2)"}">${bad?"▲":"●"} ${x.v.toFixed(0)}%</td>
-        <td><span class="barcell" style="width:${100*x.v/mx}%;background:${bad?"var(--flag)":"var(--live)"}"></span></td></tr>`;});
-    h+=`</tbody></table></div>`;
+  function offline(err) {
+    V.rail($("rail"), { home: "../", here: "monitor", state: "offline", links: LINKS });
+    document.querySelectorAll(".panel, .two, .daybar, #kpis").forEach(el => { el.hidden = true; });
+    const box = V.h("div", { class: "note" }, V.clear($("note")));
+    const p = V.h("p", null, box);
+    V.h("b", null, p, "The dataset could not be read. ");
+    p.append(`(${err || "no response"}) Browsers block fetch from a file:// page, so serve the folder instead with `);
+    V.h("code", null, p, "cd ~/Desktop/Archive/Volrec && python3 -m http.server 8000");
+    p.append(" and open localhost:8000/tools/monitor.html, or use the published copy on GitHub Pages.");
   }
 
-  h+=`<h2>activity</h2><div class="log">`;
-  const ev=days.map(d=>[`${d} 15:30Z`,`recorded ${rows.filter(r=>r.date===d).length} rows`]);
-  if(cols<24)ev.push([last,"schema is 17 col — migrate_header() adds 7 on the next run"]);
-  if(missing.length)ev.push([last,`absent: ${missing.join(", ")}`]);
-  if(wide.length)ev.push([last,`spread over ${LIMIT}%: ${wide.map(r=>r.symbol).join(", ")}`]);
-  if(age>5)ev.push(["now",`STALE: newest row is ${age} days old — the recorder may be disabled`]);
-  ev.reverse().forEach(([t,m])=>h+=`<div><span class="t">${esc(t)}</span>${esc(m)}</div>`);
-  h+=`</div>`;
+  /* ------------------------------------------------------- summary row */
 
-  $("#app").innerHTML=h;
-  bind();paintRoster();
-}
+  function kpis() {
+    const kp = V.clear($("kpis")), last = S.days[S.days.length - 1], latest = S.byDay.get(last);
+    const cols = Object.keys(S.rows[0]).length;
+    const add = (k, v, g) => { const d = V.h("div", { class: "kpi" }, kp); V.h("div", { class: "kpi-k" }, d, k); V.h("div", { class: "kpi-v" }, d, String(v)); V.h("div", { class: "kpi-g" }, d, g); };
+    const present = new Set(latest.map(r => r.symbol)), missing = V.WATCHLIST.filter(x => !present.has(x));
+    add("trading days", S.days.length, S.days.length === 1 ? `since ${S.days[0]}` : `${S.days[0]} to ${last}`);
+    add("rows", V.int(S.rows.length), `${latest.length} recorded on ${last}`);
+    add("coverage", `${latest.length}/${V.WATCHLIST.length}`, missing.length ? `${missing.length} absent that day` : "every ticker present");
+    add("schema columns", cols, cols >= 32 ? "puts, volume and a far expiry included" : "migrates on the next run");
+    add("freshness", `${S.h.atm.age}d`, S.h.atm.state === "ok" ? "the newest row is recent" : "stale: check the Actions tab");
+    add("strike surface", S.h.surface.label, S.h.surface.days ? `${S.h.surface.days.length} days collected` : `first run ${V.SURFACE_START}`);
+    add("premium estimable in", Math.max(0, V.NEED_DAYS - S.days.length), "more trading days");
+  }
 
-function bind(){
-  document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
-    STATE.filter=b.dataset.f;
-    document.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c.dataset.f===STATE.filter));
-    paintRoster();});
-  const q=$("#q");if(q)q.oninput=e=>{STATE.q=e.target.value;paintRoster()};
-  document.querySelectorAll("[data-tip]").forEach(el=>wire(el,el.dataset.tip));
-  document.querySelectorAll(".bee").forEach(g=>{
-    const s=g.dataset.sym,r=STATE.latest.find(x=>x.symbol===s);
-    const v=spread(r);
-    wire(g,`${s}  ${grp(s)}\niv ${(num(r.iv)*100).toFixed(2)}%\nspread ${v===null?"n/a":v.toFixed(1)+"% of mid"}\ndte ${r.dte}`);
-    const pick=()=>{STATE.pinned=STATE.pinned===s?null:s;
-      $("#swarmwrap").innerHTML=swarm(STATE.latest);bind();detail();};
-    g.onclick=pick;
-    g.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick()}};
-  });
-  detail();
-}
+  function note() {
+    const host = V.clear($("note"));
+    if (S.days.length >= V.NEED_DAYS) return;
+    const p = V.h("p", null, V.h("div", { class: "note" }, host));
+    V.h("b", null, p, `The premium is not measurable yet: ${S.days.length} of about ${V.NEED_DAYS} trading days. `);
+    p.append("Looking forward 30 days from every day means consecutive observations share almost the same path, so the real sample is about one independent episode per month, not one per row. Measuring today would produce a number, and it would be noise. This page tracks collection until then.");
+  }
 
-function detail(){
-  const d=$("#detail");if(!d)return;
-  if(!STATE.pinned){d.innerHTML="";return}
-  const r=STATE.latest.find(x=>x.symbol===STATE.pinned);
-  if(!r){d.innerHTML="";return}
-  const v=spread(r);
-  d.innerHTML=`<div class="note" style="border-left-color:var(--live)"><p>
-    <b>${r.symbol}</b> · ${grp(r.symbol)} · ${STATE.last}<br>
-    implied volatility <b>${(num(r.iv)*100).toFixed(2)}%</b> ·
-    strike ${r.strike} · ${r.dte} days to expiry ·
-    bid/ask ${r.bid}/${r.ask}${v===null?"":` · spread <b>${v.toFixed(1)}%</b> of mid`}
-    ${num(r.put_iv)!==null?` · put iv ${(num(r.put_iv)*100).toFixed(2)}%`:""}
-    </p></div>`;
-}
+  /* ---------------------------------------------------------- day control */
 
-function paintRoster(){
-  const el=$("#roster");if(!el)return;
-  const q=STATE.q.trim().toUpperCase();
-  const list=WATCHLIST.filter(s=>(STATE.filter==="all"||grp(s)===STATE.filter)&&(!q||s.includes(q)));
-  let h="";
-  list.forEach(s=>{
-    const r=STATE.latest.find(x=>x.symbol===s);
-    if(!r){h+=`<span class="tile" data-sym="${s}" data-tip="${s}\n${grp(s)}\nno row on ${STATE.last}"><span>${s}</span><span class="g">&#9675;</span></span>`;return}
-    const v=spread(r),bad=v!==null&&v>LIMIT;
-    h+=`<span class="tile ${bad?"flag":"ok"}" data-sym="${s}"
-      data-tip="${s}\n${grp(s)}\niv ${(num(r.iv)*100).toFixed(1)}%\nspread ${v===null?"n/a":v.toFixed(0)+"%"}">
-      <span>${s}</span><span class="g">${bad?"&#9650;":"&#9679;"}</span></span>`;});
-  el.innerHTML=h;
-  $("#cnt").textContent=`${list.length} of ${WATCHLIST.length}`;
-  el.querySelectorAll(".tile").forEach(t=>{
-    wire(t,t.dataset.tip);
-    t.onclick=()=>{STATE.pinned=STATE.pinned===t.dataset.sym?null:t.dataset.sym;
-      $("#swarmwrap").innerHTML=swarm(STATE.latest);bind();};
-  });
-}
+  function dayBar() {
+    const host = V.clear($("day-seg"));
+    const btns = S.days.map(d => {
+      const b = V.h("button", { type: "button", "aria-pressed": String(d === S.day), title: d }, host, short(d));
+      b.addEventListener("click", () => {
+        S.day = d;
+        btns.forEach((x, i) => x.setAttribute("aria-pressed", String(S.days[i] === S.day)));
+        swarmUpdate(true); swarmTable(); redraw.term(); redraw.pc(); redraw.qq(); paintRoster(); detail();
+      });
+      return b;
+    });
+  }
 
-let ROWS=null;
-addEventListener("resize",()=>{if(ROWS&&$("#swarmwrap")){$("#swarmwrap").innerHTML=swarm(STATE.latest);bind()}});
-(async()=>{
-  try{
-    const r=await fetch(RAW+"?cb="+Date.now(),{cache:"no-store"});
-    if(!r.ok)throw new Error("HTTP "+r.status);
-    ROWS=parseCSV(await r.text());
-    try{ render(ROWS,"live · github"); }
-    catch(err){
-      $("#src").textContent="render failed";
-      $("#app").innerHTML=`<div class="note"><p><b>The data loaded, but the page failed to draw it.</b>
-        ${esc(err.message)}<br><br>${ROWS.length} rows were read. This is a bug in monitor.html,
-        not a problem with the dataset.</p></div>`;
-      throw err;
+  /* ----------------------------------------------------- the cross-section */
+
+  function swarm() {
+    const all = S.rows.map(r => V.num(r.iv)).filter(v => v != null);
+    const lo = Math.min(...all), hi = Math.max(...all);
+    mount($("swarm"), function (W) {
+      const host = V.clear($("swarm"));
+      const narrow = W < 620, R = narrow ? 4 : 5.5, pad = narrow ? 12 : 26, X = V.lin(lo, hi, pad, W - pad);
+      const pack = d => {
+        const pts = (S.byDay.get(d) || []).map(r => ({ s: r.symbol, v: V.num(r.iv) })).filter(p => p.v != null).sort((a, z) => a.v - z.v);
+        const stack = [];
+        pts.forEach(p => { p.x = X(p.v); let k = 0; while (stack[k] !== undefined && p.x - stack[k] < R * 2.05) k++; stack[k] = p.x; p.k = k; });
+        return pts;
+      };
+      const layouts = new Map(S.days.map(d => [d, pack(d)]));
+      let maxK = 0;
+      layouts.forEach(pts => pts.forEach(p => { if (p.k > maxK) maxK = p.k; }));
+      const step = R * 2.1, top = 34, H = Math.round(top + maxK * step + R + 56), base = H - 48;
+      const svg = V.s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "group", "aria-label": "Implied volatility by ticker" }, host);
+      for (const t of V.ticks(lo * 100, hi * 100, narrow ? 4 : 9)) {
+        const x = X(t / 100);
+        if (x < pad - 1 || x > W - pad + 1) continue;
+        V.s("line", { x1: x, y1: top - 12, x2: x, y2: base + 16, class: "grat-line" }, svg);
+        V.s("text", { x, y: base + 33, "text-anchor": "middle" }, svg, t + "%");
+      }
+      V.s("line", { x1: pad, y1: base + 16, x2: W - pad, y2: base + 16, class: "grat-axis" }, svg);
+      V.s("text", { x: W - pad, y: H - 2, "text-anchor": "end", class: "lab-dim" }, svg, "implied volatility, 30 days, at the money");
+      const endL = V.s("text", { x: pad, y: 14, class: "lab" }, svg);
+      const endR = V.s("text", { x: W - pad, y: 14, "text-anchor": "end", class: "lab" }, svg);
+
+      const nodes = new Map();
+      V.WATCHLIST.forEach(sym => {
+        const g = V.s("g", { class: "bee", role: "button", tabindex: -1 }, svg);
+        const c = V.s("circle", { r: R, stroke: "var(--panel)", "stroke-width": 1.5 }, g);
+        g.style.opacity = 0; g.style.pointerEvents = "none";
+        V.hover(g, () => {
+          const r = dayRows().find(x => x.symbol === sym);
+          if (!r) return [sym, [{ v: "no row", k: S.day }]];
+          const sp = V.spread(r);
+          return [`${sym}, ${V.group(sym)}, ${S.day}`, [
+            { v: V.pct(V.num(r.iv), 2), k: "implied volatility", c: "var(--free)" },
+            { v: sp == null ? "n/a" : sp.toFixed(1) + "%", k: "spread, % of mid" },
+            { v: String(r.dte), k: "days to expiry" }]];
+        });
+        const pick = () => { S.pinned = S.pinned === sym ? null : sym; swarmUpdate(false); detail(); pressRoster(); };
+        g.addEventListener("click", pick);
+        g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+        nodes.set(sym, { g, c });
+      });
+
+      swarmUpdate = function (animate) {
+        const pts = layouts.get(S.day) || [], seen = new Set();
+        pts.forEach(p => {
+          const n = nodes.get(p.s);
+          if (!n) return;
+          seen.add(p.s);
+          const t = (p.v - lo) / ((hi - lo) || 1), pinned = S.pinned === p.s;
+          n.g.style.transition = animate && !V.calm ? "transform .7s cubic-bezier(.2,.7,.2,1), opacity .35s ease" : "none";
+          n.g.style.transform = `translate(${p.x.toFixed(1)}px, ${(base - p.k * step).toFixed(1)}px)`;
+          n.g.style.opacity = 1; n.g.style.pointerEvents = "auto";
+          n.g.setAttribute("tabindex", 0);
+          n.g.setAttribute("aria-label", `${p.s}, implied volatility ${(p.v * 100).toFixed(1)} percent`);
+          n.c.style.fill = `color-mix(in oklab, var(--free) ${Math.round(34 + 66 * t)}%, #06222b)`;
+          n.c.setAttribute("stroke", pinned ? "var(--ink)" : "var(--panel)");
+          n.c.setAttribute("stroke-width", pinned ? 2.5 : 1.5);
+        });
+        nodes.forEach((n, sym) => {
+          if (seen.has(sym)) return;
+          n.g.style.opacity = 0; n.g.style.pointerEvents = "none"; n.g.setAttribute("tabindex", -1);
+        });
+        if (pts.length) {
+          endL.textContent = `${pts[0].s} ${V.pct(pts[0].v)}`;
+          endR.textContent = `${pts[pts.length - 1].s} ${V.pct(pts[pts.length - 1].v)}`;
+        }
+        $("swarm-aux").textContent = `${pts.length} tickers on ${S.day}`;
+      };
+      swarmUpdate(false);
+    });
+    swarmTable();
+  }
+
+  function swarmTable() {
+    const rows = dayRows().filter(r => V.num(r.iv) != null).sort((a, z) => V.num(z.iv) - V.num(a.iv));
+    table($("swarm-table"), ["ticker", "group", "implied vol", "put iv", "far iv", "spread % mid", "dte"],
+      rows.map(r => { const sp = V.spread(r); return [r.symbol, V.group(r.symbol), V.pct(V.num(r.iv), 2), V.pct(V.num(r.put_iv), 2), V.pct(V.num(r.far_iv), 2), sp == null ? "n/a" : sp.toFixed(1), r.dte]; }));
+  }
+
+  function detail() {
+    for (const id of ["detail", "roster-detail"]) {
+      const host = V.clear($(id));
+      if (!S.pinned) continue;
+      const r = dayRows().find(x => x.symbol === S.pinned);
+      const box = V.h("div", { class: "detail" }, host);
+      if (!r) { box.textContent = `${S.pinned} has no row on ${S.day}.`; continue; }
+      const sp = V.spread(r);
+      const item = (k, v) => { const s = V.h("span", null, box); s.append(k + " "); V.h("b", null, s, v); };
+      item("", `${r.symbol}, ${V.group(r.symbol)}, ${S.day}`);
+      item("implied vol", V.pct(V.num(r.iv), 2));
+      item("strike", r.strike);
+      item("expiry", `${r.expiration} (${r.dte}d)`);
+      item("bid/ask", `${r.bid} / ${r.ask}`);
+      if (sp != null) item("spread", sp.toFixed(1) + "% of mid");
+      if (V.num(r.put_iv) != null) item("put iv", V.pct(V.num(r.put_iv), 2));
+      if (V.num(r.far_iv) != null) item("far iv", `${V.pct(V.num(r.far_iv), 2)} (${r.far_dte}d)`);
+      if (V.num(r.volume) != null) item("volume", V.int(V.num(r.volume)));
     }
-  }catch(e){
-    if($("#src").textContent==="render failed")return;
-    $("#src").textContent="fetch failed";
-    $("#app").innerHTML=`<div class="note"><p><b>Could not read the dataset.</b> ${esc(e.message)}<br><br>
-      Browsers block <code>fetch</code> from a <code>file://</code> page. Serve it instead:<br>
-      <code>cd ~/Desktop/Archive/Volrec &amp;&amp; python3 -m http.server 8000</code><br>
-      then open <a href="http://localhost:8000/tools/monitor.html">localhost:8000/tools/monitor.html</a>,
-      or use the published copy at
-      <a href="https://gabrielmitton-cloud.github.io/volrec/tools/monitor.html">GitHub Pages</a>.</p></div>`;
+  }
+
+  /* ------------------------------------------------------ term structure */
+
+  function term() {
+    const all = S.rows.flatMap(r => [V.num(r.iv), V.num(r.far_iv)]).filter(v => v != null);
+    const lo = Math.max(0, Math.min(...all) * 0.92), hi = Math.max(...all) * 1.04;
+    redraw.term = mount($("term"), function (W) {
+      const host = V.clear($("term"));
+      const pts = dayRows().map(r => ({ s: r.symbol, x: V.num(r.iv), y: V.num(r.far_iv), r })).filter(p => p.x != null && p.y != null);
+      if (!pts.length) { V.h("p", { class: "panel-cap" }, host, `No far-expiry quotes on ${S.day}.`); $("term-aux").textContent = ""; return; }
+      const m = { l: 46, r: 12, t: 12, b: 44 };
+      const H = Math.round(Math.min(W - m.l - m.r, 420)) + m.t + m.b;
+      const svg = V.s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": "Scatter of near against far expiry implied volatility" }, host);
+      const X = V.lin(lo, hi, m.l, W - m.r), Y = V.lin(lo, hi, H - m.b, m.t);
+      for (const t of V.ticks(lo * 100, hi * 100, 5)) {
+        const v = t / 100;
+        if (v < lo || v > hi) continue;
+        V.s("line", { x1: X(v), y1: m.t, x2: X(v), y2: H - m.b, class: "grat-line" }, svg);
+        V.s("line", { x1: m.l, y1: Y(v), x2: W - m.r, y2: Y(v), class: "grat-line" }, svg);
+        V.s("text", { x: X(v), y: H - m.b + 16, "text-anchor": "middle" }, svg, t + "%");
+        V.s("text", { x: m.l - 7, y: Y(v) + 3, "text-anchor": "end" }, svg, t + "%");
+      }
+      V.s("line", { x1: X(lo), y1: Y(lo), x2: X(hi), y2: Y(hi), class: "grat-axis" }, svg);
+      V.s("text", { x: m.l + 8, y: m.t + 14, class: "lab-dim" }, svg, "far expiry richer");
+      V.s("text", { x: W - m.r - 8, y: H - m.b - 8, "text-anchor": "end", class: "lab-dim" }, svg, "inverted");
+      V.s("text", { x: W - m.r, y: H - 4, "text-anchor": "end", class: "lab-dim" }, svg, "near expiry, about 30 days");
+      V.s("text", { x: 10, y: m.t, "text-anchor": "end", transform: `rotate(-90 10 ${m.t})`, class: "lab-dim" }, svg, "far expiry");
+      let inv = 0;
+      pts.forEach(p => {
+        const inverted = p.y < p.x;
+        if (inverted) inv++;
+        p.px = X(p.x); p.py = Y(p.y);
+        V.s("circle", { cx: p.px, cy: p.py, r: inverted ? 4.5 : 4, fill: inverted ? "var(--ink)" : "var(--free)", "fill-opacity": inverted ? 1 : 0.75, stroke: "var(--panel)", "stroke-width": 1.5 }, svg);
+      });
+      $("term-aux").textContent = `${inv} of ${pts.length} inverted`;
+      const ring = V.s("circle", { r: 8, fill: "none", stroke: "var(--ink)", "stroke-width": 1.5, opacity: 0 }, svg);
+      const hit = V.s("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }, svg);
+      hit.addEventListener("pointermove", e => {
+        const b = svg.getBoundingClientRect(), lx = (e.clientX - b.left) * (W / b.width), ly = (e.clientY - b.top) * (H / b.height);
+        let best = null, bd = 26 * 26;
+        pts.forEach(p => { const d = (p.px - lx) ** 2 + (p.py - ly) ** 2; if (d < bd) { bd = d; best = p; } });
+        if (!best) { ring.setAttribute("opacity", 0); V.tipHide(); return; }
+        ring.setAttribute("cx", best.px); ring.setAttribute("cy", best.py); ring.setAttribute("opacity", 1);
+        V.tipShow(e.clientX, e.clientY, `${best.s}, ${S.day}`, [
+          { v: V.pct(best.x, 2), k: `near, ${best.r.dte}d`, c: "var(--free)" },
+          { v: V.pct(best.y, 2), k: `far, ${best.r.far_dte}d` },
+          { v: V.sgn((best.y - best.x) * 100, 2), k: "far minus near, vol points" }]);
+      });
+      hit.addEventListener("pointerleave", () => { ring.setAttribute("opacity", 0); V.tipHide(); });
+    });
+  }
+
+  /* -------------------------------------------------------- put against call */
+
+  function putCall() {
+    redraw.pc = mount($("pc"), function (W) {
+      const host = V.clear($("pc"));
+      const vals = dayRows().map(r => {
+        const p = V.num(r.put_iv), c = V.num(r.iv);
+        return { s: r.symbol, v: p != null && c != null ? (p - c) * 100 : null, p, c };
+      }).filter(x => x.v != null).sort((a, z) => z.v - a.v);
+      if (!vals.length) { V.h("p", { class: "panel-cap" }, host, `No put quotes on ${S.day}.`); $("pc-aux").textContent = ""; return; }
+      const take = Math.min(8, Math.floor(vals.length / 2));
+      const topRows = vals.slice(0, take), botRows = vals.slice(vals.length - take);
+      const M = Math.max(0.5, ...[...topRows, ...botRows].map(x => Math.abs(x.v))) * 1.12;
+      const m = { l: 12, r: 12, t: 26, b: 34 }, rh = 20, gap = 14;
+      const H = m.t + m.b + rh * (topRows.length + botRows.length) + gap;
+      const svg = V.s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": "Put minus call implied volatility, largest gaps" }, host);
+      const X = V.lin(-M, M, m.l + 70, W - m.r - 70);
+      for (const t of V.ticks(-M, M, 4)) {
+        if (Math.abs(t) > M) continue;
+        V.s("line", { x1: X(t), y1: m.t - 6, x2: X(t), y2: H - m.b, class: t === 0 ? "grat-axis" : "grat-line" }, svg);
+        V.s("text", { x: X(t), y: H - m.b + 16, "text-anchor": "middle" }, svg, t > 0 ? "+" + t : String(t).replace("-", "−"));
+      }
+      V.s("text", { x: X(0) - 8, y: 12, "text-anchor": "end", class: "lab-dim" }, svg, "call richer");
+      V.s("text", { x: X(0) + 8, y: 12, class: "lab-dim" }, svg, "put richer");
+      V.s("text", { x: W - m.r, y: H - 3, "text-anchor": "end", class: "lab-dim" }, svg, "put minus call, vol points");
+      [...topRows, ...botRows].forEach((d, i) => {
+        const y = m.t + rh * i + rh / 2 + (i >= topRows.length ? gap : 0);
+        V.s("line", { x1: X(0), y1: y, x2: X(d.v), y2: y, stroke: "var(--ink-4)", "stroke-width": 2 }, svg);
+        V.s("circle", { cx: X(d.v), cy: y, r: 4, fill: "var(--free)", stroke: "var(--panel)", "stroke-width": 1.5 }, svg);
+        const left = d.v >= 0;
+        V.s("text", { x: left ? X(0) - 8 : X(0) + 8, y: y + 3.5, "text-anchor": left ? "end" : "start", class: "lab-strong", style: "font-size:10px" }, svg, d.s);
+        V.s("text", { x: X(d.v) + (left ? 9 : -9), y: y + 3.5, "text-anchor": left ? "start" : "end", class: "lab" }, svg, V.sgn(d.v, 2));
+        const hit = V.s("rect", { x: 0, y: y - rh / 2, width: W, height: rh, fill: "transparent" }, svg);
+        V.hover(hit, () => [`${d.s}, ${S.day}`, [
+          { v: V.pct(d.p, 2), k: "put implied vol" }, { v: V.pct(d.c, 2), k: "call implied vol", c: "var(--free)" },
+          { v: V.sgn(d.v, 2), k: "put minus call, vol points" }]]);
+      });
+      const med = vals[Math.floor(vals.length / 2)].v;
+      $("pc-aux").textContent = `median ${V.sgn(med, 2)} across ${vals.length}`;
+    });
+  }
+
+  /* ------------------------------------------------------- strike surface */
+
+  function surface() {
+    const host = V.clear($("surface")), h = S.h.surface;
+    $("surf-aux").textContent = h.label;
+    if (!S.surf || !S.surf.length) {
+      const wrap = V.h("div", { class: "pending" }, host);
+      const left = V.h("div", null, wrap);
+      V.h("span", { class: "st", "data-state": h.state }, left, h.label);
+      const first = new Date(`${V.SURFACE_START}T${String(V.SURFACE_CRON[0]).padStart(2, "0")}:${String(V.SURFACE_CRON[1]).padStart(2, "0")}:00Z`);
+      const now = new Date(), target = now < first ? first : V.nextRun(V.SURFACE_CRON, now);
+      const count = V.h("div", { class: "count", style: "margin-top:12px" }, left, "T−" + V.clock(target - now));
+      V.h("p", null, left, now < first
+        ? `until the first scheduled run, Monday ${V.SURFACE_START} at 15:40 UTC. GitHub usually starts it about three hours late.`
+        : "until the next scheduled run at 15:40 UTC.");
+      setInterval(() => { count.textContent = "T−" + V.clock(target - new Date()); }, 1000);
+      const right = V.h("div", null, wrap);
+      V.h("p", null, right, h.msg);
+      V.h("p", null, right, "When rows land, this panel draws the implied volatility smile for each of the eight underlyings, near and far expiry, with traded volume at every strike beneath it. H4 becomes testable after two consecutive trading days.");
+      return;
+    }
+
+    const newest = h.newest;
+    const legend = V.h("div", { class: "legend", style: "margin-bottom:12px" }, host);
+    [["sw-line", "var(--free)", "near expiry"], ["sw-line", "var(--ink-3)", "far expiry"], ["sw-sq", "var(--ink-4)", "volume, near expiry"]].forEach(([cls, c, t]) => {
+      const sp = V.h("span", null, legend); V.h("i", { class: cls, style: `background:${c}` }, sp); sp.append(t);
+    });
+    const grid = V.h("div", { class: "smiles" }, host);
+    V.SURFACE.forEach(sym => {
+      const cell = V.h("div", { class: "smile" }, grid);
+      const rows = S.surf.filter(r => r.date === newest && r.symbol === sym);
+      const head = V.h("div", { class: "legend" }, cell);
+      V.h("b", { style: "color:var(--ink);font-weight:500" }, head, sym);
+      if (!rows.length) { V.h("span", null, head, `no rows on ${newest}`); return; }
+      V.h("span", null, head, `spot ${V.fx(V.num(rows[0].spot), 2)}`);
+      const holder = V.h("div", null, cell);
+      const exps = [...new Set(rows.map(r => r.expiration))].sort();
+      // the out-of-the-money side at each strike: puts below spot, calls above
+      const side = r => { const k = V.num(r.moneyness) ?? V.num(r.strike) / V.num(r.spot); return (r.type === "P" || r.type === "put") ? k < 1 : k >= 1; };
+      const series = exps.slice(0, 2).map(e => rows.filter(r => r.expiration === e && side(r) && V.num(r.iv) != null)
+        .map(r => ({ k: V.num(r.moneyness) ?? V.num(r.strike) / V.num(r.spot), iv: V.num(r.iv), vol: V.num(r.volume) || 0, dte: r.dte }))
+        .sort((a, z) => a.k - z.k));
+      mount(holder, function (W) {
+        V.clear(holder);
+        const pts = series.flat();
+        if (!pts.length) { V.h("p", { class: "panel-cap" }, holder, "No quotes with an implied volatility."); return; }
+        const H = 170, m = { l: 34, r: 6, t: 10, b: 22 }, volH = 26;
+        const svg = V.s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": `${sym} implied volatility smile on ${newest}` }, holder);
+        const X = V.lin(0.7, 1.3, m.l, W - m.r);
+        const ivs = pts.map(p => p.iv), ylo = Math.min(...ivs), yhi = Math.max(...ivs);
+        const Y = V.lin(ylo - (yhi - ylo) * 0.08, yhi + (yhi - ylo) * 0.08, H - m.b - volH - 6, m.t);
+        for (const t of [0.8, 0.9, 1.0, 1.1, 1.2]) {
+          V.s("line", { x1: X(t), y1: m.t, x2: X(t), y2: H - m.b, class: t === 1 ? "grat-axis" : "grat-line" }, svg);
+          if (t !== 0.9 && t !== 1.1) V.s("text", { x: X(t), y: H - 6, "text-anchor": "middle" }, svg, Math.round(t * 100) + "%");
+        }
+        for (const t of V.ticks(ylo * 100, yhi * 100, 3)) {
+          const y = Y(t / 100);
+          if (y < m.t - 1 || y > H - m.b - volH - 5) continue;
+          V.s("text", { x: m.l - 5, y: y + 3, "text-anchor": "end" }, svg, t + "%");
+        }
+        const near = series[0] || [], vmax = Math.max(1, ...near.map(p => p.vol)), bw = Math.max(1.5, (W - m.l - m.r) / 90);
+        near.forEach(p => {
+          if (p.k < 0.7 || p.k > 1.3 || !p.vol) return;
+          const hgt = volH * p.vol / vmax;
+          V.s("rect", { x: X(p.k) - bw / 2, y: H - m.b - hgt, width: bw, height: hgt, fill: "var(--ink-4)" }, svg);
+        });
+        series.slice().reverse().forEach((ser, ri) => {
+          const isNear = ri === series.length - 1;
+          const inRange = ser.filter(p => p.k >= 0.7 && p.k <= 1.3);
+          if (inRange.length < 2) return;
+          V.s("path", { d: "M" + inRange.map(p => X(p.k).toFixed(1) + "," + Y(p.iv).toFixed(1)).join("L"), fill: "none",
+            stroke: isNear ? "var(--free)" : "var(--ink-3)", "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+        });
+        const hit = V.s("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }, svg);
+        hit.addEventListener("pointermove", e => {
+          const b = svg.getBoundingClientRect(), k = X.inv((e.clientX - b.left) * (W / b.width));
+          const rowsOut = series.map((ser, i) => {
+            if (!ser.length) return null;
+            let best = ser[0]; ser.forEach(p => { if (Math.abs(p.k - k) < Math.abs(best.k - k)) best = p; });
+            return { v: V.pct(best.iv, 1), k: `${i ? "far" : "near"}, ${Math.round(best.k * 100)}% of spot, ${best.dte}d`, c: i ? "var(--ink-3)" : "var(--free)" };
+          }).filter(Boolean);
+          V.tipShow(e.clientX, e.clientY, `${sym}, ${newest}`, rowsOut);
+        });
+        hit.addEventListener("pointerleave", V.tipHide);
+      });
+    });
+    V.h("p", { class: "panel-cap" }, host, h.h4);
+  }
+
+  /* ------------------------------------------------------------ coverage */
+
+  function heat() {
+    mount($("heat"), function (W) {
+      const host = V.clear($("heat"));
+      const order = V.GROUPS.flatMap(g => V.WATCHLIST.filter(s => V.group(s) === g));
+      const labelW = 78, gapG = 8;
+      const cell = Math.max(7, Math.floor((W - labelW - gapG * 3 - 4) / order.length));
+      const rh = Math.max(11, Math.min(16, cell + 5)), top = 24;
+      const xs = []; let x = labelW, prev = null;
+      order.forEach(s => { const g = V.group(s); if (prev && g !== prev) x += gapG; xs.push(x); x += cell; prev = g; });
+      const SW = x + 4, H = top + rh * S.days.length + 6;
+      const svg = V.s("svg", { viewBox: `0 0 ${SW} ${H}`, width: SW, height: H, role: "img", "aria-label": "Coverage of every ticker on every recorded day" }, host);
+      let prevG = null;
+      order.forEach((s, i) => { const g = V.group(s); if (g !== prevG) V.s("text", { x: xs[i], y: 12, class: "lab" }, svg, g); prevG = g; });
+      const index = new Map(S.days.map(d => [d, new Map((S.byDay.get(d) || []).map(r => [r.symbol, r]))]));
+      let gaps = 0, flags = 0;
+      S.days.forEach((d, j) => {
+        const y = top + rh * j;
+        V.s("text", { x: 0, y: y + rh / 2 + 3.5, class: d === S.days[S.days.length - 1] ? "lab" : "" }, svg, short(d));
+        const map = index.get(d);
+        order.forEach((s, i) => {
+          const r = map.get(s), sp = r ? V.spread(r) : null;
+          if (!r) {
+            gaps++;
+            V.s("rect", { x: xs[i] + 0.5, y: y + 1.5, width: cell - 2, height: rh - 3, fill: "none", stroke: "var(--ink-4)", "stroke-width": 1 }, svg);
+          } else {
+            const bad = sp != null && sp > V.SPREAD_LIMIT;
+            if (bad) flags++;
+            const c = V.s("rect", { x: xs[i], y: y + 1, width: cell - 1, height: rh - 2 }, svg);
+            c.style.fill = bad ? "var(--warn)" : "color-mix(in oklab, var(--free) 72%, var(--panel))";
+          }
+        });
+      });
+      $("heat-aux").textContent = `${S.days.length} days, ${order.length} tickers, ${gaps} gaps, ${flags} wide spreads`;
+      svg.addEventListener("pointermove", e => {
+        const b = svg.getBoundingClientRect(), lx = (e.clientX - b.left) * (SW / b.width), ly = (e.clientY - b.top) * (H / b.height);
+        const j = Math.floor((ly - top) / rh), i = xs.findIndex(v => lx >= v && lx < v + cell);
+        if (j < 0 || j >= S.days.length || i < 0) { V.tipHide(); return; }
+        const d = S.days[j], s = order[i], r = index.get(d).get(s);
+        if (!r) { V.tipShow(e.clientX, e.clientY, `${s}, ${d}`, [{ v: "○", k: "no row recorded" }]); return; }
+        const sp = V.spread(r);
+        V.tipShow(e.clientX, e.clientY, `${s}, ${V.group(s)}, ${d}`, [
+          { v: V.pct(V.num(r.iv), 2), k: "implied volatility", c: "var(--free)" },
+          { v: sp == null ? "n/a" : (sp > V.SPREAD_LIMIT ? "▲ " : "") + sp.toFixed(1) + "%", k: "spread, % of mid" }]);
+      });
+      svg.addEventListener("pointerleave", V.tipHide);
+    });
+  }
+
+  /* -------------------------------------------------------------- health */
+
+  function health() {
+    const hr = V.clear($("health"));
+    [["ATM panel", S.h.atm], ["Strike surface", S.h.surface]].forEach(([k, s]) => {
+      const d = V.h("div", null, hr);
+      V.h("span", { class: "st", "data-state": s.state }, d, `${k}: ${s.label}`);
+      V.h("p", null, d, s.msg);
+    });
+    const d = V.h("div", null, hr);
+    const ready = S.h.surface.h4ready;
+    V.h("span", { class: "hs", "data-h": ready ? "ready" : "waiting" }, d, ready ? "H4: testable" : "H4: waiting for data");
+    V.h("p", null, d, S.h.surface.h4 || "Needs two consecutive days of strike-surface data, from Tuesday 15 September at the earliest.");
+  }
+
+  /* ------------------------------------------------------- quote quality */
+
+  function quality() {
+    redraw.qq = mount($("qq"), function (W) {
+      const host = V.clear($("qq"));
+      const sp = dayRows().map(r => ({ s: r.symbol, v: V.spread(r), r })).filter(x => x.v != null).sort((a, z) => z.v - a.v).slice(0, 10);
+      if (!sp.length) { V.h("p", { class: "panel-cap" }, host, `No quotes on ${S.day}.`); $("qq-aux").textContent = ""; return; }
+      const m = { l: 56, r: 64, t: 8, b: 26 }, rh = 24, H = m.t + m.b + rh * sp.length;
+      const mx = Math.max(V.SPREAD_LIMIT * 1.2, sp[0].v * 1.04);
+      const svg = V.s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": "Widest bid-ask spreads as a percent of mid" }, host);
+      const X = V.lin(0, mx, m.l, W - m.r);
+      V.s("line", { x1: X(V.SPREAD_LIMIT), y1: m.t, x2: X(V.SPREAD_LIMIT), y2: H - m.b, class: "grat-axis" }, svg);
+      V.s("text", { x: X(V.SPREAD_LIMIT), y: H - m.b + 16, "text-anchor": "middle", class: "lab" }, svg, V.SPREAD_LIMIT + "% limit");
+      V.s("text", { x: m.l, y: H - m.b + 16, "text-anchor": "middle" }, svg, "0");
+      sp.forEach((d, i) => {
+        const y = m.t + rh * i + rh / 2, bad = d.v > V.SPREAD_LIMIT;
+        V.s("text", { x: m.l - 8, y: y + 3.5, "text-anchor": "end", class: "lab-strong", style: "font-size:10px" }, svg, d.s);
+        const w = Math.max(2, X(Math.min(d.v, mx)) - m.l);
+        V.s("path", { d: `M${m.l},${y - 6}h${Math.max(0, w - 3)}q3,0 3,3v6q0,3 -3,3h${-Math.max(0, w - 3)}z`, fill: bad ? "var(--warn)" : "var(--free)" }, svg);
+        V.s("text", { x: m.l + w + 8, y: y + 3.5, class: "lab" }, svg, (bad ? "▲ " : "") + d.v.toFixed(0) + "%");
+        const hit = V.s("rect", { x: 0, y: y - rh / 2, width: W, height: rh, fill: "transparent" }, svg);
+        V.hover(hit, () => [`${d.s}, ${S.day}`, [
+          { v: d.v.toFixed(1) + "%", k: "spread, % of mid", c: bad ? "var(--warn)" : "var(--free)" },
+          { v: `${d.r.bid} / ${d.r.ask}`, k: "bid / ask" }]]);
+      });
+      const flagged = dayRows().filter(r => { const s = V.spread(r); return s != null && s > V.SPREAD_LIMIT; }).length;
+      $("qq-aux").textContent = flagged ? `${flagged} over the limit on ${S.day}` : `none over the limit on ${S.day}`;
+    });
+  }
+
+  /* ---------------------------------------------------------- the universe */
+
+  function universe() {
+    const chips = V.clear($("chips"));
+    const all = ["all", ...V.GROUPS].map(g => {
+      const b = V.h("button", { class: "chip", type: "button", "aria-pressed": String(S.filter === g) }, chips, g);
+      b.addEventListener("click", () => { S.filter = g; all.forEach((x, i) => x.setAttribute("aria-pressed", String(["all", ...V.GROUPS][i] === S.filter))); paintRoster(); });
+      return b;
+    });
+    const find = V.h("input", { class: "find", type: "search", placeholder: "Find a ticker", "aria-label": "Find a ticker" }, chips);
+    find.addEventListener("input", () => { S.q = find.value; paintRoster(); });
+    const legend = V.h("div", { class: "legend", style: "margin-left:auto" }, chips);
+    [["var(--free)", "recorded"], ["var(--warn)", "▲ spread over 60%"], ["var(--ink-4)", "○ no row"]].forEach(([c, t]) => {
+      const sp = V.h("span", null, legend); V.h("i", { class: "sw-sq", style: `background:${c}` }, sp); sp.append(t);
+    });
+    paintRoster();
+  }
+
+  function paintRoster() {
+    const el = V.clear($("roster")), q = S.q.trim().toUpperCase(), rows = dayRows();
+    const list = V.WATCHLIST.map((s, i) => ({ s, i })).filter(o => (S.filter === "all" || V.group(o.s) === S.filter) && (!q || o.s.includes(q)));
+    list.forEach(({ s, i }) => {
+      const r = rows.find(x => x.symbol === s), sp = r ? V.spread(r) : null;
+      const state = !r ? "none" : (sp != null && sp > V.SPREAD_LIMIT ? "warn" : "ok");
+      const b = V.h("button", { class: "tile", type: "button", "data-state": state, "data-sym": s, "aria-pressed": String(S.pinned === s) }, el);
+      V.h("span", null, b, s);
+      V.h("span", { class: "n" }, b, state === "warn" ? "▲" : state === "none" ? "○" : String(i + 1).padStart(3, "0"));
+      V.hover(b, () => [`${s}, ${V.group(s)}, ${S.day}`, r
+        ? [{ v: V.pct(V.num(r.iv), 1), k: "implied volatility", c: "var(--free)" }, { v: sp == null ? "n/a" : sp.toFixed(0) + "%", k: "spread, % of mid" }]
+        : [{ v: "○", k: "no row recorded" }]]);
+      b.addEventListener("click", () => { S.pinned = S.pinned === s ? null : s; swarmUpdate(false); detail(); pressRoster(); });
+    });
+    $("cnt").textContent = `${list.length} of ${V.WATCHLIST.length}`;
+  }
+  function pressRoster() {
+    document.querySelectorAll("#roster .tile").forEach(t => t.setAttribute("aria-pressed", String(t.dataset.sym === S.pinned)));
+  }
+
+  /* ------------------------------------------------------------ activity */
+
+  function activity() {
+    const el = V.clear($("log")), ev = [];
+    S.days.forEach(d => {
+      const rs = S.byDay.get(d), t = V.lastSnapshot(rs);
+      ev.push([`${d} ${V.utc(t).slice(0, 5)}Z`, `recorded ${rs.length} at-the-money rows`]);
+    });
+    if (S.surf && S.surf.length) V.days(S.surf).forEach(d => ev.push([`${d} surface`, `recorded ${S.surf.filter(r => r.date === d).length} strike-surface rows`]));
+    const last = S.days[S.days.length - 1], latest = S.byDay.get(last);
+    const present = new Set(latest.map(r => r.symbol)), missing = V.WATCHLIST.filter(s => !present.has(s));
+    if (missing.length) ev.push([last + " note", `absent: ${missing.join(", ")}`]);
+    const wide = latest.filter(r => { const s = V.spread(r); return s != null && s > V.SPREAD_LIMIT; });
+    if (wide.length) ev.push([last + " note", `spread over ${V.SPREAD_LIMIT}%: ${wide.map(r => r.symbol).join(", ")}`]);
+    ev.sort((a, z) => z[0].localeCompare(a[0]));
+    const now = [];
+    if (S.h.surface.state !== "ok") now.push(["now", `strike surface ${S.h.surface.label}: ${S.h.surface.msg}`]);
+    if (S.h.atm.state !== "ok") now.push(["now", S.h.atm.msg]);
+    [...now, ...ev].forEach(([t, m]) => { const d = V.h("div", null, el); V.h("span", { class: "t" }, d, t); d.append(m); });
   }
 })();
 </script>
+</body>
+</html>

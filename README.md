@@ -2,6 +2,10 @@
 
 Measuring the volatility risk premium with data I collect myself.
 
+**Read it as a working paper, with live data:** https://gabrielmitton-cloud.github.io/volrec/
+
+**Watch the recorder:** https://gabrielmitton-cloud.github.io/volrec/tools/monitor.html
+
 ## The question
 
 Options are priced off an implied volatility — the market's forecast of how much
