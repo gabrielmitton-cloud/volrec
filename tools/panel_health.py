@@ -55,7 +55,7 @@ STALE_DAYS = 5
 
 # surface.yml's first scheduled run. Before this, an absent surface.csv is
 # correct rather than broken, and must not fail the check.
-SURFACE_START = date(2026, 9, 15)
+SURFACE_START = date(2026, 9, 14)
 
 # The hour (UTC) by which a weekday's surface rows should have landed. The job
 # is scheduled 15:40 but GitHub delays it to ~18:45 in practice, so before this

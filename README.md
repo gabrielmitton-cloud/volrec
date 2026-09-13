@@ -163,7 +163,7 @@ Recording at-the-money implied volatility answers how large the premium is. It
 cannot answer **where in the strike surface it sits**, which needs the whole
 smile and, to say anything about liquidity, the volume at each strike.
 
-Since 14 September 2026 a second recorder captures that: eight underlyings, two
+From 14 September 2026 a second recorder captures that: eight underlyings, two
 expiries, forty strikes spanning +/-30% of spot, with **bid, ask, implied
 volatility, all five greeks, volume and open interest per contract**. It costs
 no additional API calls, because the original recorder was already fetching

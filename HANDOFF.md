@@ -980,7 +980,7 @@ what Broadie, Chernov & Johannes (2009) ask for.
 ### 14.4 What was added instead
 
 `surface.py` and `data/surface.csv`, recording the strike surface with **volume
-per contract** for a small set of names, on a moneyness grid spanning +/-10% of
+per contract** for a small set of names, on a moneyness grid spanning +/-30% of
 spot, at zero additional API cost, from data the recorder was already fetching
 and discarding. See section 15.
 
@@ -1073,7 +1073,7 @@ a single day.
 | workflow | cron (UTC) | writes | notes |
 |---|---|---|---|
 | `record.yml` | 15:30 weekdays | `data/iv_history.csv` | 109 tickers, ATM. The irreplaceable one. |
-| `surface.yml` | 15:40 weekdays | `data/surface.csv` | 8 underlyings, full strike surface. **First real run: Mon 15 Sep.** |
+| `surface.yml` | 15:40 weekdays | `data/surface.csv` | 8 underlyings, full strike surface. **First real run: Mon 14 Sep.** |
 | `freshness.yml` | 17:00 **and 21:00** daily | nothing | Runs `tools/panel_health.py`. Fails loudly if **either** panel is stale, empty, duplicated or missing underlyings. The 21:00 slot exists because 17:00 is before the surface job lands. |
 
 GitHub delays scheduled runs; both have landed around 18:45-19:00 UTC in
@@ -1101,7 +1101,7 @@ pressure test.
 | H1 | **tested** | VRP positive on 9 of 11 Cboe pairs, VIX/SPY t=5.14 |
 | H2 | **tested** | log variance strongest (t=16.3), raw variance weakest (t=2.1). Registered, **not adopted**. |
 | H3 | **calibrated, not tested** | free-data model-free estimate matched the published VIX to 0.01 pts on one day. Needs a series. |
-| H4 | **registered, untestable yet** | needs two consecutive days of surface data. Earliest Tue 16 Sep. |
+| H4 | **registered, untestable yet** | needs two consecutive days of surface data. Earliest Tue 15 Sep. |
 
 ### The immediate next actions, in order
 
