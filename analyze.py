@@ -261,7 +261,14 @@ def fetch_market_vol(series=None):
     import requests
     series = series or (MARKET_VOL + sorted(set(BENCH.values())))
     cache = json.loads(VOL_CACHE.read_text()) if VOL_CACHE.exists() else {}
-    need = [x for x in series if x not in cache]
+    # A series cached on an earlier day is refetched. The original check was
+    # only "is the name in the cache", so a cache written once was served
+    # forever: every local run after 2026-09-11 kept reading that date's
+    # closes, and modelfree.py reported every later day as "n/a" against Cboe.
+    # Fetch dates live in one top-level key; no caller iterates the whole dict.
+    fetched = cache.setdefault("_fetched", {})
+    today = date.today().isoformat()
+    need = [x for x in series if x not in cache or fetched.get(x) != today]
     for name in need:
         r = requests.get(f"{CBOE}/{name}_History.csv", timeout=30)
         r.raise_for_status()
@@ -279,6 +286,7 @@ def fetch_market_vol(series=None):
             except (ValueError, IndexError):
                 continue
         cache[name] = out
+        fetched[name] = today
         print(f"  {name}: {len(out)} daily closes, {min(out)} to {max(out)}")
         time.sleep(0.2)
     if need:
