@@ -79,6 +79,56 @@ against 21.02 (-0.23), GLD 25.36 against 25.68 (-0.32), IWM 20.51 against 19.98
 test H3.** A single day cannot distinguish a method that works from a method
 that happened to land. The hypothesis is tested on the accumulated series.
 
+## The Bloomberg cross-check, 15 September 2026 - one matched day
+
+The calibration above measures the free-data estimate against Cboe. It cannot say
+whether the residual is bad quotes or a different calculation, because Cboe publishes
+one number per underlying, not the contracts behind it. Bloomberg can, and on 15
+September the two sides were captured 14 minutes apart on the same 16 October expiry:
+the recorder at 19:10 UTC, the terminal export pulled at 18:57.
+
+Matched contract by contract, with `tools/bloomberg_compare.py`:
+
+| | matched | IV gap, vol pts | mid gap | mid gap / spread | volume, free vs Bloomberg |
+|---|---|---|---|---|---|
+| TSLA | 78 | +1.84 | +0.27% | 0.42 | 40,479 vs 39,231 |
+| USO | 40 | +1.74 | +0.07% | 0.64 | 13,418 vs 13,198 |
+| SPY | 14 | +0.55 | +0.45% | 1.06 | 17,658 vs 17,408 |
+
+IV gap is the free feed minus Bloomberg's IVM, in volatility points, at the median.
+
+**The prices agree; the implied volatilities do not.** Mid prices sit within half a
+percent, and on TSLA within half of the quoted bid-ask spread. Volumes agree to within
+3%. Yet the free feed's implied volatility reads one to two points above Bloomberg's on
+both single names. Two feeds cannot disagree on volatility while agreeing on price
+unless they are inverting those prices differently, so the gap is a **convention
+difference, not a quote-quality difference**. Bloomberg prints its own implied forward
+on every block - 358.17 against a 357.04 spot on TSLA - and the free feed's greeks come
+from Alpaca's own model with its own forward, rate and dividend assumptions.
+
+**Why this matters for H3.** `modelfree.py` integrates out-of-the-money *prices*, never
+implied volatilities. An implied-volatility convention gap therefore does not enter the
+model-free estimate at all, and the 0.59-point residual against Cboe at +/-30% cannot be
+explained by it. It also means the ATM panel's `iv` column carries a vendor convention
+that the model-free series does not, and the two should not be mixed in one comparison.
+
+**Honest limits of this cross-check.**
+
+- One day, three underlyings, one expiry. This is a cross-check, not a test.
+- The SPY export matched only 14 contracts, because 40 strikes a dollar apart spans
+  2.6% of spot. Its numbers are at-the-money only and its price gate failed at 1.06 of
+  a spread. Treat SPY as unmeasured until a wider export exists.
+- USO also failed the price gate at 0.64 of a spread, on 40 contracts. TSLA, the only
+  name with a wide strike range and a passing gate, is the one to lean on.
+- Bloomberg's licence restricts redistribution. The exports live outside this repository
+  and only aggregates are recorded here. Any published use needs the attribution
+  "Source: Bloomberg Finance L.P." and the open question in HANDOFF section 16.
+
+**What would settle the convention question:** recompute implied volatility from the
+free feed's own bid/ask using Bloomberg's printed forward and rate for that expiry. If
+the gap collapses, the convention explanation holds. That is a small, bounded piece of
+work on data already collected, and it needs no new pull.
+
 ## What would falsify it
 
 - H3a fails if the mean absolute gap over the series exceeds 1.0 points.
