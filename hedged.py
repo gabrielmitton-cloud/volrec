@@ -116,11 +116,19 @@ def runs_for_contract(obs):
     return out
 
 
-def hedged_gain(run, r_annual):
-    """Delta-hedged P&L over one run. Returns a dict, or None if unusable."""
+def hedged_gain(run, r_annual, delta_of=None):
+    """Delta-hedged P&L over one run. Returns a dict, or None if unusable.
+
+    `delta_of` optionally replaces the recorded delta with a callable taking a row
+    and returning a delta, so the identical runs can be re-hedged under a different
+    model. The recorded delta is the vendor's, and the vendor's model is the one
+    `tools/iv_convention.py` found disagreeing with this project's; see
+    `tools/delta_model.py`. Default is None, which is the recorded delta unchanged.
+    """
     C, S, D = [], [], []
     for row in run:
-        c, s, d = _f(row["mid"]), _f(row["spot"]), _f(row["delta"])
+        c, s = _f(row["mid"]), _f(row["spot"])
+        d = _f(row["delta"]) if delta_of is None else delta_of(row)
         if c is None or s is None or d is None or c <= 0 or s <= 0:
             return None
         C.append(c); S.append(s); D.append(d)

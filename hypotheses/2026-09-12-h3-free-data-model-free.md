@@ -4,6 +4,8 @@
 exists to test it on. The single-day calibration below is reported honestly as
 calibration, not as a test of the hypothesis.
 **Status:** registered. Calibrated on one day. Not yet tested on a series.
+Cross-checked against Bloomberg 15-16 Sep; the volatility gap is identified
+as a day-count convention and does not touch the estimator.
 **Sample:** the strike surface in `data/surface.csv`, which begins accumulating
 on the first weekday run after 2026-09-12.
 
@@ -170,6 +172,83 @@ the vendor's *delta*, which is model-derived in exactly the way this test found 
 so H4's hedge ratios inherit an unquantified model difference. Say so in any write-up.
 
 Bloomberg figures throughout: Source: Bloomberg Finance L.P.
+
+## The day count, 16 September 2026 - the gap identified
+
+The section above left three candidates open and named the bounded test: price a
+contract under a binomial and see whether 1.7 points closes. It does not. The answer
+is the fourth input, the one never printed as a year fraction.
+
+`tools/model_gap.py` inverts the question. Rather than asking what volatility
+reproduces Bloomberg's price, it asks what TIME reproduces Bloomberg's own printed
+volatility from Bloomberg's own printed price, and then reports that time as an
+annualisation divisor two ways. A convention shows up as a divisor that holds across
+maturities; anything that drifts with maturity is not the explanation.
+
+| | cal d | bus d | n | IVM | gap at 365 | gap at 252 | gap at 252 + parity F | cal divisor | bus divisor |
+|---|---|---|---|---|---|---|---|---|---|
+| SPY 16-Oct | 31 | 23 | 40 | 13.5 | +0.60 | +0.08 | +0.08 | 336.3 | 249.5 |
+| SPY 30-Oct | 45 | 33 | 40 | 13.9 | +0.61 | +0.13 | +0.16 | 338.0 | 247.9 |
+| TSLA 16-Oct | 31 | 23 | 40 | 42.1 | **+1.80** | **+0.08** | **+0.04** | 338.4 | 251.1 |
+| TSLA 20-Nov | 66 | 48 | 40 | 44.7 | +1.29 | +0.13 | +0.11 | 344.5 | 250.6 |
+| USO 16-Oct | 31 | 23 | 40 | 54.8 | +2.21 | -0.07 | +0.06 | 341.7 | 253.5 |
+| USO 20-Nov | 66 | 48 | 40 | 53.6 | +1.01 | -0.38 | -0.25 | 351.9 | 255.9 |
+
+Gaps are medians in volatility points, ours minus Bloomberg's IVM, out-of-the-money
+contracts only.
+
+**The business-day divisor holds and the calendar-day divisor does not.** Across six
+blocks the business divisor sits between 247.9 and 255.9 with no maturity trend,
+while the calendar divisor climbs from 336 at one month to 352 at two. No fixed
+calendar divisor fits both maturities; 252 business days fits all six. Re-inverting
+on that clock collapses TSLA's gap from +1.80 to +0.08 volatility points, and every
+other block with it.
+
+**Bloomberg's IVM is on a 252 business-day clock. Alpaca's, and therefore this
+project's, is on a 365 calendar-day clock.** At 31 calendar days those are 23/252 =
+0.0913 against 31/365 = 0.0849, a 7.5% larger variance-time, and a volatility
+inverted on the smaller one has to read about 3.7% higher to reach the same price.
+Neither convention is wrong. The whole 1.7 points is the distance between them.
+
+Three things corroborate it rather than just fitting it:
+
+- **It scales with the volatility level, which a multiplicative time difference must
+  and an additive error would not.** At the same 31 days the gap is +0.60 on SPY at
+  an IVM of 13.5, +1.80 on TSLA at 42.1, and +2.21 on USO at 54.8.
+- **It shrinks with maturity in the right way.** 23/252 against 31/365 is a 7.5%
+  difference; 48/252 against 66/365 is 5.3%; the measured gaps fall from +1.80 to
+  +1.29 on TSLA and +2.21 to +1.01 on USO.
+- **The binomial does nothing**, which is the test HANDOFF 17 asked for. `--american`
+  prices a Cox-Ross-Rubinstein tree on spot with the carry the printed forward
+  implies, and moves TSLA's one-month gap from +1.80 to +1.80. It must: an American
+  call on a name paying no dividend is a European call, and the gap was never
+  larger on puts.
+
+The printed forward is a second-order refinement, not the story. Swapping IFwd for
+the forward implied by Bloomberg's own call and put mids mostly removes the
+call-against-put asymmetry (on USO's October block, calls +0.94 and puts -1.01
+become +0.38 and -0.24) and barely moves the pooled median.
+
+**SPY is measurable here although it was not before.** The cross-check above could
+match only 14 SPY contracts because the free feed's strike grid and Bloomberg's do
+not overlap on a dollar-spaced name. This test never leaves the export: it compares
+Bloomberg's IVM to Bloomberg's own bid and ask, so all 40 out-of-the-money contracts
+count, on two expiries.
+
+**Honest limits.** Three symbols, two expiries each, one day. 252 is estimated from
+the data, not read off a Bloomberg document, and the estimate spans 248 to 256. The
+claim is that the divisor is stable on business days and unstable on calendar days,
+and that 252 is squarely inside the estimated range - not that the vendor's source
+code has been read. A longer-dated pull would sharpen it: the two clocks converge as
+maturity grows, so a two-year expiry is the place the explanation could fail.
+
+**What it changes for H3: nothing, and that is the point.** `modelfree.py` integrates
+out-of-the-money prices and never reads an implied volatility, so a volatility clock
+cannot reach the 0.59-point residual against Cboe. What it does change is what may be
+said about the `iv` column: it is not wrong, it is on a calendar clock, and it must
+never be compared to a business-clock number without converting one of them.
+
+Bloomberg figures: Source: Bloomberg Finance L.P.
 
 ## What would falsify it
 

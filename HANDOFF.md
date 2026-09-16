@@ -4,7 +4,7 @@ Context for anyone (or any assistant session) picking this project up cold.
 Read this before proposing changes. It records not just the current state but
 the reasoning behind decisions already made, so they don't get re-argued.
 
-Last updated: 13 September 2026.
+Last updated: 16 September 2026.
 
 **START AT §16.** It is the current state and the next actions, and it is the
 only section guaranteed to be current. Everything before it is either settled
@@ -1211,6 +1211,8 @@ for, or the sample split.
 | `tools/volrec.js`, `tools/volrec.css` | shared runtime and styles; health rules mirrored from `panel_health.py` |
 | `tools/bloomberg_compare.py` | matches a Bloomberg OMON export to the free feed, contract by contract |
 | `tools/iv_convention.py` | re-inverts quotes under a stated forward and rate, to locate a volatility gap |
+| `tools/model_gap.py` | solves for the TIME that reproduces a vendor's own volatility from its own price; identified the day count |
+| `tools/delta_model.py` | re-hedges H4's runs with a delta from this project's model instead of the vendor's |
 
 ### Where the hypotheses stand
 
@@ -1218,8 +1220,8 @@ for, or the sample split.
 |---|---|---|
 | H1 | tested | VRP positive on 9 of 11 Cboe pairs, VIX/SPY t=5.14 |
 | H2 | tested, not adopted | log variance strongest, t=16.26 |
-| H3 | calibrated, cross-checked | 0.59 mean gap at ±30%; **the Bloomberg cross-check found the free feed's prices as good as Bloomberg's, and the remaining volatility gap to be model-side, not data-side** |
-| H4 | first run, descriptive | 998 hedged runs on the 14-15 Sep pair. H4a and H4b are on the wrong side; H4c holds directionally |
+| H3 | calibrated, cross-checked, gap identified | 0.59 mean gap at ±30%; the free feed's prices are as good as Bloomberg's, and **the 1.7-point volatility gap is a day-count convention — Bloomberg on 252 business days, the free feed on 365 calendar days**. It does not touch `modelfree.py` |
+| H4 | first run, descriptive, model dependence measured | 998 hedged runs on the 14-15 Sep pair. H4a and H4b are on the wrong side; H4c holds directionally. **Re-hedging with our own delta moves every bucket by at most 0.52bp and flips no sign** |
 
 ### The Bloomberg result, in one paragraph
 
@@ -1231,6 +1233,17 @@ inverting Bloomberg's own bid, mid and ask with this project's Black-76 still la
 about 1.7 points above the IVM Bloomberg prints beside them. So the disagreement is
 between models, not feeds. `modelfree.py` integrates prices and is untouched by it;
 `hedged.py` uses the vendor's delta and is not. See H3 and H4 for the numbers.
+
+**Both of those were closed on 16 September.** The volatility gap is the day count:
+solving for the time that reproduces Bloomberg's own IVM from Bloomberg's own mid
+gives an annualisation divisor that is stable on business days (248-256 across six
+blocks, two symbols, two maturities) and unstable on calendar days (336 at one month,
+352 at two). Re-inverting on 252 business days collapses TSLA's gap from +1.80 to
++0.08 volatility points. The binomial that HANDOFF asked to be tried changes it by
+0.00, as it must for calls on a name paying no dividend. And the vendor's delta was
+identified the same way: forcing the forward to `S e^{rT}` reproduces it to 0.0007,
+so the free feed's greeks carry no dividend and no borrow. Re-hedging H4 with a
+parity forward instead moves the buckets by at most 0.52bp and changes no direction.
 
 ### Bloomberg working rules
 
@@ -1248,23 +1261,36 @@ between models, not feeds. `modelfree.py` integrates prices and is untouched by 
 - Pass the real pull time: `python3 tools/bloomberg_compare.py --pull-time 18:57`.
   Without it the file's save time is used, which is later and fails the gap check.
 
+### Done 16 September 2026
+
+1. ~~**Identify the model gap.**~~ It is the day count. `tools/model_gap.py`;
+   numbers in H3 under "The day count". The binomial was tried and explains nothing.
+2. ~~**Quantify what the delta difference does to H4.**~~ `tools/delta_model.py`;
+   numbers in H4 under "The delta is the vendor's". Directions all survive; the
+   shifts run to 0.52bp and concentrate on the dividend-paying ETFs.
+
 ### The immediate next actions, in order
 
-1. **Identify the model gap.** The open candidates are an American binomial against a
-   European forward model, a day count, or a fitted surface rather than contract-by-
-   contract inversion. A bounded test: price one contract under a binomial with the same
-   forward and see whether 1.7 points closes.
-2. **Quantify what the delta difference does to H4.** `hedged.py` hedges with the
-   vendor's delta. Recompute the same runs with a delta from this project's own model
-   and report the difference. If it moves the buckets, H4's numbers carry a model
-   dependence that must be stated.
-3. **Let the surface accumulate.** H4 needs many more day pairs before its pooled t
+1. **Let the surface accumulate.** H4 needs many more day pairs before its pooled t
    means anything. Nothing about the predictions should be adjusted meanwhile.
-4. **Put the Bloomberg result on the site** as a figure in the paper, aggregates only,
-   with the attribution line.
-5. **Extend `analyze.py --simulate`** to the surface-level H4 tests, so the accept
+2. **Put the Bloomberg result on the site** as a figure in the paper, aggregates only,
+   with the attribution line. There is more to show than there was: the day-count
+   finding is a cleaner story than "the volatilities disagree", and it is the kind of
+   thing a free-data measurement study exists to report.
+3. **Extend `analyze.py --simulate`** to the surface-level H4 tests, so the accept
    criteria are simulated under a true null before the series is long enough to tempt a
    claim. This is the "simulation engine" idea, in the form that fits this project.
+4. **Decide what the `iv` column is for, now that its clock is known.** It is on 365
+   calendar days and Bloomberg's is on 252 business days. Nothing needs changing -
+   the convention is internally consistent and `modelfree.py` never reads it - but any
+   comparison to an outside volatility number has to convert one side, and that should
+   be written down once rather than rediscovered. A pull at a long maturity would also
+   sharpen the 252 estimate, because the two clocks converge as maturity grows.
+5. **Compute the hedge ratio rather than record it, if H4 is ever written up as more
+   than descriptive.** The vendor's delta ignores dividends; H4's numbers are not good
+   to better than about half a basis point until that is fixed. `delta_model.py`
+   already does it; nothing has been switched over because switching the default would
+   change a registered run mid-series.
 
 ### Ideas assessed and parked, 16 September 2026
 
@@ -1287,16 +1313,20 @@ between models, not feeds. `modelfree.py` integrates prices and is untouched by 
 > sync. Run `python3 tools/pressure_test.py` before and after anything; it should report
 > 0 fail and 1 warn about snapshot times.
 >
-> Context: the strike surface has been recording since Monday 14 September. A Bloomberg
-> terminal cross-check on 15 September showed the free feed's prices match Bloomberg's to
-> within half a bid-ask spread, while implied volatilities differ by about 1.7 points, and
-> that this gap survives re-inverting Bloomberg's own quotes with our model. So it is a
-> model difference, not a data difference. Bloomberg exports live in
-> ~/Documents/volrec-bloomberg and must never enter the repository; derived aggregates may
-> be published with "Source: Bloomberg Finance L.P.".
+> Context: the strike surface has been recording since Monday 14 September. The Bloomberg
+> cross-check is finished. The free feed's prices match Bloomberg's to within half a
+> bid-ask spread; the 1.7-point volatility gap is a day-count convention, Bloomberg on 252
+> business days against the free feed's 365 calendar days, and re-inverting on that clock
+> collapses it to +0.08 points. The vendor's delta was identified the same way: it carries
+> no dividend and no borrow. Neither finding touches `modelfree.py`, and re-hedging H4
+> with our own delta moves the buckets by at most 0.52bp without flipping a sign.
+> Bloomberg exports live in ~/Documents/volrec-bloomberg and must never enter the
+> repository; derived aggregates may be published with "Source: Bloomberg Finance L.P.".
 >
-> Next actions are listed in section 17. Start with the two that are bounded: identify
-> which model assumption produces the 1.7-point gap, and measure what the vendor's delta
-> does to H4's buckets by recomputing `hedged.py` with a delta from our own model. Report
-> numbers before recommending anything, and do not adjust any pre-registered threshold.
-
+> The bounded diagnostic work is done. What is left in section 17 is mostly waiting: the
+> surface needs many more day pairs before H4's pooled t means anything, and nothing about
+> the predictions should be adjusted meanwhile. The two things that can be done now are
+> putting the Bloomberg result on the site as aggregates with the attribution line, and
+> extending `analyze.py --simulate` to the surface-level H4 tests so the accept criteria
+> are simulated under a true null first. Report numbers before recommending anything, and
+> do not adjust any pre-registered threshold.
