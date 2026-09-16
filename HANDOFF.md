@@ -1314,6 +1314,17 @@ parity forward instead moves the buckets by at most 0.52bp and changes no direct
    with more days, clustering on the underlying-day is *not* sufficient once
    underlyings move together, and about 40 day pairs is enough for both H4a and H4c.
 
+### The window this is all aimed at
+
+**40 trading days from Wed 16 September 2026 ends Wed 11 November 2026.** No market
+holiday falls inside it; US clocks change on Sun 1 November, which moves the session
+an hour in UTC but not the cron. `--simulate-surface` says that length is enough to
+detect a level effect of about 1bp or a volume contrast of about 0.56bp, against a
+first run that measured +2.31bp and 4.19bp respectively. So the window is adequate
+for both H4 claims if the effects are near what one night suggested, and not
+adequate for effects half that size. Nothing about the predictions changes either
+way; this is for planning what the write-up can honestly say.
+
 ### The immediate next actions, in order
 
 1. **Let the surface accumulate.** H4 needs many more day pairs before its pooled t
