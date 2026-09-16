@@ -1213,6 +1213,8 @@ for, or the sample split.
 | `tools/iv_convention.py` | re-inverts quotes under a stated forward and rate, to locate a volatility gap |
 | `tools/model_gap.py` | solves for the TIME that reproduces a vendor's own volatility from its own price; identified the day count |
 | `tools/delta_model.py` | re-hedges H4's runs with a delta from this project's model instead of the vendor's |
+| `analyze.py --simulate-surface` | H4's accept criteria under a true null, plus what 40 day pairs can detect |
+| `hedged.py` honest-units block | the registered gains re-reported per underlying-day, per date, and as a within-day contrast |
 
 ### Where the hypotheses stand
 
@@ -1269,6 +1271,12 @@ parity forward instead moves the buckets by at most 0.52bp and changes no direct
    numbers in H4 under "The delta is the vendor's". Directions all survive; the
    shifts run to 0.52bp and concentrate on the dividend-paying ETFs.
 
+3. ~~**Extend `analyze.py --simulate` to the surface-level H4 tests.**~~ Done as
+   `--simulate-surface`; numbers in H4 under "What the tests are worth". The headline:
+   the pooled t over contracts rejects a true null 46-73% of the time and gets worse
+   with more days, clustering on the underlying-day is *not* sufficient once
+   underlyings move together, and about 40 day pairs is enough for both H4a and H4c.
+
 ### The immediate next actions, in order
 
 1. **Let the surface accumulate.** H4 needs many more day pairs before its pooled t
@@ -1302,8 +1310,27 @@ parity forward instead moves the buckets by at most 0.52bp and changes no direct
 - **Spike-timing-dependent plasticity, pattern recognition.** No defensible fit against
   roughly two independent episodes. It would look impressive and support no claim.
 - **MAR ratio.** A strategy performance measure. This project does not trade.
-- **A standalone simulation engine.** Superseded by action 5: extend the simulator that
-  already exists rather than build a second one.
+- **A standalone simulation engine.** Superseded: `analyze.py --simulate-surface`
+  extends the simulator that already existed rather than building a second one.
+- **A generate-backtest-score-refine strategy loop** (an Instagram reel, 16 Sep, "how
+  to build a loop trading bot"). Assessed and not adopted as a loop. Its good half -
+  reject anything that does not clear a noise floor, and kill the best in-sample
+  scorer when it fails out of sample - is what `--simulate` and `--simulate-surface`
+  already do, and they do it against a constructed true null rather than a heuristic
+  decay curve. Its other half is a search over strategy variants, which this project
+  does not do and must not start doing: pre-registration in `hypotheses/` is the whole
+  defence, and an iterating loop is the machine for destroying it. Nothing to take.
+- **HKUDS/Vibe-Trading** (MIT, ~1,750 Python files, read 16 Sep). It is a broker-connected
+  trading agent, which is the category HANDOFF 1 and 5 rule out, so nothing at the system
+  level applies. One module is genuinely relevant and worth reading before writing up:
+  `agent/src/quantlib/multipletesting.py` implements the deflated Sharpe ratio and CSCV
+  probability of backtest overfitting (Bailey & Lopez de Prado) and Benjamini-Hochberg.
+  The first two answer "how much of the best result is search luck", which this project
+  does not need because it does not search. **Benjamini-Hochberg is the one that applies**:
+  H1 reports 9 of 11 Cboe pairs positive and H3 will test five underlyings, and "which of
+  these are real" is an FDR question this repo currently does not correct for. It is a
+  method from 1995, not their code, and it is ~20 lines of stdlib. Raised, not adopted;
+  H1 is recorded as tested and should not be re-cut without Gabriel deciding to.
 
 ### Prompt for the next session
 
@@ -1323,10 +1350,12 @@ parity forward instead moves the buckets by at most 0.52bp and changes no direct
 > Bloomberg exports live in ~/Documents/volrec-bloomberg and must never enter the
 > repository; derived aggregates may be published with "Source: Bloomberg Finance L.P.".
 >
-> The bounded diagnostic work is done. What is left in section 17 is mostly waiting: the
-> surface needs many more day pairs before H4's pooled t means anything, and nothing about
-> the predictions should be adjusted meanwhile. The two things that can be done now are
-> putting the Bloomberg result on the site as aggregates with the attribution line, and
-> extending `analyze.py --simulate` to the surface-level H4 tests so the accept criteria
-> are simulated under a true null first. Report numbers before recommending anything, and
-> do not adjust any pre-registered threshold.
+> The bounded diagnostic work is done, and so is the simulation engine
+> (`analyze.py --simulate-surface`). It found that H4's pooled t over contracts rejects a
+> true null 46-73% of the time and gets worse with more days, that clustering on the
+> underlying-day is not sufficient, and that about 40 day pairs is enough to detect a
+> level effect of ~1bp or a volume contrast of ~0.56bp. `hedged.py` now prints the
+> registered gains at those honest units alongside the registered tables, which are
+> unchanged. What is left is mostly waiting for days to accumulate, plus putting the
+> Bloomberg result on the site as aggregates with the attribution line. Report numbers
+> before recommending anything, and do not adjust any pre-registered threshold.

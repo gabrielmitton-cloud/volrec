@@ -26,6 +26,7 @@ zero-mean form with n degrees of freedom.
 Usage:
     python analyze.py                 # the analysis (needs ALPACA_KEY/SECRET)
     python analyze.py --simulate      # validate the statistics under a true null
+    python analyze.py --simulate-surface   # the same, for H4's surface tests
     python analyze.py --status        # how far off is the analysis?
 """
 
@@ -524,6 +525,159 @@ def simulate(reps=400, n_tickers=109, T=120, H=21, rho=0.0, seed=1):
     return {k: 100.0 * v / reps for k, v in rej.items()}
 
 
+# --- H4 / surface-level null, calibrated on the 14-15 September 2026 pair -------
+# 998 hedged runs, 8 underlyings, ~125 contracts each. Decomposing the scaled
+# hedged gain in basis points of spot:
+#     within an underlying-day, sd = 16.30bp      (contract noise)
+#     between underlyings,      sd =  3.83bp      (the shared underlying-day shock)
+# The second is var(the 8 means) minus var(contracts)/125, so it is the variance
+# component and not the raw spread of the means. Intraclass correlation 0.052.
+SURF_SD_CONTRACT = 16.30
+SURF_SD_UNDERLYING = 3.83
+SURF_UNDERLYINGS = 8
+SURF_CONTRACTS = 125
+
+
+def simulate_surface(reps=400, days=1, rho_market=0.0, effect=0.0, contrast=0.0,
+                     n_underlyings=SURF_UNDERLYINGS, n_contracts=SURF_CONTRACTS,
+                     seed=7):
+    """H4's accept criteria under a true null, or against a stated true effect.
+
+    CONSTRUCTION. A delta-hedged gain is mean zero unless `effect` is set. Every
+    contract on one underlying on one day shares that underlying's shock, which is
+    the dependence HANDOFF 14.3 names and the exact reason `hedged.py`'s pooled t
+    is descriptive rather than a test. `rho_market` is how much of that shock is
+    common to every underlying on the same day; one day-pair cannot estimate it,
+    so it is swept rather than assumed.
+
+    `effect` is a true mean hedged gain in basis points applied to every contract,
+    which is what H4a claims. `contrast` is a true difference between the top and
+    bottom volume tercile, which is what H4c claims; it is applied within each
+    underlying-day so the shared shock cancels out of it exactly, as it does in
+    the real contrast.
+
+    Only the sufficient statistics are drawn - each tercile's mean, which given the
+    underlying's shock is independent of the others - rather than every contract.
+    That is exact for every test reported here and is what makes 40 days tractable.
+    """
+    rng = random.Random(seed)
+    tau, sc = SURF_SD_UNDERLYING, SURF_SD_CONTRACT
+    se_group = sc / sqrt(n_contracts / 3.0)
+    sd_total = sqrt(tau * tau + sc * sc)
+    n_all = days * n_underlyings * n_contracts
+    rej = {"pooled": 0, "underlying-day": 0, "date": 0, "contrast": 0}
+
+    for _ in range(reps):
+        day_means, ud_means, contrasts = [], [], []
+        for _d in range(days):
+            mkt = rng.gauss(0, 1)
+            todays = []
+            for _i in range(n_underlyings):
+                u = sqrt(rho_market) * mkt + sqrt(1 - rho_market) * rng.gauss(0, 1)
+                shock = tau * u
+                # three tercile means; the contrast is applied low-to-high
+                g = [shock + effect + rng.gauss(0, se_group) for _ in range(3)]
+                g[0] -= contrast / 2.0
+                g[2] += contrast / 2.0
+                m = sum(g) / 3.0
+                todays.append(m)
+                ud_means.append(m)
+                contrasts.append(g[2] - g[0])
+            day_means.append(sum(todays) / len(todays))
+
+        # (1) what hedged.py prints: every contract treated as an observation
+        pooled_mean = sum(ud_means) / len(ud_means)
+        if abs(pooled_mean) / (sd_total / sqrt(n_all)) > 1.96:
+            rej["pooled"] += 1
+        # (2) one observation per underlying-day
+        if len(ud_means) > 1 and plain_t(ud_means)[3] < 0.05:
+            rej["underlying-day"] += 1
+        # (3) one observation per date: HANDOFF 14.3's unit for a LEVEL claim
+        if len(day_means) > 1 and plain_t(day_means)[3] < 0.05:
+            rej["date"] += 1
+        # (4) the tercile contrast, which is within-date and immune to the shock
+        if len(contrasts) > 1 and plain_t(contrasts)[3] < 0.05:
+            rej["contrast"] += 1
+
+    return {k: 100.0 * v / reps for k, v in rej.items()}
+
+
+def min_detectable(kind, days, reps=300, power=80.0, hi=12.0, rho_market=0.3):
+    """Smallest true effect the test finds `power`% of the time, by bisection."""
+    lo = 0.0
+    key = "date" if kind == "level" else "contrast"
+    for _ in range(12):
+        mid = (lo + hi) / 2
+        kw = {"effect": mid} if kind == "level" else {"contrast": mid}
+        r = simulate_surface(reps=reps, days=days, rho_market=rho_market,
+                             seed=11, **kw)
+        if r[key] < power:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2
+
+
+def report_simulate_surface():
+    """Print what H4's tests do under a true null, and what 40 days can detect."""
+    print("H4 / surface: what the accept criteria do when there is NOTHING there.")
+    print()
+    print("Calibrated on the 14-15 September 2026 pair, 998 runs, 8 underlyings:")
+    print(f"  contract noise within an underlying-day   sd = {SURF_SD_CONTRACT:.2f}bp")
+    print(f"  the shared underlying-day shock           sd = {SURF_SD_UNDERLYING:.2f}bp")
+    print("  intraclass correlation 0.052, so ~125 contracts on one underlying")
+    print("  carry about as much information as 17 independent ones.")
+    print()
+    print("A hedged gain is mean zero by construction below. Every rejection is false.")
+    print("rho is how much of a day's shock is common to all 8 underlyings; one")
+    print("day-pair cannot estimate it, so it is swept.\n")
+
+    for rho in (0.0, 0.3):
+        print(f"-- rho_market = {rho}   (400 replications, nominal 5%)")
+        print(f"   {'day pairs':>10}{'pooled':>10}{'per u-day':>11}"
+              f"{'per date':>10}{'contrast':>10}")
+        for d in (1, 5, 20, 40):
+            r = simulate_surface(reps=400, days=d, rho_market=rho)
+            dt = f"{r['date']:.1f}%" if d > 1 else "n/a"
+            print(f"   {d:>10}{r['pooled']:>9.1f}%{r['underlying-day']:>10.1f}%"
+                  f"{dt:>10}{r['contrast']:>9.1f}%")
+        print()
+
+    print("Read that as: the pooled t over contracts is not a test and never becomes")
+    print("one - more days make it worse, not better, because they add correlated")
+    print("rows rather than independent ones. Clustering on date is honest for a")
+    print("LEVEL claim (H4a). The tercile CONTRAST (H4c) is honest at any length,")
+    print("because the shared shock cancels inside a difference taken within a day.")
+    print()
+
+    print("-- smallest true effect found 80% of the time (rho=0.3)")
+    print(f"   {'day pairs':>10}{'H4a level':>14}{'H4c contrast':>16}")
+    for d in (5, 20, 40, 60):
+        print(f"   {d:>10}{min_detectable('level', d):>12.2f}bp"
+              f"{min_detectable('contrast', d):>14.2f}bp")
+    print()
+    print("-- the same at 40 day pairs, against the one number that is assumed")
+    print(f"   {'rho_market':>11}{'H4a level':>14}{'H4c contrast':>16}")
+    for rho in (0.0, 0.3, 0.6, 0.9):
+        print(f"   {rho:>11.1f}{min_detectable('level', 40, rho_market=rho):>12.2f}bp"
+              f"{min_detectable('contrast', 40, rho_market=rho):>14.2f}bp")
+    print()
+    print("   For scale, the first run measured +2.21bp pooled, +2.31bp as the mean")
+    print("   of the 8 underlyings, and a low-minus-high tercile spread of 4.19bp -")
+    print("   all on a single overnight period, none of them a test.")
+    print()
+    print("   So 40 day pairs is not hopeless for either claim, which is worth knowing")
+    print("   before spending them. A level effect the size of the one observed would")
+    print("   be found most of the time; a level effect half that size would not, and")
+    print("   the answer degrades as the market factor rises, which is the quantity")
+    print("   this sample cannot yet measure. The contrast is the cheaper claim by a")
+    print("   factor of about two and is almost untouched by rho, because the shared")
+    print("   shock cancels inside a within-day difference.")
+    print()
+    print("   Nothing here adjusts a registered threshold. It says what the existing")
+    print("   thresholds can and cannot deliver at a given sample length.")
+
+
 def status():
     rows = load_rows()
     days = sorted({r["date"] for r in rows})
@@ -543,7 +697,7 @@ def status():
 def main():
     a = sys.argv[1:]
     if "--status" in a: return status()
-    if "--simulate" in a:
+    if "--simulate" in a and "--simulate-surface" not in a:
         reps = 400
         print("Validating the three tests under a TRUE NULL (premium = 0 by construction).")
         print("Section 4.2(a) predicts the pooled test rejects most of the time and the")
@@ -556,6 +710,8 @@ def main():
                 print(f"     {k:12s} rejects {r[k]:5.1f}% of the time{flag}")
             print()
         return
+    if "--simulate-surface" in a:
+        return report_simulate_surface()
     rows = load_rows()
     days = sorted({r["date"] for r in rows})
     if len(days) < MIN_DAYS_FOR_ANALYSIS and "--force" not in a:

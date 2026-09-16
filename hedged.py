@@ -217,10 +217,76 @@ def report(results):
     x = [r["scaled"] * 10000 for r in results]
     mu, se, t, p = analyze.plain_t(x) if len(x) > 1 else (x[0], 0, 0, 1)
     print(f"   n={len(x)}  mean {mu:+.2f}bp of spot  t={t:.2f}  p={p:.4f}")
+    honest_units(results)
+
     print("\n   CAUTION: these runs overlap in calendar time and share")
     print("   underlyings, so they are NOT independent observations. This t is")
     print("   descriptive. Any inferential claim needs the cross-section demeaned")
     print("   by date and standard errors clustered on date. See HANDOFF 14.3.")
+
+
+def honest_units(results):
+    """The same gains, at units that are plausibly independent. HANDOFF 14.3.
+
+    `report` above prints a t over contracts because that is what H4 registered and
+    what the first run recorded. `analyze.py --simulate-surface` measures what that
+    t does when there is nothing there: it rejects a true null 46% of the time with
+    no market factor and 64-73% with one, and more days make it worse rather than
+    better, because they add correlated rows and not independent ones.
+
+    So the same numbers are printed again at three coarser units:
+
+      underlying-day  one observation per underlying per day. Honest only when
+                      underlyings do not move together; the simulation puts its
+                      false-rejection rate at 23-30% once they do.
+      date            one observation per day, the unit HANDOFF 14.3 prescribes for
+                      a LEVEL claim like H4a. Honest at 4-5% in every sweep.
+      volume contrast the top volume tercile minus the bottom, differenced INSIDE
+                      each underlying-day so the shared shock cancels. This is H4c's
+                      claim and it is honest at any sample length.
+
+    None of this changes a threshold, a bucket or a tercile rule. It reports the
+    registered quantities at units whose error bars mean something.
+    """
+    print("\n-- the same gains at units that are plausibly independent (HANDOFF 14.3)")
+    print("   run `python analyze.py --simulate-surface` for what each unit costs\n")
+    print(f"   {'unit':<22}{'n':>5}{'mean scaled':>14}{'t':>8}{'p':>9}")
+
+    def line(label, x):
+        if len(x) < 2:
+            print(f"   {label:<22}{len(x):>5}{'':>14}{'':>8}{'needs >= 2':>9}")
+            return
+        mu, _, t, p = analyze.plain_t(x)
+        print(f"   {label:<22}{len(x):>5}{mu:>13.2f}bp{t:>8.2f}{p:>9.4f}")
+
+    line("contract", [r["scaled"] * 10000 for r in results])
+
+    cells = defaultdict(list)
+    for r in results:
+        cells[(r["symbol"], r["start"])].append(r)
+    line("underlying-day", [sum(q["scaled"] for q in v) / len(v) * 10000
+                            for v in cells.values()])
+
+    by_date = defaultdict(list)
+    for r in results:
+        by_date[r["start"]].append(r)
+    line("date", [sum(q["scaled"] for q in v) / len(v) * 10000
+                  for v in by_date.values()])
+
+    # H4c's contrast, differenced within each underlying-day using the pooled cuts.
+    vols = sorted(r["volume"] for r in results)
+    if len(vols) >= 6 and vols[-1] > 0:
+        lo, hi = vols[len(vols) // 3], vols[2 * len(vols) // 3]
+        diffs = []
+        for v in cells.values():
+            low = [q["scaled"] for q in v if q["volume"] <= lo]
+            high = [q["scaled"] for q in v if q["volume"] > hi]
+            if low and high:
+                diffs.append((sum(high) / len(high) - sum(low) / len(low)) * 10000)
+        line("volume contrast hi-lo", diffs)
+        print("\n   H4c predicted that contrast NEGATIVE (high volume more negative).")
+    print("\n   Until the date row has enough dates to be a test, every row above is")
+    print("   descriptive. No claim should be made from the contract row at any length.")
 
 
 def coverage(rows):

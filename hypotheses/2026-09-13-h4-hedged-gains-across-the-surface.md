@@ -167,6 +167,80 @@ Nothing here adjusts a threshold, a bucket boundary, or a tercile rule.
 `hedged.py`'s own output is unchanged: `hedged_gain` gained an optional
 `delta_of` argument that defaults to the recorded delta.
 
+## What the tests are worth, 16 September 2026
+
+`analyze.py --simulate-surface` does for H4 what `--simulate` already did for H1:
+builds a world where the hedged gain is zero by construction and counts how often
+each accept criterion rejects anyway. Calibrated on the 14-15 September pair -
+contract noise sd 16.30bp within an underlying-day, the shared underlying-day shock
+sd 3.83bp, intraclass correlation 0.052.
+
+False rejections at a nominal 5%, 400 replications:
+
+| day pairs | pooled over contracts | per underlying-day | per date | tercile contrast |
+|---|---|---|---|---|
+| 1 | 47.8% / 67.5% | 3.5% / 26.0% | n/a | 5.2% / 5.2% |
+| 5 | 45.0% / 69.2% | 4.0% / 24.0% | 3.5% / 5.0% | 3.8% / 3.8% |
+| 20 | 46.5% / 73.2% | 4.5% / 30.0% | 4.2% / 4.0% | 3.5% / 3.5% |
+| 40 | 45.8% / 64.0% | 3.5% / 23.2% | 3.8% / 4.0% | 3.8% / 3.8% |
+
+Each cell is `rho_market = 0` / `rho_market = 0.3`, where rho is how much of a day's
+shock is common to all eight underlyings. One day-pair cannot estimate it, so it is
+swept rather than assumed.
+
+**Three things follow, and the first is the one that matters.**
+
+1. **The pooled t over contracts is not a test and never becomes one.** It rejects a
+   true null about half the time with no market factor and two thirds of the time
+   with one, and *more days make it worse*, because they add correlated rows rather
+   than independent ones. The first run's t=4.23 was already labelled descriptive;
+   this puts a number on how descriptive.
+2. **Clustering on the underlying-day is not enough either.** It looks honest at 3.5%
+   when underlyings are independent and fails at 23-30% once they are not, which they
+   are. Only clustering on date holds across the sweep. That rules out the tempting
+   shortcut and confirms HANDOFF 14.3's prescription rather than assuming it.
+3. **The contrast is honest at any length**, 3.5-5.2% everywhere, because the shared
+   shock cancels inside a difference taken within a day.
+
+**Smallest true effect found 80% of the time:**
+
+| day pairs | H4a level | H4c contrast |
+|---|---|---|
+| 5 | 4.01bp | 1.63bp |
+| 20 | 1.59bp | 0.77bp |
+| **40** | **1.04bp** | **0.56bp** |
+| 60 | 0.87bp | 0.45bp |
+
+At 40 day pairs, against the one quantity that is assumed:
+
+| rho_market | H4a level | H4c contrast |
+|---|---|---|
+| 0.0 | 0.66bp | 0.56bp |
+| 0.3 | 1.04bp | 0.56bp |
+| 0.6 | 1.37bp | 0.56bp |
+| 0.9 | 1.61bp | 0.56bp |
+
+**So roughly 40 day pairs is enough for both claims, which is worth knowing before
+spending them.** A level effect the size of the one observed (+2.31bp as the mean of
+the eight underlyings) would be found most of the time; half that size would not, and
+the level test degrades as the market factor rises while the contrast is untouched by
+it. The contrast is the cheaper claim by about a factor of two.
+
+**The first run re-read at the honest units.** `hedged.py` now prints these beside the
+registered tables:
+
+| unit | n | mean scaled | t | p |
+|---|---|---|---|---|
+| contract | 998 | +2.21bp | 4.23 | 0.0000 |
+| underlying-day | 8 | +2.31bp | 1.49 | 0.1806 |
+| date | 1 | — | — | needs >= 2 dates |
+| volume contrast, high minus low | 8 | -2.81bp | -1.17 | 0.2819 |
+
+The pooled t of 4.23 is t=1.49 at the underlying and not distinguishable from zero.
+**H4c's contrast is on the predicted side - negative - and also not distinguishable
+from zero.** Both readings are what one overnight period should look like. Neither
+changes a registered threshold, and the registered tables above are untouched.
+
 ## What would falsify each
 
 - **H4a** fails if the pooled mean gain is positive. That would most likely mean
