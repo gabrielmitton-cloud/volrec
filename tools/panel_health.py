@@ -110,6 +110,77 @@ def _quote_minutes(stamp):
     return d.hour * 60 + d.minute + d.second / 60.0
 
 
+def session_bounds_utc(day):
+    """(open, close) of the US equity session on `day`, in UTC minutes.
+
+    Cron is UTC and the session is not: 13:30-20:00 UTC under DST, 14:30-21:00
+    from the first Sunday in November. Hard-coding either one means a check that
+    is correct for half the year, which is worse than no check, so the shift is
+    read from the zone database rather than assumed. Returns None if the zone
+    database is unavailable, and every caller treats that as "cannot judge".
+    """
+    try:
+        from zoneinfo import ZoneInfo
+        et = ZoneInfo("America/New_York")
+    except Exception:
+        return None
+    out = []
+    for hh, mm in ((9, 30), (16, 0)):
+        u = datetime(day.year, day.month, day.day, hh, mm, tzinfo=et).astimezone(timezone.utc)
+        out.append(u.hour * 60 + u.minute)
+    return tuple(out)
+
+
+def check_landing(rows, days):
+    """When did the day's snapshot actually land, and is that inside the session?
+
+    The cron is fixed; GitHub's delay is not. Over six days it ran 3h06m to
+    4h24m, which once put a snapshot six minutes before the close. A snapshot
+    taken after the close is closing quotes filed under a mid-session label, and
+    nothing downstream can tell. That is worth an email, so it FAILS; ordinary
+    drift only warns.
+    """
+    newest = [r for r in rows if r["date"] == days[-1].isoformat()]
+    stamps = sorted(t for t in (_quote_minutes(r.get("quote_time")) for r in newest)
+                    if t is not None)
+    if len(stamps) < 10:
+        return
+    mid = stamps[len(stamps) // 2]
+    print(f"  INFO  landed {int(mid)//60:02d}:{int(mid)%60:02d} UTC "
+          f"(median quote time on {days[-1]})")
+
+    bounds = session_bounds_utc(days[-1])
+    if bounds:
+        o, c = bounds
+        if mid < o or mid > c:
+            where = "before the open" if mid < o else "AFTER THE CLOSE"
+            fail(f"{days[-1]} landed {int(mid)//60:02d}:{int(mid)%60:02d} UTC, "
+                 f"{where} ({o//60:02d}:{o%60:02d}-{c//60:02d}:{c%60:02d} UTC "
+                 f"that day). Those are not mid-session quotes and nothing "
+                 f"downstream can tell. Move the cron inside the window both "
+                 f"DST regimes share - see record.yml.")
+        elif c - mid < 20:
+            warn(f"{days[-1]} landed {c - int(mid)} min before the close. The "
+                 f"delay is drifting; check the cron before it lands outside.")
+
+    # Drift against the days already collected, which is what breaks comparability.
+    prior = []
+    for d in days[:-1]:
+        ts = sorted(t for t in (_quote_minutes(r.get("quote_time"))
+                                for r in rows if r["date"] == d.isoformat())
+                    if t is not None)
+        if ts:
+            prior.append(ts[len(ts) // 2])
+    if prior:
+        ref = sorted(prior)[len(prior) // 2]
+        if abs(mid - ref) > 60:
+            warn(f"{days[-1]} landed {abs(int(mid - ref))} min "
+                 f"{'later' if mid > ref else 'earlier'} than the median of the "
+                 f"{len(prior)} prior day(s). A drifting snapshot time is a "
+                 f"comparability problem; the date-clustered tests absorb it, "
+                 f"the pooled ones do not.")
+
+
 def rows_of(path):
     if not path.exists():
         return None
@@ -133,6 +204,7 @@ def check_atm():
 
     days, age = day_span(rows)
     print(f"  {len(rows)} rows, {len(days)} days, newest {days[-1]} ({age}d old)")
+    check_landing(rows, days)
     if age > STALE_DAYS:
         return fail(f"STALE: no ATM snapshot in {age} days. The recorder has "
                     f"stopped. Check the Actions tab - GitHub disables "
@@ -172,6 +244,7 @@ def check_surface():
     syms = sorted({r["symbol"] for r in rows if r.get("symbol")})
     print(f"  {len(rows)} rows, {len(days)} days, {len(syms)} symbols, "
           f"newest {days[-1]} ({age}d old)")
+    check_landing(rows, days)
 
     if age > STALE_DAYS:
         fail(f"STALE: no surface rows in {age} days.")

@@ -1,7 +1,25 @@
 name: record
 on:
   schedule:
-    - cron: "30 15 * * 1-5"
+    # 14:47 UTC. Three constraints pin this down, and cron cannot see any of
+    # them, so they are written out here and enforced by pressure_test.py:
+    #
+    #  1. GitHub delays scheduled runs under load. Measured over six days at the
+    #     old 15:30 slot the delay ran 3h06m to 4h24m, so the snapshot landed
+    #     18:36-19:54 and on 14 Sep arrived SIX MINUTES before the close. A
+    #     snapshot that lands after the close is not a late snapshot, it is a
+    #     different measurement wearing the same label.
+    #  2. Cron is UTC and the US session is not. Under DST the market runs
+    #     13:30-20:00 UTC; from 1 November it runs 14:30-21:00. A cron chosen
+    #     against the summer session alone fires BEFORE the November open.
+    #  3. The top and quarters of the hour are where GitHub's queue is deepest.
+    #
+    # Together: the cron must be at or after 14:30 (the later of the two opens)
+    # and at or before 15:06 (the earlier close, 20:00, minus the worst delay
+    # seen, minus 30 minutes). 14:47 sits inside that window with 49 minutes of
+    # headroom to the summer close and 17 minutes past the winter open, and is
+    # not on a quarter hour.
+    - cron: "47 14 * * 1-5"
   workflow_dispatch:
 permissions:
   contents: write

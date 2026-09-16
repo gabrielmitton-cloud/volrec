@@ -1193,15 +1193,44 @@ pressure test.
 
 | what | when | notes |
 |---|---|---|
-| `record.yml` | 15:30 UTC weekdays | 109 tickers, ATM. The irreplaceable one. |
-| `surface.yml` | 15:40 UTC weekdays | 8 underlyings. **Running for real since Mon 14 Sep.** |
-| `freshness.yml` | 17:00 and 21:00 UTC daily | runs `tools/panel_health.py` over both panels |
+| `record.yml` | **14:47 UTC weekdays** | 109 tickers, ATM. The irreplaceable one. Moved 16 Sep, see below. |
+| `surface.yml` | **14:57 UTC weekdays** | 8 underlyings. **Running for real since Mon 14 Sep.** |
+| `freshness.yml` | **20:00 and 23:00 UTC daily** | runs `tools/panel_health.py` over both panels |
 | watchdog routine | Wed 09:13 Pacific | outside GitHub Actions; updated 13 Sep to know all three workflows |
 
-Both recorders landed late on 14 Sep (19:53 UTC against a usual 18:40). The pressure
-test now warns that the snapshot spread across days is 78 minutes. It is a warning, not
-a failure, but it is real and belongs in any write-up: quote times must be controlled
-for, or the sample split.
+**The crons moved on 16 September, from 15:30/15:40 to 14:47/14:57 UTC.** GitHub
+delays scheduled runs under load: measured over six days at the old slot the delay ran
+3h06m to 4h24m, so snapshots landed 18:36-19:54 UTC and on 14 Sep arrived **six minutes
+before the close**. A snapshot taken after the close is closing quotes filed under a
+mid-session label, and nothing downstream can tell.
+
+Three constraints pin the new time down, none of which cron can see, so they are
+written into `record.yml` and enforced structurally by `pressure_test.py` rather than
+as a literal string:
+
+1. The worst delay seen plus 30 minutes must still clear the close.
+2. **Cron is UTC and the session is not.** Under DST the market runs 13:30-20:00 UTC;
+   from Mon 2 November it runs 14:30-21:00. A time chosen against the summer session
+   alone fires *before* the November open - which the first attempt at this change did,
+   and the DST check caught. Both panels must clear the later open and the earlier
+   close, leaving a window of 14:30 to 15:06 UTC.
+3. Avoid the quarter hours, where GitHub's scheduling queue is deepest.
+
+14:47 sits inside that window with 49 minutes of headroom to the summer close and 17
+minutes past the winter open. The pressure test now checks the reasoning, not the time,
+so moving one cron without the other fails loudly.
+
+Belt and braces, because the cron cannot guarantee anything: `panel_health.py` reads
+the actual session bounds for the day out of the zone database and **FAILS** if a
+snapshot landed outside them, warns if it landed within 20 minutes of the close, and
+warns if it drifted more than an hour from the prior days. That is the check that
+sends an email.
+
+The 78-minute spread already in the data remains, and still belongs in any write-up.
+It is less serious than it first looked: the interval is identical for every contract
+on a date, so the date-clustered tests absorb it completely and only the contract-level
+pooled number is exposed - and that number was already established not to be a test.
+`hedged.py` prints the true interval every run.
 
 ### What is built since section 16
 

@@ -1,11 +1,16 @@
 name: freshness
 on:
   schedule:
-    - cron: "0 17 * * *"      # daily, 90 min after the recorder
-    - cron: "0 21 * * *"      # daily, after the surface job lands (~18:45 UTC).
-                              # The 17:00 slot is too early to judge the surface
-                              # panel, so without this one a green-but-empty
-                              # surface run is not caught until the next day.
+    - cron: "0 20 * * *"      # daily, after the recorders land even at the
+                              # worst delay yet seen (19:11-19:21 UTC from the
+                              # 14:47/14:57 crons).
+                              # Deliberately BEFORE panel_health's
+                              # SURFACE_LANDED_HOUR_UTC, so this slot reads the
+                              # ATM panel and holds judgment on the surface.
+    - cron: "0 23 * * *"      # daily, long after any plausible delay. This is
+                              # the one that can fail on the surface, so a
+                              # green-but-empty surface run is caught the same
+                              # day rather than the next.
   workflow_dispatch:
 permissions:
   contents: read

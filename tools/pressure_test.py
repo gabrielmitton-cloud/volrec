@@ -229,8 +229,46 @@ ok("SystemExit" in _mf,
 
 print("\n=== I. WORKFLOWS ===")
 import yaml
+import datetime as _dt
+
+# The crons are checked by their REASONING, not their literal text, because the
+# literal text has already been wrong once. Measured over six days at the old
+# 15:30 UTC slot, GitHub delayed the scheduled run by 3h06m to 4h24m, so the
+# snapshot landed 18:36-19:54 and on 14 Sep arrived six minutes before the
+# 20:00 close. A snapshot that lands after the close is not a late snapshot, it
+# is a different measurement: closing quotes, on a day the file still labels as
+# a mid-session observation. So the cron must clear the close even at the worst
+# delay ever seen, with margin, and must avoid the quarter hours where the
+# scheduling queue is deepest.
+WORST_DELAY_MIN = 264          # 4h24m, observed 14 Sep 2026
+DELAY_MARGIN_MIN = 30          # room for a delay worse than any yet seen
+# Cron is UTC; the US session is not. Under DST the market runs 13:30-20:00 UTC,
+# and from the first Sunday in November it runs 14:30-21:00. A cron picked
+# against the summer session alone fires BEFORE the winter open, so both panels
+# must clear the LATER open and the EARLIER close. That leaves a window of
+# 14:30 to 15:06 UTC, and it is narrow because the worst delay is 4h24m.
+US_OPEN_UTC_MIN = 14 * 60 + 30     # the later of the two opens (standard time)
+US_CLOSE_UTC_MIN = 20 * 60         # the earlier of the two closes (DST)
+
+
+def cron_minutes(expr):
+    """'7 14 * * 1-5' -> (847, '1-5'): minutes past midnight UTC, and the days."""
+    f = expr.split()
+    return int(f[1]) * 60 + int(f[0]), f[4]
+
+
 recy = yaml.safe_load((R / ".github/workflows/record.yml").read_text())
-ok(recy[True]["schedule"][0]["cron"] == "30 15 * * 1-5", "record cron 15:30 UTC weekdays")
+_rec_min, _rec_days = cron_minutes(recy[True]["schedule"][0]["cron"])
+ok(_rec_days == "1-5", "record runs weekdays only")
+ok(_rec_min >= US_OPEN_UTC_MIN,
+   f"record starts after the LATER of the two US opens, so it survives the "
+   f"November DST shift ({_rec_min//60:02d}:{_rec_min%60:02d} UTC)")
+ok(_rec_min + WORST_DELAY_MIN + DELAY_MARGIN_MIN <= US_CLOSE_UTC_MIN,
+   f"record clears the earlier of the two closes even at the worst delay seen "
+   f"(worst lands {(_rec_min+WORST_DELAY_MIN)//60:02d}:"
+   f"{(_rec_min+WORST_DELAY_MIN)%60:02d})")
+ok(_rec_min % 15 != 0,
+   "record cron avoids the quarter hours, where GitHub's queue is deepest")
 ok(recy["permissions"]["contents"] == "write", "record has contents:write")
 ok(any("git add data/" in str(s.get("run", "")) for s in recy["jobs"]["record"]["steps"]),
    "commits all of data/, so the backup is included")
@@ -239,14 +277,23 @@ ok(frs["permissions"]["contents"] == "read", "freshness is read-only")
 ok(any("panel_health.py" in str(st.get("run", ""))
        for st in frs["jobs"]["freshness"]["steps"]),
    "freshness actually runs panel_health.py (not a silently emptied job)")
-_crons = {c["cron"] for c in frs[True]["schedule"]}
-ok(_crons == {"0 17 * * *", "0 21 * * *"},
-   "freshness runs twice: 17:00 for the ATM panel, 21:00 once the surface lands")
+_fresh = sorted(cron_minutes(c["cron"])[0] for c in frs[True]["schedule"])
+ok(len(_fresh) == 2, "freshness runs twice a day")
+ok(_fresh[0] >= _rec_min + WORST_DELAY_MIN,
+   "the early freshness slot runs after the recorders typically land")
+ok(_fresh[-1] >= _rec_min + WORST_DELAY_MIN + DELAY_MARGIN_MIN,
+   "the late freshness slot runs after even an unusually delayed landing")
 ok(set(p.name for p in (R / ".github/workflows").glob("*.yml"))
    == {"record.yml", "freshness.yml", "surface.yml"},
    "no leftover TEMP workflows")
 srf = yaml.safe_load((R / ".github/workflows/surface.yml").read_text())
-ok(srf[True]["schedule"][0]["cron"] == "40 15 * * 1-5", "surface cron staggered 10 min after record")
+_srf_min, _srf_days = cron_minutes(srf[True]["schedule"][0]["cron"])
+ok(_srf_days == _rec_days and _srf_min - _rec_min == 10,
+   f"surface cron staggered exactly 10 min after record "
+   f"({_srf_min//60:02d}:{_srf_min%60:02d} vs "
+   f"{_rec_min//60:02d}:{_rec_min%60:02d} UTC)")
+ok(_srf_min % 15 != 0,
+   "surface cron avoids the quarter hours too")
 ok(any("git add data/surface.csv" in str(st.get("run", ""))
        for st in srf["jobs"]["surface"]["steps"]),
    "surface workflow stages ONLY data/surface.csv")
@@ -262,12 +309,35 @@ ok("import requests" not in phsrc and "import surface" not in phsrc,
    "parses that list instead of importing it: no third-party dependency")
 ok(not re.search(r"\.write_text\(|\bopen\([^)]*[\"']w[\"']|writer\(", phsrc),
    "panel_health is read-only: it never opens a file for writing")
+# The DST shift is the kind of thing that is correct for half the year and then
+# silently is not, so the session bounds are checked on both sides of it.
+_phm = _iu.module_from_spec(_iu.spec_from_file_location("_ph_mod", R / "tools/panel_health.py"))
+try:
+    _iu.spec_from_file_location("_ph_mod", R / "tools/panel_health.py").loader.exec_module(_phm)
+    ok(_phm.session_bounds_utc(_dt.date(2026, 10, 30)) == (13 * 60 + 30, 20 * 60),
+       "session bounds under DST are 13:30-20:00 UTC")
+    ok(_phm.session_bounds_utc(_dt.date(2026, 11, 2)) == (14 * 60 + 30, 21 * 60),
+       "session bounds after the November shift are 14:30-21:00 UTC")
+    _fl = len(_phm.fails)
+    # Deliberately provoking a failure, so its own output is swallowed: a FAIL
+    # line printed here would read as a real one.
+    import contextlib as _ctx, io as _io
+    with _ctx.redirect_stdout(_io.StringIO()):
+        _phm.check_landing([{"date": "2026-11-05",
+                             "quote_time": "2026-11-05T21:30:00.000000Z"}] * 20,
+                           [_dt.date(2026, 11, 5)])
+    ok(len(_phm.fails) > _fl,
+       "a snapshot after the close FAILS, which is what sends the email")
+    _phm.fails.clear(); _phm.warns.clear()
+except Exception as _e:
+    ok(False, f"panel_health session checks are importable ({_e})")
+
 ok("SURFACE_LANDED_HOUR_UTC" in phsrc and "SURFACE_START" in phsrc,
    "a missing surface.csv before the first run has landed is PEND, not FAIL")
 ok("def now_utc" in phsrc and "date.today()" not in phsrc,
    "one clock seam in UTC: same verdict on a runner and on a laptop")
-ok(int(re.search(r"SURFACE_LANDED_HOUR_UTC = (\d+)", phsrc).group(1))
-   <= max(int(c["cron"].split()[1]) for c in frs[True]["schedule"]),
+ok(int(re.search(r"SURFACE_LANDED_HOUR_UTC = (\d+)", phsrc).group(1)) * 60
+   <= _fresh[-1],
    "the checker starts judging no later than the last freshness cron of the day")
 ok("sys.exit(main())" in phsrc and "return 1" in phsrc,
    "exits non-zero on failure, which is what actually sends the email")

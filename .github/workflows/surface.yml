@@ -1,9 +1,13 @@
 name: surface
 on:
   schedule:
-    - cron: "40 15 * * 1-5"    # 10 min after record.yml, to avoid a rate-limit
+    - cron: "57 14 * * 1-5"    # 10 min after record.yml, to avoid a rate-limit
                                # collision. Both are delayed by GitHub anyway;
                                # the stagger is belt and braces, not a guarantee.
+                               # See record.yml for why 14:xx and not 15:xx, and
+                               # why an odd minute. pressure_test.py enforces the
+                               # 10-minute gap rather than the literal time, so
+                               # moving one of these moves both or fails loudly.
   workflow_dispatch:
 permissions:
   contents: write

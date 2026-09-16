@@ -289,6 +289,48 @@ def honest_units(results):
     print("   descriptive. No claim should be made from the contract row at any length.")
 
 
+def _quote_dt(stamp):
+    """Parse the feed's RFC-3339 stamp, trimming nanoseconds datetime cannot take."""
+    import re
+    from datetime import datetime, timezone
+    if not stamp:
+        return None
+    t = re.sub(r"\.(\d{6})\d+", r".\1", stamp.strip().replace("Z", "+00:00"))
+    try:
+        return datetime.fromisoformat(t).astimezone(timezone.utc)
+    except ValueError:
+        return None
+
+
+def intervals(rows):
+    """The real elapsed time between snapshots, which is not 24 hours.
+
+    The cron is fixed and GitHub's delay is not, so a "day" here is whatever
+    interval separated two snapshots. Over 14-15 September that was 23.2 hours.
+    It matters less than it looks: the interval is the same for every contract on
+    a given date, so the date-clustered rows in `honest_units` absorb it entirely
+    and only the contract-level number is exposed. Putting the financing term on
+    the true elapsed time rather than a flat 1/365 moves the pooled mean by
+    0.003bp of 2.21, which is not worth breaking a registered specification over
+    - but it is worth being able to see, because a drift that grows is a real
+    comparability problem. `panel_health.py` raises the alarm; this just shows it.
+    """
+    stamps = defaultdict(list)
+    for r in rows:
+        t = _quote_dt(r.get("quote_time"))
+        if t:
+            stamps[r["date"]].append(t)
+    if len(stamps) < 2:
+        return
+    mids = {d: sorted(v)[len(v) // 2] for d, v in stamps.items()}
+    days = sorted(mids)
+    print("\n-- the interval a 'day' actually was")
+    print(f"   {'from':<12}{'to':<12}{'hours':>8}{'vs 24h':>9}")
+    for a, b in zip(days, days[1:]):
+        h = (mids[b] - mids[a]).total_seconds() / 3600.0
+        print(f"   {a:<12}{b:<12}{h:>8.2f}{h - 24:>+9.2f}")
+
+
 def coverage(rows):
     """How well contracts persist day to day. Read this before the results."""
     by_day = defaultdict(set)
@@ -323,6 +365,7 @@ def main():
     print(f"risk-free (DGS1MO): {r*100:.3f}%\n")
 
     coverage(rows)
+    intervals(rows)
 
     by_contract = defaultdict(list)
     for row in rows:
