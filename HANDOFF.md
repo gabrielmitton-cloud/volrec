@@ -1093,7 +1093,9 @@ a single day.
 
 ---
 
-## 16. Current state and what to do next — 12 September 2026
+## 16. State as of 12 September 2026 — SUPERSEDED BY SECTION 17
+
+> Kept for the reasoning. For what is true now, read section 17 first.
 
 ### What is running, unattended
 
@@ -1182,3 +1184,119 @@ pressure test.
   2025. Check Cboe, not FRED, for whether a series still publishes.
 - A fixed percentage strike band truncates worst where volatility is highest.
   ±10% is ~2.2 sigma on a 16-vol name and ~0.6 on 59-vol oil.
+
+---
+
+## 17. Current state and what to do next — 16 September 2026
+
+### What runs unattended
+
+| what | when | notes |
+|---|---|---|
+| `record.yml` | 15:30 UTC weekdays | 109 tickers, ATM. The irreplaceable one. |
+| `surface.yml` | 15:40 UTC weekdays | 8 underlyings. **Running for real since Mon 14 Sep.** |
+| `freshness.yml` | 17:00 and 21:00 UTC daily | runs `tools/panel_health.py` over both panels |
+| watchdog routine | Wed 09:13 Pacific | outside GitHub Actions; updated 13 Sep to know all three workflows |
+
+Both recorders landed late on 14 Sep (19:53 UTC against a usual 18:40). The pressure
+test now warns that the snapshot spread across days is 78 minutes. It is a warning, not
+a failure, but it is real and belongs in any write-up: quote times must be controlled
+for, or the sample split.
+
+### What is built since section 16
+
+| file | what it does |
+|---|---|
+| `index.html`, `tools/monitor.html` | the public site: the paper and the live instrument |
+| `tools/volrec.js`, `tools/volrec.css` | shared runtime and styles; health rules mirrored from `panel_health.py` |
+| `tools/bloomberg_compare.py` | matches a Bloomberg OMON export to the free feed, contract by contract |
+| `tools/iv_convention.py` | re-inverts quotes under a stated forward and rate, to locate a volatility gap |
+
+### Where the hypotheses stand
+
+| id | status | where it stands |
+|---|---|---|
+| H1 | tested | VRP positive on 9 of 11 Cboe pairs, VIX/SPY t=5.14 |
+| H2 | tested, not adopted | log variance strongest, t=16.26 |
+| H3 | calibrated, cross-checked | 0.59 mean gap at ±30%; **the Bloomberg cross-check found the free feed's prices as good as Bloomberg's, and the remaining volatility gap to be model-side, not data-side** |
+| H4 | first run, descriptive | 998 hedged runs on the 14-15 Sep pair. H4a and H4b are on the wrong side; H4c holds directionally |
+
+### The Bloomberg result, in one paragraph
+
+On 15 September the recorder snapshotted at 19:10 UTC and the terminal export was
+pulled at 18:57. Matched contract by contract, mid prices agree within half a bid-ask
+spread on TSLA and volumes agree within 3%, while implied volatilities differ by about
+1.7 points. Re-inverting with Bloomberg's own printed forward did **not** close it, and
+inverting Bloomberg's own bid, mid and ask with this project's Black-76 still lands
+about 1.7 points above the IVM Bloomberg prints beside them. So the disagreement is
+between models, not feeds. `modelfree.py` integrates prices and is untouched by it;
+`hedged.py` uses the vendor's delta and is not. See H3 and H4 for the numbers.
+
+### Bloomberg working rules
+
+- Exports live in `~/Documents/volrec-bloomberg`, **never in this repository**. Both
+  tools refuse any path inside it.
+- Gabriel has approved publishing derived results with attribution. Use
+  **"Source: Bloomberg Finance L.P."** beside any figure. Publish aggregates, never
+  per-contract quotes: Bloomberg's own guidance allows a limited amount of derived data
+  in research output, and the education terms are stricter still.
+- The pull protocol, refined by two sessions at the terminal: `TICKER US Equity OMON`,
+  Table view, raise the strike count, export, save as `TICKER_OMON_YYYY-MM-DD.xlsx`,
+  write down the pull time. Strike counts differ by ticker because strike spacing does:
+  TSLA 50 is enough for ±30%, USO needs about 80, and SPY needs 200 or more because its
+  strikes step a dollar at a time. Record the `IFwd` printed in each expiry block.
+- Pass the real pull time: `python3 tools/bloomberg_compare.py --pull-time 18:57`.
+  Without it the file's save time is used, which is later and fails the gap check.
+
+### The immediate next actions, in order
+
+1. **Identify the model gap.** The open candidates are an American binomial against a
+   European forward model, a day count, or a fitted surface rather than contract-by-
+   contract inversion. A bounded test: price one contract under a binomial with the same
+   forward and see whether 1.7 points closes.
+2. **Quantify what the delta difference does to H4.** `hedged.py` hedges with the
+   vendor's delta. Recompute the same runs with a delta from this project's own model
+   and report the difference. If it moves the buckets, H4's numbers carry a model
+   dependence that must be stated.
+3. **Let the surface accumulate.** H4 needs many more day pairs before its pooled t
+   means anything. Nothing about the predictions should be adjusted meanwhile.
+4. **Put the Bloomberg result on the site** as a figure in the paper, aggregates only,
+   with the attribution line.
+5. **Extend `analyze.py --simulate`** to the surface-level H4 tests, so the accept
+   criteria are simulated under a true null before the series is long enough to tempt a
+   claim. This is the "simulation engine" idea, in the form that fits this project.
+
+### Ideas assessed and parked, 16 September 2026
+
+- **Intraday volume forecasting (Chen, Feng, Palomar 2016, Kalman filter).** Cannot
+  apply: this project records one snapshot a day, and the paper forecasts intraday bins
+  for execution. The reusable part is its state-space decomposition into daily, seasonal
+  and dynamic components, which could model daily contract volume for H4c and H4d once
+  the series is long enough.
+- **Spike-timing-dependent plasticity, pattern recognition.** No defensible fit against
+  roughly two independent episodes. It would look impressive and support no claim.
+- **MAR ratio.** A strategy performance measure. This project does not trade.
+- **A standalone simulation engine.** Superseded by action 5: extend the simulator that
+  already exists rather than build a second one.
+
+### Prompt for the next session
+
+> Read HANDOFF.md section 17 first, then hypotheses/2026-09-12-h3-free-data-model-free.md
+> and hypotheses/2026-09-13-h4-hedged-gains-across-the-surface.md. The repo is
+> github.com/gabrielmitton-cloud/volrec, cloned at ~/Desktop/Archive/Volrec, and it is in
+> sync. Run `python3 tools/pressure_test.py` before and after anything; it should report
+> 0 fail and 1 warn about snapshot times.
+>
+> Context: the strike surface has been recording since Monday 14 September. A Bloomberg
+> terminal cross-check on 15 September showed the free feed's prices match Bloomberg's to
+> within half a bid-ask spread, while implied volatilities differ by about 1.7 points, and
+> that this gap survives re-inverting Bloomberg's own quotes with our model. So it is a
+> model difference, not a data difference. Bloomberg exports live in
+> ~/Documents/volrec-bloomberg and must never enter the repository; derived aggregates may
+> be published with "Source: Bloomberg Finance L.P.".
+>
+> Next actions are listed in section 17. Start with the two that are bounded: identify
+> which model assumption produces the 1.7-point gap, and measure what the vendor's delta
+> does to H4's buckets by recomputing `hedged.py` with a delta from our own model. Report
+> numbers before recommending anything, and do not adjust any pre-registered threshold.
+

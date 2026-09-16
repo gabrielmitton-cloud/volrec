@@ -4,8 +4,8 @@
 The surface begins recording on 2026-09-14. This file exists specifically so
 that the predictions below are on record before any of the data that tests them
 exists, which is the only thing separating a prediction from a description.
-**Status:** registered, untestable until at least two consecutive trading days
-of surface data exist (2026-09-15 at the earliest).
+**Status:** registered 2026-09-13. **First run 2026-09-16 on the 14-15 September
+pair - see "First run" below. One overnight period: descriptive, not a test.**
 **Sample:** `data/surface.csv`, via `hedged.py`.
 
 ## Why this is registered now rather than after the first run
@@ -57,6 +57,48 @@ controlled for**, because volume is flow, meaning active demand, while open
 interest is an accumulated stock that includes stale positions. I have found no
 published work separating them this way and am not claiming it is unexplored,
 only that I have not found it.
+
+## First run, 16 September 2026 - one overnight period
+
+`hedged.py` on the only consecutive pair that exists, 14 to 15 September. 1,138
+contracts on the first day, 1,602 on the second, 1,120 carried over, 98% retained.
+998 hedged runs across 8 underlyings. Risk-free 3.910% (DGS1MO).
+
+| bucket | n | mean scaled | t | % negative |
+|---|---|---|---|---|
+| deep OTM put | 310 | +2.13bp | 2.07 | 55% |
+| OTM put | 144 | +3.45bp | 3.30 | 49% |
+| at the money | 124 | +1.79bp | 1.89 | 48% |
+| OTM call | 136 | +3.03bp | 3.58 | 34% |
+| deep OTM call | 284 | +1.44bp | 1.19 | 40% |
+
+| volume tercile | n | mean scaled | t | median volume |
+|---|---|---|---|---|
+| low | 340 | +4.43bp | 3.77 | 1 |
+| mid | 328 | +1.87bp | 2.13 | 23 |
+| high | 330 | +0.24bp | 0.50 | 475 |
+
+Pooled: n=998, mean +2.21bp of spot, t=4.23.
+
+**Read against the predictions, and most of them are on the wrong side.**
+
+- **H4a predicted negative hedged gains.** The sign is positive: the option buyer
+  gained over this one night, which is a *negative* variance premium. Contradicted on
+  this pair.
+- **H4b predicted the most negative gains at the money, less negative in the wings.**
+  The ordering is not there either.
+- **H4c predicted high-volume contracts more negative than low-volume.** This is the
+  one that holds directionally: +0.24bp against +4.43bp, a monotone fall across the
+  three terciles, and the only tercile whose t-statistic is not distinguishable from
+  zero is the high-volume one.
+- **H4d, volume against open interest, is untouched** until there are enough days to
+  control one for the other.
+
+**This is one overnight period.** Every run shares the same two dates, so the pooled t
+of 4.23 is descriptive and nothing more, exactly as the file said before the data
+existed. A single night of TSLA moving is enough to flip every sign here. No adjustment
+has been made to any threshold or bucket definition, and none should be until the
+series is long enough for the date-clustered test in HANDOFF 14.3.
 
 ## What would falsify each
 

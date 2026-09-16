@@ -124,10 +124,52 @@ that the model-free series does not, and the two should not be mixed in one comp
   and only aggregates are recorded here. Any published use needs the attribution
   "Source: Bloomberg Finance L.P." and the open question in HANDOFF section 16.
 
-**What would settle the convention question:** recompute implied volatility from the
-free feed's own bid/ask using Bloomberg's printed forward and rate for that expiry. If
-the gap collapses, the convention explanation holds. That is a small, bounded piece of
-work on data already collected, and it needs no new pull.
+## The convention test, 16 September 2026 - and what it refuted
+
+The paragraph above predicted that re-inverting the free feed's own mids with
+Bloomberg's printed forward and rate would collapse the gap. **It did not, and the
+prediction is recorded here as wrong rather than quietly dropped.**
+
+`tools/iv_convention.py`, out-of-the-money contracts only, medians in vol points:
+
+| | n | Alpaca IV minus Bloomberg | ours from Alpaca's mid | difference |
+|---|---|---|---|---|
+| TSLA | 40 | +1.73 | +1.75 | +0.00 |
+| USO | 20 | +1.81 | +1.86 | +0.01 |
+
+Our Black-76 inversion reproduces Alpaca's implied volatility to two decimals from the
+same mid. The forward and the rate were never the disagreement.
+
+The decisive test was to invert **Bloomberg's own quotes** with the same model:
+
+| price inverted | TSLA, median gap to Bloomberg's IVM | USO |
+|---|---|---|
+| Bloomberg's bid | +1.63 | +1.14 |
+| Bloomberg's mid | +1.80 | +2.21 |
+| Bloomberg's ask | +1.91 | +3.04 |
+| the free feed's mid | +1.75 | +1.86 |
+
+Feeding Bloomberg's own prices into this project's model still lands about 1.7 points
+above the number Bloomberg prints beside them. **The gap is between the two models, not
+between the two data sources.** The split by side and moneyness rules out the obvious
+model explanations: TSLA calls +1.76 against puts +1.51, near the money +1.62 against
+the wings +1.89. Early exercise would hit puts alone; a skew-fitting difference would
+not be this flat.
+
+**What this settles, and what it does not.** It settles the question this cross-check
+existed to answer: the free feed's quotes are as good as Bloomberg's, to within half a
+bid-ask spread, and every remaining difference is downstream of the prices. It does not
+identify which model assumption differs. Candidates still open: an American binomial
+against this European forward model, a different day count, or a volatility surface
+fitted across strikes rather than inverted contract by contract.
+
+**Why H3 survives it.** `modelfree.py` integrates out-of-the-money *prices*. Nothing in
+it reads an implied volatility, from either source, so a model gap of this size cannot
+reach the 0.59-point residual against Cboe. The exposure is elsewhere: `hedged.py` uses
+the vendor's *delta*, which is model-derived in exactly the way this test found wanting,
+so H4's hedge ratios inherit an unquantified model difference. Say so in any write-up.
+
+Bloomberg figures throughout: Source: Bloomberg Finance L.P.
 
 ## What would falsify it
 
