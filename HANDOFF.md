@@ -1245,6 +1245,8 @@ pooled number is exposed - and that number was already established not to be a t
 | `analyze.py --simulate-surface` | H4's accept criteria under a true null, plus what 40 day pairs can detect |
 | `hedged.py` honest-units block | the registered gains re-reported per underlying-day, per date, and as a within-day contrast |
 | `panel_health.py` quote-time check | warns when a day's rows are stale by over 15 min, the within-day half of the snapshot-spread warning |
+| `panel_health.py` missed-day check | **FAILS** when a trading day has no data. Added after 16 Sep, when a whole day was lost silently |
+| `panel_health.py` session check | **FAILS** when a snapshot lands outside the day's real market hours, DST-aware |
 
 ### Where the hypotheses stand
 
@@ -1314,6 +1316,40 @@ parity forward instead moves the buckets by at most 0.52bp and changes no direct
    with more days, clustering on the underlying-day is *not* sufficient once
    underlyings move together, and about 40 day pairs is enough for both H4a and H4c.
 
+### 16 September: two failures worth reading before anything else
+
+**1. A whole trading day was lost, silently.** No `record`, `surface` or
+`freshness` run fired on 16 Sep. The Actions tab showed nothing at all - not a
+failure, not a cancellation, simply no run. Most likely cause: the cron was edited
+and pushed at 15:57 UTC, after the 15:30 trigger but before GitHub had executed
+the routinely 3-4 hour delayed run, and the edit invalidated it.
+
+Nothing noticed. `panel_health.py` reported HEALTHY throughout, because the newest
+day was one day old and `STALE_DAYS` is five. **A dropped scheduled run leaves no
+trace and sends no mail.** It was found only because someone looked.
+
+Fixed: `missed_trading_days()` computes which trading days should have landed and
+have not, and **FAILS** on the first one. A warning would reach nobody, since
+GitHub only mails on failures. It counts today only once the landing hour passes,
+skips weekends and exchange holidays, and self-heals when a newer day arrives.
+
+**The rule that follows: never edit a workflow's `schedule:` on a day whose run
+you still need.** Check `data/surface.csv` for today's date first, and after any
+workflow edit confirm the next run actually fired.
+
+**The cost:** the 221-strike SPY Bloomberg export pulled that day at 19:00 UTC had
+no free-feed snapshot to match against, so **SPY's feed quality is still
+unmeasured** - which was the entire point of that pull. The day-count analysis
+survived only because it is internal to the export.
+
+**2. The Bloomberg export folder was moved into the repository root**, seven
+licensed spreadsheets inside a public repo. **Nothing leaked** - nothing was
+committed and no `.xlsx` is in git history - and `pressure_test.py`'s spreadsheet
+check caught it. But that guard only fires when someone runs the test, so
+`.gitignore` now blocks `*.xlsx`, `*.xls`, `*.xlsm` and `volrec-bloomberg/`
+outright, and the pressure test asserts those entries exist. This has now happened
+twice, on 14 and 16 Sep. **When a new export arrives, check `git status` first.**
+
 ### The window this is all aimed at
 
 **40 trading days from Wed 16 September 2026 ends Wed 11 November 2026.** No market
@@ -1336,7 +1372,11 @@ way; this is for planning what the write-up can honestly say.
 3. **Extend `analyze.py --simulate`** to the surface-level H4 tests, so the accept
    criteria are simulated under a true null before the series is long enough to tempt a
    claim. This is the "simulation engine" idea, in the form that fits this project.
-4. **The Bloomberg asks are ranked in `BLOOMBERG-MONDAY.md`**, rewritten 16 Sep.
+4. **The Bloomberg asks are ranked in `BLOOMBERG-MONDAY.md`**, rewritten 16 Sep and
+   updated again after that evening's pull. **Ask 0 is new and comes first: confirm
+   the recorder ran before pulling**, because an export with no matching snapshot
+   can only answer the day-count question. SPY's 221-strike export is done and
+   correct; it needs repeating on a day the recorder fires.
    The decisive one is a **long-dated expiry with 50+ strikes**: the 252 and 365
    clocks converge as maturity grows, so a two-year contract is where the day-count
    finding makes its riskiest prediction and is the one pull that could falsify

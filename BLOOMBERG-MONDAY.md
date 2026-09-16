@@ -5,13 +5,29 @@
 collect. What it can do, and nothing else can, is tell you how good your free
 data is. See HANDOFF section 15.1.
 
-**Last updated 16 September 2026.** Two sessions have happened (14 and 15 Sep).
+**Last updated 16 September 2026, evening — after the third pull.** Sessions on
+14, 15 and 16 Sep.
 Priorities 0 and 1 below are **done** and kept only as the record of what worked.
 **The live asks are in "What is still wanted", and they are ranked.**
 
 ---
 
 ## What is still wanted, in priority order
+
+### 0. BEFORE YOU PULL: check the recorder actually ran today
+
+**New on 16 September, and it cost the whole point of that pull.** The recorders did
+not run at all that day - GitHub dropped the scheduled trigger and left no trace - so
+the 221-strike SPY export had no free-feed snapshot to be matched against, and SPY's
+feed quality is *still* unmeasured.
+
+A Bloomberg export is only half a comparison. Before pulling, confirm today's date
+appears in `data/surface.csv` on GitHub, or run `python3 tools/panel_health.py`, which
+now FAILS on a missed trading day. If the recorder has not run and the market is still
+open, dispatch it by hand first and pull afterwards.
+
+The day-count test (ask 1) is the exception: it never leaves the export, so it works
+without the free feed. Everything about *feed quality* needs both sides.
 
 ### 1. A LONG-DATED expiry, wide strikes. This is the decisive one.
 
@@ -40,15 +56,21 @@ on a two-year contract with wide markets is not evidence and no conclusion was
 drawn from it. But it is the one observation pointing away from a finding that is
 already written down, and it should be settled rather than left.
 
-### 2. SPY with 200+ strikes
+### 2. SPY with 200+ strikes — EXPORT DONE 16 Sep, STILL NEEDS A MATCHED DAY
 
 SPY is the underlying H3 cares most about - it is the VIX benchmark, and the
-calibration matched Cboe to 0.01 points on it. But the 15 Sep export matched only
-**14 contracts** against the free feed, because 40 strikes a dollar apart spans
-2.6% of spot, and its price gate failed at 1.06 of a spread. **SPY is still
-formally unmeasured on feed quality.**
+calibration matched Cboe to 0.01 points on it. The 15 Sep export matched only **14
+contracts** against the free feed, because 40 strikes a dollar apart spans 2.6% of
+spot.
 
-- SPY strikes step a dollar at a time, so **200 or more** is the right count
+**The 16 Sep pull fixed the export: 221 strikes, 442 quotes, all with IVM.** That
+was enough to measure SPY on the day count for the first time (n=133, gap +0.63 on
+365 collapsing to +0.06 on 252). **But the recorder did not run that day, so it
+still could not be matched contract by contract, and SPY's feed quality remains
+unmeasured.**
+
+- Repeat the same 221-strike SPY pull on **any day the recorder has run** - see
+  ask 0. Nothing about the export needs changing; it was correct.
 - The ~30 day expiry is enough here
 
 ### 3. Find out whether Bloomberg STATES its day count anywhere
@@ -78,7 +100,9 @@ about two trading days and nothing has checked it.
 
 ### 5. A second and third matched day, any tickers
 
-The whole cross-check rests on **one day**. Replication is worth more than any new
+The whole *feed-quality* cross-check still rests on **one day**, 15 Sep - 16 Sep
+produced no match for the reason in ask 0. The day-count finding, which needs only
+the export, now has two days and ten expiry blocks. Replication is worth more than any new
 ticker. TSLA and USO on any two further days would move H3 from "a cross-check" to
 "a small sample", which is a different sentence in a write-up.
 
@@ -88,7 +112,10 @@ ticker. TSLA and USO on any two further days would move H3 from "a cross-check" 
   Library guides say 90 calendar days; the whole Bloomberg plan was rewritten on
   that claim and it is still unconfirmed.
 - **Is there a visible export limit?** Any warning about daily or monthly caps.
-- **Goukasian on publishing derived Bloomberg figures.** Still unanswered.
+- **Goukasian on publishing derived Bloomberg figures.** Still unanswered, sent
+  11 Sep. **This is now blocking**: HANDOFF section 17 action 2 is to put the
+  Bloomberg result on the public site, and that cannot proceed on an assumption.
+  Worth a short chase.
 
 ---
 
