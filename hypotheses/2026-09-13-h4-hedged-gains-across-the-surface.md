@@ -241,6 +241,27 @@ The pooled t of 4.23 is t=1.49 at the underlying and not distinguishable from ze
 from zero.** Both readings are what one overnight period should look like. Neither
 changes a registered threshold, and the registered tables above are untouched.
 
+## Multiple testing, pre-registered 2026-09-16 — before the series is long enough
+
+Registered before H4 has the day pairs to test anything, which is the strong form
+and the same reason this file was written before `surface.csv` had a row.
+
+Not every claim here is a count, and the correction applies only where one is:
+
+- **H4b is an ordering across five buckets, not five tests.** It is judged by
+  whether the predicted ordering appears, so no FDR control applies to the
+  ordering itself.
+- **H4a and H4c are each a single directional test.** Nothing to correct.
+- **But the per-bucket t-statistics `hedged.py` prints are five tests**, and any
+  sentence of the form "the premium is significant in k of the five buckets" is a
+  count. **Registered now:** that sentence, if it is ever written, carries
+  Benjamini-Hochberg control at q=0.05 across the five buckets, on the
+  date-clustered p-values and not the contract-level ones, which
+  `analyze.py --simulate-surface` showed reject a true null 46-73% of the time.
+
+The order matters: cluster first, then correct. Correcting a family of statistics
+that are each individually wrong produces a corrected family that is still wrong.
+
 ## What would falsify each
 
 - **H4a** fails if the pooled mean gain is positive. That would most likely mean

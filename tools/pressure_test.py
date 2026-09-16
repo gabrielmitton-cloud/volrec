@@ -227,6 +227,33 @@ ok("SystemExit" in _mf,
    "risk_free catches SystemExit (fred._key calls sys.exit, which bypasses "
    "except Exception)")
 
+print("\n=== H4. MULTIPLE TESTING (H1 reports a COUNT of significant pairs) ===")
+import analyze as _az
+_bh_all, _bh_adj = _az.benjamini_hochberg({f"n{i}": 1.0 for i in range(10)})
+ok(len(_bh_all) == 0, "eleven true nulls reject nothing")
+_bh_all, _ = _az.benjamini_hochberg({f"z{i}": 0.0 for i in range(10)})
+ok(len(_bh_all) == 10, "ten certain rejections all survive")
+# Benjamini & Hochberg (1995) worked example: m=4, q=0.05, all four reject.
+_bh_all, _ = _az.benjamini_hochberg({"a": 0.005, "b": 0.01, "c": 0.03, "d": 0.04})
+ok(_bh_all == {"a", "b", "c", "d"}, "BH step-up accepts up to the largest i "
+   "with p(i) <= i*q/m, not the first failure")
+# A single p just over the last threshold must not drag the rest down with it.
+_bh_all, _ = _az.benjamini_hochberg({"a": 0.001, "b": 0.9})
+ok(_bh_all == {"a"}, "one hopeless test does not cost the good one")
+# Adjusted p-values must be monotone in the raw ordering.
+_, _adj = _az.benjamini_hochberg({"a": 0.001, "b": 0.02, "c": 0.03, "d": 0.5})
+_seq = [_adj[k] for k in ("a", "b", "c", "d")]
+ok(_seq == sorted(_seq), "adjusted p-values are monotone (running-min applied)")
+ok(all(0.0 <= v <= 1.0 for v in _adj.values()), "adjusted p-values stay in [0,1]")
+# H1's own eleven, from the recorded result table. The conclusion must not move.
+_h1 = {"VIX/SPY": 0.0, "VXN/QQQ": 0.0003, "RVX/IWM": 0.0, "VXD/DIA": 0.0,
+       "OVX/USO": 0.0, "GVZ/GLD": 0.0001, "VXEEM/EEM": 0.0, "VXSLV/SLV": 0.0159,
+       "EVZ/FXE": 0.0, "VXXLE/XLE": 0.1904, "VXGDX/GDX": 0.9347}
+_bh_all, _ = _az.benjamini_hochberg(_h1)
+ok(len(_bh_all) == 9, "H1's 9 of 11 survives FDR control at q=0.05")
+ok(any("benjamini_hochberg" in (R / "samples/long/build_sample_a.py").read_text()
+       for _ in (0,)), "build_sample_a.py actually reports the correction")
+
 print("\n=== I. WORKFLOWS ===")
 import yaml
 import datetime as _dt

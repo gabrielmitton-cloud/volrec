@@ -142,6 +142,15 @@ a reader can judge it rather than take my word for it.
    obtainable; the tracking ETFs are.
 
 
+- **2026-09-16, after the test was run.** Benjamini-Hochberg FDR control added to
+  the H1a report. Logged here because it is an addition made *after* seeing the
+  data, which is the circumstance this log exists for. It is not a specification
+  change: the per-pair t-test is untouched, the registered count is still printed,
+  and the correction is reported beside it. It was added because H1a's claim is a
+  count over eleven tests and a per-test threshold does not protect a count. The
+  conclusion did not move - 9 of 11 before, 9 of 11 after - which is the only
+  reason it can be reported without the addition itself needing a caveat.
+
 ---
 
 # Result — tested 2026-09-07
@@ -190,6 +199,55 @@ mean +2.83 points. Splitting VIX/SPY observations by the slope at entry: normal
 curve +3.87 (n=110), inverted +1.22 (n=17). The premium is roughly a third as
 large when the curve is inverted, in the predicted direction. Small n on the
 inverted leg; treat as suggestive, not established.
+
+## Multiple testing, added 2026-09-16 — the count is controlled, and holds
+
+**This does not re-cut the test. The specification above stays frozen and the
+headline number is unchanged.** What it adds is a control the original
+specification did not have and should have.
+
+H1a's claim is a **count**: "9 of 11 pairs significantly positive". A count over
+eleven tests at p<0.05 is exactly the statistic that a per-test threshold does not
+protect. If every null were true, the chance of at least one pair coming back
+significant is about 43%, and nothing in the original report says whether nine is
+more than luck would produce.
+
+Benjamini-Hochberg controls the expected **proportion of the rejections that are
+false**, which is the question a count asks. It is the right member of the
+multiple-testing family here: the deflated Sharpe ratio and the CSCV probability
+of backtest overfitting answer "how much of the best result is search luck", and
+this project does not search - every hypothesis is registered before its data
+exists. Implemented as `analyze.benjamini_hochberg`, stdlib, and reported by
+`build_sample_a.py` beside the registered number.
+
+| pair | raw p | BH adjusted p | survives at q=0.05 |
+|---|---|---|---|
+| VIX/SPY | 0.0000 | 0.0000 | yes |
+| RVX/IWM | 0.0000 | 0.0000 | yes |
+| VXD/DIA | 0.0000 | 0.0000 | yes |
+| OVX/USO | 0.0000 | 0.0000 | yes |
+| VXEEM/EEM | 0.0000 | 0.0000 | yes |
+| EVZ/FXE | 0.0000 | 0.0000 | yes |
+| GVZ/GLD | 0.0001 | 0.0002 | yes |
+| VXN/QQQ | 0.0003 | 0.0004 | yes |
+| VXSLV/SLV | 0.0159 | **0.0194** | yes |
+| VXXLE/XLE | 0.1904 | 0.2094 | no |
+| VXGDX/GDX | 0.9347 | 0.9347 | no |
+
+**All nine survive. Nothing is lost to the correction**, and the weakest survivor,
+VXSLV/SLV, clears at an adjusted 0.0194 rather than scraping 0.05. The two that
+fail are the same two that failed before: the sector ETFs whose indices were
+discontinued in February 2022 and which have the fewest, most fragmented
+observations.
+
+So H1a is now a stronger sentence for free: not "nine of eleven were significant",
+which invites the obvious objection, but **"nine of eleven survive false-discovery
+control across the family"**, which answers it. Quote the corrected version.
+
+The correction is computed on the raw p-values printed in the result table above,
+where six are rounded to 0.0000. Rounding can only make an adjusted p **larger**
+than the truth here, so it cannot manufacture a survivor; the next run of
+`build_sample_a.py` computes it from the unrounded values.
 
 ## What this licenses, and what it does not
 

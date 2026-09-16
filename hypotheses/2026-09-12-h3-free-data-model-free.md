@@ -250,6 +250,23 @@ never be compared to a business-clock number without converting one of them.
 
 Bloomberg figures: Source: Bloomberg Finance L.P.
 
+## Multiple testing, pre-registered 2026-09-16 — before the series exists
+
+H1 had FDR control added *after* it was tested, which is logged there and is the
+weaker form. H3 has no series yet, so the correction goes on record first.
+
+H3a is a claim about a **family**: the mean absolute gap across five benchmarked
+underlyings. H3c regresses the gap on the volatility level, again across five. Any
+report of the form "the estimate tracks the index on k of the five" is a count over
+five tests, and a per-test threshold does not protect a count.
+
+**Registered now:** when H3 is tested, per-underlying p-values are reported with
+**Benjamini-Hochberg FDR control at q=0.05** across the five pairs
+(`analyze.benjamini_hochberg`), beside the raw values, and the corrected count is
+the one quoted. Five is a small family and the correction will be mild; that is
+not the point. The point is that it is on record before the numbers are, so it
+cannot be chosen to suit them.
+
 ## What would falsify it
 
 - H3a fails if the mean absolute gap over the series exceeds 1.0 points.

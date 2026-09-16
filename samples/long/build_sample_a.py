@@ -108,6 +108,29 @@ def main():
     print(f"   {len(wins)} of {len(results)} pairs significantly positive "
           f"at p<0.05: {', '.join(wins) if wins else 'none'}")
 
+    # Eleven tests at p<0.05 give ~43% odds of at least one false positive if
+    # every null were true, and the registered headline is a COUNT of how many
+    # came back positive - exactly the claim that count is exposed to. So the
+    # false discovery rate is controlled alongside it. This is reported BESIDE
+    # the registered number and does not replace it: H1's specification froze the
+    # per-pair t-test, and a frozen specification is not re-cut because a better
+    # control was added later.
+    rejected, adj = analyze.benjamini_hochberg(
+        {k: v[2] for k, v in results.items()}, q=0.05)
+    print(f"\n   Benjamini-Hochberg, FDR controlled at q=0.05 across "
+          f"{len(results)} pairs:")
+    print(f"   {'pair':<14}{'raw p':>9}{'BH adj p':>11}{'survives':>10}")
+    for k, (_mu, _t, p, _n) in sorted(results.items(), key=lambda kv: kv[1][2]):
+        print(f"   {k:<14}{p:>9.4f}{adj[k]:>11.4f}"
+              f"{'yes' if k in rejected else 'no':>10}")
+    survivors = [k for k in wins if k in rejected]
+    print(f"   {len(survivors)} of {len(wins)} raw-significant pairs survive "
+          f"FDR control.")
+    if len(survivors) < len(wins):
+        print(f"   LOST to the correction: "
+              f"{', '.join(k for k in wins if k not in rejected)}")
+        print("   Report the corrected count as the headline, not the raw one.")
+
     # ---- H1b: equity indices should show a LARGER premium than commodity/FX
     print("\n-- H1b  equity index premium > commodity / currency")
     for klass in ("equity index", "equity sector", "equity intl",

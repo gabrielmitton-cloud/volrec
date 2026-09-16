@@ -173,6 +173,47 @@ def sign_test(x):
 
 
 # ------------------------------------------------------------------ the data
+def benjamini_hochberg(pvalues, q=0.05):
+    """Control the FALSE DISCOVERY RATE across a family of tests.
+
+    WHY THIS AND NOT A BONFERRONI
+    -----------------------------
+    H1 runs eleven pairs and reports how many came back positive. Eleven tests at
+    p<0.05 give roughly a 43% chance of at least one false positive if every null
+    were true, and "9 of 11 were significant" does not say whether nine is more
+    than luck would produce. Bonferroni answers a different question - is the
+    single best one real - by controlling the chance of ANY false positive, which
+    is the wrong question here and throws away most of the power to answer it.
+    Benjamini-Hochberg (1995) controls the expected PROPORTION of the rejections
+    that are false, which is exactly "which of these are real".
+
+    This is the one correction in the multiple-testing family that applies to this
+    project. The deflated Sharpe ratio and the CSCV probability of backtest
+    overfitting answer "how much of the best result is search luck", and this
+    project does not search: every hypothesis is registered before the data exists.
+
+    Returns (rejected, adjusted) where `rejected` is the set of keys that survive
+    at level `q` and `adjusted` maps every key to its BH-adjusted p-value. The
+    adjustment is made monotone by taking a running minimum from the largest p
+    downward, which is the standard step-up form; without it an adjusted p can
+    come out smaller than one below it in the ordering.
+    """
+    items = sorted(pvalues.items(), key=lambda kv: kv[1])
+    m = len(items)
+    if not m:
+        return set(), {}
+    adjusted, running = {}, 1.0
+    for i in range(m, 0, -1):
+        key, p = items[i - 1]
+        running = min(running, min(1.0, m * p / i))
+        adjusted[key] = running
+    k = 0
+    for i, (_key, p) in enumerate(items, start=1):
+        if p <= i * q / m:
+            k = i
+    return {key for key, _p in items[:k]}, adjusted
+
+
 def load_rows():
     if not CSV.exists(): sys.exit(f"{CSV} not found.")
     with CSV.open(newline="") as f:
