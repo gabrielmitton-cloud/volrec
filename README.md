@@ -111,12 +111,15 @@ vol, and jumps, and sweeps rebalance frequency to find where net profit peaks.
   moved from `iex` to `sip` on 7 Sep 2026: `iex` is a single venue carrying a
   low single-digit share of volume, so its close is not the official closing
   print, and its free history is both shallower and ragged.
-- **Snapshot timing**: one reading per day at a fixed time, so intraday
-  volatility is invisible. The schedule is fixed at 15:30 UTC, which is
-  11:30am ET while daylight saving is in effect but 10:30am ET once it ends
-  on 1 November 2026. Snapshots from November onward therefore sit an hour
-  earlier in the session than those before it — worth controlling for, since
-  implied vol is not flat across the trading day.
+- **Snapshot timing**: one reading per day, so intraday volatility is
+  invisible. The cron fires at 14:47 UTC but GitHub delays scheduled runs three
+  to four hours, so the snapshot actually lands around 18:00-19:20 UTC. The cron
+  is fixed in UTC and the US session is not: it runs 13:30-20:00 UTC under
+  daylight saving and 14:30-21:00 once that ends on 1 November 2026, so
+  snapshots from November onward sit an hour earlier in the session than those
+  before them. Worth controlling for, since implied vol is not flat across the
+  trading day. `tools/panel_health.py` fails if a snapshot ever lands outside
+  the session on the day it was taken.
 - **Expiry drift**: MDY and FXE lack weekly options and fall back to ~42-day
   expiries. The `dte` column records this so it can be controlled for.
 - **Wide quotes on FXE and XLU**: on day one FXE quoted 0.63/1.27 and XLU

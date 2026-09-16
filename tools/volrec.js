@@ -31,8 +31,13 @@
   V.SURFACE_LANDED_HOUR_UTC = 20;
 
   // Scheduled times from the workflows. GitHub delays both by ~3 hours in practice.
-  V.RECORD_CRON = [15, 30];
-  V.SURFACE_CRON = [15, 40];
+  // Must match .github/workflows/*.yml. pressure_test.py section K asserts it,
+  // because these drive the live countdown and a stale pair is a public clock
+  // that is quietly wrong. Moved 16 Sep 2026 from 15:30/15:40; see record.yml
+  // for why 14:xx and why not a quarter hour.
+  V.RECORD_CRON = [14, 47];
+  V.SURFACE_CRON = [14, 57];
+  V.cronUTC = (c) => `${String(c[0]).padStart(2, "0")}:${String(c[1]).padStart(2, "0")} UTC`;
 
   V.T30 = 30 / 365;
   V.calm = !!(global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches);

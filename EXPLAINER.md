@@ -42,8 +42,11 @@ volatility insurance get paid, the way insurance companies do.
 
 ## 3. What the recorder actually collects
 
-Every weekday at 15:30 UTC, a script wakes up on GitHub's servers and asks
-Alpaca for option prices on 109 tickers. For each one it writes a row:
+Every weekday at 14:47 UTC, a script wakes up on GitHub's servers and asks
+Alpaca for option prices on 109 tickers. GitHub runs scheduled jobs late when it
+is busy - three to four hours, in practice - so the reading is usually taken
+around 18:00-19:20 UTC, comfortably inside the trading day. For each ticker it
+writes a row:
 
 | what | why it is there |
 |---|---|

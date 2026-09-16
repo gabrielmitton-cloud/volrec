@@ -403,6 +403,22 @@ ok(f'V.SURFACE_START = "{int(_start[0]):04d}-{int(_start[1]):02d}-{int(_start[2]
 ok(not re.search(r"bloomberg", site + mon + idx.replace("derived from Bloomberg", ""), re.I),
    "the site reads no Bloomberg-derived data")
 
+# The site's countdown runs off its own copy of the cron. A stale copy is a
+# public clock that is quietly wrong, which is worse than no clock, and moving
+# the workflows on 16 Sep did exactly that until this caught it.
+_js = (R / "tools/volrec.js").read_text()
+for _name, _wf, _job in (("RECORD_CRON", "record.yml", "record"),
+                         ("SURFACE_CRON", "surface.yml", "surface")):
+    _m = re.search(rf"V\.{_name} = \[(\d+), (\d+)\]", _js)
+    _cr = yaml.safe_load((R / f".github/workflows/{_wf}").read_text())
+    _h, _mi = cron_minutes(_cr[True]["schedule"][0]["cron"])[0] // 60, \
+              cron_minutes(_cr[True]["schedule"][0]["cron"])[0] % 60
+    ok(_m is not None and (int(_m.group(1)), int(_m.group(2))) == (_h, _mi),
+       f"site's {_name} matches {_wf} ({_h:02d}:{_mi:02d} UTC)")
+ok("15:40 UTC" not in (R / "tools/monitor.html").read_text()
+   and "15:30 UTC" not in (R / "tools/monitor.html").read_text(),
+   "monitor.html does not hard-code a cron time beside the constant")
+
 print("\n=== L. BLOOMBERG COMPARISON (licensed data must never enter the repo) ===")
 bc = (R / "tools/bloomberg_compare.py").read_text()
 ok("Refusing to read exports from inside the repository" in bc,

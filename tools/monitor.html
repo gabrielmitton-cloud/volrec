@@ -438,8 +438,8 @@
       const now = new Date(), target = now < first ? first : V.nextRun(V.SURFACE_CRON, now);
       const count = V.h("div", { class: "count", style: "margin-top:12px" }, left, "T−" + V.clock(target - now));
       V.h("p", null, left, now < first
-        ? `until the first scheduled run, Monday ${V.SURFACE_START} at 15:40 UTC. GitHub usually starts it about three hours late.`
-        : "until the next scheduled run at 15:40 UTC.");
+        ? `until the first scheduled run, Monday ${V.SURFACE_START} at ${V.cronUTC(V.SURFACE_CRON)}. GitHub usually starts it three to four hours late.`
+        : `until the next scheduled run at ${V.cronUTC(V.SURFACE_CRON)}.`);
       setInterval(() => { count.textContent = "T−" + V.clock(target - new Date()); }, 1000);
       const right = V.h("div", null, wrap);
       V.h("p", null, right, h.msg);
