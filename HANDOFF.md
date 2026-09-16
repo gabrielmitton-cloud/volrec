@@ -1325,13 +1325,24 @@ parity forward instead moves the buckets by at most 0.52bp and changes no direct
 3. **Extend `analyze.py --simulate`** to the surface-level H4 tests, so the accept
    criteria are simulated under a true null before the series is long enough to tempt a
    claim. This is the "simulation engine" idea, in the form that fits this project.
-4. **Decide what the `iv` column is for, now that its clock is known.** It is on 365
+4. **The Bloomberg asks are ranked in `BLOOMBERG-MONDAY.md`**, rewritten 16 Sep.
+   The decisive one is a **long-dated expiry with 50+ strikes**: the 252 and 365
+   clocks converge as maturity grows, so a two-year contract is where the day-count
+   finding makes its riskiest prediction and is the one pull that could falsify
+   something already recorded. The thin 14 Sep export reached 858 days and the gap
+   did *not* vanish there - on five strikes, which is not evidence, but is the one
+   observation pointing the wrong way. After that: SPY at 200+ strikes (still
+   formally unmeasured), whether the terminal *states* its day count anywhere
+   (which would turn an inference into a fact), and whether OMON can add an open
+   interest column (H4d needs it).
+
+5. **Decide what the `iv` column is for, now that its clock is known.** It is on 365
    calendar days and Bloomberg's is on 252 business days. Nothing needs changing -
    the convention is internally consistent and `modelfree.py` never reads it - but any
    comparison to an outside volatility number has to convert one side, and that should
    be written down once rather than rediscovered. A pull at a long maturity would also
    sharpen the 252 estimate, because the two clocks converge as maturity grows.
-5. **Compute the hedge ratio rather than record it, if H4 is ever written up as more
+6. **Compute the hedge ratio rather than record it, if H4 is ever written up as more
    than descriptive.** The vendor's delta ignores dividends; H4's numbers are not good
    to better than about half a basis point until that is fixed. `delta_model.py`
    already does it; nothing has been switched over because switching the default would
