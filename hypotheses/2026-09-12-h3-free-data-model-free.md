@@ -250,6 +250,52 @@ never be compared to a business-clock number without converting one of them.
 
 Bloomberg figures: Source: Bloomberg Finance L.P.
 
+## The day count replicated on a second day, 16 September 2026
+
+A second export set (SPY, TSLA, USO) was pulled at 19:00 UTC on 16 September. It
+is an independent day, and **SPY carries 221 strikes** rather than the 40 that
+made it unmeasurable before.
+
+| | cal | bus | n | IVM | gap 365 | gap 252 | cal div | bus div |
+|---|---|---|---|---|---|---|---|---|
+| SPY 16-Oct | 30 | 22 | 133 | 16.2 | +0.63 | +0.06 | 341.7 | 250.6 |
+| TSLA 16-Oct | 30 | 22 | 50 | 43.6 | +1.55 | -0.08 | 344.8 | 252.9 |
+| TSLA 20-Nov | 65 | 47 | 50 | 45.3 | +0.99 | -0.14 | 350.6 | 253.5 |
+| USO 16-Oct | 30 | 22 | 75 | 53.6 | +1.90 | +0.25 | 340.5 | 249.7 |
+
+**Pooled over both days: 10 blocks, 546 out-of-the-money contracts, 3 symbols.**
+Median gap **+1.15** volatility points on a 365 calendar clock, **+0.07** on a 252
+business clock.
+
+The discriminant is now a regression rather than an eyeball down a column. **A
+convention is a constant**, so whichever divisor moves with maturity is the
+artefact:
+
+| divisor | median | distance from its nominal | slope per day of maturity | t | verdict |
+|---|---|---|---|---|---|
+| calendar | 341.7 | **-23.3 from 365** | +0.2307 | **+3.09** | drifts; not a constant |
+| business | 250.8 | **-1.2 from 252** | +0.0561 | +1.19 | flat; consistent with a convention |
+
+The calendar divisor drifts significantly with maturity and lands 23 points away
+from 365. The business divisor is flat within noise and lands 1.2 points from 252.
+That is as clean a separation as this data can produce.
+
+**What it does not settle.** Every block is still 30 to 66 days. The two clocks
+converge as maturity grows, so the long-dated pull remains the test that could
+break this, and it remains the first ask in `BLOOMBERG-MONDAY.md`. The thin 14 Sep
+export reached 858 days on five strikes and did *not* show the gap vanishing; that
+is not evidence, and it is not resolved.
+
+**A cost worth recording.** The recorder did not run on 16 September - the
+scheduled trigger was dropped - so there is no free-feed snapshot for that day and
+**the 221-strike SPY export could not be matched contract by contract.** SPY's feed
+quality is therefore *still* unmeasured, which is exactly what that pull was for.
+The day-count test survived only because it is internal to the export and needs no
+free-feed data. `panel_health.py` now fails on a missed trading day so this is
+caught the same day rather than discovered later.
+
+Bloomberg figures: Source: Bloomberg Finance L.P.
+
 ## Multiple testing, pre-registered 2026-09-16 — before the series exists
 
 H1 had FDR control added *after* it was tested, which is logged there and is the

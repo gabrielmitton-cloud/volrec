@@ -196,7 +196,8 @@ def crr_iv(kind, price, s, k, t, r, q):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--date", required=True, help="trading day, YYYY-MM-DD")
+    ap.add_argument("--date", help="trading day, YYYY-MM-DD. Omit to scan every "
+                                   "date with an export and pool the result.")
     ap.add_argument("--dir", default=str(DEFAULT_DIR))
     ap.add_argument("--american", action="store_true",
                     help="also invert under a CRR American tree (slow)")
@@ -213,16 +214,15 @@ def main():
     # and its absence is a missing column rather than a dead run. That matters:
     # on 16 Sep 2026 the recorder did not fire and the export was still fully
     # measurable.
-    spot = {}
-    try:
-        spot = {r["symbol"]: float(r["spot"])
-                for r in surface_rows(a.date) if r["spot"]}
-    except SystemExit:
-        print(f"(no recorded surface for {a.date}; proceeding without it. "
-              f"--american needs a spot and will be skipped.)\n")
-    asof = date.fromisoformat(a.date)
+    dates = [a.date] if a.date else sorted({
+        m.group(1) for q in folder.glob("*_OMON_*.xlsx")
+        if (m := re.search(r"_OMON_(\d{4}-\d{2}-\d{2})\.xlsx$", q.name))})
+    if not dates:
+        sys.exit(f"No exports found in {folder}.")
 
-    print(f"What time base reproduces Bloomberg's own volatility? {a.date}\n")
+    print("What time base reproduces Bloomberg's own volatility? "
+          + (dates[0] if len(dates) == 1 else f"{len(dates)} days, {dates[0]} to {dates[-1]}")
+          + "\n")
     head = (f"{'sym':6}{'expiry':11}{'cal':>4}{'bus':>4}{'n':>4}{'IVM':>7}"
             f"{'gap 365':>9}{'gap 252':>9}{'gap 252+F':>11}{'cal div':>9}{'bus div':>9}")
     if a.american:
@@ -230,11 +230,21 @@ def main():
     print(head)
 
     seen = False
-    for path in sorted(folder.glob(f"*_OMON_{a.date}.xlsx")):
+    pooled_bus, pooled_cal, pooled_g365, pooled_g252 = [], [], [], []
+    block_div = []
+    for _date in dates:
+      spot = {}
+      try:
+        spot = {r["symbol"]: float(r["spot"])
+                for r in surface_rows(_date) if r["spot"]}
+      except SystemExit:
+        print(f"({_date}: no recorded surface, so no American column)")
+      asof = date.fromisoformat(_date)
+      for path in sorted(folder.glob(f"*_OMON_{_date}.xlsx")):
         symbol = path.name.split("_")[0]
         s = spot.get(symbol)
         if s is None and a.american:
-            print(f"{symbol:6}  no spot for {a.date}, so no American column")
+            print(f"{symbol:6}  no spot for {_date}, so no American column")
         for label, blk in sorted(omon_blocks(path).items(), key=lambda x: x[1]["dte"]):
             f_print, r, dte = blk["fwd"], blk["rate"], blk["dte"]
             t_cal = dte / CALENDAR_YEAR
@@ -275,7 +285,14 @@ def main():
                 continue
             seen = True
             m = lambda x: st.median(x) if x else float("nan")   # noqa: E731
-            line = (f"{symbol:6}{label:11}{dte:>4}{nbus:>4}{len(g365):>4}{m(ivm):>7.1f}"
+            pooled_bus.extend(bdiv)
+            pooled_cal.extend(cdiv)
+            if cdiv and bdiv:
+                block_div.append((dte, st.median(cdiv), st.median(bdiv)))
+            pooled_g365.append(m(g365))
+            pooled_g252.append(m(g252))
+            line = ((f"{_date:11}" if len(dates) > 1 else "")
+                    + f"{symbol:6}{label:11}{dte:>4}{nbus:>4}{len(g365):>4}{m(ivm):>7.1f}"
                     f"{m(g365):>+9.2f}{m(g252):>+9.2f}{m(g252f):>+11.2f}"
                     f"{m(cdiv):>9.1f}{m(bdiv):>9.1f}")
             if a.american:
@@ -290,6 +307,52 @@ def main():
     print("for the one implied by Bloomberg's own call and put mids.")
     print("'cal div' and 'bus div' are the annualisation divisors implied by the")
     print("solved time. A convention is the one whose divisor holds across maturities.")
+
+    # The whole claim in one line: one of these two is stable and the other is not.
+    def _spread(v):
+        v = sorted(v)
+        return v[len(v) // 2], v[int(0.1 * len(v))], v[int(0.9 * len(v))]
+    if pooled_bus and pooled_cal:
+        bm, blo, bhi = _spread(pooled_bus)
+        cm, clo, chi = _spread(pooled_cal)
+        print(f"\nPOOLED over {len(pooled_g365)} block(s), {len(pooled_bus)} contracts:")
+        print(f"  business-day divisor  median {bm:6.1f}   p10-p90 {blo:5.1f}-{bhi:5.1f}"
+              f"   <- 252 is the convention")
+        print(f"  calendar-day divisor  median {cm:6.1f}   p10-p90 {clo:5.1f}-{chi:5.1f}"
+              f"   <- no fixed value fits")
+        print(f"  median gap on 365 {st.median(pooled_g365):+.2f} vol pts, "
+              f"on 252 {st.median(pooled_g252):+.2f}")
+
+    # A convention is a CONSTANT. Whichever divisor drifts with maturity is the
+    # artefact; whichever holds flat is the convention. This is the claim, so it
+    # is a regression and not an eyeball over the column.
+    if len(block_div) >= 4:
+        def _slope(xs, ys):
+            mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+            sxx = sum((x - mx) ** 2 for x in xs)
+            if sxx <= 0:
+                return None
+            b1 = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sxx
+            b0 = my - b1 * mx
+            res = [y - (b0 + b1 * x) for x, y in zip(xs, ys)]
+            if len(xs) <= 2:
+                return None
+            se = (sum(e * e for e in res) / (len(xs) - 2) / sxx) ** 0.5
+            return b1, se, (b1 / se if se else float("inf"))
+        xs = [d for d, _c, _b in block_div]
+        print(f"\n  does the divisor drift with maturity? (it must not, to be a "
+              f"convention; {len(block_div)} blocks)")
+        for name, col, ref in (("calendar", 1, CALENDAR_YEAR), ("business", 2, BUSINESS_YEAR)):
+            ys = [row[col] for row in block_div]
+            r_ = _slope(xs, ys)
+            if not r_:
+                continue
+            b1, se, t = r_
+            verdict = ("DRIFTS - not a constant" if abs(t) > 2
+                       else "flat - consistent with a convention")
+            print(f"    {name:9} median {st.median(ys):6.1f} "
+                  f"({st.median(ys) - ref:+6.1f} from {ref:.0f})  "
+                  f"slope {b1:+.4f}/day  t={t:+5.2f}   {verdict}")
     print("Bloomberg figures: Source: Bloomberg Finance L.P.")
     return 0
 
