@@ -1215,6 +1215,7 @@ for, or the sample split.
 | `tools/delta_model.py` | re-hedges H4's runs with a delta from this project's model instead of the vendor's |
 | `analyze.py --simulate-surface` | H4's accept criteria under a true null, plus what 40 day pairs can detect |
 | `hedged.py` honest-units block | the registered gains re-reported per underlying-day, per date, and as a within-day contrast |
+| `panel_health.py` quote-time check | warns when a day's rows are stale by over 15 min, the within-day half of the snapshot-spread warning |
 
 ### Where the hypotheses stand
 
@@ -1270,6 +1271,13 @@ parity forward instead moves the buckets by at most 0.52bp and changes no direct
 2. ~~**Quantify what the delta difference does to H4.**~~ `tools/delta_model.py`;
    numbers in H4 under "The delta is the vendor's". Directions all survive; the
    shifts run to 0.52bp and concentrate on the dividend-paying ETFs.
+
+4. ~~**Check quote staleness before 40 days of it accumulate.**~~ Measured 16 Sep:
+   12 of 2,740 rows are over 5 minutes behind their day's median quote time, 2 are
+   over an hour, and exactly 1 of the 998 hedged runs has a stale leg. It does **not**
+   concentrate by volume (1% in the bottom volume deciles, 0% in the top), so H4c's
+   low-volume result is not a staleness artifact. `panel_health.py` now watches it
+   twice a day so a change is caught rather than discovered in November.
 
 3. ~~**Extend `analyze.py --simulate` to the surface-level H4 tests.**~~ Done as
    `--simulate-surface`; numbers in H4 under "What the tests are worth". The headline:

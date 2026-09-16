@@ -19,6 +19,7 @@ ordinary days stops being read.
 """
 import ast
 import csv
+import re
 import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -53,6 +54,14 @@ EXPECTED = watchlist()
 # plus a market holiday is four days with no data and nothing wrong.
 STALE_DAYS = 5
 
+# A quote carried forward from hours earlier is still a quote, and the feed hands
+# it over without comment. One contract in a thousand is noise; a tenth of the
+# panel means the hedged gain is measuring a different interval than the spot move
+# it is hedged against. Measured 0.4% beyond 5 minutes on 14-15 Sep 2026, so this
+# has real headroom and should stay quiet unless something changes.
+STALE_QUOTE_MIN = 15
+STALE_QUOTE_PCT = 2.0
+
 # surface.yml's first scheduled run. Before this, an absent surface.csv is
 # correct rather than broken, and must not fail the check.
 SURFACE_START = date(2026, 9, 14)
@@ -82,6 +91,23 @@ def fail(msg):
 def warn(msg):
     warns.append(msg)
     print(f"  WARN  {msg}")
+
+
+def _quote_minutes(stamp):
+    """Minutes past midnight UTC for an RFC-3339 stamp, or None if unparseable.
+
+    The feed writes nanoseconds, which datetime cannot parse, so they are trimmed
+    to microseconds rather than the whole field being discarded.
+    """
+    if not stamp:
+        return None
+    t = stamp.strip().replace("Z", "+00:00")
+    t = re.sub(r"\.(\d{6})\d+", r".\1", t)
+    try:
+        d = datetime.fromisoformat(t).astimezone(timezone.utc)
+    except ValueError:
+        return None
+    return d.hour * 60 + d.minute + d.second / 60.0
 
 
 def rows_of(path):
@@ -166,6 +192,25 @@ def check_surface():
     elif missing:
         warn(f"{days[-1]} is missing {', '.join(missing)}. One quiet name is "
              f"normal; a name absent for several days is not.")
+
+    # Within one day, every contract should carry nearly the same quote time.
+    # The across-day spread is pressure_test.py's warning; this is the other half.
+    newest = [r for r in rows if r["date"] == days[-1].isoformat()]
+    stamps = [_quote_minutes(r.get("quote_time")) for r in newest]
+    stamps = [t for t in stamps if t is not None]
+    if len(stamps) >= 10:
+        mid = sorted(stamps)[len(stamps) // 2]
+        stale = [t for t in stamps if mid - t > STALE_QUOTE_MIN]
+        pct = 100.0 * len(stale) / len(stamps)
+        worst = (mid - min(stamps)) if stamps else 0
+        print(f"  INFO  quote times on {days[-1]}: {pct:.1f}% more than "
+              f"{STALE_QUOTE_MIN} min behind the median, worst {worst:.0f} min")
+        if pct > STALE_QUOTE_PCT:
+            warn(f"{pct:.1f}% of {days[-1]} rows are stale by over "
+                 f"{STALE_QUOTE_MIN} min (worst {worst:.0f} min). A hedged gain "
+                 f"on a stale quote measures a different interval than the spot "
+                 f"move hedging it. Check whether it concentrates in the "
+                 f"low-volume tercile before trusting H4c.")
 
     # H4 needs two consecutive trading days of surface data. Say so plainly,
     # because that milestone is the reason this panel exists at all.
