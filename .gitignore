@@ -6,3 +6,14 @@ log.txt
 data/prices.json
 data/market_vol.json
 data/fred_cache.json
+
+# Licensed vendor data. Bloomberg exports live in ~/Documents/volrec-bloomberg,
+# OUTSIDE this repository, and the tools refuse any path inside it. This is the
+# last line of defence for the day one lands here anyway - which it did on
+# 16 Sep 2026, when the whole folder was moved into the repo root and only
+# pressure_test.py's spreadsheet check caught it before `git add -A`.
+*.xlsx
+*.xls
+*.xlsm
+*.csv.gz
+volrec-bloomberg/

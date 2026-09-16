@@ -76,14 +76,9 @@ _MONTHS = {m: i + 1 for i, m in enumerate(
     ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"])}
 
-# US equity-market closures. Only the ones that can fall inside a window this tool
-# is pointed at; Columbus Day and Veterans Day are deliberately absent because the
-# stock market trades on both.
-HOLIDAYS = {
-    date(2026, 11, 26), date(2026, 12, 25), date(2027, 1, 1), date(2027, 1, 18),
-    date(2027, 2, 15), date(2027, 4, 2), date(2027, 5, 31), date(2027, 6, 18),
-    date(2027, 7, 5), date(2027, 9, 6), date(2027, 11, 25), date(2027, 12, 24),
-}
+# US equity-market closures. Imported rather than copied: panel_health.py owns
+# the single list, and pressure_test.py asserts this file keeps no second one.
+from panel_health import US_MARKET_HOLIDAYS as HOLIDAYS  # noqa: E402
 
 
 def expiry_date(label):
@@ -211,8 +206,20 @@ def main():
     if ROOT in folder.parents or folder == ROOT:
         sys.exit("Refusing to read exports from inside the repository.")
 
-    rows = surface_rows(a.date)
-    spot = {r["symbol"]: float(r["spot"]) for r in rows if r["spot"]}
+    # The day-count test is entirely INTERNAL to the export: it compares
+    # Bloomberg's IVM against Bloomberg's own bid and ask under Bloomberg's own
+    # printed forward and rate. It needs no free-feed data at all. Only the
+    # American tree needs a spot, to infer the carry, so the surface is optional
+    # and its absence is a missing column rather than a dead run. That matters:
+    # on 16 Sep 2026 the recorder did not fire and the export was still fully
+    # measurable.
+    spot = {}
+    try:
+        spot = {r["symbol"]: float(r["spot"])
+                for r in surface_rows(a.date) if r["spot"]}
+    except SystemExit:
+        print(f"(no recorded surface for {a.date}; proceeding without it. "
+              f"--american needs a spot and will be skipped.)\n")
     asof = date.fromisoformat(a.date)
 
     print(f"What time base reproduces Bloomberg's own volatility? {a.date}\n")
@@ -226,16 +233,15 @@ def main():
     for path in sorted(folder.glob(f"*_OMON_{a.date}.xlsx")):
         symbol = path.name.split("_")[0]
         s = spot.get(symbol)
-        if s is None:
-            print(f"{symbol:6}  not in the recorded surface for {a.date}")
-            continue
+        if s is None and a.american:
+            print(f"{symbol:6}  no spot for {a.date}, so no American column")
         for label, blk in sorted(omon_blocks(path).items(), key=lambda x: x[1]["dte"]):
             f_print, r, dte = blk["fwd"], blk["rate"], blk["dte"]
             t_cal = dte / CALENDAR_YEAR
             nbus = business_days(asof, expiry_date(label))
             t_bus = nbus / BUSINESS_YEAR
             f_par = parity_forward(blk["quotes"], f_print, r, t_cal) or f_print
-            carry = r - math.log(f_print / s) / t_cal
+            carry = (r - math.log(f_print / s) / t_cal) if s else None
 
             g365, g252, g252f, cdiv, bdiv, ivm, gamer = [], [], [], [], [], [], []
             for (typ, k), q in sorted(blk["quotes"].items()):
@@ -260,7 +266,7 @@ def main():
                 if ts:
                     cdiv.append(dte / ts)
                     bdiv.append(nbus / ts)
-                if a.american:
+                if a.american and s:
                     av = crr_iv(typ, mid, s, k, t_cal, r, carry)
                     if av:
                         gamer.append(av * 100 - bench)

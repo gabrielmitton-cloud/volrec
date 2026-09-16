@@ -345,6 +345,22 @@ try:
        "session bounds under DST are 13:30-20:00 UTC")
     ok(_phm.session_bounds_utc(_dt.date(2026, 11, 2)) == (14 * 60 + 30, 21 * 60),
        "session bounds after the November shift are 14:30-21:00 UTC")
+    # A missed trading day used to read as HEALTHY: on 16 Sep 2026 no recorder
+    # ran and the only signal was that someone looked. It must FAIL, because
+    # GitHub emails on failures and nothing else.
+    ok(_phm.missed_trading_days(_dt.date(2026, 9, 15)) == [_dt.date(2026, 9, 16)],
+       "a skipped weekday is detected as a missed trading day")
+    ok(_phm.missed_trading_days(_dt.date(2026, 11, 25)) == [] or
+       _dt.date(2026, 11, 26) not in _phm.missed_trading_days(_dt.date(2026, 11, 25)),
+       "Thanksgiving is not counted as a missed trading day")
+    ok(_dt.date(2026, 10, 12) not in _phm.US_MARKET_HOLIDAYS,
+       "Columbus Day is NOT a holiday: the stock market trades")
+    # One holiday list, not two.
+    _mgsrc = (R / "tools/model_gap.py").read_text()
+    ok("from panel_health import US_MARKET_HOLIDAYS" in _mgsrc
+       and "date(2026, 11, 26)" not in _mgsrc,
+       "model_gap imports the holiday list instead of keeping a second copy")
+
     _fl = len(_phm.fails)
     # Deliberately provoking a failure, so its own output is swallowed: a FAIL
     # line printed here would read as a real one.
@@ -372,7 +388,17 @@ ok(phsrc.count("warns.append") == 1 and "return 1" not in phsrc.split("def warn"
    "warnings never change the exit code (an alert that cries wolf stops being read)")
 _ph = subprocess.run([sys.executable, str(R / "tools" / "panel_health.py")],
                      capture_output=True, text=True)
-ok(_ph.returncode == 0, f"panel_health passes against the live panels (exit {_ph.returncode})")
+# This one is about the DATA, not the code. Everything above checks that
+# panel_health is written correctly; this checks what it currently says. A
+# failure here is a real gap in the panels - a missed trading day, a snapshot
+# outside the session - and is fixed by collecting data, never by editing a
+# test. The reason is quoted so it cannot be mistaken for a code regression.
+_ph_reasons = [ln.strip()[6:].split(".")[0]
+               for ln in (_ph.stdout or "").splitlines() if ln.strip().startswith("FAIL")]
+ok(_ph.returncode == 0,
+   "panel_health passes against the live panels"
+   + (f" -- DATA problem, not code: {'; '.join(_ph_reasons)[:160]}"
+      if _ph.returncode else ""))
 
 print("\n=== J. GUARD ORDER ===")
 msrc = (R / "record.py").read_text()
@@ -427,7 +453,19 @@ ok("Refusing to write the summary inside the repository" in bc,
    "refuses to write its summary inside the repo")
 ok("MAX_QUOTE_GAP_MIN" in bc and "MIN_MATCHED" in bc and "MAX_MID_VS_SPREAD" in bc,
    "gates on snapshot gap, matched count and price agreement")
-ok(not list(R.glob("**/*.xlsx")), "no spreadsheet is sitting in the repo")
+_sheets = [q for pat in ("**/*.xlsx", "**/*.xls", "**/*.xlsm")
+           for q in R.glob(pat)]
+ok(not _sheets, "no spreadsheet is sitting in the repo"
+   + (f" (found {', '.join(q.relative_to(R).as_posix() for q in _sheets[:4])})"
+      if _sheets else ""))
+# Defence in depth. On 16 Sep 2026 the whole export folder was moved into the
+# repo root; this check caught it, but only because someone ran the test. A
+# .gitignore entry catches it without anyone running anything, so the entry
+# itself is now a checked invariant rather than a good intention.
+_gi = (R / ".gitignore").read_text()
+ok("*.xlsx" in _gi, ".gitignore blocks spreadsheets even if one lands here")
+ok("volrec-bloomberg/" in _gi,
+   ".gitignore blocks the export folder by name as well as by extension")
 
 print("\n" + "=" * 56)
 print(f"RESULT: {len(fails)} fail, {len(warns)} warn")

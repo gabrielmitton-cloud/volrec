@@ -21,7 +21,7 @@ import ast
 import csv
 import re
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -61,6 +61,19 @@ STALE_DAYS = 5
 # has real headroom and should stay quiet unless something changes.
 STALE_QUOTE_MIN = 15
 STALE_QUOTE_PCT = 2.0
+
+# US equity-market closures. The single list in this repo: tools/model_gap.py
+# imports it rather than keeping a second copy, and pressure_test.py checks that
+# it stays that way. Columbus Day and Veterans Day are deliberately absent
+# because the stock market trades on both.
+US_MARKET_HOLIDAYS = {
+    date(2026, 11, 26), date(2026, 12, 25), date(2027, 1, 1), date(2027, 1, 18),
+    date(2027, 2, 15), date(2027, 4, 2), date(2027, 5, 31), date(2027, 6, 18),
+    date(2027, 7, 5), date(2027, 9, 6), date(2027, 11, 25), date(2027, 12, 24),
+    date(2028, 1, 17), date(2028, 2, 21), date(2028, 4, 14), date(2028, 5, 29),
+    date(2028, 6, 19), date(2028, 7, 4), date(2028, 9, 4), date(2028, 11, 23),
+    date(2028, 12, 25), date(2029, 1, 1),
+}
 
 # surface.yml's first scheduled run. Before this, an absent surface.csv is
 # correct rather than broken, and must not fail the check.
@@ -129,6 +142,38 @@ def session_bounds_utc(day):
         u = datetime(day.year, day.month, day.day, hh, mm, tzinfo=et).astimezone(timezone.utc)
         out.append(u.hour * 60 + u.minute)
     return tuple(out)
+
+
+def missed_trading_days(newest, floor=None):
+    """Trading days after `newest` that have had their chance to land and did not.
+
+    THE FAILURE THIS EXISTS FOR
+    ---------------------------
+    On 16 September 2026 no recorder ran at all - the scheduled trigger was
+    dropped - and this file reported HEALTHY, because the newest day was one day
+    old and STALE_DAYS is five. A silent miss is the worst failure mode there is:
+    every trading day is irreplaceable, and by the close it is gone.
+
+    So a missed trading day FAILS rather than warns. GitHub only emails on a
+    failed run, so a warning would reach nobody, and a miss is both rare and
+    actionable - from November the early freshness slot runs an hour before the
+    close, which is enough time to dispatch the recorder by hand. If this turns
+    out to fire on ordinary days it should be relaxed to a warning, but it has
+    not fired on an ordinary day yet.
+
+    Today counts only once SURFACE_LANDED_HOUR_UTC has passed, because before
+    that an absence proves nothing.
+    """
+    now = now_utc()
+    today = now.date()
+    out, d = [], newest + timedelta(days=1)
+    while d <= today:
+        if (d.weekday() < 5 and d not in US_MARKET_HOLIDAYS
+                and (floor is None or d >= floor)
+                and (d < today or now.hour >= SURFACE_LANDED_HOUR_UTC)):
+            out.append(d)
+        d += timedelta(days=1)
+    return out
 
 
 def check_landing(rows, days):
@@ -205,6 +250,14 @@ def check_atm():
     days, age = day_span(rows)
     print(f"  {len(rows)} rows, {len(days)} days, newest {days[-1]} ({age}d old)")
     check_landing(rows, days)
+    _missed = missed_trading_days(days[-1], floor=None)
+    if _missed:
+        fail(f"{len(_missed)} trading day(s) with no ATM data: "
+             f"{', '.join(d.isoformat() for d in _missed)}. Every trading day is "
+             f"irreplaceable and by the close it is gone. A scheduled trigger that "
+             f"GitHub drops leaves NO failed run and no trace in the Actions tab, "
+             f"so this check is the only thing that notices. If the market is "
+             f"still open, dispatch the workflow by hand now.")
     if age > STALE_DAYS:
         return fail(f"STALE: no ATM snapshot in {age} days. The recorder has "
                     f"stopped. Check the Actions tab - GitHub disables "
@@ -245,6 +298,14 @@ def check_surface():
     print(f"  {len(rows)} rows, {len(days)} days, {len(syms)} symbols, "
           f"newest {days[-1]} ({age}d old)")
     check_landing(rows, days)
+    _missed = missed_trading_days(days[-1], floor=SURFACE_START)
+    if _missed:
+        fail(f"{len(_missed)} trading day(s) with no surface data: "
+             f"{', '.join(d.isoformat() for d in _missed)}. Every trading day is "
+             f"irreplaceable and by the close it is gone. A scheduled trigger that "
+             f"GitHub drops leaves NO failed run and no trace in the Actions tab, "
+             f"so this check is the only thing that notices. If the market is "
+             f"still open, dispatch the workflow by hand now.")
 
     if age > STALE_DAYS:
         fail(f"STALE: no surface rows in {age} days.")
