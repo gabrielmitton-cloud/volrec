@@ -1116,10 +1116,11 @@ pressure test.
 | `analyze.py` | shared estimators. Both samples import from here, deliberately. |
 | `modelfree.py` | Cboe's variance methodology, and the gap against the published index |
 | `hedged.py` | per-contract delta-hedged P&L, the strike-specific outcome |
-| `tools/pressure_test.py` | 64 read-only integrity checks. Run before and after anything. |
+| `tools/pressure_test.py` | 75 read-only integrity checks. Run before and after anything. |
 | `tools/panel_health.py` | did the *data* arrive? Run daily by `freshness.yml`; also runnable by hand. |
 | `index.html`, `tools/monitor.html` | the public site: the paper and the live instrument. Both read the repository client-side. |
 | `tools/volrec.js` | the site's shared runtime. It mirrors the health rules, and the pressure test catches drift. |
+| `tools/bloomberg_compare.py` | matches a Bloomberg OMON export against the free feed, contract by contract. Reads and writes only outside the repo. |
 | `tools/test_hedged.py` | 18 hand-computed cases for the hedging math |
 | `tools/fred.py` | FRED client, used for the discount rate |
 

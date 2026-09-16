@@ -306,6 +306,16 @@ ok(f'V.SURFACE_START = "{int(_start[0]):04d}-{int(_start[1]):02d}-{int(_start[2]
 ok(not re.search(r"bloomberg", site + mon + idx.replace("derived from Bloomberg", ""), re.I),
    "the site reads no Bloomberg-derived data")
 
+print("\n=== L. BLOOMBERG COMPARISON (licensed data must never enter the repo) ===")
+bc = (R / "tools/bloomberg_compare.py").read_text()
+ok("Refusing to read exports from inside the repository" in bc,
+   "refuses to read exports from inside the repo")
+ok("Refusing to write the summary inside the repository" in bc,
+   "refuses to write its summary inside the repo")
+ok("MAX_QUOTE_GAP_MIN" in bc and "MIN_MATCHED" in bc and "MAX_MID_VS_SPREAD" in bc,
+   "gates on snapshot gap, matched count and price agreement")
+ok(not list(R.glob("**/*.xlsx")), "no spreadsheet is sitting in the repo")
+
 print("\n" + "=" * 56)
 print(f"RESULT: {len(fails)} fail, {len(warns)} warn")
 for f in fails: print("  FAIL:", f)
