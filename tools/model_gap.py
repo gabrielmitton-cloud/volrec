@@ -232,6 +232,7 @@ def main():
     seen = False
     pooled_bus, pooled_cal, pooled_g365, pooled_g252 = [], [], [], []
     block_div = []
+    block_pred = []
     for _date in dates:
       spot = {}
       try:
@@ -289,6 +290,14 @@ def main():
             pooled_cal.extend(cdiv)
             if cdiv and bdiv:
                 block_div.append((dte, st.median(cdiv), st.median(bdiv)))
+            # The falsification test. Predict the gap from the clock ALONE, with
+            # no fitted parameter: matching one price under two time bases gives
+            # sigma_365 / sigma_252 = sqrt(T_bus / T_cal), so the gap in points is
+            # IVM * (sqrt(T_bus/T_cal) - 1). If the clock is the explanation, a
+            # regression of observed on predicted has slope 1 and intercept 0.
+            if ivm and g365:
+                block_pred.append((st.median(ivm) * ((t_bus / t_cal) ** 0.5 - 1),
+                                   st.median(g365)))
             pooled_g365.append(m(g365))
             pooled_g252.append(m(g252))
             line = ((f"{_date:11}" if len(dates) > 1 else "")
@@ -353,6 +362,32 @@ def main():
             print(f"    {name:9} median {st.median(ys):6.1f} "
                   f"({st.median(ys) - ref:+6.1f} from {ref:.0f})  "
                   f"slope {b1:+.4f}/day  t={t:+5.2f}   {verdict}")
+    if len(block_pred) >= 4:
+        xs = [x for x, _y in block_pred]
+        ys = [y for _x, y in block_pred]
+        n = len(xs)
+        mx, my = sum(xs) / n, sum(ys) / n
+        sxx = sum((x - mx) ** 2 for x in xs)
+        if sxx > 0:
+            b1 = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sxx
+            b0 = my - b1 * mx
+            res = [y - (b0 + b1 * x) for x, y in zip(xs, ys)]
+            sst = sum((y - my) ** 2 for y in ys)
+            se = ((sum(e * e for e in res) / (n - 2) / sxx) ** 0.5) if n > 2 else 0
+            r2 = 1 - sum(e * e for e in res) / sst if sst else float("nan")
+            print(f"\n  the clock predicts the gap with NO fitted parameter "
+                  f"({n} blocks)")
+            print(f"    predicted = IVM * (sqrt(T_bus/T_cal) - 1), regressed on observed")
+            print(f"    slope {b1:.3f} (se {se:.3f})   intercept {b0:+.2f}   "
+                  f"R^2 {r2:.3f}   mean |resid| "
+                  f"{sum(abs(e) for e in res) / n:.2f} pts")
+            print(f"    a pure clock effect predicts slope 1.000 and intercept 0.00; "
+                  f"t vs 1.0 = {((b1 - 1) / se) if se else float('nan'):+.2f}")
+            print("    NOTE: use each window's OWN trading-day count. The rule of")
+            print("    thumb '30 calendar days ~ 21 trading days' is the average")
+            print("    density (30*252/365 = 20.7); an actual Wed-to-Fri 30-day")
+            print("    window holds 22, and that one day is worth ~1 vol point at")
+            print("    a 44 IV. Using the rule of thumb understates the gap ~5x.")
     print("Bloomberg figures: Source: Bloomberg Finance L.P.")
     return 0
 

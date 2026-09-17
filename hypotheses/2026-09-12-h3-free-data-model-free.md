@@ -296,6 +296,115 @@ caught the same day rather than discovered later.
 
 Bloomberg figures: Source: Bloomberg Finance L.P.
 
+## The day count, reviewed against the literature 16 September 2026 — NOT a discovery
+
+A commissioned research pass was run specifically to ask whether the day-count
+result is novel. **It is not, and the framing above is corrected here rather than
+left standing.** This section supersedes any reading of the two sections above as
+a finding.
+
+### What the literature says, and it is decisive on novelty
+
+Trading-time against calendar-time annualisation of option volatility is textbook
+material, not a discovery:
+
+- **French (1984)**, "The weekend effect on the distribution of stock prices,"
+  *JFE* — the seminal treatment: variance accrues in trading time while interest
+  accrues in calendar time.
+- **Hull**, *Options, Futures and Other Derivatives*, and **Natenberg**, *Option
+  Volatility and Pricing* — both state the distinction directly. Natenberg
+  annualises daily volatility by sqrt(252).
+- **Cboe's own methodologies disagree with each other on purpose.** VIX uses
+  calendar minutes over 525,600 (= 365 x 24 x 60). **VIX1D uses business time**,
+  and Cboe documents that as a deliberate departure.
+- **Albers & Kestner (2024)**, *Finance Research Letters* — names the divide
+  outright, attributing the VIX day-of-week bias to "the mismatch between the
+  options' time to maturity calculated using the market convention (business days,
+  i.e. 252 days) and Cboe's method for those indices (calendar days, i.e. 365)."
+- **OCC filing SR-OCC-2024-016** (approved SEC Release 34-102203, Jan 2025) — a
+  clearinghouse discovered it was running a calendar-day clock for price smoothing
+  and a trading-day clock for implied volatility simulation, and filed to align
+  them. A regulator treated exactly this mismatch as material.
+
+**So the mechanism is documented at textbook, peer-reviewed and regulatory level.
+Do not write this up as a finding.** The correct framing is a *reconciliation
+note*: two specific feeds disagree, here is the arithmetic that closes it, here is
+why anyone comparing vendor implied volatilities should check the clock first.
+
+*Provenance: these citations come from a commissioned research pass on 16 Sep 2026.
+French, Hull, Natenberg and the VIX calendar-minute convention I can confirm
+independently. Albers & Kestner, the OCC filing numbers and the VIX1D business-time
+claim are* **not independently verified** *and must be checked before any of them
+is cited in print.*
+
+### The arithmetic challenge, and why it does not survive
+
+The same research pass argued the magnitude was impossible: a clean 252-vs-365
+difference at 30 days gives only about 0.2 volatility points, roughly eight times
+smaller than observed, so something other than a day count must be at work.
+
+**That argument rests on a rule of thumb, and the rule of thumb is wrong for these
+windows.** It assumes 30 calendar days contain about 21 trading days - the average
+density, 30 x 252/365 = 20.7. The windows actually measured contain **22 and 23**,
+because of where the weekends fall. One trading day is about 4.5% of T and 2.3% of
+volatility, which at TSLA's 43.6 IV is roughly a full point:
+
+| window | T_cal | T_bus | predicted gap at IVM 43.6 |
+|---|---|---|---|
+| 30 cal / **21** bus (the rule of thumb) | 0.08219 | 0.08333 | +0.30 |
+| 30 cal / **22** bus (actual, 16 Sep) | 0.08219 | 0.08730 | **+1.33** |
+| 31 cal / **23** bus (actual, 15 Sep) | 0.08493 | 0.09127 | **+1.60** |
+
+### The test that settles it, with no fitted parameter
+
+Matching one price under two time bases forces
+`sigma_365 / sigma_252 = sqrt(T_bus / T_cal)`, so the gap in points is predicted by
+
+    IVM * ( sqrt(T_bus / T_cal) - 1 )
+
+using **each window's own trading-day count**. Nothing here is fitted. Regressing
+the observed gap on that prediction across all ten blocks:
+
+| | |
+|---|---|
+| slope | **1.013** (se 0.131) |
+| t against the predicted 1.000 | **+0.10** |
+| intercept | +0.08 |
+| R-squared | **0.881** |
+| mean absolute residual | **0.13** volatility points |
+
+Ten blocks, three symbols, two days, implied volatility from 13.5 to 54.8, maturity
+30 to 66 days. The clock alone explains 88% of the variation in the gap with no
+free parameter, and the slope is indistinguishable from one.
+
+**This meets the research pass's own stated falsification criterion** - that the gap
+must scale with tenor as sqrt(T) to be a clock artifact rather than something else.
+It does. `tools/model_gap.py` prints this test on every run.
+
+### What is still NOT established, and must not be asserted
+
+- **Bloomberg does not publish IVM's day-count basis.** 252 is *inferred from
+  prices here*, and no Bloomberg document has been found stating it. The research
+  pass found the opposite-leaning observable: an OVME ticket displaying a
+  calendar-day "Time to Expiry" counter. A displayed tenor is not the same thing as
+  an annualisation basis, but it is a real reason for caution.
+- **The Help Desk reply is the missing primary source.** It is asked for in the
+  email sent to Marc Vinyard on 16 Sep and is ask 3 in `BLOOMBERG-MONDAY.md`.
+  Until it arrives, every statement about Bloomberg's convention is an inference.
+- **Every block is 30 to 66 days.** The long-dated pull is still the test that can
+  break this, because the two clocks converge as maturity grows.
+
+### One correction to the record
+
+An earlier proposal in this session was to promote "convention, not quality" to a
+co-headline of the project. **That proposal is withdrawn.** It was made before this
+literature review and it is wrong: the mechanism is textbook. The measurement
+stands, the framing does not, and H3's actual claim - that a model-free estimate
+built from free data tracks the published Cboe index - is untouched either way,
+because `modelfree.py` integrates prices and never reads an implied volatility.
+
+Bloomberg figures: Source: Bloomberg Finance L.P.
+
 ## Multiple testing, pre-registered 2026-09-16 — before the series exists
 
 H1 had FDR control added *after* it was tested, which is logged there and is the
