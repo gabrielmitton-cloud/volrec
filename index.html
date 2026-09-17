@@ -685,9 +685,9 @@
     const h4 = !surf ? ["waiting", "Waiting for data", "Needs two consecutive days of strike-surface data, from Tuesday 15 September at the earliest."]
       : surf.h4ready ? ["ready", "Testable now", surf.h4] : ["waiting", "Waiting for data", surf.h4 || surf.msg];
     const rows = [
-      ["H1", "The volatility risk premium is positive on the Cboe index family, 2016 to 2026.", "6 Sep 2026", ["tested", "Tested, holds"], ["9 of 11 pairs", "VIX/SPY t = 5.14"], "2026-09-06-h1-vrp-long-sample.md"],
+      ["H1", "The volatility risk premium is positive on the Cboe index family, 2016 to 2026.", "6 Sep 2026", ["tested", "Tested, holds"], ["9 of 11 pairs survive FDR control", "VIX/SPY t = 5.14, weakest survivor adj p = 0.019"], "2026-09-06-h1-vrp-long-sample.md"],
       ["H2", "The premium is better measured in variance than in volatility, following Carr and Wu (2009).", "9 Sep 2026", ["tested", "Tested, not adopted"], ["log variance t = 16.26", "volatility 9.28, raw variance 2.14"], "2026-09-09-h2-variance-formulation.md"],
-      ["H3", "A model-free estimate built from free data reproduces the published Cboe index.", "12 Sep 2026", ["calibrated", "Calibrated on one day"], ["0.59 mean gap at ±30%", "tested on the series from 14 Sep"], "2026-09-12-h3-free-data-model-free.md"],
+      ["H3", "A model-free estimate built from free data reproduces the published Cboe index.", "12 Sep 2026", ["calibrated", "Calibrated on one day"], ["0.59 mean gap at ±30%, one day", "series started 14 Sep, 3 days so far"], "2026-09-12-h3-free-data-model-free.md"],
       ["H4", "Delta-hedged gains are negative, vary across the strike surface, and relate to where volume sits.", "13 Sep 2026", [h4[0], h4[1]], ["registered before any data", h4[2]], "2026-09-13-h4-hedged-gains-across-the-surface.md"]
     ];
     rows.forEach(([id, claim, reg, st, ev, file]) => {

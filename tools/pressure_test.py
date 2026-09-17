@@ -105,14 +105,26 @@ times = {}
 for r in rows:
     if r.get("quote_time"):
         times.setdefault(r["date"], []).append(r["quote_time"][11:16])
+# Judged over a ROLLING WINDOW, not all history. The cron moved once, on
+# 16 Sep 2026, so the full-history spread contains a deliberate step change that
+# would keep this warning lit forever - and a warning that is always on is one
+# nobody reads. A rolling window lets a one-time schedule change age out while
+# genuine ongoing drift still fires. Full history is printed as context.
+DRIFT_WINDOW_DAYS = 10
 if len(times) >= 2:
     mids = {d: sorted(v)[len(v) // 2] for d, v in times.items()}
     mins = {d: int(t[:2]) * 60 + int(t[3:]) for d, t in mids.items()}
-    spread = max(mins.values()) - min(mins.values())
     for dd, t in sorted(mids.items()):
         print(f"  {dd}  median quote {t}Z")
-    warn(spread <= 60, f"snapshot time spread across days is {spread} min "
-                       f"(>60 breaks comparability; control for it or split the sample)")
+    recent = [mins[d] for d in sorted(mins)[-DRIFT_WINDOW_DAYS:]]
+    spread = max(recent) - min(recent)
+    full = max(mins.values()) - min(mins.values())
+    if full != spread:
+        print(f"  full history spans {full} min; judging the last "
+              f"{len(recent)} day(s), which span {spread} min")
+    warn(spread <= 60, f"snapshot time spread over the last {len(recent)} day(s) "
+                       f"is {spread} min (>60 breaks comparability; control for "
+                       f"it or split the sample)")
 elif times:
     d0, t0 = next(iter(sorted(times.items())))
     print(f"  only one day with quote_time so far ({d0}, median "

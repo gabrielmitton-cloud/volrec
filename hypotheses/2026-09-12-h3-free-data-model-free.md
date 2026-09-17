@@ -3,7 +3,8 @@
 **Registered:** 2026-09-12, after the estimator was built and before any series
 exists to test it on. The single-day calibration below is reported honestly as
 calibration, not as a test of the hypothesis.
-**Status:** registered. Calibrated on one day. Not yet tested on a series.
+**Status:** registered. Calibrated on one day. **The series began 14 Sep and has
+3 days as of 17 Sep** - see "The series so far". Not yet long enough to test H3a.
 Cross-checked against Bloomberg 15-16 Sep; the volatility gap is identified
 as a day-count convention and does not touch the estimator.
 **Sample:** the strike surface in `data/surface.csv`, which begins accumulating
@@ -80,6 +81,60 @@ against 21.02 (-0.23), GLD 25.36 against 25.68 (-0.32), IWM 20.51 against 19.98
 **This is one day and five underlyings. It sets the configuration; it does not
 test H3.** A single day cannot distinguish a method that works from a method
 that happened to land. The hypothesis is tested on the accumulated series.
+
+## The series so far, 17 September 2026 - first run on accumulated data
+
+`modelfree.py` had not been run since the 11 September calibration. Run on the
+three recorded days (14, 15, 17 Sep; 16 Sep was lost to a dropped scheduled run):
+
+| underlying | n | mean gap | min | max |
+|---|---|---|---|---|
+| GLD | 2 | +0.04 | -0.19 | +0.26 |
+| IWM | 2 | +0.32 | +0.27 | +0.38 |
+| QQQ | 2 | -0.18 | -0.21 | -0.16 |
+| SPY | 2 | -0.10 | -0.18 | -0.01 |
+| **USO** | 2 | **-2.93** | **-3.56** | -2.31 |
+
+Pooled mean gap **-0.57** volatility points over n=10. **Mean absolute gap 0.75**,
+against H3a's registered threshold of 1.0. 17 September computed on our side but
+Cboe had not published that day's closes at the time of the run, so it contributes
+no gap yet; AAPL, NVDA and TSLA have no Cboe index and never will.
+
+**H3a is passing, and one underlying is carrying it.** USO contributes 5.87 of the
+7.53 total absolute gap - **78% of the error from one of five underlyings** - and
+it is getting worse: -1.84 at calibration, then -2.31, then -3.56.
+
+**This is H3c happening in real time, and it is a risk to H3a.** A fixed +/-30%
+band is not a fixed amount of information. Measured on 17 September, in units of
+each underlying's own 30-day standard deviation:
+
+| underlying | ATM IV | 30d 1-sigma | sigmas covered, down / up |
+|---|---|---|---|
+| SPY | 13.1% | 3.2% | 11.0 / 8.1 |
+| QQQ | 16.9% | 4.2% | 8.4 / 6.3 |
+| IWM | 17.3% | 4.2% | 7.9 / 6.1 |
+| GLD | 22.7% | 5.6% | 6.3 / 4.6 |
+| AAPL | 23.3% | 5.7% | 6.2 / 4.5 |
+| NVDA | 31.2% | 7.7% | 4.5 / 3.4 |
+| TSLA | 42.3% | 10.4% | 3.3 / 2.5 |
+| **USO** | **50.8%** | **12.5%** | **2.8 / 2.0** |
+
+Cboe integrates until it observes two consecutive zero bids, which is effectively
+the whole listed chain. This project truncates USO at **two standard deviations on
+the upside** and SPY at eight. That is exactly the mechanism H3c predicts, and the
+gap column above is what it costs.
+
+**Nothing has been changed in response.** The +/-30% x 40 grid is the frozen
+specification and it stays frozen; this is recorded as a measurement, not as a
+reason to re-cut anything mid-series. The open question - whether to *record* a
+volatility-scaled band while continuing to *analyse* the frozen one - is put to
+Gabriel in the session notes and is not decided here.
+
+**Why it cannot wait indefinitely.** Cboe's index history is retrievable back to
+1990 from the same CDN, so the benchmark side of any missed day can be backfilled.
+Alpaca's free feed serves only the present. **Every day recorded at +/-30% is
+permanently a +/-30% day**, so if H3c is ever to be tested rather than asserted,
+the wider data has to be recorded while the days are happening.
 
 ## The Bloomberg cross-check, 15 September 2026 - one matched day
 

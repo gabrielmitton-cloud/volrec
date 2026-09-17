@@ -25,3 +25,7 @@ volrec-bloomberg/
 # Cboe indices under permission and requires citation: derived values may be
 # published, the raw series may NOT be mirrored here. See tools/fred.py.
 analysis/data/
+
+# Strict subset of the full benchmark result; regenerable, and committing
+# both invites them drifting apart.
+analysis/out/baselines_only.csv

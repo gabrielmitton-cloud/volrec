@@ -128,7 +128,12 @@ def main():
     logv = np.log(load_vix())
     out = evaluate(logv, start=args.start, use_timesfm=not args.no_timesfm)
     os.makedirs("analysis/out", exist_ok=True)
-    out.to_csv("analysis/out/timesfm_vix_baseline.csv", index=False)
+    # --no-timesfm must NOT overwrite the full run's output. It writes a strictly
+    # smaller table (no timesfm column) and clobbering the real result with it
+    # silently destroys the committed record -- which is exactly what happened
+    # once during a "run every tool" sweep on 17 Sep 2026.
+    stem = "timesfm_vix_baseline" if "timesfm" in out else "baselines_only"
+    out.to_csv(f"analysis/out/{stem}.csv", index=False)
     table, verdict = summarize(out)
     print(f"// VIX {H}D-AHEAD   origins={len(out)}   {out['date'].min():%Y-%m} to {out['date'].max():%Y-%m}")
     print(table.round(4).to_string())

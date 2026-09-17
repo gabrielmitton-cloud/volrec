@@ -4,7 +4,7 @@ Context for anyone (or any assistant session) picking this project up cold.
 Read this before proposing changes. It records not just the current state but
 the reasoning behind decisions already made, so they don't get re-argued.
 
-Last updated: 16 September 2026.
+Last updated: 17 September 2026.
 
 **START AT §16.** It is the current state and the next actions, and it is the
 only section guaranteed to be current. Everything before it is either settled
@@ -1448,6 +1448,42 @@ untouched** - `modelfree.py` integrates prices and never reads an implied
 volatility - and the research pass incidentally confirms the core mission is the
 distinctive part: the *free-data-cost* question is not well-trodden, while the
 *IV-convention* question is.
+
+### The Bloomberg licensing question is ANSWERED — 17 September 2026
+
+Marc Vinyard (Pepperdine business librarian, who administers the subscription)
+replied: *"You can publish an article that cites Bloomberg data as the source of
+your information, but you cannot add the raw Bloomberg data to an open access
+repository. That would be a violation of our contract with Bloomberg."*
+
+That is exactly the rule this repo has been operating under since 14 Sep, now
+confirmed by the person who can confirm it. **Action 2 below - the Bloomberg
+result on the public site - is unblocked**, aggregates only, with "Source:
+Bloomberg Finance L.P." beside any figure. Raw per-contract data stays out, which
+`.gitignore` and `pressure_test.py` now both enforce.
+
+He also answered the two OMON mechanics questions. The top bar reads
+`335.49 Strikes 5 Exp 18 Sep 26`: **`Strikes` and `Exp` are separate amber input
+fields**, so a long-dated pull means setting `Exp` FIRST and the strike count
+second. Open interest is added through `Settings > Edit Columns`. The IVM
+day-count question goes to the desk through `?` then `Live Help`, which is a live
+chat and the fastest route to the written primary source H3 still lacks.
+
+### The strike band is the one open decision — 17 September 2026
+
+`modelfree.py` was run on accumulated data for the first time since calibration.
+H3a is passing at a mean absolute gap of 0.75 against a threshold of 1.0, and
+**USO alone contributes 78% of the error**, worsening from -1.84 to -3.56.
+
+The cause is measured, not guessed: the fixed +/-30% band covers **11.0 sigmas on
+SPY and 2.0 on USO**. See H3, "The series so far".
+
+**Nothing has been changed.** The frozen grid stays frozen. The open question is
+whether to *record* a volatility-scaled band, `max(30%, 4 sigma)`, while
+continuing to *analyse* the frozen +/-30% subset - which is additive, leaves every
+registered number reproducible by a one-line moneyness filter, and touches only
+USO, TSLA and NVDA. It matters because Cboe backfills to 1990 and Alpaca does not:
+**a day recorded at +/-30% is permanently a +/-30% day.** Awaiting Gabriel.
 
 ### The window this is all aimed at
 
