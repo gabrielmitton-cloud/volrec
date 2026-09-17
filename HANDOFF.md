@@ -1091,6 +1091,72 @@ first has collected a single real row is how both end up unfinished. Revisit
 once the surface has accumulated and H3 has been tested on a series rather than
 a single day.
 
+### 15.3 The benchmark was built on 17 September 2026 — with the condition NOT met
+
+`analysis/timesfm_vix_baseline.py` exists. Recording plainly that **the revisit
+condition above was not satisfied when it was built**: the surface had three days
+and H3 is still a one-day calibration, not a tested series. Gabriel asked for it
+directly and the cost is contained, but the condition is written down so the
+departure is visible rather than quietly forgotten.
+
+**What was kept from 15.2, which is everything that mattered:**
+
+- It never touches `data/iv_history.csv` or `data/surface.csv`. It runs on **FRED
+  VIXCLS only**, 30+ years, where there is real statistical power.
+- **Nothing is trained.** Zero-shot, so there is no overfitting exposure.
+- **Origins step by 21 trading days — non-overlapping**, which is the same
+  discipline HANDOFF 4.2(a) forces on everything else.
+- **TimesFM 2.5 weights (Apache-2.0).** Never 3.0, which is non-commercial and
+  would collide with publishing.
+- **A pre-registered bar**: beat HAR by >= 5% on log-RMSE *and* win >= 55% of
+  origins. A FAIL is a planned, reportable negative result.
+
+**The question is different from 15.2's and arguably better posed.** 15.2 proposed
+benchmarking against Qiu et al. (2025) on their data. This benchmarks against
+**HAR** (Corsi 2009) on FRED, which is the standard baseline in volatility
+forecasting and has cleaner provenance than a third-party GitHub repo. The Qiu
+route remains open and is the natural follow-up if this one passes.
+
+It lives in `analysis/` with its own `.venv`. `requirements.txt` is untouched: the
+pipeline is still stdlib plus `requests`, and nothing in `analysis/` is imported by
+anything that runs unattended.
+
+### 15.4 Result, 17 September 2026 — TimesFM FAILS the pre-registered bar
+
+225 non-overlapping origins, January 2008 to July 2026, FRED VIXCLS. Forecasting
+the mean of log VIX over the next 21 trading days.
+
+| model | log RMSE | log MAE | median err | p90 err | max err |
+|---|---|---|---|---|---|
+| random walk | 0.1561 | 0.1189 | 0.0938 | 0.2603 | 0.5638 |
+| **HAR** (Corsi 2009) | **0.1461** | 0.1106 | 0.0884 | **0.2256** | **0.5507** |
+| TimesFM 2.5 zero-shot | 0.1518 | **0.1101** | **0.0850** | 0.2388 | 0.6723 |
+
+**Verdict: RMSE gain -3.9%, wins 52.9% of origins. FAILS on both legs of the bar**
+(needed >= +5% and >= 55%). Reported as a negative result, which is what the
+pre-registration existed to make possible.
+
+**The interesting part is not the FAIL, it is the shape of it.** TimesFM has the
+**lowest MAE and the lowest median error** of the three, and the **worst maximum
+error** of the three. It is slightly better than HAR on a typical month and clearly
+worse in the tail - on the ten origins where HAR struggles most, TimesFM wins only
+4 of 10. For a volatility application that is exactly the wrong trade, and it is
+why the bar was written on RMSE rather than MAE before any of this was seen. Had
+the bar been MAE, the same run would have "passed".
+
+It does beat the random walk (0.1518 against 0.1561), so it is not useless. It is
+beaten by a three-parameter linear regression from 2009.
+
+**The sentence this earns:** *a 200-million-parameter pretrained foundation model,
+zero-shot, does not beat a three-parameter linear regression at forecasting VIX,
+and the way it loses is by being worse precisely when volatility does something
+unusual.* That is a better interview answer than a pass would have been, and it
+cost one afternoon.
+
+Raw FRED series stays out of the repo (`analysis/data/` is gitignored); the
+per-origin forecasts in `analysis/out/` are derived values and may be published
+with citation. Source: FRED (VIXCLS), Cboe.
+
 ---
 
 ## 16. State as of 12 September 2026 — SUPERSEDED BY SECTION 17

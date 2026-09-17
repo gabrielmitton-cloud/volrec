@@ -348,8 +348,13 @@ try:
     # A missed trading day used to read as HEALTHY: on 16 Sep 2026 no recorder
     # ran and the only signal was that someone looked. It must FAIL, because
     # GitHub emails on failures and nothing else.
-    ok(_phm.missed_trading_days(_dt.date(2026, 9, 15)) == [_dt.date(2026, 9, 16)],
+    # Written date-independently on purpose: the first version asserted the result
+    # was exactly [16 Sep], which was true only on 16 Sep and failed the next day.
+    _m = _phm.missed_trading_days(_dt.date(2026, 9, 15))
+    ok(_dt.date(2026, 9, 16) in _m,
        "a skipped weekday is detected as a missed trading day")
+    ok(not any(d.weekday() >= 5 for d in _m),
+       "weekends are never counted as missed trading days")
     ok(_phm.missed_trading_days(_dt.date(2026, 11, 25)) == [] or
        _dt.date(2026, 11, 26) not in _phm.missed_trading_days(_dt.date(2026, 11, 25)),
        "Thanksgiving is not counted as a missed trading day")
@@ -460,8 +465,13 @@ ok("Refusing to write the summary inside the repository" in bc,
    "refuses to write its summary inside the repo")
 ok("MAX_QUOTE_GAP_MIN" in bc and "MIN_MATCHED" in bc and "MAX_MID_VS_SPREAD" in bc,
    "gates on snapshot gap, matched count and price agreement")
+# Skip vendored trees. The analysis venv holds thousands of third-party files and
+# any one of them could ship a test spreadsheet, which would fail this check for a
+# reason that has nothing to do with Bloomberg data.
+_VENDORED = (".venv", "venv", "node_modules", "__pycache__", ".git")
 _sheets = [q for pat in ("**/*.xlsx", "**/*.xls", "**/*.xlsm")
-           for q in R.glob(pat)]
+           for q in R.glob(pat)
+           if not any(part in _VENDORED for part in q.relative_to(R).parts)]
 ok(not _sheets, "no spreadsheet is sitting in the repo"
    + (f" (found {', '.join(q.relative_to(R).as_posix() for q in _sheets[:4])})"
       if _sheets else ""))

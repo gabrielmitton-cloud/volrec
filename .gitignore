@@ -17,3 +17,11 @@ data/fred_cache.json
 *.xlsm
 *.csv.gz
 volrec-bloomberg/
+
+# The analysis venv. timesfm[torch] is ~3 GB and must never reach a public repo.
+.venv/
+
+# Raw FRED series cached by analysis/timesfm_vix_baseline.py. FRED redistributes
+# Cboe indices under permission and requires citation: derived values may be
+# published, the raw series may NOT be mirrored here. See tools/fred.py.
+analysis/data/
