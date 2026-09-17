@@ -144,6 +144,42 @@ def session_bounds_utc(day):
     return tuple(out)
 
 
+# A trading day that is gone, and that has been accepted as gone. Without this the
+# missed-day check below fails on every run, forever, over a day nobody can bring
+# back - and an alarm that fires every day stops being read, which is how the next
+# real miss gets ignored. Adding a date here is a decision about irreplaceable data,
+# so each one carries the reason it was accepted and who accepted it.
+ACCEPTED_GAPS = {
+    date(2026, 9, 16): ("GitHub dropped both scheduled runs. The cron was edited at "
+                        "15:49 UTC, after the old slot had passed and before the new "
+                        "one took effect, so the day fell between schedules. Accepted "
+                        "by Gabriel the same evening rather than dispatching after the "
+                        "close, which would have written a non-comparable snapshot into "
+                        "the panel."),
+}
+
+
+def report_missed(kind, missed):
+    """Fail on trading days lost silently; note the ones already accepted.
+
+    An accepted gap stays visible on every run - it is still missing data, and the
+    write-up has to say so - but it does not fail the check, so the daily alarm keeps
+    meaning "something happened today".
+    """
+    for d in missed:
+        if d in ACCEPTED_GAPS:
+            print(f"  INFO  {d.isoformat()} has no {kind} data. Accepted: {ACCEPTED_GAPS[d]}")
+    unexplained = [d for d in missed if d not in ACCEPTED_GAPS]
+    if unexplained:
+        fail(f"{len(unexplained)} trading day(s) with no {kind} data: "
+             f"{', '.join(d.isoformat() for d in unexplained)}. Every trading day is "
+             f"irreplaceable and by the close it is gone. A scheduled trigger that "
+             f"GitHub drops leaves NO failed run and no trace in the Actions tab, "
+             f"so this check is the only thing that notices. If the market is "
+             f"still open, dispatch the workflow by hand now. If the day is already "
+             f"lost, record it in ACCEPTED_GAPS with the reason.")
+
+
 def missed_trading_days(newest, floor=None):
     """Trading days after `newest` that have had their chance to land and did not.
 
@@ -250,14 +286,7 @@ def check_atm():
     days, age = day_span(rows)
     print(f"  {len(rows)} rows, {len(days)} days, newest {days[-1]} ({age}d old)")
     check_landing(rows, days)
-    _missed = missed_trading_days(days[-1], floor=None)
-    if _missed:
-        fail(f"{len(_missed)} trading day(s) with no ATM data: "
-             f"{', '.join(d.isoformat() for d in _missed)}. Every trading day is "
-             f"irreplaceable and by the close it is gone. A scheduled trigger that "
-             f"GitHub drops leaves NO failed run and no trace in the Actions tab, "
-             f"so this check is the only thing that notices. If the market is "
-             f"still open, dispatch the workflow by hand now.")
+    report_missed("ATM", missed_trading_days(days[-1], floor=None))
     if age > STALE_DAYS:
         return fail(f"STALE: no ATM snapshot in {age} days. The recorder has "
                     f"stopped. Check the Actions tab - GitHub disables "
@@ -298,14 +327,7 @@ def check_surface():
     print(f"  {len(rows)} rows, {len(days)} days, {len(syms)} symbols, "
           f"newest {days[-1]} ({age}d old)")
     check_landing(rows, days)
-    _missed = missed_trading_days(days[-1], floor=SURFACE_START)
-    if _missed:
-        fail(f"{len(_missed)} trading day(s) with no surface data: "
-             f"{', '.join(d.isoformat() for d in _missed)}. Every trading day is "
-             f"irreplaceable and by the close it is gone. A scheduled trigger that "
-             f"GitHub drops leaves NO failed run and no trace in the Actions tab, "
-             f"so this check is the only thing that notices. If the market is "
-             f"still open, dispatch the workflow by hand now.")
+    report_missed("surface", missed_trading_days(days[-1], floor=SURFACE_START))
 
     if age > STALE_DAYS:
         fail(f"STALE: no surface rows in {age} days.")

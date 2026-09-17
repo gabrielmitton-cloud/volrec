@@ -400,6 +400,13 @@ ok(_ph.returncode == 0,
    + (f" -- DATA problem, not code: {'; '.join(_ph_reasons)[:160]}"
       if _ph.returncode else ""))
 
+ok("ACCEPTED_GAPS" in phsrc and "report_missed" in phsrc,
+   "a lost trading day can be accepted, so the daily alarm does not cry wolf forever")
+_acc = re.findall(r"date\((\d{4}), (\d+), (\d+)\): \(", phsrc)
+ok(len(_acc) <= 5, f"accepted gaps stay few ({len(_acc)}); this is not a dumping ground")
+ok(all(len(m) > 80 for m in re.findall(r"date\(\d{4}, \d+, \d+\): \((.*?)\),\n", phsrc, re.S)),
+   "every accepted gap records why it was accepted")
+
 print("\n=== J. GUARD ORDER ===")
 msrc = (R / "record.py").read_text()
 ok(0 < msrc.find("is_trading_day(s, today)") < msrc.find("if rows:"),
