@@ -1361,6 +1361,26 @@ for both H4 claims if the effects are near what one night suggested, and not
 adequate for effects half that size. Nothing about the predictions changes either
 way; this is for planning what the write-up can honestly say.
 
+### The 16 September gap was accepted, not silenced
+
+The day is gone and cannot be recovered. Gabriel accepted the loss rather than
+dispatching after the close, because a post-close snapshot would enter the
+irreplaceable panel at a time no other day shares, and comparability is worth more than
+one row.
+
+Left alone, the new missed-day check would have failed on every run from now on, over a
+day nobody can bring back, which is exactly how an alarm becomes noise and the next real
+miss gets ignored. `ACCEPTED_GAPS` in `tools/panel_health.py` holds the date beside the
+reason it was accepted. The day still prints as an INFO line on every run, so no
+write-up can quietly forget it, and any date not on the list still fails. The pressure
+test caps the list at five and insists each entry carries a reason.
+
+**Consequences for the analysis.** H4 has one usable pair, 14 to 15 September; the 15 to
+16 pair does not exist. The three exports pulled on 16 September can never be matched
+against a snapshot, so they count as coverage validation only - and at that they were
+useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, and USO's
+80 reach only -26% on the downside, so USO should be centred lower next time.
+
 ### The immediate next actions, in order
 
 1. **Let the surface accumulate.** H4 needs many more day pairs before its pooled t

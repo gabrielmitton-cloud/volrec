@@ -96,6 +96,9 @@ Pooled: n=998, mean +2.21bp of spot, t=4.23.
 - **H4d, volume against open interest, is untouched** until there are enough days to
   control one for the other.
 
+**The next pair does not exist.** Both recorders were dropped on 16 September, so the
+series runs 14, 15, then a hole. Everything below still rests on that single pair.
+
 **This is one overnight period.** Every run shares the same two dates, so the pooled t
 of 4.23 is descriptive and nothing more, exactly as the file said before the data
 existed. A single night of TSLA moving is enough to flip every sign here. No adjustment
