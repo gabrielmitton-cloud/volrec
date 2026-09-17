@@ -75,14 +75,25 @@ unmeasured.**
 
 ### 3. Find out whether Bloomberg STATES its day count anywhere
 
-**Highest value for the least time.** Everything in section 1 is an inference from
-prices. If the terminal documents the convention, the inference becomes a fact.
+**Now the single most important ask on this list, and it is not close.** A research
+pass on 16 Sep established that Bloomberg does **not** publish IVM's day-count basis
+anywhere public, and found one observable pointing the other way: an OVME ticket
+displaying a *calendar-day* "Time to Expiry" counter. A displayed tenor is not an
+annualisation basis, but until a written reply exists, **252 is an inference from
+prices and must not be asserted as Bloomberg's convention.**
 
-- On an option contract, `DES` then `<GO>`, and look for a model or day-count line
-- `OVME` (the option valuation screen) exposes model settings - look for a day
-  count, calendar, or "252/365" basis selector
-- `HELP HELP` on OMON opens the help page; search it for `IVM` and for `day count`
-- The field `IVOL_MID` in `FLDS` may carry a description naming the model
+A dated, written Help Desk reply is the primary source the whole section is missing.
+
+- **`HELP HELP` is the one that matters** - it routes a written question to the
+  Bloomberg desk. Ask literally: *"What day-count and annualisation basis does the
+  IVM column in OMON use for implied volatility - calendar/365 or trading/252?"*
+  Save the reply with its date; that is the citable source.
+- `FLDS` on a contract, search `IVOL_MID`, and open the field's description
+- `OVME` exposes model settings - look for a day count, calendar, or 252/365 basis
+  selector. SEC-filed warrant contracts that price off OVME specify their own
+  annualisation factor (some 360, some 365), which suggests OVME exposes it as a
+  parameter. If there is a toggle, note its default.
+- `DES` on a contract, looking for a model or day-count line
 
 **Write down the exact wording and where you found it**, even if it seems to say
 nothing. A screenshot is ideal.

@@ -1254,7 +1254,7 @@ pooled number is exposed - and that number was already established not to be a t
 |---|---|---|
 | H1 | tested | VRP positive on 9 of 11 Cboe pairs, VIX/SPY t=5.14 |
 | H2 | tested, not adopted | log variance strongest, t=16.26 |
-| H3 | calibrated, cross-checked, gap identified | 0.59 mean gap at ±30%; the free feed's prices are as good as Bloomberg's, and **the 1.7-point volatility gap is a day-count convention — Bloomberg on 252 business days, the free feed on 365 calendar days**. It does not touch `modelfree.py` |
+| H3 | calibrated, cross-checked, gap identified and **demoted to a measurement note** | 0.59 mean gap at ±30%; the free feed's prices are as good as Bloomberg's, and **the 1.7-point volatility gap is a day-count convention — Bloomberg on 252 business days, the free feed on 365 calendar days**. It does not touch `modelfree.py` |
 | H4 | first run, descriptive, model dependence measured | 998 hedged runs on the 14-15 Sep pair. H4a and H4b are on the wrong side; H4c holds directionally. **Re-hedging with our own delta moves every bucket by at most 0.52bp and flips no sign** |
 
 ### The Bloomberg result, in one paragraph
@@ -1349,6 +1349,39 @@ check caught it. But that guard only fires when someone runs the test, so
 `.gitignore` now blocks `*.xlsx`, `*.xls`, `*.xlsm` and `volrec-bloomberg/`
 outright, and the pressure test asserts those entries exist. This has now happened
 twice, on 14 and 16 Sep. **When a new export arrives, check `git status` first.**
+
+### The day count is NOT a finding — settled 16-17 September
+
+A commissioned research pass reviewed the day-count result against the
+literature. **It is not novel and must not be written up as a discovery.**
+Trading-time against calendar-time annualisation is in Hull and Natenberg, in
+French (1984), in Cboe's own VIX-versus-VIX1D methodologies, in Albers & Kestner
+(2024) naming the 252-vs-365 divide outright, and in OCC filing SR-OCC-2024-016,
+where a clearinghouse found it was running a calendar clock for price smoothing
+and a trading clock for implied volatility and filed to align them.
+
+**An earlier proposal in this session to promote "convention, not quality" to a
+co-headline is withdrawn.** Gabriel had approved it; it was made before the
+review and it was wrong. H3's day-count section carries the full correction.
+
+The measurement itself survived a direct challenge and is now stronger. The pass
+argued the magnitude was impossible - about 0.2 points from a clean 252-vs-365
+split at 30 days against 1.7 observed - but that rests on the rule of thumb that
+30 calendar days hold ~21 trading days, which is the average density
+(30 x 252/365 = 20.7). The measured windows hold **22 and 23**, and one trading
+day is worth about a full volatility point at TSLA's IV. Using each window's own
+count, the clock predicts the gap with **no fitted parameter**: slope 1.013
+(se 0.131) against the predicted 1.000, intercept +0.08, R-squared 0.881, mean
+absolute residual 0.13 points across ten blocks. `tools/model_gap.py` prints it.
+
+**What this leaves.** A well-executed reconciliation note, not a headline: two
+feeds disagree by a knowable amount, the arithmetic closes it exactly, and anyone
+comparing vendor implied volatilities should check the clock before blaming data
+quality. That is worth stating and worth nothing more. **H3's actual claim is
+untouched** - `modelfree.py` integrates prices and never reads an implied
+volatility - and the research pass incidentally confirms the core mission is the
+distinctive part: the *free-data-cost* question is not well-trodden, while the
+*IV-convention* question is.
 
 ### The window this is all aimed at
 
