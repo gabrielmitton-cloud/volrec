@@ -46,7 +46,7 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from bloomberg_compare import (ROOT, DEFAULT_DIR, read_sheet, num,   # noqa: E402
+from bloomberg_compare import (ATTRIBUTION, ROOT, DEFAULT_DIR, read_sheet, num,   # noqa: E402
                                bloomberg_label, surface_rows)
 
 MIN_MID = 0.20          # below this, one tick of rounding swamps the implied volatility
@@ -168,7 +168,7 @@ def main():
     print("\nColumns are medians in volatility points, out-of-the-money contracts only.")
     print("A = Alpaca's implied volatility, B = ours from Alpaca's mid with Bloomberg's forward,")
     print("C = Bloomberg's IVM. A shrinking |B-C| against |A-C| means the gap was convention.")
-    print("Bloomberg figures: Source: Bloomberg Finance L.P.")
+    print(ATTRIBUTION)
     return 0
 
 

@@ -508,8 +508,23 @@ ok(f'V.SURFACE_START = "{int(_start[0]):04d}-{int(_start[1]):02d}-{int(_start[2]
    and f"V.STALE_DAYS = {re.search(r'STALE_DAYS = (\d+)', _ph).group(1)};" in site
    and f"V.SURFACE_LANDED_HOUR_UTC = {re.search(r'SURFACE_LANDED_HOUR_UTC = (\d+)', _ph).group(1)};" in site,
    "site health rules use the same constants as panel_health.py")
-ok(not re.search(r"bloomberg", site + mon + idx.replace("derived from Bloomberg", ""), re.I),
-   "the site reads no Bloomberg-derived data")
+# The real invariant is about CODE, not words: the site must never LOAD Bloomberg
+# data. The first version of this check failed on any occurrence of the word, which
+# would also have failed the page for saying, correctly, that Bloomberg is NOT used.
+# Disclosure is the opposite of a violation, so only executable code is inspected.
+def _scripts(html):
+    return " ".join(re.findall(r"<script\b[^>]*>(.*?)</script>", html, re.S | re.I))
+_code = site + _scripts(idx) + _scripts(mon)
+ok(not re.search(r"bloomberg|omon|\bIVM\b|\.xlsx|surface_wide", _code, re.I),
+   "the site's code loads no Bloomberg data (and not the unregistered wide file)")
+_fetches = set(re.findall(r"data/[A-Za-z0-9_.-]+\.(?:csv|json)", _code))
+ok(_fetches <= {"data/iv_history.csv", "data/surface.csv"},
+   f"the site fetches only the two registered panels ({sorted(_fetches)})")
+ok("Not used on this page" in idx and "Source: Bloomberg Finance L.P." in idx,
+   "the site discloses that it uses no Bloomberg data, with the attribution for "
+   "where it does appear")
+ok("DGS1MO" in idx and "VIXCLS" in idx and "retrieved from FRED" in idx,
+   "the site cites both FRED series in FRED's own form")
 
 # The site's countdown runs off its own copy of the cron. A stale copy is a
 # public clock that is quietly wrong, which is worse than no clock, and moving
@@ -539,6 +554,33 @@ ok("MAX_QUOTE_GAP_MIN" in bc and "MIN_MATCHED" in bc and "MAX_MID_VS_SPREAD" in 
 # any one of them could ship a test spreadsheet, which would fail this check for a
 # reason that has nothing to do with Bloomberg data.
 _VENDORED = (".venv", "venv", "node_modules", "__pycache__", ".git")
+# Attribution, as a checked invariant. Confirmed 17 Sep 2026 by the librarian who
+# administers the subscription: derived Bloomberg figures may be published with
+# "Source: Bloomberg Finance L.P.", raw data may not enter an open repository.
+# Any Markdown section that states a measured Bloomberg-derived number must carry
+# that line, so a future edit cannot publish one uncited.
+_BBG = re.compile(r"\bIVM\b|OMON|Bloomberg'?s? (?:own |printed )?(?:IVM|forward|mid|quote|"
+                  r"prices?|bid|ask|export)|divisor|bloomberg_compare|model_gap|iv_convention", re.I)
+_FIG = re.compile(r"[+-]\d+\.\d{2}\b|\bt\s*=\s*[+-]?\d|\b\d{3}\.\d\b|R\^2|R-squared")
+_uncited = []
+for _doc in ["HANDOFF.md", "BLOOMBERG-MONDAY.md", "README.md"] + \
+            [q.relative_to(R).as_posix() for q in (R / "hypotheses").glob("*.md")]:
+    _t = (R / _doc).read_text() if (R / _doc).exists() else ""
+    _head = "(preamble)"
+    for _chunk in re.split(r"(?m)^(#{2,4} .*)$", _t):
+        if re.match(r"#{2,4} ", _chunk):
+            _head = _chunk.strip()
+            continue
+        if _BBG.search(_chunk) and _FIG.search(_chunk) and \
+                "Source: Bloomberg Finance L.P." not in _chunk:
+            _uncited.append(f"{_doc} :: {_head[:50]}")
+ok(not _uncited, "every section publishing a Bloomberg-derived figure carries the attribution"
+   + (f" -- MISSING in {'; '.join(_uncited[:3])}" if _uncited else ""))
+for _tool in ("bloomberg_compare", "model_gap", "iv_convention"):
+    _src = (R / f"tools/{_tool}.py").read_text()
+    ok("ATTRIBUTION" in _src,
+       f"tools/{_tool}.py prints the shared attribution line on every run")
+
 _sheets = [q for pat in ("**/*.xlsx", "**/*.xls", "**/*.xlsm")
            for q in R.glob(pat)
            if not any(part in _VENDORED for part in q.relative_to(R).parts)]

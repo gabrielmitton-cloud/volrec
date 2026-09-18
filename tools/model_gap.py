@@ -65,7 +65,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from bloomberg_compare import ROOT, DEFAULT_DIR, read_sheet, num, surface_rows  # noqa: E402
+from bloomberg_compare import ATTRIBUTION, ROOT, DEFAULT_DIR, read_sheet, num, surface_rows  # noqa: E402
 from iv_convention import black76, implied_vol, MIN_MID                          # noqa: E402
 
 BUSINESS_YEAR = 252.0
@@ -388,7 +388,7 @@ def main():
             print("    density (30*252/365 = 20.7); an actual Wed-to-Fri 30-day")
             print("    window holds 22, and that one day is worth ~1 vol point at")
             print("    a 44 IV. Using the rule of thumb understates the gap ~5x.")
-    print("Bloomberg figures: Source: Bloomberg Finance L.P.")
+    print(ATTRIBUTION)
     return 0
 
 

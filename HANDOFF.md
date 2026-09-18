@@ -1345,6 +1345,8 @@ identified the same way: forcing the forward to `S e^{rT}` reproduces it to 0.00
 so the free feed's greeks carry no dividend and no borrow. Re-hedging H4 with a
 parity forward instead moves the buckets by at most 0.52bp and changes no direction.
 
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
+
 ### Bloomberg working rules
 
 - Exports live in `~/Documents/volrec-bloomberg`, **never in this repository**. Both
@@ -1448,6 +1450,8 @@ untouched** - `modelfree.py` integrates prices and never reads an implied
 volatility - and the research pass incidentally confirms the core mission is the
 distinctive part: the *free-data-cost* question is not well-trodden, while the
 *IV-convention* question is.
+
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
 
 ### The Bloomberg licensing question is ANSWERED — 17 September 2026
 

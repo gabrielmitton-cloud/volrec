@@ -73,6 +73,8 @@ unmeasured.**
   ask 0. Nothing about the export needs changing; it was correct.
 - The ~30 day expiry is enough here
 
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
+
 ### 3. Find out whether Bloomberg STATES its day count anywhere
 
 **Now the single most important ask on this list, and it is not close.** A research

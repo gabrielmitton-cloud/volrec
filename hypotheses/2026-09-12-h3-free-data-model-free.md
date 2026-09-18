@@ -179,7 +179,9 @@ that the model-free series does not, and the two should not be mixed in one comp
   name with a wide strike range and a passing gate, is the one to lean on.
 - Bloomberg's licence restricts redistribution. The exports live outside this repository
   and only aggregates are recorded here. Any published use needs the attribution
-  "Source: Bloomberg Finance L.P." and the open question in HANDOFF section 16.
+  "Source: Bloomberg Finance L.P." *[Settled 17 Sep 2026: derived figures may be
+  published with that attribution; raw Bloomberg data may not enter an open repository.
+  See HANDOFF section 17.]*
 
 ## The convention test, 16 September 2026 - and what it refuted
 
@@ -410,6 +412,8 @@ volatility, which at TSLA's 43.6 IV is roughly a full point:
 | 30 cal / **22** bus (actual, 16 Sep) | 0.08219 | 0.08730 | **+1.33** |
 | 31 cal / **23** bus (actual, 15 Sep) | 0.08493 | 0.09127 | **+1.60** |
 
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
+
 ### The test that settles it, with no fitted parameter
 
 Matching one price under two time bases forces
@@ -435,6 +439,8 @@ free parameter, and the slope is indistinguishable from one.
 **This meets the research pass's own stated falsification criterion** - that the gap
 must scale with tenor as sqrt(T) to be a clock artifact rather than something else.
 It does. `tools/model_gap.py` prints this test on every run.
+
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
 
 ### What is still NOT established, and must not be asserted
 

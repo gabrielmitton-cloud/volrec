@@ -22,8 +22,10 @@ LICENCE, READ THIS BEFORE CHANGING THE OUTPUT
 Bloomberg's terms restrict redistribution. Exports live OUTSIDE the repository, in
 ~/Documents/volrec-bloomberg, and this script refuses to write per-contract
 Bloomberg values anywhere inside it. Only aggregates - counts, medians, spreads -
-reach stdout or the summary file, and even those should stay unpublished until the
-licensing question is settled. There is no network call here and nothing is fetched.
+reach stdout or the summary file. The licensing question was SETTLED on 17 Sep 2026:
+derived aggregates may be published with "Source: Bloomberg Finance L.P.", and raw
+Bloomberg data may never enter an open repository. Every run ends with that line.
+There is no network call here and nothing is fetched.
 
 USAGE
 -----
@@ -52,6 +54,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SURFACE = ROOT / "data" / "surface.csv"
 DEFAULT_DIR = Path.home() / "Documents" / "volrec-bloomberg"
+
+# Required beside any published Bloomberg-derived figure. Confirmed 17 Sep 2026 by
+# Marc Vinyard, who administers Pepperdine's subscription: "You can publish an
+# article that cites Bloomberg data as the source of your information, but you
+# cannot add the raw Bloomberg data to an open access repository."
+ATTRIBUTION = "Bloomberg figures: Source: Bloomberg Finance L.P."
 
 # Rigorous-validation thresholds. A run that trips one of these is reported as a
 # failure rather than quietly averaged away.
@@ -301,14 +309,21 @@ def main():
         print(f"  NOTE  {n}")
     for f_ in fails:
         print(f"  FAIL  {f_}")
+    print(f"\n{ATTRIBUTION}")
 
     if a.json:
         out = Path(os.path.expanduser(a.json)).resolve()
         if ROOT in out.parents or out == ROOT:
-            sys.exit("Refusing to write the summary inside the repository while the licence "
-                     "question is open.")
+            # The licence question was answered on 17 Sep 2026: derived results may
+            # be published with citation, raw Bloomberg data may not enter an open
+            # repository. This summary is aggregated, so it is not raw - but a
+            # machine-readable dump is one careless edit away from per-contract
+            # values, so it is still kept outside the repository by default.
+            sys.exit("Refusing to write the summary inside the repository. Derived "
+                     "figures may be PUBLISHED with attribution; a data dump stays out.")
         out.write_text(json.dumps({"date": date, "gap_minutes": gap, "results": results,
-                                   "failures": fails, "notes": notes}, indent=2))
+                                   "failures": fails, "notes": notes,
+                                   "attribution": ATTRIBUTION}, indent=2))
         print(f"\nwrote {out}")
 
     print(f"\n{'PASS' if not fails else 'FAIL'}: {len(results)} symbol(s), {len(fails)} failed check(s)")

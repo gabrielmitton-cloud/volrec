@@ -235,11 +235,23 @@
   <section class="section">
     <h2>What this cannot show</h2>
     <ul class="limits">
-      <li><b>One day is calibration.</b> The model-free comparison has been run on a single day. H3 is tested on the series that begins collecting on 14 September 2026.</li>
+      <li><b>The series is young.</b> The model-free comparison was calibrated on a single day, 11 September 2026. The series behind H3 began on 14 September and holds only a handful of days; H3 is tested on that series, not on the calibration.</li>
       <li><b>The feed is indicative.</b> Alpaca's free options data is not consolidated OPRA. Levels are approximate, and changes over time are more trustworthy than any single reading.</li>
       <li><b>The daily panel is short.</b> It carries roughly two independent episodes so far, so it reports collection, not a premium.</li>
       <li><b>H4 is close to a replication.</b> Its predictions come from published work. What is new is the data: collected first-hand, at zero budget, with volume and open interest per contract.</li>
       <li><b>No licensed data is redistributed.</b> Nothing on this site is derived from Bloomberg, and no Cboe or FRED series is mirrored. Index levels are quoted only where a result depends on them.</li>
+    </ul>
+  </section>
+
+  <!-- Sources ------------------------------------------------------------ -->
+  <section class="section">
+    <h2>Data sources</h2>
+    <ul class="limits">
+      <li><b>Option quotes.</b> Alpaca Markets, free indicative options feed, recorded once a trading day by this project. Not consolidated OPRA.</li>
+      <li><b>Volatility indices.</b> VIX, VXN, RVX, OVX, GVZ, VIX9D and VIX3M: Cboe Global Markets, from Cboe's public daily index files. Index levels are quoted only where a result depends on them.</li>
+      <li><b>Risk-free rate.</b> Board of Governors of the Federal Reserve System (US), 1-Month Treasury Constant Maturity Rate [DGS1MO], retrieved from FRED, Federal Reserve Bank of St. Louis.</li>
+      <li><b>VIX history.</b> Chicago Board Options Exchange, CBOE Volatility Index: VIX [VIXCLS], retrieved from FRED, Federal Reserve Bank of St. Louis. Used for the forecasting benchmark in the repository.</li>
+      <li><b>Bloomberg.</b> Not used on this page. Bloomberg-derived aggregates appear in the repository's hypothesis files, each marked <i>Source: Bloomberg Finance L.P.</i> Raw Bloomberg data is never redistributed, per Pepperdine's subscription terms.</li>
     </ul>
   </section>
 
