@@ -1640,28 +1640,33 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 
 ### Prompt for the next session
 
-> Read HANDOFF.md section 17 first, then hypotheses/2026-09-12-h3-free-data-model-free.md
-> and hypotheses/2026-09-13-h4-hedged-gains-across-the-surface.md. The repo is
-> github.com/gabrielmitton-cloud/volrec, cloned at ~/Desktop/Archive/Volrec, and it is in
-> sync. Run `python3 tools/pressure_test.py` before and after anything; it should report
-> 0 fail and 1 warn about snapshot times.
+> Read `CLAUDE.md` first, then `HANDOFF.md` section 17, then the H3 and H4 files in
+> `hypotheses/`. The repo is github.com/gabrielmitton-cloud/volrec, cloned at
+> ~/Desktop/Archive/Volrec, and in sync.
 >
-> Context: the strike surface has been recording since Monday 14 September. The Bloomberg
-> cross-check is finished. The free feed's prices match Bloomberg's to within half a
-> bid-ask spread; the 1.7-point volatility gap is a day-count convention, Bloomberg on 252
-> business days against the free feed's 365 calendar days, and re-inverting on that clock
-> collapses it to +0.08 points. The vendor's delta was identified the same way: it carries
-> no dividend and no borrow. Neither finding touches `modelfree.py`, and re-hedging H4
-> with our own delta moves the buckets by at most 0.52bp without flipping a sign.
-> Bloomberg exports live in ~/Documents/volrec-bloomberg and must never enter the
-> repository; derived aggregates may be published with "Source: Bloomberg Finance L.P.".
+> Use `/Library/Frameworks/Python.framework/Versions/3.14/bin/python3`, never bare
+> `python3` (Homebrew's has no `requests`). Prefix `hedged.py`, `modelfree.py` and
+> `delta_model.py` with `FRED_KEY=use-cache` or they silently use r=0. Run
+> `tools/pressure_test.py` before and after anything; it should say 0 fail and 1 warn.
 >
-> The bounded diagnostic work is done, and so is the simulation engine
-> (`analyze.py --simulate-surface`). It found that H4's pooled t over contracts rejects a
-> true null 46-73% of the time and gets worse with more days, that clustering on the
-> underlying-day is not sufficient, and that about 40 day pairs is enough to detect a
-> level effect of ~1bp or a volume contrast of ~0.56bp. `hedged.py` now prints the
-> registered gains at those honest units alongside the registered tables, which are
-> unchanged. What is left is mostly waiting for days to accumulate, plus putting the
-> Bloomberg result on the site as aggregates with the attribution line. Report numbers
-> before recommending anything, and do not adjust any pre-registered threshold.
+> State: the engine is settled and running unattended toward Wed 11 November 2026, 40
+> trading days. The plan is to let data accumulate, not to build. Three things changed
+> on 17 September: a WIDE band now records high-volatility names beyond +/-30% into a
+> separate `data/surface_wide.csv` (the registered +/-30% grid is byte-identical); every
+> instrument is checked against a known answer by `tools/calibrate.py`; and Bloomberg
+> attribution is enforced by the pressure test. The day-count gap is a reconciliation
+> note, NOT a finding - it is textbook.
+>
+> First, check that the 18 September run fired AND that `data/surface_wide.csv` appeared.
+> That is the first live run of the wide pass. `gh run list --workflow=surface.yml` and
+> `tools/panel_health.py`, which warns if the wide file lags.
+>
+> Then, once the wide file has a few days: H3 registered a falsifiable prediction before
+> that data existed - `modelfree.py --wide` should lift USO's estimate by 1.4 to 3.2
+> points and leave SPY essentially unchanged. Test it and report the numbers either way.
+>
+> Rules: report numbers before recommending; never adjust a pre-registered threshold,
+> bucket or bar; never edit a workflow's `schedule:` on a day whose run is still
+> needed; Bloomberg exports stay in ~/Documents/volrec-bloomberg and never enter the
+> repo, and every published Bloomberg-derived figure carries "Source: Bloomberg
+> Finance L.P.".
