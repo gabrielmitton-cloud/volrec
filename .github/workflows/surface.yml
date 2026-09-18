@@ -28,7 +28,7 @@ jobs:
       - name: Refuse to proceed if the ATM panel was touched
         run: |
           git diff --exit-code -- data/iv_history.csv data/iv_history.pre-17col.csv
-      - name: Commit only the surface file
+      - name: Commit only the surface files
         run: |
           # On a market holiday the calendar guard writes nothing, so the file
           # may legitimately not exist. `git add` on a missing path exits 128,
@@ -40,6 +40,12 @@ jobs:
           git config user.name "recorder"
           git config user.email "recorder@users.noreply.github.com"
           git add data/surface.csv
+          # The wide file is additive and may legitimately not exist - first run,
+          # or a day where no symbol needed widening. `git add` on a missing path
+          # exits 128, which would fail this step and lose surface.csv with it.
+          # An explicit if, never `[ -f ] && git add`, so the step cannot inherit
+          # a non-zero status from a file that simply is not there.
+          if [ -f data/surface_wide.csv ]; then git add data/surface_wide.csv; fi
           git diff --staged --quiet && exit 0
           git commit -m "surface $(date +%F)"
           # record.yml may be committing at the same time. Rebase and retry

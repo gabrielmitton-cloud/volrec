@@ -1469,7 +1469,24 @@ second. Open interest is added through `Settings > Edit Columns`. The IVM
 day-count question goes to the desk through `?` then `Live Help`, which is a live
 chat and the fastest route to the written primary source H3 still lacks.
 
-### The strike band is the one open decision — 17 September 2026
+### The strike band — DECIDED and live from 18 September 2026
+
+Gabriel delegated it: "implement whatever makes the long term engine run strong and
+precise." Implemented as the additive option. **The registered grid is unchanged**;
+high-volatility names are also recorded out to max(30%, 5 sigma), capped at 60%, into a
+separate `data/surface_wide.csv`. Full reasoning in H3's adjustment log. What follows is
+the record of the decision as it stood before it was made.
+
+**The options that were on the table:**
+
+| option | what it does | verdict |
+|---|---|---|
+| A. do nothing | keep +/-30% x 40 | USO stays at 2 sigma; H3c can never be tested; the days pass unrecoverably |
+| **B. record wide, analyse frozen** | add a separate wide file, keep +/-30% as the registered estimate | **chosen.** Additive, H3's numbers byte-identical, H3c becomes testable |
+| C. widen and re-analyse | change the registered band mid-series | rejected - a pre-registered specification is not re-cut after seeing data |
+| D. widen everyone uniformly | +/-50% on all names | rejected - wastes rows on SPY, already at 9.5 sigma |
+
+### Before the decision — 17 September 2026
 
 `modelfree.py` was run on accumulated data for the first time since calibration.
 H3a is passing at a mean absolute gap of 0.75 against a threshold of 1.0, and
@@ -1478,12 +1495,10 @@ H3a is passing at a mean absolute gap of 0.75 against a threshold of 1.0, and
 The cause is measured, not guessed: the fixed +/-30% band covers **11.0 sigmas on
 SPY and 2.0 on USO**. See H3, "The series so far".
 
-**Nothing has been changed.** The frozen grid stays frozen. The open question is
-whether to *record* a volatility-scaled band, `max(30%, 4 sigma)`, while
-continuing to *analyse* the frozen +/-30% subset - which is additive, leaves every
-registered number reproducible by a one-line moneyness filter, and touches only
-USO, TSLA and NVDA. It matters because Cboe backfills to 1990 and Alpaca does not:
-**a day recorded at +/-30% is permanently a +/-30% day.** Awaiting Gabriel.
+The proposal as first stated was `max(30%, 4 sigma)` touching only USO, TSLA and
+NVDA. What was built is 5 sigma on a 30-day basis, which also widens GLD and AAPL by
+three points: 5 sigma is where the names already tracking Cboe sit, and sizing on the
+longest expiry turned out to include stale carry-forward expiries.
 
 ### The window this is all aimed at
 

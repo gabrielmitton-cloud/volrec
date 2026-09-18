@@ -368,6 +368,25 @@ def check_surface():
                  f"move hedging it. Check whether it concentrates in the "
                  f"low-volume tercile before trusting H4c.")
 
+    # The wide band (added 17 Sep 2026) is a SENSITIVITY dataset, not part of the
+    # registered study, so it can only warn - never fail. But it must not be able
+    # to go quiet silently either: that is precisely how 16 Sep was lost.
+    wide = ROOT / "data" / "surface_wide.csv"
+    if wide.exists():
+        wrows = rows_of(wide) or []
+        wdays = sorted({r["date"] for r in wrows if r.get("date")})
+        if wdays and wdays[-1] < days[-1].isoformat():
+            warn(f"surface_wide.csv stops at {wdays[-1]} but the registered surface "
+                 f"reaches {days[-1]}. The wide pass is failing quietly; check the "
+                 f"surface run's log for 'wide pass failed'.")
+        elif wdays:
+            print(f"  INFO  wide band: {len(wrows)} rows over {len(wdays)} day(s), "
+                  f"newest {wdays[-1]}")
+    elif days[-1] >= date(2026, 9, 18):
+        warn("surface_wide.csv does not exist, but the wide pass has been live "
+             "since 18 Sep 2026. It should appear on any day a high-volatility "
+             "name needed widening.")
+
     # H4 needs two consecutive trading days of surface data. Say so plainly,
     # because that milestone is the reason this panel exists at all.
     if len(days) < 2:

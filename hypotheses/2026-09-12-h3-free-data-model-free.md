@@ -510,6 +510,49 @@ to be interesting.
 
 ## Adjustment log
 
+- **2026-09-17, after three days of the series existed — a RECORDING change, not an
+  analysis change.** High-volatility names are now ALSO recorded beyond +/-30%, into a
+  separate file, `data/surface_wide.csv`. **H3's registered specification is untouched**:
+  the estimator still integrates +/-30% x 40 from `data/surface.csv`, and every H3 number
+  is reproduced byte-for-byte - verified by diffing `modelfree.py`'s output before and
+  after the change.
+
+  *Why.* On three days USO carried 78% of H3's absolute error and was worsening (-1.84,
+  -2.31, -3.56). Measured in each underlying's own 30-day standard deviation, the fixed
+  band covered SPY's downside to 9.5 sigma and USO's to 2.4. Downside is what matters: the
+  model-free integrand weights each strike by 1/K^2, so low strikes dominate. And it could
+  not wait - Cboe's index history is retrievable back to 1990, but Alpaca's free feed
+  serves only the present, so a day recorded at +/-30% is permanently a +/-30% day.
+
+  *The rule.* Band = max(30%, 5 sigma of the 30-day move), capped at 60%. Five sigma is
+  where the names that already track Cboe sit (SPY, QQQ, IWM, GLD all within 0.35 points).
+  Sigma is on the 30-day horizon because that is what the estimate and the index target;
+  a first attempt sized it on the longest expiry present, which included stale expiries
+  brought in by carry-forward, and inflated every band. After the change every name's
+  downside is at least 6 sigma:
+
+  | | band | downside before | after |
+  |---|---|---|---|
+  | USO | 60% | 2.4 sd | 6.3 sd |
+  | TSLA | 60% | 2.9 sd | 7.5 sd |
+  | NVDA | 45% | 4.0 sd | 6.6 sd |
+  | GLD, AAPL | 33% | ~5.4 sd | 6.1 sd |
+  | SPY, QQQ, IWM | 30% | 7.2-9.5 sd | unchanged |
+
+  *What it enables.* `python modelfree.py --wide` integrates both files. **H3c - that
+  truncation bias scales with volatility - becomes testable directly:** if widening closes
+  USO's gap and leaves SPY's alone, the mechanism is shown rather than inferred. That
+  comparison is a sensitivity and is labelled as one; it never replaces the registered
+  estimate, and H3a is still judged on +/-30%.
+
+  *How the registered surface is protected.* The wide pass runs only after `surface.csv`
+  is written to disk. Its fetch and row-building are duplicated rather than shared, so the
+  registered functions are byte-identical (checked by comparing their syntax trees). It
+  catches every exception including `SystemExit`, because a non-zero exit would skip the
+  workflow's commit step and lose `surface.csv` with it. `pressure_test.py` asserts all of
+  this, plus that the two files never overlap: `surface.csv` holds nothing beyond +/-30%,
+  `surface_wide.csv` nothing inside it.
+
 - **2026-09-12, before any series existed.** Strike band widened from +/-10% x
   20 to +/-30% x 40 on the calibration above. Recorded rather than silently
   applied: the advised configuration was +/-10%, and it was changed because it

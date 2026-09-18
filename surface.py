@@ -280,6 +280,220 @@ def rows_for(s, symbol, spot, today):
     return sorted(out, key=lambda r: (r["expiration"], r["type"], r["strike"]))
 
 
+# --- the WIDE band, recorded to a SEPARATE file --------------------------------
+# On 17 Sep 2026 H3 found the fixed +/-30% band covers 11 standard deviations on
+# SPY but only 2 on USO, and USO carried 78% of H3's error. Cboe integrates the
+# whole chain. So high-volatility names are ALSO recorded out to WIDE_SIGMAS of
+# their own 30-day move, into data/surface_wide.csv, so that H3c - truncation
+# bias scales with volatility - can be TESTED rather than asserted.
+#
+# It is a separate file and a separate pass so the registered surface cannot be
+# affected by it in any way:
+#   - surface.csv is written by the code above, unchanged, BEFORE any of this runs
+#   - H3 and H4 read surface.csv only, so every registered number is reproducible
+#   - any failure below is caught and cannot fail the run. That matters more than
+#     it looks: a non-zero exit skips the workflow's commit step, so a crash here
+#     would lose surface.csv even though it had already been written.
+# The fetch and row-building are duplicated from chain() and rows_for() rather
+# than shared. Sharing them would mean editing the registered path, and that
+# path is irreplaceable: Alpaca's free feed serves only the present.
+#
+# WIDE_SIGMAS is set where the names that ALREADY track Cboe sit: SPY 8.1, QQQ
+# 6.3, IWM 6.1, GLD 4.6 sigmas on the upside, all within 0.35 points of the index.
+WIDE_SIGMAS = 5.0
+WIDE_CAP = 0.60             # beyond this, listed strikes are sparse and bids zero
+WIDE_OUT = Path(__file__).parent / "data" / "surface_wide.csv"
+
+
+def wide_band(atm_iv, dte):
+    """Half-width of the wide band, as a moneyness fraction. Never below the
+    registered band, never above WIDE_CAP."""
+    try:
+        atm_iv, dte = float(atm_iv), float(dte)
+    except (TypeError, ValueError):
+        return STRIKE_BAND
+    if atm_iv <= 0 or dte <= 0:
+        return STRIKE_BAND
+    return max(STRIKE_BAND, min(WIDE_CAP, WIDE_SIGMAS * atm_iv * (dte / 365.0) ** 0.5))
+
+
+def wide_targets(band):
+    """Moneyness targets strictly OUTSIDE the registered band, at its spacing."""
+    step = (2 * STRIKE_BAND) / (STRIKE_COUNT - 1)
+    out, m = [], 1 - STRIKE_BAND - step
+    while m >= 1 - band - 1e-9:
+        out.append(m)
+        m -= step
+    m = 1 + STRIKE_BAND + step
+    while m <= 1 + band + 1e-9:
+        out.append(m)
+        m += step
+    return out
+
+
+def wide_chain(s, symbol, spot, today, kind, band):
+    """chain(), with the band as a parameter instead of the registered constant."""
+    p = dict(
+        feed=R.OPTION_FEED, limit=1000, type=kind,
+        expiration_date_gte=(today + timedelta(days=DTE_WINDOW[0])).isoformat(),
+        expiration_date_lte=(today + timedelta(days=DTE_WINDOW[1])).isoformat(),
+        strike_price_gte=round(spot * (1 - band), 2),
+        strike_price_lte=round(spot * (1 + band), 2))
+    out = {}
+    for _ in range(R.MAX_PAGES):
+        j = R.get(s, f"{R.DATA}/v1beta1/options/snapshots/{symbol}", **p)
+        page = j.get("snapshots") or {}
+        out.update(page)
+        token = j.get("next_page_token")
+        if not token or not page:
+            break
+        p["page_token"] = token
+        time.sleep(PACE)
+    return out
+
+
+def wide_select(inner, spot, available_by_expiry, band):
+    """{expiry: {strikes}} beyond the registered band, at the inner expiries.
+
+    Pure function, so it can be tested without the network. A strike is kept only
+    if it lies strictly outside +/-STRIKE_BAND and was not already recorded in the
+    registered file at that expiry, so the two files never overlap.
+    """
+    inner_at = {}
+    for r in inner:
+        inner_at.setdefault(r["expiration"], set()).add(float(r["strike"]))
+    targets = wide_targets(band)
+    keep = {}
+    for e in sorted(inner_at):
+        avail = sorted(available_by_expiry.get(e, ()))
+        if not avail or not targets:
+            continue
+        ks = set()
+        for m in targets:
+            k = min(avail, key=lambda x: abs(x - spot * m))
+            if abs(k / spot - 1) > STRIKE_BAND and k not in inner_at[e]:
+                ks.add(k)
+        if ks:
+            keep[e] = ks
+    return keep
+
+
+def wide_rows_for(s, symbol, spot, today, inner):
+    """Rows beyond the registered band for one symbol. Returns (rows, band)."""
+    ivs = []
+    for r in inner:
+        try:
+            if abs(float(r["moneyness"]) - 1) < 0.03 and r["iv"] not in ("", None):
+                ivs.append(float(r["iv"]))
+        except (TypeError, ValueError, KeyError):
+            continue
+    if not ivs:
+        return [], STRIKE_BAND
+    ivs.sort()
+    # Sigma on the 30-day horizon, because that is what H3's estimate and Cboe's
+    # index both target. NOT the longest expiry present: inner rows include
+    # contracts carried forward from earlier days, sometimes at a stale expiry,
+    # and sizing on those inflated the band on the first attempt at this.
+    band = wide_band(ivs[len(ivs) // 2], TARGET_DTE)
+    if band <= STRIKE_BAND + 1e-9:
+        return [], band
+
+    snaps = wide_chain(s, symbol, spot, today, "call", band)
+    time.sleep(PACE)
+    snaps.update(wide_chain(s, symbol, spot, today, "put", band))
+    # The two expiries nearest TARGET_DTE: the pair H3 interpolates. A third
+    # expiry present only through carry-forward is not extended.
+    by_exp = {}
+    for r in inner:
+        by_exp[r["expiration"]] = int(r["dte"])
+    wanted = set(sorted(by_exp, key=lambda e: abs(by_exp[e] - TARGET_DTE))[:2])
+    inner = [r for r in inner if r["expiration"] in wanted]
+    parsed, avail = [], {}
+    for osym, snap in snaps.items():
+        try:
+            exp, strike, kind = R.parse_occ(osym)
+        except ValueError:
+            continue
+        e = exp.isoformat()
+        if e not in wanted:
+            continue
+        parsed.append((exp, (exp - today).days, strike, kind, osym, snap))
+        avail.setdefault(e, set()).add(strike)
+    keep = wide_select(inner, spot, avail, band)
+
+    out = []
+    for exp, dte, strike, kind, osym, snap in parsed:
+        if strike not in keep.get(exp.isoformat(), ()):
+            continue
+        q = snap.get("latestQuote") or {}
+        g = snap.get("greeks") or {}
+        bid, ask = q.get("bp"), q.get("ap")
+        mid = (bid + ask) / 2 if (bid is not None and ask is not None) else None
+        day = snap.get("dailyBar") or {}
+        out.append({
+            "date": today.isoformat(), "symbol": symbol, "spot": round(spot, 4),
+            "quote_time": q.get("t", ""),
+            "expiration": exp.isoformat(), "dte": dte,
+            "type": kind, "strike": strike,
+            "moneyness": round(strike / spot, 6) if spot else "",
+            "option_symbol": osym,
+            "bid": bid, "ask": ask,
+            "mid": round(mid, 6) if mid is not None else "",
+            "volume": day.get("v", ""),
+            "open_interest": "", "open_interest_date": "",
+            "iv": snap.get("impliedVolatility", ""),
+            "delta": g.get("delta", ""), "gamma": g.get("gamma", ""),
+            "theta": g.get("theta", ""), "vega": g.get("vega", ""),
+            "rho": g.get("rho", ""),
+        })
+    return sorted(out, key=lambda r: (r["expiration"], r["type"], r["strike"])), band
+
+
+def append_wide(rows, today):
+    """append(), for the wide file. Idempotent per (date, option_symbol)."""
+    WIDE_OUT.parent.mkdir(parents=True, exist_ok=True)
+    new = not WIDE_OUT.exists() or WIDE_OUT.stat().st_size == 0
+    seen = set()
+    if not new:
+        with WIDE_OUT.open(newline="") as f:
+            rd = csv.DictReader(f)
+            if rd.fieldnames != FIELDS:
+                print("    (wide: header mismatch, not appending)")
+                return 0
+            seen = {(r["date"], r["option_symbol"]) for r in rd}
+    fresh = [r for r in rows if (r["date"], r["option_symbol"]) not in seen]
+    with WIDE_OUT.open("a", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        if new:
+            w.writeheader()
+        w.writerows(fresh)
+    return len(fresh)
+
+
+def record_wide(s, spots, rows, today):
+    """The wide pass. NEVER raises and never exits: see the note above WIDE_SIGMAS."""
+    try:
+        by_sym = {}
+        for r in rows:
+            by_sym.setdefault(r["symbol"], []).append(r)
+        wide = []
+        for sym in sorted(by_sym):
+            try:
+                got, band = wide_rows_for(s, sym, spots[sym], today, by_sym[sym])
+                if got:
+                    wide.extend(got)
+                    print(f"  {sym:6s} wide band +/-{band:.0%}: {len(got)} more contracts")
+            except Exception as e:
+                print(f"  {sym:6s} wide pass failed, registered file unaffected: "
+                      f"{type(e).__name__}: {e}")
+            time.sleep(PACE)
+        if wide:
+            n = append_wide(wide, today)
+            print(f"Wrote {n} wide row(s) to {WIDE_OUT}")
+    except (Exception, SystemExit) as e:
+        print(f"Wide pass abandoned, registered file unaffected: {type(e).__name__}: {e}")
+
+
 def already_recorded(today):
     if not OUT.exists():
         return set()
@@ -351,6 +565,8 @@ def main():
     if rows:
         append(rows)
         print(f"\nWrote {len(rows)} row(s) to {OUT}")
+        # Only after the registered file is safely on disk.
+        record_wide(s, spots, rows, today)
     if failed:
         print(f"Failed: {', '.join(failed)} - a gap is not fatal.")
 

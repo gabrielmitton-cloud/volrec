@@ -217,7 +217,59 @@ _body = [n for n in _tree.body
 _code = "\n".join(_ast.unparse(n) for n in _body)
 ok("iv_history" not in _code,
    "surface.py code never touches the protected ATM panel (docstring aside)")
-ok(_sm.OUT.name == "surface.csv", f"surface.py writes only to surface.csv (OUT={_sm.OUT.name})")
+ok(_sm.OUT.name == "surface.csv", f"surface.py's registered output is surface.csv (OUT={_sm.OUT.name})")
+
+# --- the wide band (added 17 Sep 2026). It must be ADDITIVE and SEPARATE. ------
+ok(_sm.WIDE_OUT.name == "surface_wide.csv" and _sm.WIDE_OUT.parent == _sm.OUT.parent,
+   "the wide band writes to its own file, beside the registered one")
+# The registered path must not know the wide band exists. If rows_for, chain or
+# append ever reference a WIDE_ constant, the registered grid has been changed.
+_regsrc = "".join(_iu_src for _iu_src in [
+    __import__("inspect").getsource(getattr(_sm, f))
+    for f in ("rows_for", "chain", "append", "open_interest")])
+ok("WIDE_" not in _regsrc and "wide" not in _regsrc.lower(),
+   "the registered path (rows_for, chain, append, open_interest) never touches the wide band")
+ok(abs(_sm.STRIKE_BAND - 0.30) < 1e-12 and _sm.STRIKE_COUNT == 40,
+   "the registered grid is still +/-30% x 40, as frozen in H3")
+_wt = _sm.wide_targets(0.60)
+ok(_wt and all(abs(m - 1) > _sm.STRIKE_BAND for m in _wt),
+   "every wide target lies strictly outside the registered band")
+ok(_sm.wide_targets(_sm.STRIKE_BAND) == [],
+   "a symbol that needs no widening gets no wide targets")
+ok(_sm.wide_band(0.13, 30) == _sm.STRIKE_BAND,
+   "a low-volatility name (13% IV) is left at the registered band")
+ok(_sm.wide_band(5.0, 30) == _sm.WIDE_CAP, "the wide band never exceeds its cap")
+ok(_sm.wide_band("", 30) == _sm.STRIKE_BAND and _sm.wide_band(None, 30) == _sm.STRIKE_BAND,
+   "a missing IV falls back to the registered band rather than raising")
+# The wide pass must never fail the run: a non-zero exit skips the commit step,
+# which would lose surface.csv even though it had already been written.
+import contextlib as _ctx2, io as _io2, datetime as _dtw
+_orig = _sm.wide_rows_for
+for _exc in (RuntimeError("api down"), SystemExit(1), KeyError("x")):
+    def _boom(*a, _e=_exc, **k): raise _e
+    _sm.wide_rows_for = _boom
+    try:
+        with _ctx2.redirect_stdout(_io2.StringIO()):
+            _sm.record_wide(None, {"USO": 150.0},
+                            [{"symbol": "USO", "expiration": "2026-10-16"}],
+                            _dtw.date(2026, 9, 18))
+        _raised = None
+    except BaseException as _e2:
+        _raised = _e2
+    ok(_raised is None, f"the wide pass swallows {type(_exc).__name__} instead of failing the run")
+_sm.wide_rows_for = _orig
+# And the file-level separation, checked against the real data.
+if surf.exists():
+    _far = [r for r in csv.DictReader(surf.open(newline=""))
+            if r.get("moneyness") and abs(float(r["moneyness"]) - 1) > 0.305]
+    ok(not _far, f"surface.csv holds no row beyond the registered band "
+                 f"({len(_far)} found)")
+_wide = R / "data/surface_wide.csv"
+if _wide.exists():
+    _near = [r for r in csv.DictReader(_wide.open(newline=""))
+             if r.get("moneyness") and abs(float(r["moneyness"]) - 1) <= _sm.STRIKE_BAND]
+    ok(not _near, f"surface_wide.csv holds no row inside the registered band "
+                  f"({len(_near)} found) - the two files never overlap")
 
 print("\n=== H3. DELTA-HEDGED P&L ESTIMATOR ===")
 import subprocess as _sp
@@ -333,9 +385,15 @@ ok(_srf_days == _rec_days and _srf_min - _rec_min == 10,
    f"{_rec_min//60:02d}:{_rec_min%60:02d} UTC)")
 ok(_srf_min % 15 != 0,
    "surface cron avoids the quarter hours too")
-ok(any("git add data/surface.csv" in str(st.get("run", ""))
-       for st in srf["jobs"]["surface"]["steps"]),
-   "surface workflow stages ONLY data/surface.csv")
+_srf_run = " ".join(str(st.get("run", "")) for st in srf["jobs"]["surface"]["steps"])
+ok("git add data/surface.csv" in _srf_run,
+   "surface workflow stages the registered surface file")
+ok("if [ -f data/surface_wide.csv ]; then git add data/surface_wide.csv; fi" in _srf_run,
+   "surface workflow stages the wide file ONLY if it exists (a bare git add on a "
+   "missing path exits 128 and would lose surface.csv)")
+ok("git add data/" not in _srf_run.replace("git add data/surface.csv", "")
+                                  .replace("git add data/surface_wide.csv", ""),
+   "surface workflow stages nothing else under data/ - never the ATM panel")
 ok(any("git diff --exit-code -- data/iv_history.csv" in str(st.get("run", ""))
        for st in srf["jobs"]["surface"]["steps"]),
    "surface workflow aborts if the ATM panel was touched")

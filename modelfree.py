@@ -59,6 +59,10 @@ sys.path.insert(0, str(HERE / "tools"))
 
 import analyze                                    # noqa: E402
 SURF = HERE / "data" / "surface.csv"
+# The wide band (added 17 Sep 2026): contracts beyond +/-30% on high-volatility
+# names, in a separate file. Used ONLY with --wide, to test H3c directly. H3's
+# registered numbers come from SURF alone and are unchanged by its existence.
+SURF_WIDE = HERE / "data" / "surface_wide.csv"
 
 # Underlying -> the Cboe index published against it.
 BENCH = {"SPY": "VIX", "QQQ": "VXN", "IWM": "RVX", "GLD": "GVZ", "USO": "OVX"}
@@ -199,6 +203,19 @@ def main():
     rows = list(csv.DictReader(SURF.open(newline="")))
     if not rows:
         sys.exit("surface.csv is empty.")
+    # --wide adds the contracts beyond the registered band. The integral then
+    # reaches further into the tails, which is exactly what H3c predicts should
+    # close the gap on high-volatility names. Without the flag, nothing changes:
+    # this is a sensitivity, never a replacement for the frozen specification.
+    if "--wide" in sys.argv:
+        if SURF_WIDE.exists():
+            extra = list(csv.DictReader(SURF_WIDE.open(newline="")))
+            rows = rows + extra
+            print(f"--wide: adding {len(extra)} contracts beyond the registered "
+                  f"+/-30% band. SENSITIVITY ONLY - not H3's registered estimate.\n")
+        else:
+            print("--wide: no surface_wide.csv yet; it starts with the next "
+                  "surface run. Showing the registered estimate.\n")
 
     r = risk_free()
     print(f"risk-free (DGS1MO): {r*100:.3f}%\n")
