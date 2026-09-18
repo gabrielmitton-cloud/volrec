@@ -65,7 +65,8 @@ from datetime import date, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from bloomberg_compare import ATTRIBUTION, ROOT, DEFAULT_DIR, read_sheet, num, surface_rows  # noqa: E402
+from bloomberg_compare import (ATTRIBUTION, ROOT, DEFAULT_DIR, read_sheet, num,  # noqa: E402
+                               strike_cells, surface_rows)
 from iv_convention import black76, implied_vol, MIN_MID                          # noqa: E402
 
 BUSINESS_YEAR = 252.0
@@ -115,16 +116,10 @@ def omon_blocks(path):
                 out[cur] = {"dte": int(m.group(2)), "rate": float(m.group(3)) / 100,
                             "fwd": float(m.group(4)), "quotes": {}}
             continue
-        if not cur or not re.match(r"^\d+(\.\d+)?$", first):
+        if not cur:
             continue
-        for off, typ in ((0, "C"), (7, "P")):
-            if len(r) < off + 7:
-                continue
-            k = num(r[off])
-            if k is None:
-                continue
-            out[cur]["quotes"][(typ, round(k, 2))] = {
-                "bid": num(r[off + 2]), "ask": num(r[off + 3]), "ivm": num(r[off + 5])}
+        for typ, k, bid, ask, _, ivm, _ in strike_cells(r):
+            out[cur]["quotes"][(typ, k)] = {"bid": bid, "ask": ask, "ivm": ivm}
     return out
 
 

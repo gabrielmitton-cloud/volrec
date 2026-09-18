@@ -46,7 +46,7 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from bloomberg_compare import (ATTRIBUTION, ROOT, DEFAULT_DIR, read_sheet, num,   # noqa: E402
+from bloomberg_compare import (ATTRIBUTION, ROOT, DEFAULT_DIR, read_sheet, num, strike_cells,  # noqa: E402
                                bloomberg_label, surface_rows)
 
 MIN_MID = 0.20          # below this, one tick of rounding swamps the implied volatility
@@ -98,11 +98,8 @@ def omon_block(path, expiry_label):
                 rate = float(m.group(1)) / 100 if m else None
         if not block or not block.startswith(expiry_label):
             continue
-        if not re.match(r"^\d+(\.\d+)?$", first):
-            continue
-        for off, typ in ((0, "C"), (7, "P")):
-            if len(r) >= off + 7 and num(r[off]) is not None:
-                out[(typ, round(num(r[off]), 2))] = num(r[off + 5])
+        for typ, k, _, _, _, ivm, _ in strike_cells(r):
+            out[(typ, k)] = ivm
     return fwd, rate, out
 
 

@@ -1566,6 +1566,27 @@ Preparing the test above turned up three defects, all found and settled before
 **Deliberately not done:** no wide quote was previewed. Every choice was made on
 known-answer simulations and the +/-30% data already seen.
 
+### 18 September, afternoon: the first wide day and the USO wide pull
+
+The wide pass ran for real (266 rows; USO 0.42x-1.59x spot), and a USO OMON export
+at 144 strikes was matched to it 30 minutes after the snapshot. Full numbers in H3,
+"The first wide day". Three things to carry forward:
+
+1. **The free feed's wing quotes match Bloomberg's**: 0.07 of a spread on the far
+   puts, 0.40 on the far calls, and the same 13 far puts have no bid on both feeds.
+2. **The registered estimator is contaminated in the wings, not the feed.** Counting
+   a zero bid at half the ask lifts USO's 16 Oct estimate by +5.28 on the free feed
+   and +4.91 on Bloomberg's own prices; under Cboe's zero-bid rule, +0.94 and +0.85.
+   The known-answer test had put that inflation at +0.14-0.47, which was wrong by an
+   order of magnitude. The registered grid already reads a reading over 3.2 as
+   "contamination, check the zero-bid column", so nothing registered changes, and
+   H3a's +/-30% numbers move by 0.03 points at most under the same rule.
+3. **Cboe's 17 Sep close put USO at +0.71**, its first positive gap. H3a over n=15 is
+   0.59. The OMON export format also changed to Ticker-first; the three Bloomberg
+   tools share one parser for both layouts now, and the pressure test holds them to it.
+
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
+
 ### The window this is all aimed at
 
 **40 trading days from Wed 16 September 2026 ends Wed 11 November 2026.** No market

@@ -640,6 +640,23 @@ ok("Refusing to write the summary inside the repository" in bc,
    "refuses to write its summary inside the repo")
 ok("MAX_QUOTE_GAP_MIN" in bc and "MIN_MATCHED" in bc and "MAX_MID_VS_SPREAD" in bc,
    "gates on snapshot gap, matched count and price agreement")
+# OMON has exported two column orders. The 18 Sep 2026 export put Ticker before
+# Strike and every parser silently read zero quotes from it. Both must parse alike.
+_bcs = _iu.spec_from_file_location("bcmp", R / "tools/bloomberg_compare.py")
+_bcm = _iu.module_from_spec(_bcs); _bcs.loader.exec_module(_bcm)
+_old = ["116", "USO 10/16/26 C116", "39.65", "42.2", "41.08", "0", "3",
+        "116", "USO 10/16/26 P116", "0.31", "0.59", "0.38", "60.96", "17"]
+_new = ["USO 10/16/26 C116", "116", "39.65", "42.2", "41.08", "0", "3",
+        "USO 10/16/26 P116", "116", "0.31", "0.59", "0.38", "60.96", "17"]
+_hdr = ["Ticker", "Strike", "Bid", "Ask", "Last", "IVM", "Volm"] * 2
+_blk = ["16-Oct-26 (28d); CSize 100; IBrw 1.51; R 4.31; IFwd 154.52", "", "", "", "", "", ""]
+ok(_bcm.strike_cells(_old) == _bcm.strike_cells(_new) and len(_bcm.strike_cells(_new)) == 2
+   and not _bcm.strike_cells(_hdr) and not _bcm.strike_cells(_blk),
+   "OMON exports parse identically whether Strike or Ticker comes first, and headers parse to nothing")
+for _tool in ("model_gap", "iv_convention"):
+    _src = (R / f"tools/{_tool}.py").read_text()
+    ok("strike_cells" in _src and 're.match(r"^\\d+(\\.\\d+)?$", first)' not in _src,
+       f"tools/{_tool}.py uses the shared layout-aware parser, not its own first-cell test")
 # Skip vendored trees. The analysis venv holds thousands of third-party files and
 # any one of them could ship a test spreadsheet, which would fail this check for a
 # reason that has nothing to do with Bloomberg data.

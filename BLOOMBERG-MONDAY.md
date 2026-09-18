@@ -5,6 +5,8 @@
 collect. What it can do, and nothing else can, is tell you how good your free
 data is. See HANDOFF section 15.1.
 
+**18 September: fourth pull (USO, 16 Oct, wide) — see ask 1b and ask 3.**
+
 **Last updated 16 September 2026, evening — after the third pull.** Sessions on
 14, 15 and 16 Sep.
 Priorities 0 and 1 below are **done** and kept only as the record of what worked.
@@ -58,6 +60,13 @@ already written down, and it should be settled rather than left.
 
 ### 1b. USO out to ±60% on both of the recorder's expiries — NEW 18 September
 
+**Half done 18 Sep.** 16 Oct pulled 18:25 UTC, 30 minutes after the recorder, 144
+strikes reaching 0.03x-2.04x spot: the wings match to 0.07 (puts) and 0.40 (calls)
+of a spread, and it exposed the zero-bid contamination in H3's wide lift (H3, "The
+first wide day"). **Still wanted: the SECOND expiry** (23 Oct on 18 Sep; see the
+dates below), and a second day. Note the export came out Ticker-first rather than
+Strike-first; the tools now read both, so nothing needs changing at the terminal.
+
 **Why.** From 18 September the recorder also writes USO's wings out to ±60% of spot
 (`data/surface_wide.csv`), and H3 predicts that adding them lifts USO's model-free
 estimate by 1.4 to 3.2 points. The wings are exactly where a free indicative feed is
@@ -107,6 +116,16 @@ unmeasured.**
 *Bloomberg figures: Source: Bloomberg Finance L.P.*
 
 ### 3. Find out whether Bloomberg STATES its day count anywhere
+
+**18 Sep: asked, not answered.** The reply described the `GV` template (60-day
+classical historical volatility against 3-month at-the-money implied volatility)
+and said nothing about how OMON's IVM annualises time. Still open. Ask again naming
+the field, and ask for a documentation link: *"In OMON, the IVM column: when you
+convert days to expiry into a year fraction, do you divide trading days by 252 or
+calendar days by 365? Please point me to the documentation."* Meanwhile the prices
+say 252 on a third day (divisor 252.0, 18 Sep).
+
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
 
 **Now the single most important ask on this list, and it is not close.** A research
 pass on 16 Sep established that Bloomberg does **not** publish IVM's day-count basis

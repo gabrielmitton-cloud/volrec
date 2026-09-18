@@ -103,6 +103,29 @@ def num(v):
     return f
 
 
+def strike_cells(r):
+    """One OMON strike row -> [(type, strike, bid, ask, last, ivm, volume)], calls first.
+
+    Two layouts exist. Exports up to 16 Sep 2026 put Strike first and Ticker second in
+    each half; the 18 Sep export put Ticker first, and every parser that looked for a
+    number in the first cell silently read zero quotes from it. Bid, Ask, Last, IVM
+    and Volm sit in the same five columns either way, so only the strike's column is
+    detected. Returns [] for anything that is not a strike row.
+    """
+    out = []
+    for off, typ in ((0, "C"), (7, "P")):
+        if len(r) < off + 7:
+            continue
+        k = num(r[off])
+        if k is None and str(r[off] or "").strip():
+            k = num(r[off + 1])             # Ticker-first layout: the strike is next
+        if k is None:
+            continue
+        out.append((typ, round(k, 2), num(r[off + 2]), num(r[off + 3]),
+                    num(r[off + 4]), num(r[off + 5]), num(r[off + 6])))
+    return out
+
+
 def parse_omon(path, expiry_label):
     """{(type, strike): {bid, ask, iv, volume}} for one expiry block of an OMON export.
 
@@ -120,18 +143,8 @@ def parse_omon(path, expiry_label):
                 forward = float(m.group(1))
         if not block or not block.startswith(expiry_label):
             continue
-        if not re.match(r"^\d+(\.\d+)?$", first):
-            continue
-        for off, typ in ((0, "C"), (7, "P")):
-            if len(r) < off + 7:
-                continue
-            k = num(r[off])
-            if k is None:
-                continue
-            out[(typ, round(k, 2))] = {
-                "bid": num(r[off + 2]), "ask": num(r[off + 3]),
-                "iv": num(r[off + 5]), "volume": num(r[off + 6]),
-            }
+        for typ, k, bid, ask, _, iv, vol in strike_cells(r):
+            out[(typ, k)] = {"bid": bid, "ask": ask, "iv": iv, "volume": vol}
     return out, forward
 
 
@@ -233,6 +246,80 @@ def compare(symbol, export, rows, fails, notes):
     }
 
 
+SURFACE_WIDE = ROOT / "data" / "surface_wide.csv"
+
+
+def wings(symbol, export, rows, expiry):
+    """The strikes beyond +/-30%, where a free indicative feed is weakest.
+
+    Added 18 Sep 2026 with the first wide export (USO, ~$5-315). Two questions:
+      1. are the free feed's wing quotes as good as Bloomberg's, contract by contract?
+      2. what does adding the wing strikes do to the model-free estimate for this
+         expiry, computed from EACH vendor's own prices on the SAME strikes? A lift
+         that appears on both feeds is the estimator's; one that appears on only one
+         is the feed's.
+    Aggregates only, like everything else here. None when the recorder has no wide
+    rows for this symbol and expiry."""
+    if not SURFACE_WIDE.exists():
+        return None
+    wide = [r for r in csv.DictReader(SURFACE_WIDE.open(newline=""))
+            if r["date"] == rows[0]["date"] and r["symbol"] == symbol and r["expiration"] == expiry]
+    if not wide:
+        return None
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    import modelfree                                   # only here: it pulls in the network stack
+    label = bloomberg_label(expiry)
+    bbg, _ = parse_omon(export, label)
+    rate = next((float(m.group(1)) / 100 for r in read_sheet(export) if r and "CSize" in (r[0] or "")
+                 and (r[0] or "").startswith(label) and (m := re.search(r"\bR\s+([\d.]+)", r[0]))), 0.0)
+    reg = [r for r in rows if r["expiration"] == expiry]
+    spot, dte = num(reg[0]["spot"]), reg[0]["dte"]
+
+    def agree(sub):
+        n, ratio, both0, free0, bbg0 = 0, [], 0, 0, 0
+        for x in sub:
+            k, t = num(x["strike"]), x["type"]
+            b = bbg.get((t, round(k, 2)))
+            if (t == "P") != (k < spot) or not b or b["ask"] is None:
+                continue                                      # out of the money, quoted, only
+            n += 1
+            fb, fa, bb, ba = num(x["bid"]) or 0.0, num(x["ask"]), b["bid"] or 0.0, b["ask"]
+            both0 += fb == 0 and bb == 0
+            free0 += fb == 0 and bb > 0
+            bbg0 += fb > 0 and bb == 0
+            if fa is not None and ba > bb:
+                ratio.append(abs((fb + fa) / 2 - (bb + ba) / 2) / (ba - bb))
+        return {"n": n, "mid_vs_spread": st.median(ratio) if ratio else None,
+                "both_zero_bid": both0, "free_only_zero": free0, "bbg_only_zero": bbg0}
+
+    def vol(quotes, keep, zero_bid):
+        rows_ = [{"dte": dte, "strike": str(k), "type": t, "mid": str((q["bid"] + q["ask"]) / 2),
+                  "bid": str(q["bid"])} for (t, k), q in quotes.items()
+                 if k in keep and q["bid"] is not None and q["ask"] is not None]
+        got = modelfree.variance_one_expiry(rows_, rate, zero_bid)
+        return 100 * got[0] ** 0.5 if got and got[0] > 0 else None
+
+    free = {(x["type"], round(num(x["strike"]), 2)): {"bid": num(x["bid"]) or 0.0, "ask": num(x["ask"])}
+            for x in reg + wide if num(x["ask"]) is not None}
+    kr = {round(num(x["strike"]), 2) for x in reg}
+    kw = kr | {round(num(x["strike"]), 2) for x in wide}
+    chain = {k for _, k in bbg}
+    lift = {}
+    for zb, key in ((False, "as_registered"), (True, "zero_bid")):
+        f0, f1 = vol(free, kr, zb), vol(free, kw, zb)
+        b0, b1, b2 = vol(bbg, kr, zb), vol(bbg, kw, zb), vol(bbg, chain, zb)
+        lift[key] = {"free": f1 - f0 if None not in (f0, f1) else None,
+                     "bbg": b1 - b0 if None not in (b0, b1) else None,
+                     "bbg_beyond_cap": b2 - b1 if None not in (b1, b2) else None}
+    ks = sorted(chain)
+    return {"expiry": expiry, "wide_rows": len(wide), "rate": rate,
+            "export_reach": [ks[0] / spot, ks[-1] / spot] if ks else None,
+            "put_wing": agree([x for x in wide if num(x["strike"]) < spot]),
+            "call_wing": agree([x for x in wide if num(x["strike"]) > spot]),
+            "lift": lift}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--dir", default=str(DEFAULT_DIR), help="folder holding the OMON exports")
@@ -301,6 +388,21 @@ def main():
         if r["strikes"]:
             print(f"      strikes {r['strikes'][0]:.0f}-{r['strikes'][1]:.0f} matched; "
                   f"the recorder covers {r['free_strikes'][0]:.0f}-{r['free_strikes'][1]:.0f}")
+        w = wings(symbol, day[symbol], sym_rows, r["expiry"])
+        if w:
+            r["wings"] = w
+            g = lambda v, s="+.2f": format(v, s) if v is not None else "n/a"
+            print(f"      WINGS, {w['wide_rows']} wide rows; export reaches "
+                  f"{w['export_reach'][0]:.2f}x-{w['export_reach'][1]:.2f}x spot")
+            for side in ("put_wing", "call_wing"):
+                a_ = w[side]
+                print(f"        {side.replace('_', ' '):<10} n={a_['n']:<3} mid gap {g(a_['mid_vs_spread'], '.2f')}"
+                      f" of a spread; zero bid on both {a_['both_zero_bid']}, free only "
+                      f"{a_['free_only_zero']}, Bloomberg only {a_['bbg_only_zero']}")
+            for key, lab in (("as_registered", "as registered"), ("zero_bid", "Cboe zero-bid rule")):
+                L = w["lift"][key]
+                print(f"        lift, this expiry, {lab:<19} free {g(L['free'])}  Bloomberg "
+                      f"{g(L['bbg'])}  Bloomberg beyond the cap {g(L['bbg_beyond_cap'])}")
 
     print("\nIV columns are volatility points, free feed minus Bloomberg. Mid is a signed percent "
           "difference\non contracts worth 50c or more, then the same gap in cents, then as a "

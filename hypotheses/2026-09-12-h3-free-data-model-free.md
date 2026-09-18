@@ -699,6 +699,72 @@ proper control was assessed and rejected: SPY's own smile predicts +0.07 to +0.2
 45% band, because its put skew holds real variance beyond -30%, so it would not be a
 clean null, and it would need a recorder change. GLD and AAPL do the job instead.
 
+## The first wide day, and the wings against Bloomberg — 18 September 2026, AFTER data
+
+Everything in this section was seen after the first wide file landed. **It changes
+nothing registered above.** One wide day is not a reading; the first reading is at
+three.
+
+**The series with 17 September.** Cboe published 17 Sep after the leg rule changed, so
+that day entered on the new pair. USO read **+0.71**, its first positive gap, after
+-2.31 and -3.56 (the old 22/36 pair would have read +0.40). GLD -0.29, IWM +0.28, QQQ
++0.00, SPY +0.09. Over n=15 the mean absolute gap is **0.59** against H3a's 1.0, USO
+carrying 74% of it. The premise that USO reads low because of its wings did not hold
+on 17 Sep.
+
+**`modelfree.py --wide`, day one** (28d/35d, fully covered): USO +5.25 as registered,
++0.84 under Cboe's zero-bid rule; TSLA +1.66 on both; NVDA +0.76 on both; AAPL +0.02
+(null control, under 0.3). GLD recorded no wide rows: its band barely clears 30%, so
+that control will be intermittent. Only USO's two columns differ, because only USO
+has zero bids in its wings (21 of 82 wide rows).
+
+**The wings against Bloomberg.** USO OMON pulled 18:25 UTC, 30 minutes after the
+recorder's 17:55 snapshot, 16 Oct expiry, 144 strikes from 0.03x to 2.04x spot.
+`tools/bloomberg_compare.py` now matches the wide file too:
+
+| | n | mid gap, fraction of a spread | zero bid on both | on one feed only |
+|---|---|---|---|---|
+| registered band, 108-200 | 97 | 0.25 | - | - |
+| put wing, 64-105 | 18 | **0.07** | 13 | 1 (Bloomberg) |
+| call wing, 205-245 | 9 | **0.40** | 0 | 0 |
+
+**The free feed's wing quotes are as good as Bloomberg's**, including where the
+quotes are empty: 13 of 18 far puts had no bid on either feed. This is the first
+measurement of feed quality in the tails, and the first day USO passes the price
+gate (it failed at 0.64 on 15 Sep).
+
+**The lift for this expiry alone, from each vendor's own prices on the same strikes:**
+
+| | free feed | Bloomberg | Bloomberg's whole chain beyond the cap |
+|---|---|---|---|
+| as registered (zero bid counted at half the ask) | +5.28 | +4.91 | +65.9 |
+| Cboe zero-bid rule | +0.94 | +0.85 | +0.27 |
+
+Both vendors show it, so **the contamination is the estimator's, not the feed's.** Far
+puts with no bid carry asks of up to about two dollars on options worth pennies, and
+the registered estimator counts half of that ask as the price, at the low strikes the
+1/K^2 weight favours most.
+
+**A correction to this morning's section.** The known-answer test put the
+as-registered inflation at +0.14 to +0.47. On real USO wing quotes it is about **+4.1
+to +4.3**. The simulation's quote model (half-spread 0.05 plus 2.5% of price) badly
+understated real far-OTM asks. The direction it predicted held; the size did not.
+This is recorded as wrong rather than quietly dropped.
+
+**What it does and does not change.** The primary reading stays as registered. The
+interpretation grid registered this morning already covers this case - over 3.2
+reads "fail, most likely quote contamination; check the zero-bid column" - and day
+one is exactly that. On the same grid, the zero-bid column would sit in the 0.5-1.4
+band. **H3a's registered estimate is not affected**: applying the zero-bid rule
+inside +/-30% moves every benchmarked gap on every day by 0.03 points or less.
+
+**Also from the pull.** A third day of the day count: business divisor **252.0**, gap
++0.82 on 365 and +0.00 on 252. Volume on matched contracts, free 18,112 against
+Bloomberg 25,614; on 15 Sep they agreed within 3%. A 30-minute gap explains some of
+that and probably not all; not investigated.
+
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
+
 ## Adjustment log
 
 - **2026-09-18, before any wide data existed — the pair of expiries integrated, and the
