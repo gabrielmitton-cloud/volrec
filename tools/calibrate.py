@@ -14,6 +14,8 @@ what "right" is - that would be checking the data against itself.
     implied-vol inversion       invertibility: price -> vol -> price is identity
     model-free variance         Carr & Madan (1998): under a constant vol the
                                 model-free variance IS sigma^2
+    the --wide lift (H3)        the lift with EVERY expiry widened: what the
+                                recorder widens must reproduce it exactly
     realised-vol estimator      a simulated path with a known sigma
     the significance tests      a simulated world with NO premium, where a 5%
                                 test must reject about 5% of the time
@@ -25,6 +27,8 @@ Every threshold is set from something outside the measurement it judges, so a
 check cannot be made to pass by loosening it after the fact:
 
 - Parity and round-trip: floating-point precision. These are identities.
+- The --wide lift: floating-point precision. It is an identity once every leg the
+  estimate weights has been widened; any shortfall is a leg the recorder skipped.
 - Model-free method error: HALF of H3a's registered 1.0-point budget. Method error
   may not consume more than half the tolerance the hypothesis is judged on,
   otherwise H3a could pass or fail on the estimator rather than the data.
@@ -160,10 +164,69 @@ def risk_free_input():
     print("        against a smallest detectable effect of 0.56bp.")
 
 
+def wide_lift_identity():
+    """H3's --wide prediction is a LIFT: the 30-day estimate with the wide strikes
+    minus without. Until 18 Sep 2026 the estimate integrated the outermost expiries
+    present, while the recorder widened the two nearest 30 days, so on three days in
+    five a weighted leg was never widened and a known 1.93-point lift read as 0.63.
+
+    The reference truth is the lift with EVERY expiry widened. The measured lift runs
+    the recorder's own wide pass (surface.wide_rows_for, network replaced by a fake
+    chain) and modelfree's own estimator. They must agree to float precision on
+    every expiry layout the weekly calendar produces, carry-forward included."""
+    print("\n-- the --wide lift against the lift with every expiry widened (H3)")
+    import surface
+    from datetime import date as _d, timedelta
+    S, r, iv0, today = 150.0, 0.039, 0.51, _d(2026, 9, 18)
+
+    def smile(k):                        # fat-winged and USO-like; any smile will do
+        return iv0 * (1 + 0.8 * k * k)
+
+    def row(exp, K, kind, extra=None):
+        T = (exp - today).days / 365
+        F = S * math.exp(r * T)
+        p = black76(kind, F, K, T, r, smile(math.log(K / F)))
+        return {"date": today.isoformat(), "symbol": "USO", "expiration": exp.isoformat(),
+                "dte": str((exp - today).days), "type": kind, "strike": str(K),
+                "moneyness": str(K / S), "mid": str(p), "bid": str(p),
+                "iv": str(iv0), **(extra or {})}
+
+    band = surface.wide_band(iv0, surface.TARGET_DTE)
+    ladder = sorted({round(S * m, 3) for m in surface.wide_targets(band)})   # OCC: 1/1000
+    worst, parts = 0.0, []
+    saved = surface.wide_chain, surface.PACE
+    try:
+        surface.PACE = 0
+        for layout in ([21, 28, 35], [25, 32], [24, 31], [23, 30, 37], [22, 29, 36]):
+            exps = [today + timedelta(d) for d in layout]
+            inner = [row(e, round(S * m, 4), k) for e in exps
+                     for m in surface.MONEYNESS_GRID for k in ("C", "P")]
+
+            def fake_chain(s, symbol, spot, day, kind, bnd, _e=exps):
+                return {f"USO{e:%y%m%d}{kind[0].upper()}{int(round(K * 1000)):08d}":
+                        {"latestQuote": {"bp": 0.0, "ap": 0.0}} for e in _e for K in ladder}
+            surface.wide_chain = fake_chain
+            got, _ = surface.wide_rows_for(None, "USO", S, today, inner)
+            # re-price what the recorder chose, exactly: the fake chain carries no quotes
+            wide = [row(_d.fromisoformat(x["expiration"]), float(x["strike"]), x["type"])
+                    for x in got]
+            every = [row(e, K, k) for e in exps for K in ladder for k in ("C", "P")]
+            base = modelfree.model_free_30d(inner, r)[0]
+            measured = modelfree.model_free_30d(inner + wide, r)[0] - base
+            truth = modelfree.model_free_30d(inner + every, r)[0] - base
+            worst = max(worst, abs(measured - truth))
+            parts.append(f"{layout}: {measured:+.3f} vs {truth:+.3f}")
+    finally:
+        surface.wide_chain, surface.PACE = saved
+    check(worst < 1e-9, "the --wide lift equals the lift with every expiry widened",
+          f"{'; '.join(parts)}; worst {worst:.1e}")
+
+
 def main():
     print("Calibration: every instrument against a known reference truth.")
     black76_identities()
     modelfree_method()
+    wide_lift_identity()
     realised_vol()
     test_size()
     risk_free_input()

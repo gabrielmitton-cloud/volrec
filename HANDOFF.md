@@ -1315,7 +1315,9 @@ pooled number is exposed - and that number was already established not to be a t
 | `panel_health.py` session check | **FAILS** when a snapshot lands outside the day's real market hours, DST-aware |
 | `tools/calibrate.py` | feeds every instrument an input with a KNOWN answer; runs inside every pressure test |
 | `surface.py` wide pass | records high-vol names beyond +/-30% into `data/surface_wide.csv`; registered grid untouched |
-| `modelfree.py --wide` | H3c sensitivity: integrates both files. Never the registered estimate |
+| `modelfree.py --wide` | H3c sensitivity: integrates both files. Never the registered estimate. **Since 18 Sep prints the LIFT per day, the zero-bid variant, coverage, and the GLD/AAPL null controls** |
+| `modelfree.pick_pair`, `surface.wide_expiries` | 18 Sep: one expiry rule in both places, `rows_for`'s own. The estimate used to integrate the outermost expiries and the wide pass widened a different pair |
+| `calibrate.py` lift identity | the measured `--wide` lift must equal the lift with every expiry widened, through the recorder's real `wide_rows_for` |
 
 ### Where the hypotheses stand
 
@@ -1323,7 +1325,7 @@ pooled number is exposed - and that number was already established not to be a t
 |---|---|---|
 | H1 | tested | VRP positive on 9 of 11 Cboe pairs, VIX/SPY t=5.14 |
 | H2 | tested, not adopted | log variance strongest, t=16.26 |
-| H3 | calibrated, cross-checked, gap identified and **demoted to a measurement note** | 0.59 mean gap at ±30%; the free feed's prices are as good as Bloomberg's, and **the 1.7-point volatility gap is a day-count convention — Bloomberg on 252 business days, the free feed on 365 calendar days**. It does not touch `modelfree.py` |
+| H3 | calibrated, cross-checked, gap identified and **demoted to a measurement note** | 0.59 mean gap at ±30%; the free feed's prices are as good as Bloomberg's, and **the 1.7-point volatility gap is a day-count convention — Bloomberg on 252 business days, the free feed on 365 calendar days**. It does not touch `modelfree.py`. **The wide-band test was repaired and pre-registered 18 Sep, before its data; first reading after the Tue 22 Sep run** |
 | H4 | first run, descriptive, model dependence measured | 998 hedged runs on the 14-15 Sep pair. H4a and H4b are on the wrong side; H4c holds directionally. **Re-hedging with our own delta moves every bucket by at most 0.52bp and flips no sign** |
 
 ### The Bloomberg result, in one paragraph
@@ -1537,6 +1539,33 @@ for a better reason than the one first given. **It also makes a falsifiable pred
 `modelfree.py --wide` should lift USO's estimate by 1.4 to 3.2 points and leave SPY's
 alone.** H3, "Calibration", has the detail.
 
+### 18 September: the wide test was broken, and was fixed before its data
+
+Preparing the test above turned up three defects, all found and settled before
+`surface_wide.csv` existed. Full numbers in H3, "How the prediction is tested".
+
+1. **The estimate and the wide pass used different expiries.** `modelfree.py`
+   integrated the outermost expiries present; carry-forward puts a third, shorter one
+   in the file on 23 of 39 days, so the estimate broke Cboe's 23-day rule and the wide
+   pass widened a pair the estimate did not use. On a synthetic USO with a known
+   1.93-point lift, the old code read **0.63 every Wednesday**. Now one rule in both
+   places, `rows_for`'s own: exact on every layout, **no recorded gap moved** (14-15
+   Sep have two expiries; 17 Sep had no Cboe close yet). The recorder's registered
+   path is unchanged as a syntax tree; only the sandboxed wide pass picks its pair
+   differently. Changing only `modelfree` was tried first and failed on Wed 25 Nov,
+   when Thanksgiving week moves the Christmas expiry and a nearest-two tie drops a
+   weighted leg.
+2. **The 1.37 / 3.24 bracket cannot be reproduced** - its code was never committed.
+   Seven smile methods on three days put what the capped band can deliver at 0.93 to
+   about 2.7. **The bar stays 1.4 to 3.2**; an interpretation grid is now registered
+   beside it, including the band where a reading fails the bar but is consistent with
+   flat wings.
+3. **SPY's half cannot fail** - SPY is never widened. GLD and AAPL (widened to 33%,
+   predicted lift 0.03-0.14) are registered as null controls with a 0.3 limit.
+
+**Deliberately not done:** no wide quote was previewed. Every choice was made on
+known-answer simulations and the +/-30% data already seen.
+
 ### The window this is all aimed at
 
 **40 trading days from Wed 16 September 2026 ends Wed 11 November 2026.** No market
@@ -1661,9 +1690,15 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 > That is the first live run of the wide pass. `gh run list --workflow=surface.yml` and
 > `tools/panel_health.py`, which warns if the wide file lags.
 >
-> Then, once the wide file has a few days: H3 registered a falsifiable prediction before
-> that data existed - `modelfree.py --wide` should lift USO's estimate by 1.4 to 3.2
-> points and leave SPY essentially unchanged. Test it and report the numbers either way.
+> Then, once the wide file has three days (after the Tue 22 Sep run): H3 registered a
+> falsifiable prediction before that data existed - `modelfree.py --wide` should lift
+> USO's estimate by 1.4 to 3.2 points. On 18 Sep the test itself was repaired and
+> pre-registered (H3, "How the prediction is tested"): the reading is USO's mean lift
+> over EVERY covered wide day, read against the registered interpretation grid, with
+> GLD and AAPL as null controls that must stay under 0.3, and the zero-bid column as
+> the other side of a bracket around the truth. SPY's half holds by construction and
+> is not evidence. Run `FRED_KEY=use-cache .../python3 modelfree.py --wide` and report
+> the numbers either way. The written-up reading is the one after Wed 11 Nov.
 >
 > Rules: report numbers before recommending; never adjust a pre-registered threshold,
 > bucket or bar; never edit a workflow's `schedule:` on a day whose run is still

@@ -6,7 +6,9 @@ calibration, not as a test of the hypothesis.
 **Status:** registered. Calibrated on one day. **The series began 14 Sep and has
 3 days as of 17 Sep** - see "The series so far". Not yet long enough to test H3a.
 Cross-checked against Bloomberg 15-16 Sep; the volatility gap is identified
-as a day-count convention and does not touch the estimator.
+as a day-count convention and does not touch the estimator. **The test of the wide
+prediction was fixed and pre-registered on 18 Sep, before any wide data** - see
+"How the prediction is tested".
 **Sample:** the strike surface in `data/surface.csv`, which begins accumulating
 on the first weekday run after 2026-09-12.
 
@@ -555,7 +557,159 @@ has accumulated, `modelfree.py --wide` should move USO's estimate UP by between 
 3.2 points and leave SPY's essentially unchanged. If it does not, the gap is not tail
 truncation and this section is wrong. That is the test the wide band was built for.
 
+## How the prediction is tested — registered 18 September 2026, before any wide data
+
+Written in the early hours of 18 September UTC, when `data/surface_wide.csv` did not
+yet exist; the first wide pass fires with the 14:57 UTC surface run that day. Three
+defects in the test design were found while preparing it. Each was attacked several
+ways, on synthetic worlds with a known answer and on the +/-30% data already recorded.
+**No wide quote was looked at**: Alpaca's chain could have been queried that night
+for USO's closing quotes out to +/-60%, which would have previewed the result and
+made every choice below data-informed. **Nothing here changes the 1.4 to 3.2 bar.**
+
+### 1. The legs: the test was measuring the wrong expiry, and so was H3a
+
+`modelfree.py` interpolated the OUTERMOST expiries present. `surface.py` carries
+yesterday's contracts forward for H4, so on 23 of the 39 trading days from 18 Sep to
+11 Nov a third, shorter expiry sits in the file. Integrating it broke Cboe's own rule
+that the near-term expiry be over 23 days, and the wide pass, which extended the two
+expiries nearest 30 days, left a leg the estimate weighted unwidened.
+
+**Coverage**, the share of the 30-day variance on legs the wide pass extended, 18 Sep
+to 11 Nov (Friday listings, as all eight names showed on 17 Sep):
+
+| estimate integrates | wide pass: nearest two (was) | wide pass: same rule as estimate (now) | wide pass: every expiry |
+|---|---|---|---|
+| outermost (was) | 16 of 39 days full, worst 38% | 16 of 39, worst 62% | 39 of 39 |
+| **the recorder's own pair (now)** | 39 of 39 | **39 of 39** | 39 of 39 |
+
+**Known-answer test**, through the real `surface.wide_select` and `modelfree` code on
+a synthetic USO whose true lift is 1.93-1.94. Measured lift on the weekly cycle:
+
+| layout (days) | 21/28/35 | 25/32 | 24/31 | 23/30/37 | 22/29/36 | worst error |
+|---|---|---|---|---|---|---|
+| as it was | +1.62 | +1.94 | +1.94 | **+0.63** | +1.51 | **1.30** |
+| **as it is now** | +1.94 | +1.94 | +1.94 | +1.93 | +1.93 | **0.000** |
+
+Every Wednesday a true 1.9-point lift would have read 0.63. The defect alone could
+have decided the test.
+
+**Interpolation error against a known 30-day variance** (mean over the weekly cycle,
+vol points): outermost 0.18 against 0.04 for the recorder's pair on a sloped term
+structure; 0.40 against 0.15 with one event day at 3x a normal day's variance; 1.27
+against 0.47 at earnings size. The coded rule broke Cboe's 23-day floor on 23 of 39
+days; nearest-two in the estimate would break it on 8; the recorder's pair and
+Cboe's strict 23-37 day window never do and are identical on every layout here.
+
+**Adopted: one rule in two places.** `modelfree.pick_pair` is `rows_for`'s own pick
+(last expiry at or under 30 days, first over it) and `surface.wide_expiries` applies
+the same rule to the same expiries. Changing only `modelfree` was tried first. It was
+exact through 11 Nov but not on Wed 25 Nov, when the Christmas expiry moves to
+Thursday and the file holds 23/29/37 days: the nearest-two tie between 23 and 37 went
+to 23, leaving the 37-day leg (15% of the estimate) unwidened. It also left 2 of 39
+days short (worst 81%) if an underlying lists month-end expiries. Keeping the
+outermost rule and widening every expiry was also rejected: it measures the lift to
+within 0.07, but it keeps the Cboe violation and three to five times the interpolation
+error, and it needs a recorder change anyway.
+
+**Effect on registered numbers: none on the gap series.** 14 and 15 September hold
+exactly two expiries per symbol, so both rules pick the same pair; 17 September had
+no Cboe close when this was changed, so no recorded gap moved. `modelfree.py`'s
+output was diffed before and after: only the 17 September estimates change - USO
+52.51 to 52.82, SPY 15.49 to 15.53, QQQ 20.08 to 19.96, IWM 19.50 to 19.49, GLD 24.66
+to 24.69 (and TSLA 46.19 to 44.60, which has no index).
+
+**Guards.** `tools/calibrate.py` checks the measured lift equals the lift with every
+expiry widened, to float precision, running the recorder's own `wide_rows_for`. Under
+the old rule it fails (Wednesday: +0.089 against +0.626). `pressure_test.py` replays
+every trading day to 31 Dec through the frozen `rows_for` and the real
+`wide_rows_for`, and checks the two rules agree on all 15,250 layouts of two to four
+expiries the window allows.
+
+### 2. The bracket: not reproducible, and the bar stands
+
+The computation behind 1.37 (flat wings) and 3.24 (linear wings) was not committed.
+Repeated here by the method described above - each day's own USO smile, priced with
+this project's Black-76, integrated with `variance_one_expiry`, 30-day interpolation on
+the recorder's pair, lift to the 60% cap | lift to the full tail:
+
+| wings beyond the recorded range | 14 Sep | 15 Sep | 17 Sep |
+|---|---|---|---|
+| flat | +1.38 \| +1.41 | +1.47 \| +1.50 | +0.93 \| +0.95 |
+| linear in vol, edge slope from 3 points | +3.91 \| +46.0 | +2.44 \| +6.47 | +2.03 \| +4.80 |
+| linear in vol, 4 points | +2.40 \| +3.14 | +2.08 \| +3.64 | +2.15 \| +8.95 |
+| linear in vol, 6 points | +2.25 \| +2.72 | +2.23 \| +2.48 | +1.55 \| +1.78 |
+| linear in total variance | +2.23 \| +2.57 | +1.99 \| +2.13 | +1.77 \| +1.99 |
+| SVI (Gatheral), Lee-bounded | +2.73 \| +3.84 | +2.39 \| +2.64 | +1.91 \| +4.53 |
+| quadratic (rejected above) | +4.10 \| +431 | +4.85 \| +437 | +3.03 \| +430 |
+
+No setup reproduces the registered pair. Flat wings on 17 Sep give 0.56 to 1.12
+depending on the expiry used, not 1.37; the nearest to 1.37 is linear total-variance
+wings on the old 22/36 pair, and nothing tried gives 3.24. What the capped band can deliver on a fitted
+smile runs from 0.93 to about 2.7, central near 2.0. The cap matters little for flat
+wings and a great deal for the steeper ones: the full tail on a linear-wing smile is
+not identified by the data at all, which is why the wide band has a cap.
+
+**How a reading will be interpreted, stated now:**
+
+| USO mean lift | reading |
+|---|---|
+| under 0.5 | what a lognormal with no smile gives (+0.25, per `calibrate.py`): the wings carry nothing extra, tail truncation is not the mechanism. **Fail.** |
+| 0.5 to 1.4 | **fail against the registered bar.** Consistent with flat-wing truncation on some days, and that is said beside it - the bar is not moved |
+| 1.4 to 3.2 | **pass** |
+| 2.7 to 3.2 | a pass, but above anything the capped band delivered on a fitted smile: check the zero-bid column before believing it |
+| over 3.2 | **fail**, most likely quote contamination in the thin wings rather than variance |
+
+### 3. How the lift is measured
+
+- **Primary, the registered reading.** `modelfree.py --wide` prints the lift for each
+  day: wide estimate minus registered estimate, same day, same legs. USO's reading is
+  the **mean over every covered wide day from 18 September, never a subset.** First
+  reading once three wide days exist (after the Tue 22 Sep run). Every later reading
+  uses all days; **the one written up is the reading after the last day of the
+  40-day window, Wed 11 Nov.** Stopping early on a good number is not available.
+- **Coverage exclusion.** A day where a leg the estimate weights has no wide rows is
+  printed, flagged `UNCOVERED` and excluded. The design above makes that count zero;
+  if it is not zero, that is itself a finding.
+- **The zero-bid sensitivity is a reading aid, not a second hypothesis.** The
+  known-answer test found that counting a zero-bid quote at half its ask, as the
+  registered estimator does, reads **+0.14 (median spreads) to +0.47 (90th-percentile
+  spreads) high**, while Cboe's zero-bid rule reads **0.36 to 0.56 low**, with 6-8 of
+  19 wide strikes on a zero bid. The truth lies between the two columns. If 1.4
+  falls between them, say the reading straddles the bar.
+- **Null controls: GLD and AAPL.** Both are widened only to 33%, and every smile
+  fitted to their own quotes predicts a lift of 0.03 to 0.14. **Each must stay under
+  0.3** (largest prediction plus the +0.14 zero-bid inflation, rounded). A control
+  over 0.3 means the pipeline makes lift that is not tail variance, and USO's reading
+  cannot be taken at face value whatever it is.
+- **Dose ordering.** Mean lift ordered {USO, TSLA} above NVDA above {AAPL, GLD}. Every
+  fitted smile agrees on this. USO against TSLA flips with the smile method, so it is
+  not predicted.
+
+Predicted lift at each name's own band, 17 Sep, flat / linear total variance / SVI:
+USO +0.93/+1.77/+1.91, TSLA +0.52/+1.31/+2.49, NVDA +0.27/+0.85/+1.50, AAPL
++0.03/+0.07/+0.05, GLD +0.04/+0.05/+0.05.
+
+### 4. SPY's half of the prediction holds by construction
+
+SPY's band is max(30%, 5 sigma) and 5 sigma is about 19%, so SPY is never widened and
+its `--wide` estimate is identical to its registered one. "Leave SPY essentially
+unchanged" cannot fail and is **not evidence either way**. Recording SPY wide as a
+proper control was assessed and rejected: SPY's own smile predicts +0.07 to +0.24 at a
+45% band, because its put skew holds real variance beyond -30%, so it would not be a
+clean null, and it would need a recorder change. GLD and AAPL do the job instead.
+
 ## Adjustment log
+
+- **2026-09-18, before any wide data existed — the pair of expiries integrated, and the
+  pair widened.** `modelfree.py` now integrates the pair the recorder picked
+  (`pick_pair`, `rows_for`'s rule) instead of the outermost expiries present, and
+  `surface.py`'s wide pass extends exactly that pair (`wide_expiries`). This conforms
+  the code to the frozen specification ("Cboe's variance calculation", "two expiries
+  per day"): the outermost rule broke Cboe's 23-day near-term floor on 23 of 39 days.
+  No gap in the series moved; see "How the prediction is tested", part 1. The
+  registered recording path (`rows_for`, `chain`, `append`, `open_interest`) is
+  unchanged, compared as syntax trees against the previous commit.
 
 - **2026-09-17, after three days of the series existed — a RECORDING change, not an
   analysis change.** High-volatility names are now ALSO recorded beyond +/-30%, into a

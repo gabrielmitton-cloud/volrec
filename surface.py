@@ -378,6 +378,28 @@ def wide_select(inner, spot, available_by_expiry, band):
     return keep
 
 
+def wide_expiries(dte_by_exp):
+    """{expiration: dte} -> the expiries to widen: exactly the pair modelfree.py's
+    pick_pair() integrates, by rows_for's own rule applied to the same expiries.
+
+    Pure, so it is tested without the network. Until 18 Sep 2026 this took the two
+    expiries nearest TARGET_DTE. That differs from H3's pair when the spacing is
+    uneven: on Wed 25 Nov 2026 the Christmas expiry moves to Thursday, the file holds
+    23, 29 and 37 days, H3 weights 29 and 37, and the nearest-two tie between 23 and
+    37 went to 23 - so a leg carrying 15% of the estimate was never widened.
+    pressure_test.py replays every trading day to 31 Dec and fails if any weighted
+    leg goes unwidened, so the two rules cannot drift apart silently.
+    """
+    d = sorted(set(dte_by_exp.values()))
+    below = [x for x in d if x <= TARGET_DTE]
+    above = [x for x in d if x > TARGET_DTE]
+    if below and above:
+        pair = {below[-1], above[0]}
+    else:
+        pair = set(sorted(d, key=lambda x: abs(x - TARGET_DTE))[:2])
+    return {e for e, x in dte_by_exp.items() if x in pair}
+
+
 def wide_rows_for(s, symbol, spot, today, inner):
     """Rows beyond the registered band for one symbol. Returns (rows, band)."""
     ivs = []
@@ -401,12 +423,12 @@ def wide_rows_for(s, symbol, spot, today, inner):
     snaps = wide_chain(s, symbol, spot, today, "call", band)
     time.sleep(PACE)
     snaps.update(wide_chain(s, symbol, spot, today, "put", band))
-    # The two expiries nearest TARGET_DTE: the pair H3 interpolates. A third
-    # expiry present only through carry-forward is not extended.
+    # Exactly the pair H3 interpolates. A third expiry present only through
+    # carry-forward is not extended.
     by_exp = {}
     for r in inner:
         by_exp[r["expiration"]] = int(r["dte"])
-    wanted = set(sorted(by_exp, key=lambda e: abs(by_exp[e] - TARGET_DTE))[:2])
+    wanted = wide_expiries(by_exp)
     inner = [r for r in inner if r["expiration"] in wanted]
     parsed, avail = [], {}
     for osym, snap in snaps.items():

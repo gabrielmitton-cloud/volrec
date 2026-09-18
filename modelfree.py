@@ -36,9 +36,25 @@ Cboe's variance calculation, applied per expiry:
 
 then interpolate the two expiries to a constant 30 days and take the square root.
 
+WHICH two expiries: the pair `surface.py` picked, by the same rule (`pick_pair`) -
+the last at or under 30 days and the first over it. That is Cboe's near/next rule
+for weekly listings. It is NOT "the shortest and longest present": `surface.py`
+carries yesterday's contracts forward for H4's continuity, so on about three days
+in five a third, shorter expiry sits in the file. Integrating that one broke Cboe's
+23-day near-term floor and left `--wide` measuring a leg the wide pass never
+extended. Changed 18 Sep 2026, before any affected day had a Cboe close; see H3's
+adjustment log.
+
+--wide (a SENSITIVITY, never the registered estimate) adds `surface_wide.csv` and
+reports the LIFT, wide minus registered, per day, which is how H3's 17 Sep
+prediction is tested. It also reports the lift under Cboe's zero-bid rule. A
+known-answer test (H3, 18 Sep) found the two bracket the truth: counting zero-bid
+quotes at half the ask reads high, Cboe's rule reads low.
+
 HONEST LIMITS, state these in any write-up
 ------------------------------------------
-- Strike coverage stops at +/-10% of spot. Cboe integrates until it sees two
+- Strike coverage stops at +/-30% of spot (widened from +/-10% on 12 Sep; --wide
+  reaches further on high-volatility names). Cboe integrates until it sees two
   consecutive zero bids, which reaches much further into the tails. The tails
   carry real weight in the integral, so this estimator is expected to sit BELOW
   Cboe's, and that bias is a measured quantity here rather than a flaw to hide.
@@ -68,6 +84,18 @@ SURF_WIDE = HERE / "data" / "surface_wide.csv"
 BENCH = {"SPY": "VIX", "QQQ": "VXN", "IWM": "RVX", "GLD": "GVZ", "USO": "OVX"}
 TARGET_DAYS = 30
 
+# H3's falsifiable prediction for --wide, registered 17 Sep 2026 BEFORE any wide data
+# existed. Never change these to suit a result.
+PREDICTED_LIFT = {"USO": (1.4, 3.2)}
+# Registered 18 Sep 2026, also before any wide data. GLD and AAPL are widened only to
+# 33%, and every smile fitted to their own 14-17 Sep quotes predicts a lift of 0.03 to
+# 0.14. The limit adds the +0.14 that counting zero-bid quotes was measured to add
+# in the known-answer test, then rounds: a control over 0.3 means the pipeline is
+# making lift that is not tail variance. See H3, "How the prediction is tested".
+NULL_CONTROLS = ("GLD", "AAPL")
+NULL_LIFT_MAX = 0.3
+FIRST_READING_DAYS = 3
+
 
 def _num(v):
     try:
@@ -77,11 +105,16 @@ def _num(v):
         return None
 
 
-def variance_one_expiry(rows, r_annual):
+def variance_one_expiry(rows, r_annual, zero_bid_rule=False):
     """Cboe's sigma^2 for a single expiry. Returns (sigma2, T, n_used) or None.
 
     `rows` are every recorded contract at one expiry for one underlying on one
     day, both types.
+
+    zero_bid_rule (off by default, and off for every registered number): apply
+    Cboe's exclusion to the out-of-the-money strikes - walking outward from K0,
+    skip any zero bid and stop after two consecutive zero bids. Used only by the
+    --wide sensitivity, where the far wings are thin.
     """
     if not rows:
         return None
@@ -123,6 +156,21 @@ def variance_one_expiry(rows, r_annual):
             q[k] = calls[k]
         elif k == K0 and k in calls and k in puts:
             q[k] = (calls[k] + puts[k]) / 2.0
+    if zero_bid_rule:
+        bids = {}
+        for row in rows:
+            k, b = _num(row["strike"]), _num(row.get("bid"))
+            if k is not None:
+                bids[(k, row["type"])] = b
+        for side, walk in (("P", sorted((k for k in q if k < K0), reverse=True)),
+                           ("C", sorted(k for k in q if k > K0))):
+            zeros = 0
+            for k in walk:
+                if zeros >= 2 or not bids.get((k, side)):
+                    zeros += 1
+                    del q[k]
+                else:
+                    zeros = 0
     ks = sorted(q)
     if len(ks) < 3:
         return None
@@ -141,19 +189,48 @@ def variance_one_expiry(rows, r_annual):
     return (sigma2, T, len(ks))
 
 
-def model_free_30d(day_rows, r_annual):
-    """Interpolate the two expiries to a constant 30 days. Returns vol in points."""
+def pick_pair(dtes):
+    """The two expiries to interpolate: surface.py's own pick rule, verbatim - the
+    last at or under TARGET_DAYS and the first over it, else the two nearest.
+
+    Kept identical to rows_for() in surface.py on purpose (that function is frozen
+    and cannot be imported without the network stack). pressure_test.py checks the
+    two agree on a full calendar and that the wide pass extends every leg this
+    picks, so neither can drift alone.
+    """
+    d = sorted(set(dtes))
+    below = [x for x in d if x <= TARGET_DAYS]
+    above = [x for x in d if x > TARGET_DAYS]
+    if below and above:
+        return [below[-1], above[0]]
+    return sorted(sorted(d, key=lambda x: abs(x - TARGET_DAYS))[:2])
+
+
+def leg_weights(pair):
+    """Share of the interpolated 30-day total variance each leg carries, under a flat
+    forward variance. A leg with weight 0 does not move the estimate at all."""
+    if len(pair) == 1 or not (pair[0] <= TARGET_DAYS <= pair[-1]):
+        return {min(pair, key=lambda x: abs(x - TARGET_DAYS)): 1.0}
+    d1, d2 = pair
+    w = (d2 - TARGET_DAYS) / (d2 - d1)
+    a, b = d1 * w, d2 * (1 - w)
+    return {d1: a / (a + b), d2: b / (a + b)}
+
+
+def model_free_30d(day_rows, r_annual, zero_bid_rule=False):
+    """Interpolate the picked pair to a constant 30 days. Returns vol in points."""
     by_exp = {}
     for row in day_rows:
         by_exp.setdefault(row["expiration"], []).append(row)
     legs = []
     for exp_date, rows in by_exp.items():
-        got = variance_one_expiry(rows, r_annual)
+        got = variance_one_expiry(rows, r_annual, zero_bid_rule)
         if got:
             legs.append((int(rows[0]["dte"]), got[0], got[1], got[2]))
     if not legs:
         return None
-    legs.sort()
+    pair = pick_pair([x[0] for x in legs])
+    legs = sorted(x for x in legs if x[0] in pair)
 
     if len(legs) == 1 or not (legs[0][0] <= TARGET_DAYS <= legs[-1][0]):
         # No bracket: use the nearest expiry and scale. Flagged in the output,
@@ -203,6 +280,7 @@ def main():
     rows = list(csv.DictReader(SURF.open(newline="")))
     if not rows:
         sys.exit("surface.csv is empty.")
+    registered, extra = rows, []
     # --wide adds the contracts beyond the registered band. The integral then
     # reaches further into the tails, which is exactly what H3c predicts should
     # close the gap on high-volatility names. Without the flag, nothing changes:
@@ -258,6 +336,68 @@ def main():
         mu, se, t, p = analyze.plain_t(allg) if len(allg) > 1 else (allg[0], 0, 0, 1)
         print(f"\n   pooled n={len(allg)}  mean gap {mu:+.2f} vol points")
         print(f"   for reference, the 4 Sep ATM-vs-Cboe gap was -3.61")
+
+    if extra:
+        wide_lift_report(registered, extra, r)
+
+
+def wide_lift_report(registered, extra, r):
+    """H3's 17 Sep prediction, tested exactly as pre-registered on 18 Sep: the lift
+    is --wide minus registered, same day, same legs. See H3, "How the prediction
+    is tested"."""
+    print("\n-- the LIFT: wide minus registered, same day, same legs (vol points)")
+    print("   'as reg' counts a zero-bid quote at half its ask, as the registered")
+    print("   estimator does; 'zero-bid' applies Cboe's rule. A known-answer test found")
+    print("   the first reads high and the second low, so the truth lies between.\n")
+    print(f"   {'date':<12}{'sym':<6}{'reg':>7}{'wide':>7}{'as reg':>8}{'zero-bid':>9}"
+          f"{'wide rows':>10}{'0-bid':>6}  legs")
+    lifts = {}
+    for d in sorted({x["date"] for x in extra}):
+        for sym in sorted({x["symbol"] for x in extra if x["date"] == d}):
+            inner = [x for x in registered if x["date"] == d and x["symbol"] == sym]
+            outer = [x for x in extra if x["date"] == d and x["symbol"] == sym]
+            if not inner:
+                continue
+            # Coverage: every leg that carries weight must have wide rows, or the lift
+            # is diluted. Pre-registered: such a day is shown, flagged, and excluded.
+            dte_of = {x["expiration"]: int(x["dte"]) for x in inner}
+            pair = pick_pair(dte_of.values())
+            widened = {int(x["dte"]) for x in outer}
+            short = [d_ for d_, w in leg_weights(pair).items() if w > 0 and d_ not in widened]
+            got = [model_free_30d(inner, r), model_free_30d(inner + outer, r),
+                   model_free_30d(inner, r, True), model_free_30d(inner + outer, r, True)]
+            zb = sum(1 for x in outer if not _num(x.get("bid")))
+            legs = "/".join(f"{x}d" for x in pair) + (f"  UNCOVERED {short}, excluded" if short else "")
+            if not all(got):
+                print(f"   {d:<12}{sym:<6}{'too thin':>7}")
+                continue
+            a, b, za, zbw = (g[0] for g in got)
+            print(f"   {d:<12}{sym:<6}{a:>7.2f}{b:>7.2f}{b - a:>+8.2f}{zbw - za:>+9.2f}"
+                  f"{len(outer):>10}{zb:>6}  {legs}")
+            if not short:
+                lifts.setdefault(sym, []).append((b - a, zbw - za))
+
+    if not lifts:
+        return
+    print(f"\n   {'sym':<6}{'days':>5}{'mean as reg':>13}{'mean zero-bid':>15}   reading")
+    for sym in sorted(lifts, key=lambda s: -sum(x[0] for x in lifts[s]) / len(lifts[s])):
+        v = lifts[sym]
+        m1 = sum(x[0] for x in v) / len(v)
+        m2 = sum(x[1] for x in v) / len(v)
+        note = ""
+        if sym in PREDICTED_LIFT:
+            lo, hi = PREDICTED_LIFT[sym]
+            note = (f"registered bracket {lo:.1f} to {hi:.1f}: "
+                    + ("INSIDE" if lo <= m1 <= hi else "OUTSIDE"))
+            if len(v) < FIRST_READING_DAYS:
+                note += f" (only {len(v)} day(s); first reading at {FIRST_READING_DAYS})"
+        elif sym in NULL_CONTROLS:
+            note = (f"null control, must stay under {NULL_LIFT_MAX}: "
+                    + ("ok" if m1 < NULL_LIFT_MAX else "FAILED - lift that is not tail variance"))
+        print(f"   {sym:<6}{len(v):>5}{m1:>+13.2f}{m2:>+15.2f}   {note}")
+    print("\n   Pre-registered in H3 on 18 Sep: USO's reading is the as-registered mean over")
+    print("   every covered wide day, never a subset. SPY is never widened, so its half of")
+    print("   the prediction holds by construction and is not evidence either way.")
 
 
 if __name__ == "__main__":

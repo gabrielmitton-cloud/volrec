@@ -264,6 +264,84 @@ if surf.exists():
             if r.get("moneyness") and abs(float(r["moneyness"]) - 1) > 0.305]
     ok(not _far, f"surface.csv holds no row beyond the registered band "
                  f"({len(_far)} found)")
+# --- which two expiries H3 integrates, and whether the wide pass covers them -------
+# Added 18 Sep 2026. modelfree used to integrate the OUTERMOST expiries present, and
+# carry-forward puts a third, shorter one in the file on ~3 days in 5: that broke
+# Cboe's 23-day near-term floor and left --wide measuring a leg the wide pass never
+# extended (a known 1.93-point lift read as 0.63). modelfree.pick_pair now copies
+# rows_for's rule; these check the copy against the frozen original, on a calendar.
+_ms = _iu.spec_from_file_location("mfree", R / "modelfree.py")
+_mfm = _iu.module_from_spec(_ms)
+_ms.loader.exec_module(_mfm)
+if surf.exists():
+    _two = {}
+    for _r in srows:
+        _two.setdefault((_r["date"], _r["symbol"]), set()).add(int(_r["dte"]))
+    _two = {k: v for k, v in _two.items() if len(v) == 2}
+    ok(all(_mfm.pick_pair(v) == sorted(v) for v in _two.values()),
+       f"every recorded two-expiry day keeps both legs ({len(_two)} symbol-days), so no "
+       f"registered H3 gap moved when the pair rule changed")
+# A trading calendar to 31 Dec with Friday expiries (what all eight names list inside
+# the 21-45 day window, as recorded on 17 Sep). A Friday holiday moves to Thursday.
+from datetime import timedelta as _td
+_hol = {date(2026, 11, 26), date(2026, 12, 25)}
+_cal, _t = [], date(2026, 9, 18)
+while _t <= date(2026, 12, 31):
+    if _t.weekday() < 5 and _t not in _hol:
+        _fri = [_t + _td(n) for n in range(_sm.DTE_WINDOW[0], _sm.DTE_WINDOW[1] + 1)
+                if (_t + _td(n)).weekday() == 4]
+        _cal.append((_t, [e - _td(1) if e in _hol else e for e in _fri]))
+    _t += _td(1)
+def _occ(e, kind, K):
+    return f"USO{e:%y%m%d}{kind[0].upper()}{int(round(K * 1000)):08d}"
+# Drive the FROZEN rows_for and the real wide_rows_for with fake chains, day by day,
+# carrying forward exactly as the recorder does.
+_saved = (_sm.chain, _sm.wide_chain, _sm.open_interest, _sm.previous_contracts, _sm.PACE)
+_bad_pick, _bad_cboe, _bad_cover, _prev = [], [], [], set()
+try:
+    _sm.PACE = 0
+    _sm.open_interest = lambda *a, **k: {}
+    for _t, _listed in _cal:
+        _sm.chain = (lambda s, sym, spot, day, kind, _L=_listed:
+                     {_occ(e, kind, K): {"latestQuote": {"bp": 1.0, "ap": 1.1},
+                                         "impliedVolatility": 0.51}
+                      for e in _L for K in range(105, 196, 5)})
+        _sm.previous_contracts = lambda sym, day: set()
+        _picked = sorted({int(r["dte"]) for r in _sm.rows_for(None, "USO", 150.0, _t)})
+        _sm.previous_contracts = lambda sym, day, _p=_prev: _p
+        _rows = _sm.rows_for(None, "USO", 150.0, _t)
+        _dtes = sorted({int(r["dte"]) for r in _rows})
+        if _mfm.pick_pair([(e - _t).days for e in _listed]) != _picked:
+            _bad_pick.append(_t)
+        _pair = _mfm.pick_pair(_dtes)
+        if _pair[0] <= 23 and any(23 < d <= 30 for d in _dtes):
+            _bad_cboe.append(_t)
+        for _r in _rows:
+            _r["moneyness"], _r["iv"] = str(float(_r["strike"]) / 150.0), "0.51"
+        _sm.wide_chain = (lambda s, sym, spot, day, kind, band, _L=_listed:
+                          {_occ(e, kind, K): {} for e in _L for K in range(40, 250, 5)})
+        _got, _ = _sm.wide_rows_for(None, "USO", 150.0, _t, _rows)
+        _ext = {int(r["dte"]) for r in _got}
+        if any(w > 0 and d not in _ext for d, w in _mfm.leg_weights(_pair).items()):
+            _bad_cover.append(_t)
+        _prev = {r["option_symbol"] for r in _rows}
+finally:
+    _sm.chain, _sm.wide_chain, _sm.open_interest, _sm.previous_contracts, _sm.PACE = _saved
+ok(not _bad_pick, f"modelfree.pick_pair reproduces the frozen rows_for pick on all "
+                  f"{len(_cal)} trading days to 31 Dec ({len(_bad_pick)} differ)")
+ok(not _bad_cboe, f"H3 never integrates a near leg of 23 days or less while a 24-30 day "
+                  f"expiry exists - Cboe's rule ({len(_bad_cboe)} of {len(_cal)} days break it)")
+ok(not _bad_cover, f"the wide pass extends every leg the H3 estimate weights, carry-forward "
+                   f"included ({len(_bad_cover)} of {len(_cal)} days uncovered)")
+# Stronger than any calendar: every layout of 2-4 expiries the DTE window allows.
+from itertools import combinations as _comb
+_span = range(_sm.DTE_WINDOW[0], _sm.DTE_WINDOW[1] + 1)
+_lay = [c for n in (2, 3, 4) for c in _comb(_span, n)]
+_diff = [c for c in _lay if _sm.wide_expiries({f"e{x}": x for x in c})
+         != {f"e{x}" for x in _mfm.pick_pair(c)}]
+ok(not _diff, f"surface.wide_expiries and modelfree.pick_pair agree on all {len(_lay):,} "
+              f"possible layouts of 2-4 expiries ({len(_diff)} differ)")
+
 _wide = R / "data/surface_wide.csv"
 if _wide.exists():
     _near = [r for r in csv.DictReader(_wide.open(newline=""))

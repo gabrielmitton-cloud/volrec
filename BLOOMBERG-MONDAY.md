@@ -56,6 +56,37 @@ on a two-year contract with wide markets is not evidence and no conclusion was
 drawn from it. But it is the one observation pointing away from a finding that is
 already written down, and it should be settled rather than left.
 
+### 1b. USO out to ±60% on both of the recorder's expiries — NEW 18 September
+
+**Why.** From 18 September the recorder also writes USO's wings out to ±60% of spot
+(`data/surface_wide.csv`), and H3 predicts that adding them lifts USO's model-free
+estimate by 1.4 to 3.2 points. The wings are exactly where a free indicative feed is
+weakest: thin quotes, zero bids, stale prints. Nothing has ever checked the free
+feed's far-wing prices against a second vendor. A matched wide USO export does two
+things no other pull can: it measures **feed quality in the tails**, and it lets the
+lift be computed **from Bloomberg's own prices** on the same day, independently of
+the free feed.
+
+- **Pull on a day the recorder has run** (ask 0). The wide file lands with the
+  surface run, around 18:30 UTC.
+- `USO US Equity` `OMON` `<GO>`, Table view.
+- **Set `Exp` FIRST, then `Strikes`** - they are separate amber fields, and the
+  library's answer of 17 Sep was to set the expiry before the strike count.
+- **The two expiries the recorder uses:** the last Friday at or under 30 days out, and
+  the Friday after it. Mon 21 and Tue 22 Sep: **16 Oct and 23 Oct**. Wed 23 Sep to
+  Tue 29 Sep: **23 Oct and 30 Oct**. Export both.
+- **Strikes: 200, or the field's maximum.** USO was near $156 on 17 Sep, so ±60% is
+  about **$62 to $250**. The 16 Sep pull at 80 strikes reached only -26%. Before
+  exporting, **check the lowest strike shown is at or below ~$65 and the highest at
+  or above ~$245**; if the field caps short of that, write down the range reached.
+- Export, save as `USO_OMON_YYYY-MM-DD.xlsx` in `~/Documents/volrec-bloomberg/`,
+  record `IFwd` and `R` for **both** expiry blocks and the pull time to the minute,
+  in UTC.
+
+The comparison tool does not exist yet, on purpose: it will be written against the
+first real export rather than guessed at. Aggregates only in anything published, with
+"Source: Bloomberg Finance L.P.".
+
 ### 2. SPY with 200+ strikes — EXPORT DONE 16 Sep, STILL NEEDS A MATCHED DAY
 
 SPY is the underlying H3 cares most about - it is the VIX benchmark, and the
