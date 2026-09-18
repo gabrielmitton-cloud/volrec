@@ -514,6 +514,47 @@ to be interesting.
   is one of several components inside the residual gap and is not separately
   identified here.
 
+## Calibration, 17 September 2026 - the estimator is sound; USO's gap is its wings
+
+`tools/calibrate.py` feeds every instrument an input whose correct answer is known in
+advance. The one that matters for H3 is the model-free estimator itself.
+
+**The method is well calibrated.** Priced under a constant volatility, the model-free
+variance has a known answer - it IS sigma^2 (Carr & Madan 1998; Demeterfi, Derman, Kamal
+& Zou 1999). On the recorder's own +/-30% x 40 grid:
+
+| true vol | error at +/-30% | error at +/-60% |
+|---|---|---|
+| 13% | +0.19 | +0.18 |
+| 23% | +0.11 | +0.10 |
+| 42% | -0.00 | +0.06 |
+| 51% | **-0.20** | +0.05 |
+
+At most 0.20 points, under half of H3a's 1.0-point budget. So **method error cannot
+explain USO's -2.93 gap.** Under a lognormal, truncating a 51% vol name at +/-30% costs
+two tenths of a point, because out-of-the-money option prices decay fast.
+
+**What does explain it is USO's actual smile.** The free feed's own recorded implied
+volatilities on 17 September show both wings elevated - far downside ~59%, far upside
+~64%, against 51% at the money. A smile puts real variance in the tails, and a +/-30%
+band cuts it off. Recomputing the estimator on USO's own fitted smile:
+
+| wing assumption beyond the recorded range | variance +/-30% misses |
+|---|---|
+| flat wings (conservative) | **-1.37** points |
+| linear wings, continuing the edge slope, bounded by Lee's moment formula | **-3.24** points |
+| **USO's observed gap to Cboe OVX** | **-2.93** (worst -3.56) |
+
+**The observed gap sits inside the bracket.** USO's shortfall against Cboe is the
+variance in its wings beyond +/-30%, not poor quotes. A quadratic fit to the smile was
+tried first and rejected: it extrapolates to 139% implied volatility at 0.45
+moneyness, which is the known failure of quadratic smiles in the wings.
+
+**A falsifiable prediction, stated before the data exists.** When `surface_wide.csv`
+has accumulated, `modelfree.py --wide` should move USO's estimate UP by between 1.4 and
+3.2 points and leave SPY's essentially unchanged. If it does not, the gap is not tail
+truncation and this section is wrong. That is the test the wide band was built for.
+
 ## Adjustment log
 
 - **2026-09-17, after three days of the series existed — a RECORDING change, not an
@@ -529,6 +570,15 @@ to be interesting.
   model-free integrand weights each strike by 1/K^2, so low strikes dominate. And it could
   not wait - Cboe's index history is retrievable back to 1990, but Alpaca's free feed
   serves only the present, so a day recorded at +/-30% is permanently a +/-30% day.
+
+  *Correction, the same day, after calibrating.* The sigma-coverage argument above is
+  **incomplete, and on its own would have been wrong.** Under a lognormal, truncating at
+  2.4 sigma costs only 0.20 points - see "Calibration" above - so low sigma coverage does
+  not by itself produce a 3-point gap. What does is USO's **smile**: its wings carry real
+  variance that a lognormal does not have. The decision stands and is now better
+  justified - the variance beyond +/-30% on USO's own smile is 1.37 to 3.24 points,
+  bracketing the observed 2.93 - but the reason is the shape of the distribution, not the
+  sigma count. The sigma heuristic pointed the right way for the wrong reason.
 
   *The rule.* Band = max(30%, 5 sigma of the 30-day move), capped at 60%. Five sigma is
   where the names that already track Cboe sit (SPY, QQQ, IWM, GLD all within 0.35 points).

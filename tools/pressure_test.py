@@ -282,6 +282,18 @@ for _ln in _t.stdout.splitlines():
 ok(_t.returncode == 0 and _nfail == 0,
    f"hedged.py unit tests pass ({_nfail} failures)" if _nfail
    else "hedged.py unit tests pass (18 hand-computed cases)")
+
+print("\n=== H3b. CALIBRATION (every instrument against a known reference truth) ===")
+# Each instrument is fed an input whose right answer is known in advance - parity,
+# invertibility, Carr-Madan's sigma^2, a simulated known vol, a no-premium world -
+# so a failure here means an instrument is wrong, never that the market moved.
+_c = _sp.run([sys.executable, str(R / "tools/calibrate.py")],
+             capture_output=True, text=True)
+_cfail = [ln.strip()[6:] for ln in _c.stdout.splitlines() if ln.strip().startswith("FAIL")]
+_cpass = sum(1 for ln in _c.stdout.splitlines() if ln.strip().startswith("PASS"))
+ok(_c.returncode == 0 and not _cfail,
+   f"all instruments calibrated ({_cpass} checks)" if not _cfail
+   else f"UNCALIBRATED: {'; '.join(_cfail)}")
 _hsrc = (R / "hedged.py").read_text()
 ok("iv_history" not in _hsrc, "hedged.py never touches the ATM panel")
 ok("cluster" in _hsrc.lower() and "demean" in _hsrc.lower(),

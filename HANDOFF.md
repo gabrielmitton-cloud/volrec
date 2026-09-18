@@ -1313,6 +1313,9 @@ pooled number is exposed - and that number was already established not to be a t
 | `panel_health.py` quote-time check | warns when a day's rows are stale by over 15 min, the within-day half of the snapshot-spread warning |
 | `panel_health.py` missed-day check | **FAILS** when a trading day has no data. Added after 16 Sep, when a whole day was lost silently |
 | `panel_health.py` session check | **FAILS** when a snapshot lands outside the day's real market hours, DST-aware |
+| `tools/calibrate.py` | feeds every instrument an input with a KNOWN answer; runs inside every pressure test |
+| `surface.py` wide pass | records high-vol names beyond +/-30% into `data/surface_wide.csv`; registered grid untouched |
+| `modelfree.py --wide` | H3c sensitivity: integrates both files. Never the registered estimate |
 
 ### Where the hypotheses stand
 
@@ -1503,6 +1506,36 @@ The proposal as first stated was `max(30%, 4 sigma)` touching only USO, TSLA and
 NVDA. What was built is 5 sigma on a 30-day basis, which also widens GLD and AAPL by
 three points: 5 sigma is where the names already tracking Cboe sit, and sizing on the
 longest expiry turned out to include stale carry-forward expiries.
+
+### Everything is calibrated — 17 September 2026
+
+`tools/calibrate.py` checks each instrument against a reference truth that does not
+come from the data, so a pass cannot be the data agreeing with itself. It runs in about
+four seconds inside every `pressure_test.py`.
+
+| instrument | reference truth | result |
+|---|---|---|
+| Black-76 pricer | put-call parity (exact identity) | worst 1.4e-14 |
+| implied-vol inversion | price to vol to price is identity | worst 1.8e-15 |
+| model-free variance | Carr & Madan: equals sigma^2 under constant vol | worst **0.20 pts** at +/-30% |
+| realised vol | simulated known sigma | c4 removes the ~1.2% low bias, residual under 0.25% |
+| ATM significance test | no-premium world, nominal 5% | 5.5% (the pooled test: 64.5%) |
+| surface date test | no-premium world, nominal 5% | 5.5% |
+| surface volume contrast | no-premium world, nominal 5% | 3.0% |
+| risk-free input | today's date | 7 days stale, **immaterial**: 10bp moves a gain ~0.013bp |
+
+Tolerances are argued from outside the measurement: identities to float precision,
+method error to half of H3a's 1.0-point budget, test size to the binomial 2.5-sigma band.
+
+**The calibration also corrected a piece of reasoning.** The wide band was first
+justified by sigma coverage - USO's downside at 2.4 sigma against SPY's 9.5. Calibrating
+showed that under a lognormal, 2.4 sigma costs only 0.20 points. What actually explains
+USO's -2.93 gap is its **smile**: on USO's own recorded implied volatilities, the variance
+beyond +/-30% is 1.37 points with flat wings and 3.24 with linear wings, bracketing the
+observed gap. So it is not a data-quality problem, and the wide band is the right fix
+for a better reason than the one first given. **It also makes a falsifiable prediction:
+`modelfree.py --wide` should lift USO's estimate by 1.4 to 3.2 points and leave SPY's
+alone.** H3, "Calibration", has the detail.
 
 ### The window this is all aimed at
 
