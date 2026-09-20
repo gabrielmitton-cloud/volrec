@@ -1587,6 +1587,25 @@ at 144 strikes was matched to it 30 minutes after the snapshot. Full numbers in 
 
 *Bloomberg figures: Source: Bloomberg Finance L.P.*
 
+### 19 September: H5 registered, and where the project's edge actually is
+
+`hypotheses/2026-09-19-h5-wing-quote-quality.md`. The 18 Sep pull found the free
+feed's wing quotes matching Bloomberg's while the estimator's zero-bid handling
+inflated the estimate by ~4.2 points on **both** vendors' prices. H5 turns that into
+four registered predictions: the wing quotes are fine (H5a), the emptiness is real
+(H5b), the inflation is the estimator's and reproduces on Bloomberg (H5c), and it
+scales with the zero-bid count (H5d). It needs no recorder change and no new code -
+only more wide days and **two more matched Bloomberg wing pulls**, which is now the
+binding constraint on the most distinctive result this project has.
+
+The framing, after a conference on 18 Sep and Greg Jensen (Bridgewater) on Odd Lots
+on 11 Sep arguing that AI keeps markets inefficient because frontier capability
+leapfrogs: **that is an argument for not competing on compute or on data volume.**
+The asymmetry available here is attention, not scale - nobody funded measures what
+free data costs, because they buy OPRA instead. An agent that searches for patterns
+in this data would destroy the pre-registration that makes these results citable
+(assessed 16 Sep, still rejected). An agent that runs the daily operations would not.
+
 ### The window this is all aimed at
 
 **40 trading days from Wed 16 September 2026 ends Wed 11 November 2026.** No market
