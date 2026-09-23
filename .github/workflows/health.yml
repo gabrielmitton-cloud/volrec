@@ -1,0 +1,38 @@
+name: health
+# The whole daily check - panel health, the pressure test, the registered H3 reading,
+# the H5e tally - on the runner, with the report published on the run page.
+#
+# Why a SEPARATE workflow (OPS-AGENT.md item 3, built 23 Sep 2026): the pressure test
+# crashed for two days (21-23 Sep) and nothing noticed, because only freshness.yml
+# runs in CI and it runs panel_health alone. freshness.yml deliberately installs
+# nothing so the missed-day alarm can never break on a dependency; that stays true.
+# This job needs requests and pyyaml, so it lives here, where breaking it cannot
+# silence the alarm that matters most.
+#
+# It NEVER commits. Two recorders already push to main every weekday; a third
+# committer would only add push races against the irreplaceable data.
+on:
+  schedule:
+    - cron: "37 23 * * 1-5"   # weekdays, after freshness's late slot; off the quarter hours
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install what the pressure test imports
+        run: pip install requests pyyaml
+      - name: Daily check (exits non-zero, which emails, on any FAIL or crash)
+        run: |
+          set -o pipefail
+          python tools/daily.py --no-pull | tee report.txt
+      - name: Publish the report on the run page
+        if: always()
+        run: |
+          { echo '```'; cat report.txt 2>/dev/null || echo "no report was written"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

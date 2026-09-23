@@ -513,8 +513,27 @@ ok(_fresh[0] >= _rec_min + WORST_DELAY_MIN,
 ok(_fresh[-1] >= _rec_min + WORST_DELAY_MIN + DELAY_MARGIN_MIN,
    "the late freshness slot runs after even an unusually delayed landing")
 ok(set(p.name for p in (R / ".github/workflows").glob("*.yml"))
-   == {"record.yml", "freshness.yml", "surface.yml"},
+   == {"record.yml", "freshness.yml", "surface.yml", "health.yml"},
    "no leftover TEMP workflows")
+# health.yml (23 Sep 2026): the daily check in CI. It must stay read-only - two
+# recorders already push to main - must actually run the check, and must never
+# keep the temporary push trigger it was tested with on a branch.
+_hl = yaml.safe_load((R / ".github/workflows/health.yml").read_text())
+_hl_on = _hl[True]
+_hl_run = " ".join(str(st.get("run", "")) for st in _hl["jobs"]["health"]["steps"])
+ok(_hl["permissions"]["contents"] == "read" and "git push" not in _hl_run
+   and "git commit" not in _hl_run, "health is read-only and never commits")
+ok("tools/daily.py --no-pull" in _hl_run and "pipefail" in _hl_run,
+   "health runs the whole daily check and keeps its exit code through the tee")
+ok(set(_hl_on) == {"schedule", "workflow_dispatch"},
+   f"health triggers only on its schedule and by hand (found {sorted(_hl_on)})")
+_hmin, _hdays = cron_minutes(_hl_on["schedule"][0]["cron"])
+ok(_hdays == "1-5" and _hmin > _fresh[-1] and _hmin % 15 != 0,
+   f"health runs weekdays after freshness's late slot, off the quarter hours "
+   f"({_hmin // 60:02d}:{_hmin % 60:02d} UTC)")
+_fr_run = " ".join(str(st.get("run", "")) for st in frs["jobs"]["freshness"]["steps"])
+ok("pip install" not in _fr_run,
+   "freshness still installs nothing, so the missed-day alarm cannot break on a dependency")
 srf = yaml.safe_load((R / ".github/workflows/surface.yml").read_text())
 _srf_min, _srf_days = cron_minutes(srf[True]["schedule"][0]["cron"])
 ok(_srf_days == _rec_days and _srf_min - _rec_min == 10,
