@@ -56,6 +56,7 @@ DEFAULT_MAX_COST = 0.50
 WINDOW_BEFORE, WINDOW_AFTER = 2, 3     # minutes around the snapshot's median quote time
 MATCH_TOLERANCE_S = 120                # a contract with no OPRA record this close is excluded
 ATTRIBUTION = "Reference quotes: OPRA consolidated NBBO, via Databento. Aggregates only."
+REFETCH = "--refetch" in sys.argv
 
 
 # ---------------- pure helpers (tested by pressure_test.py, no network) ----------------
@@ -223,6 +224,11 @@ def fetch(date, symbol, key, max_cost, dry):
     params = request_params(symbol, minute)
     print(f"  {symbol} {date}: snapshot minute {minute:%H:%M} UTC; request {params['symbols']} "
           f"{SCHEMA} {params['start'][11:16]}-{params['end'][11:16]} UTC")
+    # 23 Sep 2026: `--all` re-bought 18 and 21 Sep because nothing checked the disk first.
+    # Historical data does not change, so a file already here is never paid for twice.
+    if not dry and not REFETCH and (DATA_DIR / f"OPRA_{symbol}_{date}.csv").exists():
+        print("    already on disk - skipped, nothing charged (--refetch to buy it again)")
+        return
     if not key:
         print("    no key yet - set DATABENTO_API_KEY or ~/.config/volrec/databento.key to price it")
         return
@@ -404,6 +410,7 @@ def main():
     ap.add_argument("--definitions", action="store_true",
                     help="fetch OPRA's listing for the day and say whether unmatched contracts exist on it")
     ap.add_argument("--max-cost", type=float, default=DEFAULT_MAX_COST, help="per-request cap, USD")
+    ap.add_argument("--refetch", action="store_true", help="buy a day again even if its file is on disk")
     a = ap.parse_args()
 
     pairs = ([(d, s) for d, s in wide_days() if s in a.symbols] if a.all

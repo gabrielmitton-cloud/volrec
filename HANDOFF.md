@@ -1253,7 +1253,7 @@ pressure test.
 
 ---
 
-## 17. Current state and what to do next — 16 September 2026
+## 17. History, 16-23 September 2026 — SUPERSEDED BY SECTION 18 for the current state
 
 ### What runs unattended
 
@@ -1877,3 +1877,105 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 > needed; Bloomberg exports stay in ~/Documents/volrec-bloomberg and never enter the
 > repo, and every published Bloomberg-derived figure carries "Source: Bloomberg
 > Finance L.P.".
+
+---
+
+## 18. Current state — 23 September 2026, the reading every session starts from
+
+**Section 17 is now history:** dated notes from 16-23 Sep, with the reasoning behind
+every decision. This section is the only one guaranteed current. Read it, run
+`tools/daily.py`, and open section 17 only when a task needs the why.
+
+### System status, checked 23 Sep 2026 15:40 UTC
+
+| check | result |
+|---|---|
+| `tools/pressure_test.py` | **0 fail, 2 warn** - both known and true: one HYG quote with no vendor greeks (ages out), and the 121-minute snapshot spread (GitHub's delays). The cron margin is ACCEPTED until 11 Nov |
+| `tools/calibrate.py` | **9 of 9** instruments calibrated against a known answer (the OPRA comparison added 23 Sep) |
+| `tools/test_hedged.py` | 21 hand-computed cases pass |
+| static scan | no undefined name in 18 files; dead imports removed |
+| `tools/daily.py` | ALL CLEAR |
+| workflows | record, surface, freshness, health all **active**; last runs green |
+| `health.yml` | first manual run green in 32 s; **first scheduled run tonight, 23:37 UTC** |
+| watchdog routine | **updated 23 Sep**; next run **today 16:13 UTC** (Wednesdays 09:13 Pacific). Its 16 Sep run FAILED on Gabriel's Claude session limit - it runs on his usage |
+| iMessage alerts | test message delivered; launchd job **installed**, weekdays 13:30 Pacific, from the clean clone `~/.volrec-ops` |
+| pre-push hook | installed (`core.hooksPath tools/hooks`); every push to main runs the pressure test |
+| Databento | key saved outside the repo; **$0.0865 over 12 requests** of the $100 cap; days on disk are never bought twice (fixed 23 Sep) |
+| public site | live at gabrielmitton-cloud.github.io/volrec with the Bloomberg aggregates section and an up-to-date hypothesis table |
+
+### What runs unattended (UTC)
+
+| what | when | on failure |
+|---|---|---|
+| `record.yml`, `surface.yml` | weekdays 14:47 / 14:57, landing 3-5 h later | `freshness` fails and GitHub emails |
+| `freshness.yml` | 20:00 and 23:00 daily | GitHub emails |
+| `health.yml` | weekdays 23:37 | GitHub emails (the whole daily check) |
+| launchd `com.volrec.daily` | weekdays 13:30 Pacific | the iMessage leads with LOOK AT |
+| watchdog routine | Wednesdays 16:13 | a push notification, only when something is wrong |
+
+### Where each hypothesis stands
+
+| | status | the numbers |
+|---|---|---|
+| H1 | tested, holds | 9 of 11 Cboe pairs survive FDR control |
+| H2 | tested, not adopted | log variance strongest (t=16.26) |
+| H3 | series running | H3a mean abs gap **0.53** over 30 readings (bar 1.0). First registered wide reading **OUTSIDE** 1.4-3.2 (+9.41): quote contamination, as the grid anticipated. **IWM reads positive on all six days**, against H3b's sign - watch |
+| H4 | descriptive, **strike 1 of 3** | runs break on a missed trading day since 23 Sep; date level -0.57bp over 4 dates; needs ~40 date pairs |
+| H5a-c | Bloomberg | 2 matched wing days of the 3 needed |
+| H5d | descriptive | 12 underlying-days on 3 dates; the date-clustered test needs more dates |
+| H5e | counting from 23 Sep | skip-only USO against OVX; 10 counted days needed, **first verdict ~6 Oct**. Estimator is ABG (2015)'s RX*, credited |
+| H5f | OPRA, **3 of 5 days** | USO far puts within 0.01-0.03 of an OPRA spread; 38 of 38 no-bid quotes are no-bid on OPRA; inflation reproduces within 0.3-1.4%. TSLA's one-tick markets make the spread metric coarse. The free feed's hours-old quotes on contracts OPRA did not quote are excluded by the rule - say so beside any verdict |
+
+*Bloomberg figures: Source: Bloomberg Finance L.P. Reference quotes: OPRA, via Databento. Aggregates only.*
+
+### Decisions made, and not to be reopened without new, dated evidence
+
+- H4's run fix is strike 1 of 3 (Gabriel, 23 Sep). The cron is held to Wed 11 Nov.
+- Bloomberg aggregates are on the public site, inside Marc Vinyard's rule, read
+  conservatively; `pressure_test.py` section K enforces it.
+- Databento is used for OPRA reference quotes, priced before every request.
+- Kalshi (H6) is parked; no new hypotheses before 11 Nov unless one needs no new data.
+- The operations agent never searches for results (`OPS-AGENT.md`).
+
+### Next steps, dated
+
+**Today, Wed 23 Sep**
+- 16:13 UTC: the updated watchdog's first run. Healthy means one quiet line and no
+  notification; check its log once (routine `trig_01GkVL3mRpGGptXfqoNSR77d`).
+- ~18:00-19:45 UTC: today's surface lands - **H5e's first counted day** (it needs
+  tonight's OVX close to score).
+- 13:30 Pacific: the first scheduled iMessage. 23:37 UTC: the first scheduled `health.yml`.
+
+**Thu 24 Sep**
+- **Bloomberg pull:** `tools/bloomberg_prep.py --date 2026-09-24` - USO and TSLA, 23 Oct
+  AND 30 Oct, TSLA first and within 10 minutes of the landing. This is H5a-b's third
+  matched day. Optional: TSLA's expiry 18-24 months out, 50+ strikes (the pull that can
+  still falsify the day count). Then `tools/bloomberg_compare.py --date 2026-09-24 --pull-time HH:MM`.
+- `tools/opra_reference.py --all` then `--all --compare`: 23 Sep becomes H5f's fourth day.
+
+**Fri 25 Sep** - fetch 24 Sep: H5f's fifth day, so **the first H5f verdict**, read exactly
+as registered, with the stale-quote exclusion stated beside it.
+
+**Open, no fixed date**
+- **Check Databento's terms on derived data.** OPRA aggregates already sit in H5 and
+  here, in a public repository; they are medians and counts, never quotes, but the
+  terms have not been read. If they forbid it, remove the figures.
+- Read Jiang & Tian when the library request arrives: "Extracting Model-Free Volatility
+  from Option Prices: An Examination of the VIX Index" (*J. Derivatives*, 2007) first,
+  then "The Model-Free Implied Volatility and Its Information Content" (*RFS*, 2005).
+- A site chart logs a negative SVG width in a narrow window (pre-existing, harmless).
+- Optional: a FRED key as a repository secret, so CI's H3 reading matches the local one.
+
+**Later**
+- ~6 Oct: H5e's verdict. Late October: register and run "IV against a technical-levels
+  scanner" (parked in section 17). Wed 11 Nov: the 40-day window closes - written-up
+  readings, the cron revisited. Feb 2027: the write-up, TimesFM's FAIL included.
+
+### Prompt for the next session
+
+> Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is
+> history. Run `tools/daily.py` with the framework python and report its verdict.
+> Then work down section 18's dated next steps: check the watchdog's 23 Sep run, fetch
+> and compare the newest OPRA days, and if Gabriel has pulled Bloomberg, run
+> `bloomberg_compare.py` on it. Report numbers before recommending; never adjust a
+> registered threshold; keep licensed data out of the repo.

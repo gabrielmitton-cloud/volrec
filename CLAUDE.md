@@ -2,8 +2,8 @@
 
 **Start at `SESSION-START.md`** - one screen: read order, commands, what runs
 unattended, standing rules. Then run `tools/daily.py` for the live state, and read
-only the newest dated subsection of `HANDOFF.md` section 17. The rest of HANDOFF is
-history with the reasoning attached; sections 1-3 hold closed decisions - do not
+`HANDOFF.md` section 18, the current state. Section 17 and earlier are history with
+the reasoning attached; sections 1-3 hold closed decisions - do not
 re-argue them without new, dated evidence.
 
 ## Which python

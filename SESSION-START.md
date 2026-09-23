@@ -11,8 +11,8 @@ session's job is to read results, answer a question, or do one bounded thing.
 2. **The live state** - never trust a document for it:
    `.../python3 tools/daily.py` -> did today land, 0 fail / n warn, the H3 reading,
    the H5e tally, and ALL CLEAR or LOOK AT.
-3. **The newest dated subsection of HANDOFF.md section 17** (headed by a date).
-   The rest of HANDOFF is history: read it only when a task needs the reasoning.
+3. **HANDOFF.md section 18** - the current state, status table and dated next steps.
+   Section 17 and earlier are history: read them only when a task needs the reasoning.
 4. **The hypothesis file the task touches**, in `hypotheses/`.
 
 ## Commands (always the framework python; Homebrew's has no `requests`)

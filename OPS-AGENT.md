@@ -34,8 +34,11 @@ number means - and is called by a person, not by a schedule.
 | 6 | `tools/opra_reference.py` | by hand | OPRA quotes at the recorder's own minute; prices every request first | a request over $0.50 or past the $100 lifetime cap is refused |
 | 7 | `tools/notify.py` + `tools/launchd/install.sh` | this Mac, weekdays 13:30 local, once Gabriel installs it | pulls a separate clean clone (`~/.volrec-ops`), runs `daily.py`, texts the one-line verdict by iMessage | LOOK AT leads the message; a failed send never fails the check |
 
-The watchdog routine (Wed 09:13 Pacific, outside GitHub) predates this layer and
-still runs; `health.yml` now covers the daily checks it cannot.
+The watchdog routine (Wednesdays 16:13 UTC, outside GitHub) was rewritten 23 Sep: it
+fetches the current code, builds Python 3.12, runs `daily.py`, checks all four
+workflows are active, and notifies only when something is wrong. It runs on
+Gabriel's Claude usage - its 16 Sep run failed on a session limit - which is why
+`health.yml` and the iMessage job, which cost nothing, carry the daily load.
 
 ## Design decisions, and why
 

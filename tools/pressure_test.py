@@ -856,6 +856,10 @@ ok(_opm.budget_ok(0.10, 0.50, 0.0)[0] and not _opm.budget_ok(0.60, 0.50, 0.0)[0]
    f"${_opm.LIFETIME_CAP_USD:.0f} lifetime cap")
 ok(_opm.LIFETIME_CAP_USD <= 110 and _opm.DEFAULT_MAX_COST <= 1.0,
    "the caps leave margin inside the free credit")
+_fsrc = (R / "tools/opra_reference.py").read_text()
+_fetch = _fsrc[_fsrc.index("def fetch("):_fsrc.index("def compare(") if "def compare(" in _fsrc else None]
+ok("already on disk" in _fetch and _fetch.index("already on disk") < _fetch.index("metadata.get_cost"),
+   "a day already on disk is skipped BEFORE anything is priced or bought (23 Sep: --all re-bought two days)")
 ok(not _opm.inside_repo(_opm.DATA_DIR) and not _opm.inside_repo(_opm.KEY_FILE),
    "OPRA data and the Databento key live outside the repository")
 ok(all(x in _gi for x in ("volrec-databento/", "*.key")),
