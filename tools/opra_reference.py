@@ -195,11 +195,20 @@ def api_key():
     return None
 
 
+class NotYetHistorical(Exception):
+    """OPRA is served historically only after a delay; newer data needs a live
+    licence. Found 23 Sep 2026: 22 Sep's session was refused with a 403 the
+    morning after. The day is skipped and becomes fetchable later."""
+
+
 def call(endpoint, data, key, method="post"):
     import requests
     fn = requests.post if method == "post" else requests.get
     kw = {"data": data} if method == "post" else {"params": data}
     r = fn(f"{GATEWAY}/{endpoint}", auth=(key, ""), timeout=120, **kw)
+    if r.status_code == 403 and "license" in r.text.lower():
+        m = re.search(r"after (\d{4}-\d{2}-\d{2}T\d{2}:\d{2})", r.text)
+        raise NotYetHistorical(m.group(1) + " UTC" if m else "a recent cutoff")
     if r.status_code != 200:
         sys.exit(f"Databento {endpoint} returned {r.status_code}: {r.text[:300]}")
     return r
@@ -231,7 +240,12 @@ def fetch(date, symbol, key, max_cost, dry):
         sys.exit("Refusing to write OPRA data inside the repository.")
     body = dict(params, encoding="csv", compression="none", pretty_px="true",
                 pretty_ts="true", map_symbols="true")
-    r = call("timeseries.get_range", body, key)
+    try:
+        r = call("timeseries.get_range", body, key)
+    except NotYetHistorical as e:
+        print(f"    not yet available historically (data after {e} needs a live licence); "
+              f"nothing charged - run again tomorrow")
+        return
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     out.write_bytes(r.content)
     new = not LEDGER.exists()

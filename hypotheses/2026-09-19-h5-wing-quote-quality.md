@@ -224,6 +224,41 @@ OPRA data before any verdict. The registered-band comparison (inside +/-30%) is 
 printed and is descriptive only: H3's feed-quality question, not a hypothesis here.
 **Falsified** exactly as H5a-c are, with OPRA in Bloomberg's place.
 
+## The first OPRA comparison, 23 September 2026 — AFTER data, 2 of H5f's 5 days
+
+Fetched from Databento on 23 Sep for $0.0273 (USO and TSLA, 18 and 21 Sep); 22 Sep is
+not yet served historically (anything after 22 Sep 13:30 UTC needed a live licence the
+next morning) and is retried later. Each contract matched to OPRA within seconds of its
+own quote time (median 5-26 s). Mid gaps are medians, as a fraction of OPRA's spread;
+lifts use only contracts both feeds quote, so they differ from `modelfree.py --wide`.
+
+| | band | put wing | call wing | zero bid, both / one only | inflation, free / OPRA |
+|---|---|---|---|---|---|
+| USO 18 Sep | 0.06 | **0.02** | 0.40 | 13 / 0 | 3.50 / 3.49 |
+| USO 21 Sep | 0.12 | **0.03** | 0.50 | 9 / 0 | 15.97 / 16.19 |
+| TSLA 18 Sep | 0.47 | 0.83 | 0.50 | 0 / 0 | 0.00 / 0.00 |
+| TSLA 21 Sep | 0.50 | 0.50 | 0.75 | 0 / 0 | 0.00 / 0.00 |
+
+- **USO's free quotes sit on the consolidated market** at the same minute, and every
+  no-bid quote on the free feed is a no-bid quote on OPRA (22 of 22).
+- **The inflation reproduces on OPRA to within 0.3% and 1.4%** - the estimator's, not
+  the feed's. Descriptive: H5f needs five days.
+- **A correction to the 22 Sep section.** TSLA reads 0.47-0.83 of a spread against
+  OPRA *thirteen to twenty-three seconds apart*, so its 0.87 against Bloomberg was not
+  only the 24-minute drift, as that section said. TSLA's options are a cent or two
+  wide, and a one-tick difference is a whole spread: the half-spread metric is coarse
+  for one-tick markets. That is a property of the registered metric, stated, not
+  re-scored. H5f-a will read TSLA's wings through the same coarse lens.
+- **Unmatched, and why.** USO 18 Sep: 44 (5 free quotes 7-8 minutes stale, 39 symbols
+  absent from OPRA's file, 29 of them deep in-the-money calls from the wide pass that
+  never enter the integral). USO 21 Sep: 16 (1 stale, 15 absent - **13 of them far
+  out-of-the-money puts with no bid, P60-P72**, the stub region itself). Whether OPRA
+  omits a contract with no quote on either side, or the listing differs, is not yet
+  known; Databento's `definition` schema can settle it for cents. Until then, H5f-b
+  is silent on those 13.
+
+*Reference quotes: OPRA consolidated NBBO, via Databento. Aggregates only.*
+
 ## Prior art, read 23 September 2026 — H5e's estimator is NOT new
 
 Andersen, Bondarenko & Gonzalez-Perez (2015), "Exploring Return Dynamics via

@@ -1693,6 +1693,16 @@ timestamp bug that would have fetched the wrong minutes. **H5f was registered
 before any OPRA data was requested**, reusing H5a-c's thresholds. Nothing is
 fetched until Gabriel creates the account and a dry run shows the cost.
 
+**First OPRA data, same day.** Account created; the dry run priced six requests at
+$0.006-0.007 each. Fetched 18 and 21 Sep for $0.0273; 22 Sep was refused (OPRA is
+served historically only after a delay; the tool now skips and says retry tomorrow,
+charging nothing). At the same minute USO's free quotes match OPRA to 0.02-0.12 of a
+spread, 22 of 22 no-bid quotes are no-bid on OPRA too, and the zero-bid inflation
+reproduces on OPRA within 1.4%. TSLA reads 0.47-0.83 even seconds apart - one-tick
+markets, a coarse metric - which corrects the 22 Sep drift explanation. 13 far-OTM
+USO stubs on 21 Sep have no OPRA record at all; the `definition` schema is the next
+check. H5 has the table.
+
 ### The window this is all aimed at
 
 **40 trading days from Wed 16 September 2026 ends Wed 11 November 2026.** No market
