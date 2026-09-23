@@ -95,6 +95,13 @@ PREDICTED_LIFT = {"USO": (1.4, 3.2)}
 NULL_CONTROLS = ("GLD", "AAPL")
 NULL_LIFT_MAX = 0.3
 FIRST_READING_DAYS = 3
+# H5e, registered 23 Sep 2026 before that day's run: see hypotheses/...-h5-wing-quote-
+# quality.md. Out of sample from H5E_START only. The bar is half of H3a's 1.0-point
+# budget, the same share calibrate.py allows method error. Never change these.
+H5E_SYMBOL = "USO"
+H5E_START = "2026-09-23"
+H5E_MAX_ABS_GAP = 0.5
+H5E_MIN_DAYS = 10
 
 
 def _num(v):
@@ -111,10 +118,14 @@ def variance_one_expiry(rows, r_annual, zero_bid_rule=False):
     `rows` are every recorded contract at one expiry for one underlying on one
     day, both types.
 
-    zero_bid_rule (off by default, and off for every registered number): apply
-    Cboe's exclusion to the out-of-the-money strikes - walking outward from K0,
-    skip any zero bid and stop after two consecutive zero bids. Used only by the
-    --wide sensitivity, where the far wings are thin.
+    zero_bid_rule (off by default, and off for every registered H3 number):
+      True    Cboe's rule on the out-of-the-money strikes - walking outward from K0,
+              skip any zero bid and stop after two consecutive zero bids.
+      "skip"  skip every zero bid and never stop. Registered as H5e on 23 Sep
+              2026: on 22 Sep USO carried one-sided stub quotes (no bid, ~$3 ask)
+              on odd strikes only 15-20% from the money, and Cboe's stop rule cut
+              the put wing there, inside the registered band.
+    Used only by the --wide sensitivity and H5, where the far wings are thin.
     """
     if not rows:
         return None
@@ -162,11 +173,14 @@ def variance_one_expiry(rows, r_annual, zero_bid_rule=False):
             k, b = _num(row["strike"]), _num(row.get("bid"))
             if k is not None:
                 bids[(k, row["type"])] = b
+        stop = zero_bid_rule != "skip"
         for side, walk in (("P", sorted((k for k in q if k < K0), reverse=True)),
                            ("C", sorted(k for k in q if k > K0))):
             zeros = 0
             for k in walk:
-                if zeros >= 2 or not bids.get((k, side)):
+                if stop and zeros >= 2:
+                    del q[k]                  # Cboe: nothing past two consecutive zero bids
+                elif not bids.get((k, side)):
                     zeros += 1
                     del q[k]
                 else:
@@ -323,9 +337,16 @@ def main():
                 print(f"{d:<12}{sym:<6}{ours:>8.2f}{'n/a':>8}{'':>8}{legs:>10}{n:>5}")
 
     if gaps:
-        print("\n-- gap against the published Cboe index, in volatility points")
-        print("   negative = ours reads lower, which is the expected direction")
-        print("   given truncated strike coverage\n")
+        if extra:
+            # 23 Sep 2026: this summary read "USO max +12.00" and was nearly taken for
+            # H3a's own series. In --wide mode it scores the SENSITIVITY estimate.
+            print("\n-- gap of the WIDE SENSITIVITY against Cboe - NOT H3a's registered gap")
+            print("   (run without --wide for H3a). Zero bids count at half the ask here,")
+            print("   so the wings inflate it; see the LIFT and H5e blocks below.\n")
+        else:
+            print("\n-- gap against the published Cboe index, in volatility points")
+            print("   negative = ours reads lower, which is the expected direction")
+            print("   given truncated strike coverage\n")
         allg = []
         for sym in sorted(gaps):
             g = gaps[sym]
@@ -339,6 +360,42 @@ def main():
 
     if extra:
         wide_lift_report(registered, extra, r)
+        h5e_report(registered, extra, r, vol)
+
+
+def h5e_report(registered, extra, r, vol):
+    """H5e, registered 23 Sep 2026 BEFORE that day's data: USO's wide estimate with
+    zero-bid quotes skipped (never stopped) tracks OVX. Judged only from H5E_START on;
+    earlier days are printed as the in-sample evidence that motivated it, never counted."""
+    idx = BENCH[H5E_SYMBOL]
+    print(f"\n-- H5e: {H5E_SYMBOL}, wide strikes, zero bids SKIPPED, against {idx} "
+          f"(registered 23 Sep; judged from {H5E_START})")
+    print(f"   {'date':<12}{idx:>7}{'registered':>12}{'gap':>8}{'wide skip':>11}{'gap':>8}  counted")
+    judged = []
+    for d in sorted({x["date"] for x in extra if x["symbol"] == H5E_SYMBOL}):
+        cb = (vol.get(idx) or {}).get(d)
+        inner = [x for x in registered if x["date"] == d and x["symbol"] == H5E_SYMBOL]
+        outer = [x for x in extra if x["date"] == d and x["symbol"] == H5E_SYMBOL]
+        a, b = model_free_30d(inner, r), model_free_30d(inner + outer, r, "skip")
+        if not (cb and a and b):
+            print(f"   {d:<12}{'n/a' if not cb else '':>7}  (no {idx} close yet, or too thin)")
+            continue
+        counted = d >= H5E_START
+        if counted:
+            judged.append((a[0] - cb, b[0] - cb))
+        print(f"   {d:<12}{cb:>7.2f}{a[0]:>12.2f}{a[0] - cb:>+8.2f}{b[0]:>11.2f}{b[0] - cb:>+8.2f}  "
+              + ("yes" if counted else "no - in-sample, before registration"))
+    if not judged:
+        print(f"   no counted day yet; H5e needs {H5E_MIN_DAYS}")
+        return
+    mae = sum(abs(g) for _, g in judged) / len(judged)
+    closer = sum(abs(g) < abs(r_) for r_, g in judged)
+    verdict = (f"mean |gap| {mae:.2f} against {H5E_MAX_ABS_GAP} "
+               f"({'under' if mae < H5E_MAX_ABS_GAP else 'OVER'}); closer than registered on "
+               f"{closer} of {len(judged)} days ({'majority' if closer > len(judged) / 2 else 'NOT a majority'})")
+    if len(judged) < H5E_MIN_DAYS:
+        verdict += f" - {len(judged)} of {H5E_MIN_DAYS} days, not a verdict yet"
+    print(f"   {verdict}")
 
 
 def wide_lift_report(registered, extra, r):

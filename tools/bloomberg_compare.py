@@ -176,10 +176,16 @@ def surface_rows(date):
 
 def compare(symbol, export, rows, fails, notes):
     """One symbol: match every Bloomberg contract to the free feed and measure."""
-    # The expiry to compare is the one the recorder chose closest to 30 days.
+    # The expiry to compare: the recorder's closest to 30 days AMONG THOSE THE EXPORT
+    # HOLDS. On 22 Sep 2026 the closest was 23 Oct but the export held only 16 Oct, and
+    # insisting on the former failed a perfectly good match.
     exps = sorted({r["expiration"] for r in rows}, key=lambda e: abs(int(
         next(x["dte"] for x in rows if x["expiration"] == e)) - 30))
-    expiry = exps[0]
+    held = [e for e in exps if parse_omon(export, bloomberg_label(e))[0]]
+    expiry = held[0] if held else exps[0]
+    if held and held[0] != exps[0]:
+        notes.append(f"{symbol}: the export has no {bloomberg_label(exps[0])} block; matched "
+                     f"{bloomberg_label(expiry)} instead. Pull both of the recorder's expiries.")
     bbg, forward = parse_omon(export, bloomberg_label(expiry))
     if not bbg:
         fails.append(f"{symbol}: the export has no {bloomberg_label(expiry)} block")

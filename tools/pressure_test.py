@@ -80,8 +80,25 @@ iv = [float(r["iv"]) for r in rows if r["iv"]]
 ok(all(0.01 < v < 3.0 for v in iv), f"IV sane ({min(iv):.3f}-{max(iv):.3f})")
 d = [int(r["dte"]) for r in rows]
 ok(all(rec.DTE_WINDOW[0] <= x <= rec.DTE_WINDOW[1] for x in d), f"dte in window ({min(d)}-{max(d)})")
-ok(all(float(r["delta"]) > 0 for r in rows), "all calls")
-ok(all(r["iv"] for r in rows), "IV populated on every row")
+# The contract type comes from the OCC symbol, not from delta: on 21-22 Sep 2026 the
+# vendor returned a quote with NO greeks for one HYG contract, delta was blank, and
+# float('') crashed this whole test in section C - so nothing after it ran.
+ok(all(rec.parse_occ(r["option_symbol"])[2] == "C" for r in rows), "all calls (by OCC symbol)")
+ok(all(float(r["delta"]) > 0 for r in rows if r["delta"].strip()),
+   "every delta the vendor sent is positive, as a call's must be")
+# Missing greeks are a VENDOR gap, recorded honestly beside a good quote. Judged on the
+# latest day only, like the drift check: one contract warns that day and ages out; a
+# day with more than 5% missing is an outage and fails. History is reported, not judged.
+_noiv = [r for r in rows if not r["iv"].strip()]
+_last_noiv = [r for r in _noiv if r["date"] == days[-1]]
+_last_n = sum(1 for r in rows if r["date"] == days[-1])
+if _noiv:
+    print(f"  INFO  {len(_noiv)} row(s) in history have a quote but no vendor IV/greeks: "
+          + ", ".join(sorted({f"{r['symbol']} {r['date']}" for r in _noiv})))
+ok(len(_last_noiv) <= 0.05 * _last_n,
+   f"vendor IV present on >=95% of the latest day ({_last_n - len(_last_noiv)}/{_last_n})")
+warn(not _last_noiv, f"vendor IV present on every row of the latest day "
+                     f"({len(_last_noiv)} missing: {', '.join(r['symbol'] for r in _last_noiv)})")
 
 print("\n=== D. PER-DAY COVERAGE ===")
 for day in days:

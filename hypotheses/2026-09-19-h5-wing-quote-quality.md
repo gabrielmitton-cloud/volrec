@@ -130,9 +130,76 @@ advance:
    constraint, and the reason ask 1b stays at the top of `BLOOMBERG-MONDAY.md`.
    Both of the recorder's expiries, pulled within 30 minutes of the snapshot.
 
+## H5e — registered 23 September 2026, BEFORE that day's run; out of sample from 23 Sep
+
+**Why it exists, stated first because it was motivated by data.** On 18, 21 and 22 Sep
+a diagnostic that was NOT pre-registered - USO's wide estimate with every zero-bid
+quote skipped and no stop rule - landed on OVX at **+0.23, -0.24 and -0.00**, while
+the registered estimator sat at -1.18, -1.09 and -1.00. Three days, chosen after the
+fact, prove nothing. So the diagnostic is registered here as a prediction and judged
+**only on days that did not exist when it was written**: from Wed 23 Sep 2026, whose
+surface run had not fired at the time of this commit (the commit time is the proof).
+
+**H5e.** From 23 Sep 2026 through the end of the window (Wed 11 Nov), USO's 30-day
+model-free estimate built from `surface.csv` plus `surface_wide.csv`, with every
+out-of-the-money zero-bid quote skipped and no stop rule, tracks the published OVX
+with a **mean absolute gap under 0.5 volatility points**, AND sits **closer to OVX than
+the registered estimate on a majority of days**.
+
+- **Estimator:** `modelfree.model_free_30d(rows, r, "skip")`, H3's pair of expiries,
+  H3's everything else. Only the zero-bid handling differs.
+- **Bar:** 0.5 points, half of H3a's 1.0 budget - the same share `calibrate.py`
+  allows method error. Set from outside this data, not from the in-sample 0.16.
+- **Minimum:** 10 counted days before any verdict. `modelfree.py --wide` prints the
+  running tally and marks the three in-sample days as not counted.
+- **Falsified** if the mean absolute gap is 0.5 or more, or if skip-only is not
+  closer than the registered estimator on a majority of counted days.
+
+**Why this matters if it holds.** It is the constructive half of H5: the wing quotes
+are usable, the standard zero-bid treatment is what breaks the estimate, and a
+treatment that simply drops one-sided stub quotes lets free data track Cboe's own
+index on the name where it was worst. **What it would not show:** that skip-only is
+right in general. Cboe's stop rule exists for dense, regular SPX ladders; the
+finding would be about sparse ETF ladders with stub quotes on odd strikes.
+
+## The second wide pull, 22 September 2026 — AFTER data
+
+USO and TSLA OMON, **16 Oct only** (the recorder's other expiry, 23 Oct, was not
+pulled), 18:46 UTC against the recorder's 18:22 snapshot, a 24-minute gap.
+
+| | matched, band | mids vs spread, band | put wing | call wing | zero bid on both / one only |
+|---|---|---|---|---|---|
+| USO | 107 | 0.39 | 0.09 (n=12) | 0.00 (n=9) | 7 / 0 |
+| TSLA | 98 | **0.87 - FAILS the 0.5 gate** | 1.00 (n=18) | 1.00 (n=15) | 0 / 0 |
+
+- **TSLA's failure is stated as a failure.** The diagnosis: TSLA's parity forward was
+  380.80 on the free feed and 380.28 on Bloomberg's prices, a 0.14% move in 24
+  minutes, and the signature is a move rather than a bad feed (calls +$0.155 on the
+  free feed, puts -$0.03; a bad feed pushes both one way). In the wings TSLA's far puts
+  are three cents wide, so a two-cent difference is most of a spread: the half-spread
+  metric is coarse for one-tick markets. Neither point re-scores anything. The lesson
+  is operational: pull TSLA within ~10 minutes of the snapshot.
+- **H5c on this day:** inflation (as registered minus Cboe rule) is 5.01 on the free
+  feed and 3.51 on Bloomberg for USO - a 30% difference, outside H5c's 25% (18 Sep was
+  6.5%). TSLA's is 0.00 on both, exactly as H5d predicts for wings with no zero bids.
+- **The Cboe stop rule cut the registered band on 22 Sep.** USO's 23 Oct leg carried
+  one-sided stubs (no bid, $2.92-3.29 ask) at P119, P122 and P124, beside two-sided
+  P120 and P124.5. Walking outward, the rule stopped at P122 and dropped every put
+  below it, moving USO's +/-30% estimate by **-2.75**. The claim in H3 on 18 Sep that
+  the rule moves the band by 0.03 at most held for 14-21 Sep (USO -0.12 on 18 Sep) and
+  **fails on 22 Sep**. This is why H5e skips rather than stops.
+- **Status:** two matched Bloomberg wing days (18 and 22 Sep), three symbol-days.
+  H5a and H5b need three days. H5d's 10 underlying-days now exist (USO, TSLA, NVDA and
+  AAPL on 18, 21 and 22 Sep) but sit on three dates, too few for the date-clustered
+  test the specification requires; the pattern so far is descriptive only.
+
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
+
 ## Adjustment log
 
-- *(none yet)*
+- **2026-09-23 — an ADDITION, not an adjustment.** H5e added after seeing 18-22 Sep,
+  judged only from 23 Sep onward. H5a-H5d, their thresholds and their minimums are
+  unchanged.
 
 ## Result
 
