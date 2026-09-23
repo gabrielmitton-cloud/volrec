@@ -1996,6 +1996,12 @@ as registered, with the stale-quote exclusion stated beside it.
   **Scheduled:** `volrec-opra-fetch-0924` fires Fri 07:15 Pacific the same way (fetch,
   compare to `~/Documents/volrec-databento/compare_2026-09-24.txt`, text Gabriel); it
   does not score the verdict.
+  **Scheduled:** `volrec-h5f-verdict` fires Fri 08:15 Pacific: runs the pooled script
+  written 23 Sep before days 4-5 existed (`~/Documents/volrec-databento/verdict/h5f_pooled.py`),
+  records H5f in H5's Result and this section, pushes if the pressure test passes and no
+  workflow is running, and texts Gabriel. **Known in advance:** on the first three days
+  H5f-a's pooled median is exactly 0.500, ON the bar, because TSLA's one-tick contracts
+  sit at 0.5; the task must say so. It never touches the site's OPRA section.
 
 **Open, no fixed date**
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
