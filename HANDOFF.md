@@ -1901,7 +1901,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | iMessage alerts | test message delivered; launchd job **installed**, weekdays 13:30 Pacific, from the clean clone `~/.volrec-ops` |
 | pre-push hook | installed (`core.hooksPath tools/hooks`); every push to main runs the pressure test |
 | Databento | key saved outside the repo; **$0.0865 over 12 requests** of the $100 cap; days on disk are never bought twice (fixed 23 Sep) |
-| public site | live at gabrielmitton-cloud.github.io/volrec with the Bloomberg aggregates section and an up-to-date hypothesis table |
+| public site | live at gabrielmitton-cloud.github.io/volrec with the Bloomberg aggregates section, **the OPRA aggregates section (added 23 Sep)** and an up-to-date hypothesis table |
 
 ### What runs unattended (UTC)
 
@@ -1943,7 +1943,10 @@ every decision. This section is the only one guaranteed current. Read it, run
   "Data provided by Databento" under each block (`pressure_test.py` section N checks
   it), and lets Databento name Gabriel as a client in its marketing. Gabriel kept the
   figures on those terms. Read: the User Agreement and OPRA's fee schedule, not OPRA's
-  full vendor agreement.
+  full vendor agreement. **On the public site since 23 Sep** ("Checked against the
+  consolidated feed", 18-22 Sep, 3 of H5f's 5 days, labelled descriptive), under the
+  same rules as Bloomberg's: medians and counts only, the credit under every block;
+  `pressure_test.py` section K enforces it.
 - Kalshi (H6) is parked; no new hypotheses before 11 Nov unless one needs no new data.
 - The operations agent never searches for results (`OPS-AGENT.md`).
 
@@ -1967,10 +1970,12 @@ every decision. This section is the only one guaranteed current. Read it, run
 as registered, with the stale-quote exclusion stated beside it.
 
 **Open, no fixed date**
-- ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution
-  (see the decisions above). OPRA aggregates could now join the site's Bloomberg
-  section under the same rule - aggregates only, the credit line under every block.
-  Not done; Gabriel's call.
+- ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
+  and the OPRA aggregates are on the site (see the decisions above). When H5f reaches
+  its verdict, the site section's "three days, descriptive" paragraph must be updated
+  by hand: it is static text.
+- The site overflows horizontally at phone width (961 px on a 375 px screen; Fig. 2,
+  Fig. 3 and both data tables). Pre-existing, found 23 Sep; layout only.
 - Read Jiang & Tian when the library request arrives: "Extracting Model-Free Volatility
   from Option Prices: An Examination of the VIX Index" (*J. Derivatives*, 2007) first,
   then "The Model-Free Implied Volatility and Its Information Content" (*RFS*, 2005).

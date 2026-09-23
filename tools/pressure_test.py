@@ -703,6 +703,27 @@ _raw = re.findall(r"\b[A-Z]{1,5} \d{1,2}/\d{1,2}/\d{2} [CP]\d|\bIFwd\b|\bIVM\b|\
                   idx + mon)
 ok(not _raw, f"no raw Bloomberg data on the site: no terminal tickers, IVM, IFwd, IBrw or "
              f"OMON fields ({_raw[:3] or 'none'})")
+# 23 Sep 2026: the site also publishes OPRA-derived aggregates, under Databento's User
+# Agreement (read 23 Sep): derived figures are redistribution, allowed for historical
+# OPRA data with explicit attribution to Databento (section 1.6). The same rules as
+# Bloomberg's, keyed on "Databento" because the page says "not consolidated OPRA"
+# beside figures that are not OPRA's.
+_DB = "Data provided by Databento"
+_osec = re.search(r'<section class="section" id="opra">(.*?)</section>', idx, re.S)
+ok(_osec is not None and "Derived aggregates only" in _osec.group(1),
+   "the OPRA section exists and says it holds derived aggregates only")
+_oblocks = re.split(r'<div class="(?:prose|fig)"', _osec.group(1))[1:] if _osec else []
+ok(_oblocks and all(_DB in b for b in _oblocks if re.search(r"\d", re.sub(r"<[^>]+>", "", b))),
+   f"every block of the OPRA section that states a figure credits Databento ({len(_oblocks)} blocks)")
+_uncredited = [m.group(1)[:40] for m in re.finditer(r"<section\b[^>]*>(.*?)</section>", idx, re.S)
+               if re.search(r"Databento", m.group(1)) and re.search(r"\d\.\d", m.group(1))
+               and _DB not in m.group(1)]
+ok(not _uncredited, f"no section of the page states a Databento-derived figure without the "
+                    f"credit ({_uncredited or 'none'})")
+ok(not re.search(r"databento|cbbo|\bopra\b", _code, re.I),
+   "the site's code loads no OPRA data")
+_osi = re.findall(r"\b[A-Z]{1,6}\s*\d{6}[CP]\d{8}\b", idx + mon)
+ok(not _osi, f"no raw OPRA data on the site: no option symbol ({_osi[:3] or 'none'})")
 ok("DGS1MO" in idx and "VIXCLS" in idx and "retrieved from FRED" in idx,
    "the site cites both FRED series in FRED's own form")
 

@@ -174,6 +174,41 @@
     </div>
   </section>
 
+  <!-- OPRA cross-check: DERIVED AGGREGATES ONLY (Databento User Agreement 1.5(e) and
+       1.6, read 23 Sep 2026: derived figures count as redistribution, allowed for
+       historical OPRA data with explicit attribution to Databento). Static text, never
+       loaded from a file. tools/pressure_test.py section K enforces all of this. -->
+  <section class="section" id="opra">
+    <h2>Checked against the consolidated feed, at the same minute</h2>
+    <div class="prose">
+      <p>The check above has one weak point: the two captures sit up to thirty minutes apart, and the underlying moves in between. OPRA is the consolidated feed that every US options exchange reports to. Its best bid and offer, one minute at a time, bought historically from Databento, can be matched to each contract at the minute the free feed quoted it, on every recorded day rather than only on terminal days. Only aggregates appear here: medians and counts.</p>
+      <p><b>At the same minute, the prices agree.</b> The table gives how far apart the two feeds' mid prices sit, as a fraction of OPRA's own bid-ask spread, at the median.</p>
+    </div>
+    <div class="fig" style="grid-column:1/-1;margin-top:28px">
+      <div class="ledger-wrap"><table class="data">
+        <thead><tr><th>Day</th><th>Underlying</th><th>Contracts inside ±30%</th><th>Inside ±30%</th><th>Far puts</th><th>Far calls</th></tr></thead>
+        <tbody>
+          <tr><td>18 Sep</td><td>USO</td><td>138</td><td>0.06</td><td>0.02</td><td>0.40</td></tr>
+          <tr><td>18 Sep</td><td>TSLA</td><td>129</td><td>0.47</td><td>0.83*</td><td>0.50</td></tr>
+          <tr><td>21 Sep</td><td>USO</td><td>110</td><td>0.12</td><td>0.03</td><td>0.50</td></tr>
+          <tr><td>21 Sep</td><td>TSLA</td><td>93</td><td>0.50</td><td>0.50</td><td>0.75*</td></tr>
+          <tr><td>22 Sep</td><td>USO</td><td>124</td><td>0.10</td><td>0.01</td><td>0.05</td></tr>
+          <tr><td>22 Sep</td><td>TSLA</td><td>96</td><td>0.52*</td><td>0.67*</td><td>0.67*</td></tr>
+        </tbody>
+      </table></div>
+      <p class="src">* Over half a spread. These are seconds apart, so timing does not explain them: TSLA's options trade a cent or two wide, and a one-cent difference counts as a whole spread. The metric is coarse for markets that narrow. Far strikes lie beyond ±30% of spot. Each contract is matched to OPRA's record nearest its own quote time; the median gap was 5 to 26 seconds, day by day.</p>
+      <div class="src">Data provided by Databento (OPRA consolidated NBBO). Derived aggregates only: no OPRA quote or price is reproduced here, and none is stored in this repository.</div>
+    </div>
+    <div class="prose" style="margin-top:28px">
+      <p><b>An empty bid on the free feed is an empty bid on the market.</b> Across the three USO days, every far-wing contract with no bid on the free feed had no bid on OPRA either: <span class="m">38</span> of <span class="m">38</span>. TSLA's far wings had none. Computed from OPRA's prices on the same strikes, the lift that half-the-ask pricing adds to USO's estimate reproduces the free feed's within <span class="m">0.3</span> to <span class="m">1.4</span> percent on each day. On these contracts the distortion belongs to the estimator, as the check above suggested, now at the same minute.</p>
+      <div class="src">Data provided by Databento (OPRA consolidated NBBO). Derived aggregates only: no OPRA quote or price is reproduced here, and none is stored in this repository.</div>
+    </div>
+    <div class="prose" style="margin-top:28px">
+      <p><b>What the free feed adds is stale quotes.</b> Some far out-of-the-money USO contracts, all real OPRA listings, had no consolidated quote at all in the five-minute window. The free feed still carried a one-sided quote on each, a median of <span class="m">91</span> minutes old on 21 September and <span class="m">130</span> on 18 September. Part of the wing contamination is therefore the feed's too, not only the estimator's. H5f was registered before any OPRA data was requested and needs five days for a verdict; these are three, so they describe rather than test. Its rule excludes contracts OPRA did not quote, so its verdict will cover the quotes both feeds carry, not these.</p>
+      <div class="src">Data provided by Databento (OPRA consolidated NBBO). Derived aggregates only: no OPRA quote or price is reproduced here, and none is stored in this repository.</div>
+    </div>
+  </section>
+
   <section class="section">
     <h2>Why a month of daily rows is not a month of evidence</h2>
     <div class="prose">
@@ -273,7 +308,7 @@
       <li><b>The feed is indicative.</b> Alpaca's free options data is not consolidated OPRA. Levels are approximate, and changes over time are more trustworthy than any single reading.</li>
       <li><b>The daily panel is short.</b> It carries roughly two independent episodes so far, so it reports collection, not a premium.</li>
       <li><b>H4 is close to a replication.</b> Its predictions come from published work. What is new is the data: collected first-hand, at zero budget, with volume and open interest per contract.</li>
-      <li><b>No licensed data is redistributed.</b> The Bloomberg section shows derived aggregates only (medians, counts and fitted lines), each marked <i>Source: Bloomberg Finance L.P.</i>; no Bloomberg quote, price or volatility is reproduced, and no Cboe or FRED series is mirrored. Index levels are quoted only where a result depends on them.</li>
+      <li><b>No licensed data is redistributed.</b> The Bloomberg section shows derived aggregates only (medians, counts and fitted lines), each marked <i>Source: Bloomberg Finance L.P.</i>; no Bloomberg quote, price or volatility is reproduced. The OPRA section likewise shows medians and counts only, each marked <i>Data provided by Databento</i>, and no OPRA quote or price. No Cboe or FRED series is mirrored. Index levels are quoted only where a result depends on them.</li>
     </ul>
   </section>
 
@@ -286,6 +321,7 @@
       <li><b>Risk-free rate.</b> Board of Governors of the Federal Reserve System (US), 1-Month Treasury Constant Maturity Rate [DGS1MO], retrieved from FRED, Federal Reserve Bank of St. Louis.</li>
       <li><b>VIX history.</b> Chicago Board Options Exchange, CBOE Volatility Index: VIX [VIXCLS], retrieved from FRED, Federal Reserve Bank of St. Louis. Used for the forecasting benchmark in the repository.</li>
       <li><b>Bloomberg.</b> Derived aggregates only, in "Checked against Bloomberg" above and in the repository's hypothesis files, each marked <i>Source: Bloomberg Finance L.P.</i> Raw Bloomberg data is never redistributed or stored in the repository, per Pepperdine's subscription terms: derived figures may be published with that citation; raw data may not be placed in an open repository.</li>
+      <li><b>OPRA.</b> Consolidated best bid and offer at one-minute resolution (OPRA.PILLAR, cbbo-1m), bought historically from Databento, Inc. Derived aggregates only, in "Checked against the consolidated feed" above and in the repository's hypothesis files, each marked <i>Data provided by Databento</i>. Raw OPRA data is never redistributed or stored in the repository; every figure is computed from historical data, at least one trading day old.</li>
     </ul>
   </section>
 
