@@ -1979,6 +1979,11 @@ every decision. This section is the only one guaranteed current. Read it, run
   `--all --compare`. 23 Sep becomes H5f's fourth day, and the first day checked against
   Bloomberg AND OPRA at the same minute. Tried 23 Sep 20:43 UTC: priced at $0.0267 for
   both, refused as not yet historical, nothing charged.
+  **Scheduled:** a one-off local task (`volrec-opra-fetch-0923`, the app's Scheduled
+  list) fires 24 Sep 07:15 Pacific, fetches and compares, texts Gabriel, and saves
+  the compare to `~/Documents/volrec-databento/compare_2026-09-23.txt`. It never
+  touches the repo: recording day 4 in H5 is still this session's job. Re-running
+  the fetch is harmless - days on disk are skipped, never bought twice.
 - `daily.py` scores **H5e's first counted day** (23 Sep, once OVX's close is in).
 - **Gabriel sends the help desk the follow-up** (worded in `BLOOMBERG-MONDAY.md` ask 3):
   forward, rate, exercise model and holiday count behind IVM on TSLA 16-Jun-28. His
