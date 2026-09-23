@@ -370,13 +370,11 @@ print("\n=== H3. DELTA-HEDGED P&L ESTIMATOR ===")
 import subprocess as _sp
 _t = _sp.run([sys.executable, str(R / "tools/test_hedged.py")],
              capture_output=True, text=True)
-_nfail = 0
-for _ln in _t.stdout.splitlines():
-    if _ln.strip().startswith("FAIL"):
-        _nfail += 1
+_nfail = sum(1 for _ln in _t.stdout.splitlines() if _ln.strip().startswith("FAIL"))
+_npass = sum(1 for _ln in _t.stdout.splitlines() if _ln.strip().startswith("PASS"))
 ok(_t.returncode == 0 and _nfail == 0,
    f"hedged.py unit tests pass ({_nfail} failures)" if _nfail
-   else "hedged.py unit tests pass (18 hand-computed cases)")
+   else f"hedged.py unit tests pass ({_npass} hand-computed cases)")
 
 print("\n=== H3b. CALIBRATION (every instrument against a known reference truth) ===")
 # Each instrument is fed an input whose right answer is known in advance - parity,
@@ -485,9 +483,19 @@ print(f"  INFO  worst record delay since {CRON_SINCE}: {_meas // 60}h{_meas % 60
 ok(_land <= US_CLOSE_UTC_MIN,
    f"record's worst delay seen still lands before the earlier close "
    f"(lands {_land // 60:02d}:{_land % 60:02d}, close 20:00 UTC)")
-warn(_land + DELAY_MARGIN_MIN <= US_CLOSE_UTC_MIN,
-     f"record keeps {DELAY_MARGIN_MIN} min of margin at the worst delay seen "
-     f"({US_CLOSE_UTC_MIN - _land} min left) - see HANDOFF 17, 23 Sep, on the cron")
+# Accepted by Gabriel on 23 Sep 2026 until the window closes: a schedule change would
+# move every remaining snapshot, while a post-close landing costs one day, which
+# panel_health FAILS on (and emails) so it is dropped rather than silently kept. The
+# acceptance expires on its own, like ACCEPTED_GAPS: after the date it warns again.
+CRON_MARGIN_ACCEPTED = ("2026-11-11", "hold the cron to the end of the 40-day window")
+_margin_ok = _land + DELAY_MARGIN_MIN <= US_CLOSE_UTC_MIN
+if not _margin_ok and date.today().isoformat() <= CRON_MARGIN_ACCEPTED[0]:
+    print(f"  INFO  cron margin {US_CLOSE_UTC_MIN - _land} min at the worst delay seen, under "
+          f"{DELAY_MARGIN_MIN}: ACCEPTED until {CRON_MARGIN_ACCEPTED[0]} - {CRON_MARGIN_ACCEPTED[1]}")
+else:
+    warn(_margin_ok,
+         f"record keeps {DELAY_MARGIN_MIN} min of margin at the worst delay seen "
+         f"({US_CLOSE_UTC_MIN - _land} min left) - see HANDOFF 17, 23 Sep, on the cron")
 ok(_rec_min % 15 != 0,
    "record cron avoids the quarter hours, where GitHub's queue is deepest")
 ok(recy["permissions"]["contents"] == "write", "record has contents:write")

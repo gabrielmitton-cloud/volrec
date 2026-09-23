@@ -195,6 +195,39 @@ pulled), 18:46 UTC against the recorder's 18:22 snapshot, a 24-minute gap.
 
 *Bloomberg figures: Source: Bloomberg Finance L.P.*
 
+## Prior art, read 23 September 2026 — H5e's estimator is NOT new
+
+Andersen, Bondarenko & Gonzalez-Perez (2015), "Exploring Return Dynamics via
+Corridor Implied Volatility", *Review of Financial Studies* 28(10), 2902-2945
+(doi:10.1093/rfs/hhv033), read in full via Pepperdine's access. Two things in it
+bear directly on H5, and both must be credited in anything written:
+
+- **The critique of Cboe's cutoff is theirs.** Section 3.1.2 shows that the rule of
+  discarding everything past two consecutive zero bids makes the effective strike
+  range vary at random, which puts noise and artificial jumps into the
+  high-frequency VIX and biases VIX^2 downward against the full model-free measure.
+  H5's observation that the stop rule cut USO's band on 22 Sep is an instance of
+  their mechanism, not a discovery.
+- **H5e's estimator is their RX\*.** They compute the index from every
+  out-of-the-money option with a positive bid, abandoning the two-zero-bid cutoff,
+  and note that it bounds the official index from above. That is exactly
+  `modelfree`'s `"skip"` mode. H5e stays registered as it stands - a prediction
+  about free data on USO, not a claim of method - but the method is theirs and is
+  cited as theirs.
+
+**What remains this project's:** RX\* applied to a free, indicative, retail-grade
+feed; at the daily frequency; on a sparse ETF strike ladder where the cutoff bites
+on one-sided stub quotes at odd strikes 15-20% from the money (they study SPX, where
+it bites far in the tails); and a same-contract cross-check against Bloomberg. Their
+remedy for the underlying problem, a corridor whose barriers follow the options
+themselves (their CX index), is the natural next step if H5e holds, and is not
+adopted here.
+
+**Still to read:** Jiang & Tian (2005), *RFS* 18, 1305-1342, which they cite as
+finding no major VIX biases at the daily frequency - the frequency this project
+works at - and the companion working paper named in their footnote 13, "A Corridor
+Fix for High-Frequency VIX: Developing Coherent Implied Volatility Measures".
+
 ## Adjustment log
 
 - **2026-09-23 — an ADDITION, not an adjustment.** H5e added after seeing 18-22 Sep,

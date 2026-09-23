@@ -56,7 +56,7 @@ Run:  FRED_KEY=... python hedged.py
 import csv
 import sys
 from collections import defaultdict
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -64,6 +64,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE / "tools"))
 
 import analyze                                     # noqa: E402
+from panel_health import US_MARKET_HOLIDAYS        # noqa: E402  one list, owned there
 SURF = HERE / "data" / "surface.csv"
 
 MIN_RUN = 2          # need at least two observations to hedge anything
@@ -91,12 +92,28 @@ def _i(v):
         return None
 
 
+def skipped_trading_day(prev, here):
+    """True if a US trading day falls strictly between two observation dates."""
+    d = prev + timedelta(days=1)
+    while d < here:
+        if d.weekday() < 5 and d not in US_MARKET_HOLIDAYS:
+            return True
+        d += timedelta(days=1)
+    return False
+
+
 def runs_for_contract(obs):
     """Split one contract's observations into consecutive-trading-day runs.
 
-    `obs` is a list of rows for a single option_symbol, sorted by date. A gap of
-    more than four calendar days is treated as a break rather than a weekend, so
-    a long holiday weekend does not silently splice two separate runs together.
+    `obs` is a list of rows for a single option_symbol, sorted by date. A run breaks
+    whenever a trading day passes with the contract unobserved, so a weekend or a
+    holiday weekend joins while a missed session does not.
+
+    Until 23 Sep 2026 this used "within four calendar days" as a proxy for
+    consecutive. That spliced 15 -> 17 Sep across the lost 16 Sep, and any contract
+    that dropped off the grid for a day, into two-trading-day hedges: 1,395 runs,
+    which moved H4's date-level mean from about -1.1bp to -8.56bp. H4's specification
+    says consecutive trading days; see H4's adjustment log (strike 1 of 3).
     """
     out, cur = [], []
     for row in obs:
@@ -105,7 +122,7 @@ def runs_for_contract(obs):
             continue
         prev = date.fromisoformat(cur[-1]["date"])
         here = date.fromisoformat(row["date"])
-        if (here - prev).days <= 4:
+        if not skipped_trading_day(prev, here):
             cur.append(row)
         else:
             if len(cur) >= MIN_RUN:

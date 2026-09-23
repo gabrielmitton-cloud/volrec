@@ -303,4 +303,28 @@ called significant.**
 
 ## Adjustment log
 
-- *(none yet)*
+- **2026-09-23 — STRIKE 1 of 3, after seeing output. Runs now break on a missed
+  trading day.** Approved by Gabriel 23 Sep. `hedged.runs_for_contract` used "within
+  four calendar days" as its test of consecutive, which the specification above
+  states but only as the means to "consecutive trading days". The two diverge when
+  a trading day is missed: 15 -> 17 Sep spliced across the lost 16 Sep (1,376
+  runs), and 19 more runs spliced across a day a contract dropped off the grid. Those
+  are two-trading-day hedges in a sample defined as one-day hedges, and HANDOFF 17
+  had already said the 15-16 pair does not exist. A run now breaks exactly when a
+  trading day passes unobserved (`panel_health`'s holiday list), so weekends and
+  holiday weekends still join; three unit tests pin that.
+
+  Counted as a strike because it changes which runs count and was made after the
+  descriptive output had been seen. Nothing else changed: buckets, terciles,
+  outcome and thresholds are as registered. The effect, all descriptive:
+
+  | unit | before | after |
+  |---|---|---|
+  | contract | 2,332 runs, -11.87bp | 3,355 runs, -3.18bp |
+  | underlying-day | 39, -9.58bp (t -3.30) | 31, -0.96bp (t -0.55) |
+  | date | 5, -8.56bp (t -1.88) | 4, -0.57bp (t -0.26) |
+  | volume contrast, high minus low | +0.75bp (wrong side of H4c) | -1.06bp (H4c's side) |
+
+  So the "H4a now points negative" reading that five dates suggested was mostly the
+  spliced two-day interval. `delta_model.py` re-run on the new runs: vendor delta
+  -3.41bp, ours -3.47bp over 3,310 common runs, the same small model dependence.

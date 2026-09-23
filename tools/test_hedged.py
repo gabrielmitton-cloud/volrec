@@ -79,6 +79,17 @@ istrue("a two-week gap splits the run",
                                 row("2026-01-20"), row("2026-01-21")])) == 2)
 istrue("a lone observation yields no run",
        h.runs_for_contract([row("2026-01-05")]) == [])
+# 23 Sep 2026: a missed SESSION must split a run even inside four calendar days;
+# the old calendar proxy spliced 15 -> 17 Sep across the lost 16 Sep.
+istrue("a missed trading day splits the run (Tue -> Thu)",
+       len(h.runs_for_contract([row("2026-09-14"), row("2026-09-15"),
+                                row("2026-09-17"), row("2026-09-18")])) == 2)
+istrue("a holiday weekend joins (Fri 4 Sep -> Tue 8 Sep, Labor Day between)",
+       len(h.runs_for_contract([row("2026-09-03"), row("2026-09-04"),
+                                row("2026-09-08")])) == 1)
+istrue("a Thanksgiving gap joins (Wed 25 Nov -> Fri 27 Nov)",
+       len(h.runs_for_contract([row("2026-11-24"), row("2026-11-25"),
+                                row("2026-11-27")])) == 1)
 
 print("\n=== bad data is rejected rather than silently treated as zero ===")
 for bad, label in [({"mid": "0"}, "zero mid"), ({"delta": ""}, "missing delta"),

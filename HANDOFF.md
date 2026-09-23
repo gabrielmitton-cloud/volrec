@@ -1647,23 +1647,22 @@ in this data would destroy the pre-registration that makes these results citable
 walk against a known answer (13 / 9 / 10 strikes), and checks the prep tool
 reproduces the 18, 22 and 23 Sep sessions.
 
-**Two decisions that are Gabriel's, both costed in the 23 Sep session:**
+**Both decisions made by Gabriel, 23 Sep:**
 
-- **H4 splices across missing trading days.** `hedged.runs_for_contract` treats
-  "within four calendar days" as consecutive, so 15 -> 17 Sep (16 Sep lost) counts:
-  1,376 runs at -11.67bp, plus 19 runs where a contract skipped a day. With them
-  the date-level mean is -8.56bp over five pairs; with only truly consecutive pairs,
-  about -1.1bp. H4's spec says "consecutive trading days" and this section already
-  said the 15-16 pair does not exist. Fixing it is a post-output change to which
-  runs count, so it costs one of H4's three strikes. **Recommended: fix, log it as
-  strike 1, before H4 has enough pairs to be tested.**
-- **The cron margin.** Worst delay seen is now 4h57m: 16 minutes to spare under
-  DST, and no single UTC time satisfies both "after the winter open" and "30 minutes
-  clear of the summer close" any more. Options: (a) hold to 11 Nov, rely on
-  `panel_health` failing a post-close landing and drop that day; (b) a DST-aware
-  pair of crons with an in-session guard, edited on a Saturday. **Recommended: (a)**
-  - a schedule change moves every remaining snapshot, a late landing costs one day,
-  and the clocks change on 1 Nov anyway, adding an hour of room.
+- **H4 fixed - strike 1 of 3.** Runs now break on a missed trading day instead of
+  after four calendar days; 15 -> 17 Sep no longer splices across the lost 16 Sep.
+  H4's date-level mean moves from -8.56bp (5 dates) to -0.57bp (4), and the volume
+  contrast from +0.75bp to -1.06bp, H4c's side. All descriptive; H4's adjustment log
+  has the table.
+- **The cron is held to Wed 11 Nov.** The 16-minute margin is recorded in
+  `pressure_test.py` as ACCEPTED until that date and warns again after it. A
+  post-close landing still FAILS `panel_health`, and that day gets dropped.
+
+**Prior art read, 23 Sep:** Andersen, Bondarenko & Gonzalez-Perez (2015, *RFS*)
+already critique Cboe's two-zero-bid cutoff, and their RX\* is H5e's "skip"
+estimator. H5 now credits it; what stays ours is the free feed, the daily
+frequency, the sparse ETF ladder with stubs near the money, and the Bloomberg
+cross-check. Next to read: Jiang & Tian (2005, *RFS*; 2007, *J. Derivatives*).
 
 **Assessed and parked, 23 Sep:** H6 (Kalshi against the market) - Kalshi's S&P
 contracts are same-day (`KXINX`, `KXINXU`, public API, no key); the recorder has no
@@ -1671,9 +1670,9 @@ same-day options, so there is nothing to compare against without a new recorder,
 and a correlation search would break pre-registration. TradingView (charting needs a
 licence; the broker module is trading), worldmonitor (news-to-market pattern
 search), a SQL store (CSV stays the audited record; a gitignored DuckDB view is 20
-lines if ever needed). **Worth pursuing: Databento's OPRA data** - consolidated NBBO
-at one-minute resolution, historical, $125 free credit - would give a reference
-quote for every recorded day at the snapshot's own minute.
+lines if ever needed). **Databento's OPRA data** (one-minute consolidated NBBO, historical, $125 of free
+credit on sign-up) would give a reference quote for every recorded day at the
+snapshot's own minute. Not pursued for now (Gabriel, 23 Sep).
 
 *Bloomberg figures: Source: Bloomberg Finance L.P.*
 
@@ -1798,8 +1797,8 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 > reading came out OUTSIDE (contamination, as the grid said). H5e was registered
 > before 23 Sep's run and is judged only from 23 Sep: USO's wide estimate with
 > zero-bid stubs skipped should track OVX within 0.5 points on 10+ days.
-> HANDOFF 17, "23 September", has everything, including two decisions awaiting
-> Gabriel: the H4 splice fix (costs a strike) and the cron margin.
+> HANDOFF 17, "23 September", has everything. H4's splice fix is made (strike 1
+> of 3), the cron is held to 11 Nov, and H5e's estimator is credited to ABG (2015).
 >
 > Rules: report numbers before recommending; never adjust a pre-registered threshold,
 > bucket or bar; never edit a workflow's `schedule:` on a day whose run is still
