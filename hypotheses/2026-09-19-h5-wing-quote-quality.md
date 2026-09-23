@@ -195,6 +195,35 @@ pulled), 18:46 UTC against the recorder's 18:22 snapshot, a 24-minute gap.
 
 *Bloomberg figures: Source: Bloomberg Finance L.P.*
 
+## H5f — registered 23 September 2026, BEFORE any OPRA data was requested
+
+H5a-H5c name Bloomberg, and two matched Bloomberg days in a week is the constraint on
+H5. OPRA's consolidated NBBO, bought historically from Databento at one-minute
+resolution, can be matched at the recorder's own minute on every recorded day. Letting
+OPRA count toward H5a-c after the fact would be an adjustment, so its predictions are
+registered here first. At this commit no Databento account exists and no OPRA quote
+has been seen; the commit time is the proof.
+
+Reference: `tools/opra_reference.py`, dataset OPRA.PILLAR, schema `cbbo-1m`, each
+recorded contract matched to the OPRA record nearest its own quote time within 120
+seconds (unmatched contracts are excluded and counted). Every day with wide data from
+18 Sep 2026 through Wed 11 Nov 2026, USO and TSLA.
+
+- **H5f-a.** Pooled over every matched wing contract (beyond +/-30%, out of the money,
+  an OPRA ask present), the median free-feed mid sits within **half an OPRA bid-ask
+  spread** of OPRA's mid.
+- **H5f-b.** Where the free feed shows no bid, OPRA shows no bid either, on **at least
+  80%** of matched wing contracts.
+- **H5f-c.** On underlying-days whose wings carry zero-bid quotes, the inflation (as
+  registered minus Cboe rule) computed from OPRA's prices on the recorder's own
+  strikes is positive and, at the median across those days, within **25%** of the
+  free feed's.
+
+The three thresholds are H5a-c's, copied, not chosen again. **Minimum:** five days with
+OPRA data before any verdict. The registered-band comparison (inside +/-30%) is also
+printed and is descriptive only: H3's feed-quality question, not a hypothesis here.
+**Falsified** exactly as H5a-c are, with OPRA in Bloomberg's place.
+
 ## Prior art, read 23 September 2026 — H5e's estimator is NOT new
 
 Andersen, Bondarenko & Gonzalez-Perez (2015), "Exploring Return Dynamics via

@@ -26,6 +26,6 @@ that it was pre-registered; that is the whole point of this directory.
 |---|---|---|---|---|
 | H1 | VRP is positive on Cboe vol indices, 2016-2026 | 2026-09-06 | 2026-09-07 | H1a holds (9/11, p<0.05); H1b holds but mixed, read the caveat; H1c holds |
 | H4 | Hedged gains negative, vary by moneyness, relate to volume | 2026-09-13 | not yet | registered before surface.csv had any rows; **strike 1 of 3** on 23 Sep (runs break on a missed trading day) |
-| H3 | Free-data model-free variance reproduces the Cboe index | 2026-09-12 | calibrated only | mean abs gap 0.59 pts on one day; series pending |
-| H5 | The cost of free data is in the wings, and it is the estimator's zero-bid handling, not the quotes | 2026-09-19 | not yet | registered after one wing day, which the file states in full |
+| H3 | Free-data model-free variance reproduces the Cboe index | 2026-09-12 | series running | H3a mean abs gap 0.53 over 30 readings (23 Sep); first wide reading OUTSIDE its bracket - contamination, as the registered grid anticipated |
+| H5 | The cost of free data is in the wings, and it is the estimator's zero-bid handling, not the quotes | 2026-09-19 | not yet | registered after one wing day, which the file states in full; H5e (23 Sep, judged from 23 Sep) and H5f (23 Sep, before any OPRA data) added; H5e's estimator is ABG (2015)'s RX* |
 | H2 | Variance rather than volatility formulation, per Carr & Wu (2009) | 2026-09-09 | 2026-09-09 | H2a holds but raw variance is weakest (t=2.1) and log variance strongest (t=16.3); H2b NOT supported; registered, still unadopted |

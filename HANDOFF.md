@@ -1676,6 +1676,23 @@ snapshot's own minute. Not pursued for now (Gabriel, 23 Sep).
 
 *Bloomberg figures: Source: Bloomberg Finance L.P.*
 
+### 23 September, later: the operations agent is built, and Databento is ready
+
+`OPS-AGENT.md` has the whole layer. New since the morning: `health.yml` runs
+`daily.py` in CI on weekdays at 23:37 UTC and emails on any FAIL or crash (first
+manual run green in 32 seconds; CI reads with r=0 because the FRED cache is
+gitignored, so the local reading is the one of record); `tools/hooks/pre-push`
+blocks a push to main that fails the pressure test (proven with a deliberate FAIL);
+`SESSION-START.md` is the one-screen orientation `CLAUDE.md` now points to first.
+
+**Databento, agreed 23 Sep for the $125 free credit.** `tools/opra_reference.py`
+prices every request with Databento's own `get_cost` before fetching, refuses over
+$0.50 a request or past $100 lifetime, keeps data and key outside the repo, and
+matches each contract to OPRA at its own quote time. Its dry run caught a
+timestamp bug that would have fetched the wrong minutes. **H5f was registered
+before any OPRA data was requested**, reusing H5a-c's thresholds. Nothing is
+fetched until Gabriel creates the account and a dry run shows the cost.
+
 ### The window this is all aimed at
 
 **40 trading days from Wed 16 September 2026 ends Wed 11 November 2026.** No market

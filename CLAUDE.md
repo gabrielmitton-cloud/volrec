@@ -1,9 +1,10 @@
 # volrec
 
-**Start at `HANDOFF.md` section 17.** It is the only section guaranteed current:
-what runs unattended, what is built, where the four hypotheses stand, and what has
-been assessed and rejected. Sections 1-3 hold closed decisions with their
-reasoning attached; do not re-argue them without new, dated evidence.
+**Start at `SESSION-START.md`** - one screen: read order, commands, what runs
+unattended, standing rules. Then run `tools/daily.py` for the live state, and read
+only the newest dated subsection of `HANDOFF.md` section 17. The rest of HANDOFF is
+history with the reasoning attached; sections 1-3 hold closed decisions - do not
+re-argue them without new, dated evidence.
 
 ## Which python
 

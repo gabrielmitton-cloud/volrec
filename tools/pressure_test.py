@@ -816,6 +816,38 @@ _daily = (R / "tools/daily.py").read_text()
 ok(all(s in _daily for s in ("panel_health.py", "pressure_test.py", '"--wide"', "Traceback")),
    "daily.py runs panel health, the pressure test and the H3/H5e reading, and reports crashes")
 
+print("\n=== N. OPRA REFERENCE (Databento) - money, keys, time, parsing ===")
+_ops = _iu.spec_from_file_location("opraref", R / "tools/opra_reference.py")
+_opm = _iu.module_from_spec(_ops); _ops.loader.exec_module(_opm)
+# Time: the first parser read '...06.416966692Z' as local time, 7 hours off.
+_t_ok = all(_opm.parse_ts(_s).strftime("%H:%M:%S") == "18:22:06" for _s in (
+    "2026-09-22T18:22:06.416966692Z", "2026-09-22T18:22:06Z", "2026-09-22T11:22:06-0700",
+    "2026-09-22 18:22:06", "1790101326000000000"))
+ok(_t_ok, "timestamps parse to UTC in every format, and a zone-less one is UTC, never local")
+_rows22 = _opm.recorded("2026-09-22", "USO")
+ok(_opm.snapshot_minute(_rows22).strftime("%H:%M") == "18:22" if _rows22 else True,
+   "the OPRA request is centred on the recorder's real 22 Sep minute (18:22 UTC)")
+ok(_opm.compact("USO   261016P00119000") == "USO261016P00119000",
+   "OPRA's padded OSI symbols match the recorder's compact ones")
+_hdr = ["ts_recv", "ts_event", "rtype", "bid_px_00", "ask_px_00", "bid_sz_00", "symbol"]
+ok(_opm.columns(_hdr) == {"symbol": 6, "ts": 0, "bid": 3, "ask": 4},
+   "OPRA CSV columns are found by name, not position")
+ok(_opm.budget_ok(0.10, 0.50, 0.0)[0] and not _opm.budget_ok(0.60, 0.50, 0.0)[0]
+   and not _opm.budget_ok(0.40, 0.50, 99.80)[0],
+   f"the money guard refuses a request over the per-request cap and past the "
+   f"${_opm.LIFETIME_CAP_USD:.0f} lifetime cap")
+ok(_opm.LIFETIME_CAP_USD <= 110 and _opm.DEFAULT_MAX_COST <= 1.0,
+   "the caps leave margin inside the free credit")
+ok(not _opm.inside_repo(_opm.DATA_DIR) and not _opm.inside_repo(_opm.KEY_FILE),
+   "OPRA data and the Databento key live outside the repository")
+ok(all(x in _gi for x in ("volrec-databento/", "*.key")),
+   ".gitignore blocks the OPRA folder and key files")
+# No API key may ever be committed: scan every tracked file for a Databento key.
+_tracked = subprocess.run(["git", "ls-files"], cwd=R, capture_output=True, text=True).stdout.split()
+_leak = [f for f in _tracked if (R / f).is_file() and (R / f).stat().st_size < 5_000_000
+         and re.search(r"db-[A-Za-z0-9]{20,}", (R / f).read_text(errors="ignore"))]
+ok(not _leak, f"no Databento API key in any tracked file ({_leak or 'none'})")
+
 print("\n" + "=" * 56)
 print(f"RESULT: {len(fails)} fail, {len(warns)} warn")
 for f in fails: print("  FAIL:", f)

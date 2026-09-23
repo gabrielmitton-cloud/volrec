@@ -79,6 +79,12 @@ def main():
         bad.append("modelfree")
     else:
         lines = out.splitlines()
+        # 23 Sep 2026: the first CI run read USO at +9.39 against +9.41 locally, because
+        # the FRED cache is gitignored (FRED's terms) and the runner fell back to r=0.
+        rate = next((ln.strip() for ln in lines if ln.startswith("risk-free")), None)
+        if rate:
+            print("   " + rate + ("   <- r=0: NOT the reading of record; run locally with the"
+                                  " FRED cache for that" if "0.000%" in rate else ""))
         grab, shown = False, []
         for ln in lines:
             if ln.strip().startswith("sym ") and "days" in ln:

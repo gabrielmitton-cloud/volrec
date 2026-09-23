@@ -29,3 +29,11 @@ analysis/data/
 # Strict subset of the full benchmark result; regenerable, and committing
 # both invites them drifting apart.
 analysis/out/baselines_only.csv
+
+# Databento / OPRA reference data (tools/opra_reference.py) lives in
+# ~/Documents/volrec-databento, OUTSIDE this repository, and the key in
+# ~/.config/volrec. Same licence regime as Bloomberg: aggregates only.
+volrec-databento/
+*.dbn
+*.dbn.zst
+*.key
