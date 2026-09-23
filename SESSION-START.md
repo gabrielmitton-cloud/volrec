@@ -50,8 +50,10 @@ session's job is to read results, answer a question, or do one bounded thing.
   needed.** The cron is held as-is until Wed 11 Nov 2026 (Gabriel, 23 Sep).
 - **Licensed data never enters the repo.** Bloomberg exports live in
   `~/Documents/volrec-bloomberg`, Databento data in `~/Documents/volrec-databento`,
-  keys outside the repo. Publish aggregates only; Bloomberg figures carry
-  "Source: Bloomberg Finance L.P.".
+  interlibrary-loan papers in `~/Documents/volrec-papers`, keys outside the repo.
+  Publish aggregates only; Bloomberg figures carry "Source: Bloomberg Finance L.P.",
+  OPRA figures "Data provided by Databento". When a file arrives, `git status` first:
+  licensed files have landed in the repo root three times.
 - **Operations, never search.** Tools may run, check and report. Nothing proposes,
   ranks or tests a hypothesis that is not already registered.
 - **Report numbers before recommending.** Label anything seen after the fact.

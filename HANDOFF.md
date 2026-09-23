@@ -1975,12 +1975,16 @@ every decision. This section is the only one guaranteed current. Read it, run
 - 23:37 UTC: the first scheduled `health.yml`.
 
 **Thu 24 Sep**
-- `tools/opra_reference.py --all` then `--all --compare`: 23 Sep becomes H5f's fourth day,
-  and the first day checked against Bloomberg AND OPRA at the same minute.
-- No Bloomberg pull is needed for H5a-b any more. If Gabriel is at the terminal, the
-  one open question goes to the help desk (HELP twice; `BLOOMBERG-MONDAY.md` ask 3 has
-  the wording): which forward, rate and borrow OMON's IVM uses on a long-dated TSLA
-  contract. A further matched day (weekly on, both expiries) is still useful, not binding.
+- **After 13:30 UTC (06:30 Pacific)**, not before: `tools/opra_reference.py --all` then
+  `--all --compare`. 23 Sep becomes H5f's fourth day, and the first day checked against
+  Bloomberg AND OPRA at the same minute. Tried 23 Sep 20:43 UTC: priced at $0.0267 for
+  both, refused as not yet historical, nothing charged.
+- `daily.py` scores **H5e's first counted day** (23 Sep, once OVX's close is in).
+- **Gabriel sends the help desk the follow-up** (worded in `BLOOMBERG-MONDAY.md` ask 3):
+  forward, rate, exercise model and holiday count behind IVM on TSLA 16-Jun-28. His
+  reply goes into H3's section "The day count, stated by Bloomberg and tested at 21
+  months", labelled with its date. No Bloomberg pull is needed for H5a-b any more; a
+  further matched day (weekly on, both expiries) is useful, not binding.
 
 **Fri 25 Sep** - fetch 24 Sep: H5f's fifth day, so **the first H5f verdict**, read exactly
 as registered, with the stale-quote exclusion stated beside it.
@@ -2010,8 +2014,9 @@ as registered, with the stale-quote exclusion stated beside it.
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is
-> history. Run `tools/daily.py` with the framework python and report its verdict.
-> Then work down section 18's dated next steps: check the watchdog's 23 Sep run, fetch
-> and compare the newest OPRA days, and if Gabriel has pulled Bloomberg, run
-> `bloomberg_compare.py` on it. Report numbers before recommending; never adjust a
+> history. Run `tools/daily.py` with the framework python and report its verdict,
+> including H5e's first counted day. Then work down section 18's dated next steps:
+> after 13:30 UTC fetch and compare 23 Sep from OPRA (`opra_reference.py --all`, then
+> `--all --compare`), and if Gabriel brings the help desk's reply on the long-dated
+> day count, record it in H3. Report numbers before recommending; never adjust a
 > registered threshold; keep licensed data out of the repo.

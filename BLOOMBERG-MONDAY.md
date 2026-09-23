@@ -150,9 +150,12 @@ unmeasured.**
 exchange holidays excluded, intraday precision, not configurable; OVME and OVDV's BVOL
 surfaces use calendar ACT/365. Documented at `LPHP OMON:0:1 4373105` ("Migration to
 Business Day Convention", June 2023) and `HELP OMON`. **The one open follow-up**, same
-route (HELP twice): *"For TSLA US 06/16/28 options in OMON, which forward, interest
-rate and borrow cost does the IVM solve use, and does its business-day count exclude
-2027 and 2028 exchange holidays?"* That is what the 21-month residual turns on.
+route (HELP pressed twice, paste into the chat box, never the command line), final
+wording 23 Sep, to be sent Thu 24 Sep:
+
+> "For TSLA US 06/16/28 options in OMON, how is the IVM column solved? (1) Which forward does it use: the IFwd shown in the expiry header, or one built from a rate curve with a borrow or dividend assumption? (2) Which rate: the single R in the header, or a term curve? (3) Is the pricing model American or European for these equity options? (4) Does the ACT/252 business-day count to expiry exclude the 2027 and 2028 exchange holidays? Context: re-solving OMON's own mid prices on ACT/252 with the header IFwd and R reproduces IVM on the October 2026 expiries to within about 0.2 vol points, but leaves about 1 vol point on 16-Jun-28."
+
+That is what the 21-month residual turns on. Send back the reply verbatim.
 
 **18 Sep: asked, not answered.** The reply described the `GV` template (60-day
 classical historical volatility against 3-month at-the-money implied volatility)
