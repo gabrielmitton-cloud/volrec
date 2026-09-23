@@ -31,7 +31,7 @@ Usage:
 """
 
 import csv, json, os, random, sys, time
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from math import erf, exp, lgamma, sqrt, isfinite
 from pathlib import Path
 

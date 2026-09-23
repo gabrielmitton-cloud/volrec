@@ -1606,6 +1606,77 @@ free data costs, because they buy OPRA instead. An agent that searches for patte
 in this data would destroy the pre-registration that makes these results citable
 (assessed 16 Sep, still rejected). An agent that runs the daily operations would not.
 
+### 23 September: the first H3 reading, H5e, and a full health check
+
+**Readings** (H3 and H5 files have the tables):
+
+- **H3's registered wide reading: OUTSIDE.** USO's as-registered lift averaged +9.41
+  over 18, 21 and 22 Sep against the 1.4-3.2 bracket - over 3.2, which the grid
+  registered on 18 Sep reads as quote contamination. The zero-bid column: +1.00.
+  AAPL's null control: +0.05. Not the written-up reading; that is after 11 Nov.
+- **H3a:** 30 readings, mean absolute gap 0.53, USO 61% of it, USO settled at -1.1.
+  IWM reads positive on all six days, against H3b's sign.
+- **H5e registered 07:09 UTC 23 Sep, before that day's run** (commit `ac237a6`).
+  Skipping zero-bid stubs without Cboe's stop rule put USO's wide estimate on OVX
+  at +0.23, -0.24, -0.00 in sample. Judged only from 23 Sep; `modelfree.py --wide`
+  and `tools/daily.py` print the running tally.
+- **Cboe's stop rule cut USO's registered band by 2.75 points on 22 Sep** at
+  one-sided stubs on odd strikes (P119, P122, P124, no bid, ~$3 ask).
+- **The 22 Sep pull** (16 Oct only): USO passes (0.39 of a spread; wings 0.09 and
+  0.00). TSLA FAILS the price gate at 0.87. The new drift line in
+  `bloomberg_compare.py` shows every gate failure to date coincides with the
+  underlying moving between snapshots: USO 15 Sep +0.18% (0.64), TSLA 22 Sep -0.14%
+  (0.87). The failures stand; the lesson is to pull faster, fast movers first.
+
+**Fixed:**
+
+1. **`pressure_test.py` had been crashing since 21 Sep** on a vendor quote with no
+   greeks (HYG): `float('')` in section C, so nothing after it ran - and no email,
+   because the workflows run `panel_health`, not the pressure test.
+2. **The worst-delay check trusted a stale constant.** Record fired 4h57m late on
+   21 Sep and landed 16 minutes before the close; the test believed 4h24m. It now
+   measures the delay from the panels and WARNS inside the 30-minute margin.
+3. **`bloomberg_compare.py` and `iv_convention.py`** now match the recorder expiry
+   the export actually holds; both 22 Sep exports held 16 Oct only.
+4. Dead imports removed; an AST scan found no undefined name anywhere.
+5. The `--wide` gap summary is relabelled: it read "USO max +12.00" and was nearly
+   taken for H3a's series.
+
+**Built:** `tools/bloomberg_prep.py` (OPS item 1) and `tools/daily.py` (item 2).
+`pressure_test.py` section M locks every registered constant, checks the zero-bid
+walk against a known answer (13 / 9 / 10 strikes), and checks the prep tool
+reproduces the 18, 22 and 23 Sep sessions.
+
+**Two decisions that are Gabriel's, both costed in the 23 Sep session:**
+
+- **H4 splices across missing trading days.** `hedged.runs_for_contract` treats
+  "within four calendar days" as consecutive, so 15 -> 17 Sep (16 Sep lost) counts:
+  1,376 runs at -11.67bp, plus 19 runs where a contract skipped a day. With them
+  the date-level mean is -8.56bp over five pairs; with only truly consecutive pairs,
+  about -1.1bp. H4's spec says "consecutive trading days" and this section already
+  said the 15-16 pair does not exist. Fixing it is a post-output change to which
+  runs count, so it costs one of H4's three strikes. **Recommended: fix, log it as
+  strike 1, before H4 has enough pairs to be tested.**
+- **The cron margin.** Worst delay seen is now 4h57m: 16 minutes to spare under
+  DST, and no single UTC time satisfies both "after the winter open" and "30 minutes
+  clear of the summer close" any more. Options: (a) hold to 11 Nov, rely on
+  `panel_health` failing a post-close landing and drop that day; (b) a DST-aware
+  pair of crons with an in-session guard, edited on a Saturday. **Recommended: (a)**
+  - a schedule change moves every remaining snapshot, a late landing costs one day,
+  and the clocks change on 1 Nov anyway, adding an hour of room.
+
+**Assessed and parked, 23 Sep:** H6 (Kalshi against the market) - Kalshi's S&P
+contracts are same-day (`KXINX`, `KXINXU`, public API, no key); the recorder has no
+same-day options, so there is nothing to compare against without a new recorder,
+and a correlation search would break pre-registration. TradingView (charting needs a
+licence; the broker module is trading), worldmonitor (news-to-market pattern
+search), a SQL store (CSV stays the audited record; a gitignored DuckDB view is 20
+lines if ever needed). **Worth pursuing: Databento's OPRA data** - consolidated NBBO
+at one-minute resolution, historical, $125 free credit - would give a reference
+quote for every recorded day at the snapshot's own minute.
+
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
+
 ### The window this is all aimed at
 
 **40 trading days from Wed 16 September 2026 ends Wed 11 November 2026.** No market
@@ -1716,29 +1787,19 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 > Use `/Library/Frameworks/Python.framework/Versions/3.14/bin/python3`, never bare
 > `python3` (Homebrew's has no `requests`). Prefix `hedged.py`, `modelfree.py` and
 > `delta_model.py` with `FRED_KEY=use-cache` or they silently use r=0. Run
-> `tools/pressure_test.py` before and after anything; it should say 0 fail and 1 warn.
+> `tools/pressure_test.py` before and after anything; it should say 0 fail. Three
+> warnings are known and true (a vendor IV gap, snapshot spread, the cron margin).
 >
-> State: the engine is settled and running unattended toward Wed 11 November 2026, 40
-> trading days. The plan is to let data accumulate, not to build. Three things changed
-> on 17 September: a WIDE band now records high-volatility names beyond +/-30% into a
-> separate `data/surface_wide.csv` (the registered +/-30% grid is byte-identical); every
-> instrument is checked against a known answer by `tools/calibrate.py`; and Bloomberg
-> attribution is enforced by the pressure test. The day-count gap is a reconciliation
-> note, NOT a finding - it is textbook.
+> **One command does the daily check:** `.../python3 tools/daily.py`. It pulls, runs
+> panel health, the pressure test and `modelfree.py --wide`, and ends ALL CLEAR or
+> LOOK AT. Before any Bloomberg session: `tools/bloomberg_prep.py --date YYYY-MM-DD`.
 >
-> First, check that the 18 September run fired AND that `data/surface_wide.csv` appeared.
-> That is the first live run of the wide pass. `gh run list --workflow=surface.yml` and
-> `tools/panel_health.py`, which warns if the wide file lags.
->
-> Then, once the wide file has three days (after the Tue 22 Sep run): H3 registered a
-> falsifiable prediction before that data existed - `modelfree.py --wide` should lift
-> USO's estimate by 1.4 to 3.2 points. On 18 Sep the test itself was repaired and
-> pre-registered (H3, "How the prediction is tested"): the reading is USO's mean lift
-> over EVERY covered wide day, read against the registered interpretation grid, with
-> GLD and AAPL as null controls that must stay under 0.3, and the zero-bid column as
-> the other side of a bracket around the truth. SPY's half holds by construction and
-> is not evidence. Run `FRED_KEY=use-cache .../python3 modelfree.py --wide` and report
-> the numbers either way. The written-up reading is the one after Wed 11 Nov.
+> State, 23 Sep: the engine runs unattended to Wed 11 Nov. H3's first registered wide
+> reading came out OUTSIDE (contamination, as the grid said). H5e was registered
+> before 23 Sep's run and is judged only from 23 Sep: USO's wide estimate with
+> zero-bid stubs skipped should track OVX within 0.5 points on 10+ days.
+> HANDOFF 17, "23 September", has everything, including two decisions awaiting
+> Gabriel: the H4 splice fix (costs a strike) and the cron margin.
 >
 > Rules: report numbers before recommending; never adjust a pre-registered threshold,
 > bucket or bar; never edit a workflow's `schedule:` on a day whose run is still

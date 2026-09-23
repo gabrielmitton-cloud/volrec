@@ -22,6 +22,13 @@ requests`.
 pandas, numpy and torch. The pipeline itself stays stdlib + `requests`, and
 `requirements.txt` is deliberately not the place to add analysis dependencies.
 
+## Daily and Bloomberg commands
+
+    .../python3 tools/daily.py                        # the whole daily check, one screen
+    .../python3 tools/bloomberg_prep.py --date DATE   # what to pull, when, what to write down
+
+`daily.py` ends ALL CLEAR or LOOK AT. A crash is reported as a crash, never a pass.
+
 ## Tools and rules
 ### TimesFM benchmark (analysis/timesfm_vix_baseline.py)
 - Question: does TimesFM beat HAR and a random walk at forecasting mean log VIX over the next 21 trading days?

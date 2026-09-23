@@ -1,7 +1,8 @@
-# The operations agent — design only, NOT built
+# The operations agent — items 1-2 built, 3-5 designed
 
-**Written 19 September 2026. Nothing here is deployed.** Build window: Wednesday
-23 September, morning. This file exists so that session starts from a spec instead
+**Written 19 September 2026. Items 1 and 2 BUILT 23 September** (`tools/bloomberg_prep.py`,
+`tools/daily.py`; both checked by `pressure_test.py` section M). Items 3-5 not built.
+Original build window: Wednesday 23 September, morning. This file exists so that session starts from a spec instead
 of rebuilding the argument.
 
 ## The one rule that decides everything
@@ -36,7 +37,10 @@ Runs, in order: `git pull --rebase`, `panel_health`, `pressure_test`, and
 current, 0 fail / n warn, and the current H3 reading against its registered grid.
 **Done when:** a normal day needs exactly one command and one screen of output.
 
-### 3. A GitHub Action that writes `reports/daily.md`
+### 3. A GitHub Action that writes `reports/daily.md` - and runs the pressure test
+On 21-23 Sep the pressure test crashed for two days and nothing noticed, because
+the freshness workflow runs `panel_health` only. Running `daily.py` in CI closes
+that. Edit workflows on a Saturday only.
 The same thing as (2), on the runner, committed as a one-page report after the
 surface run. Free on a public repo. The existing freshness workflow already mails
 on failure, so this is for reading, not alerting. **Done when:** a week can pass

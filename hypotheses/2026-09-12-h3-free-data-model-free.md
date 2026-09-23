@@ -765,6 +765,37 @@ that and probably not all; not investigated.
 
 *Bloomberg figures: Source: Bloomberg Finance L.P.*
 
+## The first registered reading of the wide prediction — 23 September 2026
+
+Read exactly as pre-registered: USO's as-registered lift, mean over every covered wide
+day (18, 21, 22 Sep; all three covered, no `UNCOVERED` day).
+
+| | 18 Sep | 21 Sep | 22 Sep | mean | reading |
+|---|---|---|---|---|---|
+| USO, as registered | +5.25 | +9.96 | +13.01 | **+9.41** | **OUTSIDE 1.4-3.2: over 3.2, "fail, most likely quote contamination"** |
+| USO, Cboe zero-bid rule | +0.84 | +0.92 | +1.26 | +1.00 | the other side of the bracket; 0.5-1.4 band |
+| TSLA | +1.66 | +1.63 | +1.66 | +1.65 | no zero bids, both columns equal |
+| NVDA | +0.76 | +0.69 | +0.78 | +0.75 | |
+| AAPL (null control) | +0.02 | +0.09 | +0.02 | +0.05 | **under 0.3: ok** |
+
+GLD recorded no wide rows on any day, so the GLD control has not run. The dose ordering
+{USO, TSLA} > NVDA > {AAPL, GLD} holds on both columns. **This is the first reading,
+not the written-up one**, which is the reading after Wed 11 Nov.
+
+**What it says.** The contamination the grid anticipated is the whole story of the
+as-registered column, and it is growing (5, 10, 13) while the zero-bid count stays at
+21-22, so the size of the stub asks matters, not only their number. The zero-bid
+column is not clean either: on 22 Sep Cboe's stop rule truncated USO *inside* the
+registered band at one-sided stubs (H5, "The second wide pull"). A variant that skips
+zero bids without stopping closes USO's gap to OVX on all three days; it was defined
+after seeing them, so it is registered as H5e and judged only from 23 Sep.
+
+**H3a's own series, now 30 readings over six days:** mean absolute gap **0.53**
+against the 1.0 bar, pooled mean -0.25, USO carrying 61% of the error. USO's registered
+gap has settled at -1.18, -1.09, -1.00 since 18 Sep. **IWM reads positive on all six
+days** (mean +0.42), against H3b's predicted negative sign - worth watching, since H3b
+fails on a positive mean gap.
+
 ## Adjustment log
 
 - **2026-09-18, before any wide data existed — the pair of expiries integrated, and the

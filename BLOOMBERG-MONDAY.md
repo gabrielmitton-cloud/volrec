@@ -60,6 +60,13 @@ already written down, and it should be settled rather than left.
 
 ### 1b. USO out to ±60% on both of the recorder's expiries — NEW 18 September
 
+**22 Sep: USO and TSLA pulled, 16 Oct only again.** USO matched cleanly (0.39 of a
+spread; wings 0.09 and 0.00). TSLA FAILED the price gate at 0.87 because it moved
+0.14% in the 24 minutes between snapshots. **Before the next session run
+`python3 tools/bloomberg_prep.py --date YYYY-MM-DD`**: it names both expiries, the
+strike range and the landing window. Pull BOTH expiries, and pull TSLA first,
+within 10 minutes of the snapshot.
+
 **Half done 18 Sep.** 16 Oct pulled 18:25 UTC, 30 minutes after the recorder, 144
 strikes reaching 0.03x-2.04x spot: the wings match to 0.07 (puts) and 0.40 (calls)
 of a spread, and it exposed the zero-bid contamination in H3's wide lift (H3, "The
@@ -92,8 +99,8 @@ the free feed.
   record `IFwd` and `R` for **both** expiry blocks and the pull time to the minute,
   in UTC.
 
-The comparison tool does not exist yet, on purpose: it will be written against the
-first real export rather than guessed at. Aggregates only in anything published, with
+`tools/bloomberg_compare.py` matches the wings automatically (built 18 Sep against the
+first real export). Aggregates only in anything published, with
 "Source: Bloomberg Finance L.P.".
 
 ### 2. SPY with 200+ strikes — EXPORT DONE 16 Sep, STILL NEEDS A MATCHED DAY

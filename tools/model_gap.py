@@ -65,7 +65,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from bloomberg_compare import (ATTRIBUTION, ROOT, DEFAULT_DIR, read_sheet, num,  # noqa: E402
+from bloomberg_compare import (ATTRIBUTION, ROOT, DEFAULT_DIR, read_sheet,  # noqa: E402
                                strike_cells, surface_rows)
 from iv_convention import black76, implied_vol, MIN_MID                          # noqa: E402
 

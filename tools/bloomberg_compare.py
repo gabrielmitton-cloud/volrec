@@ -174,6 +174,34 @@ def surface_rows(date):
     return rows
 
 
+def drift(free, bbg, dte, r=0.043):
+    """Did the underlying move between the two snapshots? Added 23 Sep 2026, when TSLA
+    failed the price gate after moving 0.14% in 24 minutes. A move shows as calls and
+    puts disagreeing in OPPOSITE directions and the two parity forwards apart; a bad
+    feed pushes both types the same way. Reported beside the gate; it re-scores nothing."""
+    def fwd(c, p):
+        both = [k for k in c if k in p]
+        if not both:
+            return None
+        k = min(both, key=lambda k: abs(c[k] - p[k]))
+        return k + (c[k] - p[k]) * (2.718281828459045 ** (r * dte / 365))
+    fm = {t: {} for t in "CP"}
+    bm = {t: {} for t in "CP"}
+    signed = {"C": [], "P": []}
+    for (t, k), b in bbg.items():
+        f = free.get((t, k))
+        if b["bid"] is None or not b["ask"] or not f or num(f["mid"]) is None:
+            continue
+        bm[t][k] = (b["bid"] + b["ask"]) / 2
+        fm[t][k] = num(f["mid"])
+        signed[t].append(fm[t][k] - bm[t][k])
+    ff, fb = fwd(fm["C"], fm["P"]), fwd(bm["C"], bm["P"])
+    return {"forward_free": ff, "forward_bbg_parity": fb,
+            "move_pct": 100 * (fb / ff - 1) if ff and fb else None,
+            "calls_signed": st.median(signed["C"]) if signed["C"] else None,
+            "puts_signed": st.median(signed["P"]) if signed["P"] else None}
+
+
 def compare(symbol, export, rows, fails, notes):
     """One symbol: match every Bloomberg contract to the free feed and measure."""
     # The expiry to compare: the recorder's closest to 30 days AMONG THOSE THE EXPORT
@@ -249,6 +277,7 @@ def compare(symbol, export, rows, fails, notes):
         "spread_bbg_pct": st.median(sp_bbg) if sp_bbg else None,
         "volume_free": vol_free, "volume_bbg": vol_bbg,
         "forward_bbg": forward, "spot_free": num(rows[0]["spot"]),
+        "drift": drift(free, bbg, int(next(x["dte"] for x in rows if x["expiration"] == expiry))),
     }
 
 
@@ -394,6 +423,11 @@ def main():
         if r["strikes"]:
             print(f"      strikes {r['strikes'][0]:.0f}-{r['strikes'][1]:.0f} matched; "
                   f"the recorder covers {r['free_strikes'][0]:.0f}-{r['free_strikes'][1]:.0f}")
+        dr = r.get("drift") or {}
+        if dr.get("move_pct") is not None:
+            print(f"      parity forward free {dr['forward_free']:.2f}, Bloomberg {dr['forward_bbg_parity']:.2f}: "
+                  f"{dr['move_pct']:+.2f}% between snapshots; calls {dr['calls_signed']:+.3f}, "
+                  f"puts {dr['puts_signed']:+.3f} (free minus Bloomberg, median)")
         w = wings(symbol, day[symbol], sym_rows, r["expiry"])
         if w:
             r["wings"] = w

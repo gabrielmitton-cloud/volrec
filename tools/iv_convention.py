@@ -36,13 +36,11 @@ USAGE
   python3 tools/iv_convention.py --date 2026-09-15 --dir ~/Documents/volrec-bloomberg
 """
 import argparse
-import csv
 import math
 import os
 import re
 import statistics as st
 import sys
-from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -123,8 +121,10 @@ def main():
         srows = [r for r in rows if r["symbol"] == symbol]
         if not srows:
             continue
-        expiry = sorted({r["expiration"] for r in srows},
-                        key=lambda e: abs(int(next(x["dte"] for x in srows if x["expiration"] == e)) - 30))[0]
+        exps = sorted({r["expiration"] for r in srows},
+                      key=lambda e: abs(int(next(x["dte"] for x in srows if x["expiration"] == e)) - 30))
+        # The closest to 30 days AMONG THE EXPIRIES THE EXPORT HOLDS (22 Sep: 16 Oct only).
+        expiry = next((e for e in exps if omon_block(path, bloomberg_label(e))[2]), exps[0])
         fwd, rate, ivm = omon_block(path, bloomberg_label(expiry))
         if not fwd or not ivm:
             print(f"{symbol:6}  no {bloomberg_label(expiry)} block, or no forward printed")

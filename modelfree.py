@@ -65,7 +65,6 @@ Run:  ALPACA_KEY=... ALPACA_SECRET=... FRED_KEY=... python modelfree.py
 """
 import csv
 import sys
-from datetime import date
 from math import exp, sqrt
 from pathlib import Path
 

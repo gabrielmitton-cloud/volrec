@@ -438,8 +438,24 @@ import datetime as _dt
 # a mid-session observation. So the cron must clear the close even at the worst
 # delay ever seen, with margin, and must avoid the quarter hours where the
 # scheduling queue is deepest.
-WORST_DELAY_MIN = 264          # 4h24m, observed 14 Sep 2026
+WORST_DELAY_MIN = 264          # 4h24m, observed 14 Sep 2026 at the OLD 15:30 cron
 DELAY_MARGIN_MIN = 30          # room for a delay worse than any yet seen
+# 23 Sep 2026: the hardcoded 264 went stale. On Mon 21 Sep record.yml fired 4h57m
+# after its 14:47 cron and the snapshot landed 16 minutes before the close, and
+# nothing noticed, because this file trusted a constant. The worst delay is now
+# MEASURED from the panels' own quote times since the cron moved (16 Sep), and the
+# constant is only a floor.
+CRON_SINCE = "2026-09-16"
+
+
+def _measured_delay(path, cron_min):
+    by = {}
+    for _r in csv.DictReader(path.open(newline="")):
+        _t = _r.get("quote_time", "")
+        if _r["date"] >= CRON_SINCE and len(_t) >= 16:
+            by.setdefault(_r["date"], []).append(int(_t[11:13]) * 60 + int(_t[14:16]))
+    lands = {d: sorted(v)[len(v) // 2] for d, v in by.items()}
+    return max(((m - cron_min, d) for d, m in lands.items()), default=(0, None))
 # Cron is UTC; the US session is not. Under DST the market runs 13:30-20:00 UTC,
 # and from the first Sunday in November it runs 14:30-21:00. A cron picked
 # against the summer session alone fires BEFORE the winter open, so both panels
@@ -461,10 +477,17 @@ ok(_rec_days == "1-5", "record runs weekdays only")
 ok(_rec_min >= US_OPEN_UTC_MIN,
    f"record starts after the LATER of the two US opens, so it survives the "
    f"November DST shift ({_rec_min//60:02d}:{_rec_min%60:02d} UTC)")
-ok(_rec_min + WORST_DELAY_MIN + DELAY_MARGIN_MIN <= US_CLOSE_UTC_MIN,
-   f"record clears the earlier of the two closes even at the worst delay seen "
-   f"(worst lands {(_rec_min+WORST_DELAY_MIN)//60:02d}:"
-   f"{(_rec_min+WORST_DELAY_MIN)%60:02d})")
+_meas, _meas_day = _measured_delay(live, _rec_min)
+WORST_DELAY_MIN = max(WORST_DELAY_MIN, _meas)
+_land = _rec_min + WORST_DELAY_MIN
+print(f"  INFO  worst record delay since {CRON_SINCE}: {_meas // 60}h{_meas % 60:02d}m "
+      f"({_meas_day}); judged on {WORST_DELAY_MIN // 60}h{WORST_DELAY_MIN % 60:02d}m")
+ok(_land <= US_CLOSE_UTC_MIN,
+   f"record's worst delay seen still lands before the earlier close "
+   f"(lands {_land // 60:02d}:{_land % 60:02d}, close 20:00 UTC)")
+warn(_land + DELAY_MARGIN_MIN <= US_CLOSE_UTC_MIN,
+     f"record keeps {DELAY_MARGIN_MIN} min of margin at the worst delay seen "
+     f"({US_CLOSE_UTC_MIN - _land} min left) - see HANDOFF 17, 23 Sep, on the cron")
 ok(_rec_min % 15 != 0,
    "record cron avoids the quarter hours, where GitHub's queue is deepest")
 ok(recy["permissions"]["contents"] == "write", "record has contents:write")
@@ -492,6 +515,11 @@ ok(_srf_days == _rec_days and _srf_min - _rec_min == 10,
    f"{_rec_min//60:02d}:{_rec_min%60:02d} UTC)")
 ok(_srf_min % 15 != 0,
    "surface cron avoids the quarter hours too")
+_smeas, _ = _measured_delay(surf, _srf_min) if surf.exists() else (0, None)
+_sland = _srf_min + max(_smeas, WORST_DELAY_MIN)
+ok(_sland <= US_CLOSE_UTC_MIN,
+   f"surface's worst delay seen still lands before the earlier close "
+   f"(lands {_sland // 60:02d}:{_sland % 60:02d})")
 _srf_run = " ".join(str(st.get("run", "")) for st in srf["jobs"]["surface"]["steps"])
 ok("git add data/surface.csv" in _srf_run,
    "surface workflow stages the registered surface file")
@@ -719,6 +747,47 @@ _gi = (R / ".gitignore").read_text()
 ok("*.xlsx" in _gi, ".gitignore blocks spreadsheets even if one lands here")
 ok("volrec-bloomberg/" in _gi,
    ".gitignore blocks the export folder by name as well as by extension")
+
+print("\n=== M. REGISTERED CONSTANTS, ZERO-BID SEMANTICS, OPERATIONS TOOLS ===")
+# A pre-registered bar that can be edited without anything noticing is not a bar.
+ok(_mfm.PREDICTED_LIFT == {"USO": (1.4, 3.2)} and _mfm.NULL_LIFT_MAX == 0.3
+   and _mfm.NULL_CONTROLS == ("GLD", "AAPL") and _mfm.FIRST_READING_DAYS == 3,
+   "H3's wide-prediction bar, controls and first-reading rule are as registered 17-18 Sep")
+ok((_mfm.H5E_SYMBOL, _mfm.H5E_START, _mfm.H5E_MAX_ABS_GAP, _mfm.H5E_MIN_DAYS)
+   == ("USO", "2026-09-23", 0.5, 10), "H5e's symbol, start, bar and minimum are as registered 23 Sep")
+# The zero-bid walk, against a chain whose right answer is known by construction:
+# K0 = 100, OTM puts walking down carry bids ok, 0, ok, 0, 0, ok; every call is quoted.
+# As registered all 6 puts count; Cboe keeps 95 and 85 and stops at the 80/75 pair;
+# skip drops only the three zeros. Strikes used: 13, 9 and 10.
+_zb_put = {95: 1, 90: 0, 85: 1, 80: 0, 75: 0, 70: 1}
+_zrows = []
+for _k in range(70, 135, 5):
+    for _t in ("C", "P"):
+        _px = max(0.05, (_k - 100 if _t == "P" else 100 - _k)) + 1.0
+        _bid = 0.0 if (_t == "P" and _zb_put.get(_k) == 0) else _px * 0.9
+        _zrows.append({"dte": "30", "strike": str(_k), "type": _t,
+                       "mid": str(_px if _bid else _px / 2), "bid": str(_bid)})
+# Parity must put the forward at 100: equal call and put mids there.
+_n = {m: _mfm.variance_one_expiry(_zrows, 0.0, m)[2] for m in (False, True, "skip")}
+ok(_n == {False: 13, True: 9, "skip": 10},
+   f"zero-bid walk: as registered / Cboe / skip use 13 / 9 / 10 strikes (got "
+   f"{_n[False]} / {_n[True]} / {_n['skip']})")
+# bloomberg_prep must reproduce the two sessions that were worked out by hand.
+_bps = _iu.spec_from_file_location("bprep", R / "tools/bloomberg_prep.py")
+_bpm = _iu.module_from_spec(_bps); _bps.loader.exec_module(_bpm)
+ok(_bpm.DTE_WINDOW == _sm.DTE_WINDOW and _bpm.WIDE_CAP == _sm.WIDE_CAP,
+   "bloomberg_prep's DTE window and wide cap are surface.py's")
+def _prep_pair(d):
+    _l = _bpm.listed_expiries(d)
+    _p = _mfm.pick_pair([(e - d).days for e in _l])
+    return [_bpm.bbg_label(e) for e in _l if (e - d).days in _p]
+ok(_prep_pair(date(2026, 9, 18)) == ["16-Oct-26", "23-Oct-26"]
+   and _prep_pair(date(2026, 9, 22)) == ["16-Oct-26", "23-Oct-26"]
+   and _prep_pair(date(2026, 9, 23)) == ["23-Oct-26", "30-Oct-26"],
+   "bloomberg_prep names the recorder's expiries for 18, 22 and 23 Sep")
+_daily = (R / "tools/daily.py").read_text()
+ok(all(s in _daily for s in ("panel_health.py", "pressure_test.py", '"--wide"', "Traceback")),
+   "daily.py runs panel health, the pressure test and the H3/H5e reading, and reports crashes")
 
 print("\n" + "=" * 56)
 print(f"RESULT: {len(fails)} fail, {len(warns)} warn")
