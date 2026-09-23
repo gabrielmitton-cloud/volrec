@@ -682,9 +682,27 @@ ok(not re.search(r"bloomberg|omon|\bIVM\b|\.xlsx|surface_wide", _code, re.I),
 _fetches = set(re.findall(r"data/[A-Za-z0-9_.-]+\.(?:csv|json)", _code))
 ok(_fetches <= {"data/iv_history.csv", "data/surface.csv"},
    f"the site fetches only the two registered panels ({sorted(_fetches)})")
-ok("Not used on this page" in idx and "Source: Bloomberg Finance L.P." in idx,
-   "the site discloses that it uses no Bloomberg data, with the attribution for "
-   "where it does appear")
+# 23 Sep 2026: the site now PUBLISHES Bloomberg-derived aggregates, under the rule
+# Pepperdine's subscription administrator confirmed on 17 Sep: derived figures may be
+# published with "Source: Bloomberg Finance L.P."; raw Bloomberg data may not enter an
+# open repository. These checks are that rule, applied to the page.
+_ATTR = "Source: Bloomberg Finance L.P."
+_bsec = re.search(r'<section class="section" id="bloomberg">(.*?)</section>', idx, re.S)
+ok(_bsec is not None and "Derived aggregates only" in _bsec.group(1),
+   "the Bloomberg section exists and says it holds derived aggregates only")
+_blocks = re.split(r'<div class="(?:prose|fig)"', _bsec.group(1))[1:] if _bsec else []
+ok(_blocks and all(_ATTR in b for b in _blocks if re.search(r"\d\.\d", b)),
+   f"every block of the Bloomberg section that states a figure carries the attribution "
+   f"({len(_blocks)} blocks)")
+_uncited_sec = [m.group(1)[:40] for m in re.finditer(r"<section\b[^>]*>(.*?)</section>", idx, re.S)
+                if re.search(r"Bloomberg", m.group(1)) and re.search(r"\d\.\d", m.group(1))
+                and _ATTR not in m.group(1)]
+ok(not _uncited_sec, f"no section of the page states a Bloomberg-related figure without the "
+                     f"attribution ({_uncited_sec or 'none'})")
+_raw = re.findall(r"\b[A-Z]{1,5} \d{1,2}/\d{1,2}/\d{2} [CP]\d|\bIFwd\b|\bIVM\b|\bIBrw\b|\bOMON\b",
+                  idx + mon)
+ok(not _raw, f"no raw Bloomberg data on the site: no terminal tickers, IVM, IFwd, IBrw or "
+             f"OMON fields ({_raw[:3] or 'none'})")
 ok("DGS1MO" in idx and "VIXCLS" in idx and "retrieved from FRED" in idx,
    "the site cites both FRED series in FRED's own form")
 

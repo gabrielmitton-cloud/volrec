@@ -1717,8 +1717,14 @@ check. H5 has the table.
   only in session memory - written below. The public site's hypothesis table was a
   week stale (H3 "one day", no H5) - updated. The watchdog routine (Wed 16:13 UTC)
   predates `health.yml` and `daily.py` - an update is proposed to Gabriel, not made.
-- **Still open from HANDOFF 17's action list since 17 Sep:** the Bloomberg result on
-  the public site (unblocked by the licensing answer, never done).
+- **Done 23 Sep: the Bloomberg result is on the public site** (action 2, open since
+  17 Sep), at Gabriel's instruction and inside Marc Vinyard's rule: derived aggregates
+  only - medians, counts, fitted lines - with "Source: Bloomberg Finance L.P." under
+  every block; no quote, price, implied volatility, IFwd, R or ticker; static text,
+  never a data file. Read conservatively on purpose, so Pepperdine's contract is never
+  in question. OPRA/Databento figures stay off the site until Databento's terms are
+  checked. `pressure_test.py` section K now enforces the rule on the page, and was
+  shown to fail on a removed attribution and on a pasted terminal ticker.
 
 ### Parked for late October: implied volatility against a technical-levels scanner
 

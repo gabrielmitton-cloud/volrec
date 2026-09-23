@@ -140,6 +140,40 @@
   </section>
 
   <!-- Section 3 ----------------------------------------------------------- -->
+  <!-- Bloomberg cross-check: DERIVED AGGREGATES ONLY (Pepperdine's subscription terms,
+       confirmed 17 Sep 2026: derived figures may be published with "Source: Bloomberg
+       Finance L.P."; raw Bloomberg data may not enter an open repository). Static text,
+       never loaded from a file. tools/pressure_test.py section K enforces all of this. -->
+  <section class="section" id="bloomberg">
+    <h2>Checked against Bloomberg</h2>
+    <div class="prose">
+      <p>A free feed can be wrong in two ways: its prices can be bad, or its prices can be fine and simply read differently. To tell them apart, the free feed was checked contract by contract against a Bloomberg terminal on three days when both captured the same option chain within thirty minutes of each other. Only aggregates appear here: medians, counts and fitted lines.</p>
+      <p><b>The prices agree.</b> The table gives how far apart the two feeds' mid prices sit, as a fraction of Bloomberg's own bid-ask spread, at the median. Under half a spread, two feeds are quoting the same market.</p>
+    </div>
+    <div class="fig" style="grid-column:1/-1;margin-top:28px">
+      <div class="ledger-wrap"><table class="data">
+        <thead><tr><th>Day</th><th>Underlying</th><th>Contracts inside ±30%</th><th>Inside ±30%</th><th>Far puts</th><th>Far calls</th></tr></thead>
+        <tbody>
+          <tr><td>15 Sep</td><td>TSLA</td><td>78</td><td>0.42</td><td>–</td><td>–</td></tr>
+          <tr><td>15 Sep</td><td>USO</td><td>40</td><td>0.64*</td><td>–</td><td>–</td></tr>
+          <tr><td>18 Sep</td><td>USO</td><td>97</td><td>0.25</td><td>0.07</td><td>0.40</td></tr>
+          <tr><td>22 Sep</td><td>USO</td><td>107</td><td>0.39</td><td>0.09</td><td>0.00</td></tr>
+          <tr><td>22 Sep</td><td>TSLA</td><td>98</td><td>0.87*</td><td>1.00</td><td>1.00</td></tr>
+        </tbody>
+      </table></div>
+      <p class="src">* Over half a spread. Both coincide with the underlying moving between the two snapshots, and TSLA's options trade a cent or two wide, so a one-cent difference counts as a whole spread. Far strikes lie beyond ±30% of spot and were recorded from 18 September.</p>
+      <div class="src">Source: Bloomberg Finance L.P. Derived aggregates only: no Bloomberg quote, price or implied volatility is reproduced here, and none is stored in this repository.</div>
+    </div>
+    <div class="prose" style="margin-top:28px">
+      <p><b>The implied volatilities differ by a day count.</b> With prices agreeing, the free feed's implied volatilities still read one to two points above Bloomberg's. The difference is the calendar: Bloomberg annualises on 252 trading days, the free feed on 365 calendar days. Across ten expiry blocks on 15 and 16 September (three underlyings, 546 contracts) the median gap was <span class="m">+1.15</span> points on the calendar clock and <span class="m">+0.07</span> on the trading-day clock, and the clock alone predicts each block's gap with no fitted parameter: slope <span class="m">1.01</span> (standard error 0.13), R² <span class="m">0.88</span>. Two later days agree. Trading-time against calendar-time annualisation is textbook, in Hull and in Natenberg, so this is a reconciliation, not a discovery.</p>
+      <div class="src">Source: Bloomberg Finance L.P. Derived aggregates only: no Bloomberg quote, price or implied volatility is reproduced here, and none is stored in this repository.</div>
+    </div>
+    <div class="prose" style="margin-top:28px">
+      <p><b>The far wings expose the estimator.</b> Adding the strikes beyond ±30% to USO's estimate lifted it by <span class="m">5.28</span> volatility points on the free feed and <span class="m">4.91</span> on Bloomberg's own prices on 18 September, when a quote with no bid is counted at half its ask, as the registered estimator does. Under Cboe's rule of discarding such quotes the lifts were <span class="m">0.94</span> and <span class="m">0.85</span>. The distortion appears on both vendors' prices, so on these contracts it belongs to the estimator's handling of empty bids, not to the free feed. Hypothesis H5 tests it properly, and records what a same-minute check against the consolidated options feed adds.</p>
+      <div class="src">Source: Bloomberg Finance L.P. Derived aggregates only: no Bloomberg quote, price or implied volatility is reproduced here, and none is stored in this repository.</div>
+    </div>
+  </section>
+
   <section class="section">
     <h2>Why a month of daily rows is not a month of evidence</h2>
     <div class="prose">
@@ -239,7 +273,7 @@
       <li><b>The feed is indicative.</b> Alpaca's free options data is not consolidated OPRA. Levels are approximate, and changes over time are more trustworthy than any single reading.</li>
       <li><b>The daily panel is short.</b> It carries roughly two independent episodes so far, so it reports collection, not a premium.</li>
       <li><b>H4 is close to a replication.</b> Its predictions come from published work. What is new is the data: collected first-hand, at zero budget, with volume and open interest per contract.</li>
-      <li><b>No licensed data is redistributed.</b> Nothing on this site is derived from Bloomberg, and no Cboe or FRED series is mirrored. Index levels are quoted only where a result depends on them.</li>
+      <li><b>No licensed data is redistributed.</b> The Bloomberg section shows derived aggregates only (medians, counts and fitted lines), each marked <i>Source: Bloomberg Finance L.P.</i>; no Bloomberg quote, price or volatility is reproduced, and no Cboe or FRED series is mirrored. Index levels are quoted only where a result depends on them.</li>
     </ul>
   </section>
 
@@ -251,7 +285,7 @@
       <li><b>Volatility indices.</b> VIX, VXN, RVX, OVX, GVZ, VIX9D and VIX3M: Cboe Global Markets, from Cboe's public daily index files. Index levels are quoted only where a result depends on them.</li>
       <li><b>Risk-free rate.</b> Board of Governors of the Federal Reserve System (US), 1-Month Treasury Constant Maturity Rate [DGS1MO], retrieved from FRED, Federal Reserve Bank of St. Louis.</li>
       <li><b>VIX history.</b> Chicago Board Options Exchange, CBOE Volatility Index: VIX [VIXCLS], retrieved from FRED, Federal Reserve Bank of St. Louis. Used for the forecasting benchmark in the repository.</li>
-      <li><b>Bloomberg.</b> Not used on this page. Bloomberg-derived aggregates appear in the repository's hypothesis files, each marked <i>Source: Bloomberg Finance L.P.</i> Raw Bloomberg data is never redistributed, per Pepperdine's subscription terms.</li>
+      <li><b>Bloomberg.</b> Derived aggregates only, in "Checked against Bloomberg" above and in the repository's hypothesis files, each marked <i>Source: Bloomberg Finance L.P.</i> Raw Bloomberg data is never redistributed or stored in the repository, per Pepperdine's subscription terms: derived figures may be published with that citation; raw data may not be placed in an open repository.</li>
     </ul>
   </section>
 
