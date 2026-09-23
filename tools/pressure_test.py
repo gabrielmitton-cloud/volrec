@@ -848,6 +848,23 @@ _leak = [f for f in _tracked if (R / f).is_file() and (R / f).stat().st_size < 5
          and re.search(r"db-[A-Za-z0-9]{20,}", (R / f).read_text(errors="ignore"))]
 ok(not _leak, f"no Databento API key in any tracked file ({_leak or 'none'})")
 
+print("\n=== O. NOTIFICATIONS (iMessage, tools/notify.py) ===")
+_nts = _iu.spec_from_file_location("notif", R / "tools/notify.py")
+_ntm = _iu.module_from_spec(_nts); _nts.loader.exec_module(_ntm)
+ok(R not in _ntm.HANDLE_FILE.resolve().parents, "the iMessage handle lives outside the repository")
+_scr = "\n".join(_ntm.SCRIPT)
+ok("item 1 of argv" in _scr and "item 2 of argv" in _scr and "{" not in _scr and "%" not in _scr,
+   "message text and handle reach AppleScript as arguments, never spliced into its source")
+_ok_d, _why_d = _ntm.send("pressure test", dry=True)
+ok(_ok_d is False and "dry run" in _why_d, "a dry run sends nothing")
+_nsrc = (R / "tools/notify.py").read_text()
+ok(not re.search(r"\+?1?\d{10}|@[A-Za-z0-9-]+\.(com|net|org|edu)", _nsrc),
+   "no phone number or email address is hardcoded in notify.py")
+ok("except Exception" in _nsrc and "never raise" in _nsrc.lower(),
+   "a failed notification cannot fail the check it reports")
+ok(not any("install.sh" in p.read_text() for p in (R / ".github/workflows").glob("*.yml")),
+   "no workflow installs the launchd job: it is a change to Gabriel's Mac, run by him")
+
 print("\n" + "=" * 56)
 print(f"RESULT: {len(fails)} fail, {len(warns)} warn")
 for f in fails: print("  FAIL:", f)

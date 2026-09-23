@@ -257,6 +257,68 @@ def fetch(date, symbol, key, max_cost, dry):
     print(f"    fetched {len(r.content):,} bytes -> {out}")
 
 
+# ---------------- are the unmatched contracts listed on OPRA at all? ----------------
+def definitions(date, symbol, key, max_cost, dry):
+    """Added 23 Sep 2026. On 21 Sep, 13 far out-of-the-money USO puts with no bid had
+    no OPRA quote record at all. Either OPRA lists them and the one-minute BBO file
+    simply omits a contract with no quote on either side, or the free feed carries
+    listings OPRA does not have. Databento's `definition` schema answers it: every
+    listed instrument, per day."""
+    d0 = datetime.fromisoformat(date).replace(tzinfo=timezone.utc)
+    params = {"dataset": DATASET, "schema": "definition", "symbols": f"{symbol}.OPT",
+              "stype_in": "parent", "stype_out": "instrument_id",
+              "start": d0.strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "end": (d0 + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")}
+    print(f"  {symbol} {date}: definitions for {symbol}.OPT over the whole day")
+    if not key:
+        print("    no key"); return
+    cost = float(call("metadata.get_cost", params, key).json())
+    spent = ledger_total()
+    allowed, why = budget_ok(cost, max_cost, spent)
+    print(f"    costs ${cost:.4f}; spent so far ${spent:.2f}: {why}")
+    if dry or not allowed:
+        return
+    out = DATA_DIR / f"DEF_{symbol}_{date}.csv"
+    try:
+        r = call("timeseries.get_range", dict(params, encoding="csv", compression="none",
+                                              pretty_px="true", pretty_ts="true", map_symbols="true"), key)
+    except NotYetHistorical as e:
+        print(f"    not yet available historically (after {e}); nothing charged"); return
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(r.content)
+    with LEDGER.open("a", newline="") as f:
+        csv.writer(f).writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), date,
+                                f"{symbol}-definition", f"{cost:.6f}"])
+    print(f"    fetched {len(r.content):,} bytes -> {out.name}")
+
+
+def check_listed(date, symbol):
+    """Unmatched recorded contracts: listed on OPRA that day, or not? Aggregates only."""
+    q, dfile = DATA_DIR / f"OPRA_{symbol}_{date}.csv", DATA_DIR / f"DEF_{symbol}_{date}.csv"
+    if not (q.exists() and dfile.exists()):
+        print(f"  {symbol} {date}: need both OPRA_ and DEF_ files"); return
+    quoted = set(load_opra(q))
+    with dfile.open(newline="") as f:
+        rd = csv.reader(f); h = next(rd)
+        col = h.index("raw_symbol") if "raw_symbol" in h else h.index("symbol")
+        listed = {compact(r[col]) for r in rd if len(r) > col}
+    rows = recorded(date, symbol)
+    spot = float(rows[0]["spot"])
+    absent = [r for r in rows if compact(r["option_symbol"]) not in quoted]
+    otm = lambda r: (r["type"] == "P") == (float(r["strike"]) < spot)
+    zb = lambda r: not r["bid"] or float(r["bid"]) == 0
+    in_def = [r for r in absent if compact(r["option_symbol"]) in listed]
+    print(f"  {symbol} {date}: {len(listed):,} {symbol} options listed on OPRA; {len(absent)} recorded "
+          f"contracts had no OPRA quote record")
+    print(f"    of those: {len(in_def)} ARE listed on OPRA, {len(absent) - len(in_def)} are NOT listed")
+    for label, sub in (("listed, no quote record", in_def),
+                       ("not listed at all", [r for r in absent if r not in in_def])):
+        if sub:
+            print(f"    {label:<24} {len(sub):>3}: out of the money {sum(otm(r) for r in sub)}, "
+                  f"zero bid on the free feed {sum(zb(r) for r in sub)}, "
+                  f"strikes {min(float(r['strike']) for r in sub):g}-{max(float(r['strike']) for r in sub):g}")
+
+
 # ---------------- the comparison (aggregates only) ----------------
 def compare(date, symbol):
     import modelfree
@@ -339,13 +401,24 @@ def main():
     ap.add_argument("--symbols", nargs="+", default=["USO", "TSLA"])
     ap.add_argument("--dry-run", action="store_true", help="show and price the requests; spend nothing")
     ap.add_argument("--compare", action="store_true", help="analyse files already on disk; no network")
+    ap.add_argument("--definitions", action="store_true",
+                    help="fetch OPRA's listing for the day and say whether unmatched contracts exist on it")
     ap.add_argument("--max-cost", type=float, default=DEFAULT_MAX_COST, help="per-request cap, USD")
     a = ap.parse_args()
 
     pairs = ([(d, s) for d, s in wide_days() if s in a.symbols] if a.all
              else [(a.date, s) for s in a.symbols])
     print(f"OPRA reference ({DATASET}, {SCHEMA}) - {'compare' if a.compare else 'dry run' if a.dry_run else 'fetch'}\n")
-    if a.compare:
+    if a.definitions:
+        key = api_key()
+        for d, s in pairs:
+            if not a.dry_run and (DATA_DIR / f"DEF_{s}_{d}.csv").exists():
+                print(f"  {s} {d}: definitions already on disk")
+            else:
+                definitions(d, s, key, a.max_cost, a.dry_run)
+            if not a.dry_run:
+                check_listed(d, s)
+    elif a.compare:
         for d, s in pairs:
             compare(d, s)
     else:

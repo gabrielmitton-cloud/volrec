@@ -699,8 +699,9 @@
     const rows = [
       ["H1", "The volatility risk premium is positive on the Cboe index family, 2016 to 2026.", "6 Sep 2026", ["tested", "Tested, holds"], ["9 of 11 pairs survive FDR control", "VIX/SPY t = 5.14, weakest survivor adj p = 0.019"], "2026-09-06-h1-vrp-long-sample.md"],
       ["H2", "The premium is better measured in variance than in volatility, following Carr and Wu (2009).", "9 Sep 2026", ["tested", "Tested, not adopted"], ["log variance t = 16.26", "volatility 9.28, raw variance 2.14"], "2026-09-09-h2-variance-formulation.md"],
-      ["H3", "A model-free estimate built from free data reproduces the published Cboe index.", "12 Sep 2026", ["calibrated", "Calibrated on one day"], ["0.59 mean gap at ±30%, one day", "series started 14 Sep, 3 days so far"], "2026-09-12-h3-free-data-model-free.md"],
-      ["H4", "Delta-hedged gains are negative, vary across the strike surface, and relate to where volume sits.", "13 Sep 2026", [h4[0], h4[1]], ["registered before any data", h4[2]], "2026-09-13-h4-hedged-gains-across-the-surface.md"]
+      ["H3", "A model-free estimate built from free data reproduces the published Cboe index.", "12 Sep 2026", ["calibrated", "Series running"], ["0.53 mean gap over 30 readings, against a 1.0 limit", "first wide-band reading fell outside its bracket: quote contamination, as registered"], "2026-09-12-h3-free-data-model-free.md"],
+      ["H4", "Delta-hedged gains are negative, vary across the strike surface, and relate to where volume sits.", "13 Sep 2026", [h4[0], h4[1]], ["registered before any data", h4[2]], "2026-09-13-h4-hedged-gains-across-the-surface.md"],
+      ["H5", "What free option data costs sits in the far wings, and it is the estimator's handling of missing bids rather than the quotes.", "19 Sep 2026", ["waiting", "Registered, collecting"], ["checked against the consolidated feed at the same minute", "needs 3-10 more days; two further predictions added 23 Sep before their data"], "2026-09-19-h5-wing-quote-quality.md"]
     ];
     rows.forEach(([id, claim, reg, st, ev, file]) => {
       const tr = V.h("tr", null, tb);

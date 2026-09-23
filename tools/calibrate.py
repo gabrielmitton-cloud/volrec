@@ -16,6 +16,8 @@ what "right" is - that would be checking the data against itself.
                                 model-free variance IS sigma^2
     the --wide lift (H3)        the lift with EVERY expiry widened: what the
                                 recorder widens must reproduce it exactly
+    the OPRA comparison (H5f)   our own quotes, dressed as OPRA's file: the
+                                comparison must return our own lift, exactly
     realised-vol estimator      a simulated path with a known sigma
     the significance tests      a simulated world with NO premium, where a 5%
                                 test must reject about 5% of the time
@@ -46,6 +48,7 @@ adjustment log.
 
     python3 tools/calibrate.py            # ~20 seconds, no network, no keys
 """
+import csv
 import json
 import math
 import random
@@ -222,11 +225,54 @@ def wide_lift_identity():
           f"{'; '.join(parts)}; worst {worst:.1e}")
 
 
+def opra_identity():
+    """H5f compares the free feed to OPRA through tools/opra_reference.py: symbol
+    matching, timestamp parsing, nearest-record selection, then the lift on the
+    contracts both feeds quote. The reference truth: feed it OPRA's file built from
+    our OWN quotes, in OPRA's own layout (padded symbols, minute stamps, an empty
+    field for a missing bid), and every estimator must return our own lift exactly.
+    Added 23 Sep 2026, after that tool's first version read every timestamp as local
+    time and only a dry run caught it."""
+    print("\n-- the OPRA comparison against our own quotes, in OPRA's layout (H5f)")
+    import contextlib, io, tempfile
+    import opra_reference as o
+    day = next((d for d, s in reversed(o.wide_days()) if s == "USO"), None)
+    if not day:
+        print("  INFO  no wide USO day recorded yet; nothing to check against")
+        return
+    saved = o.DATA_DIR
+    with tempfile.TemporaryDirectory() as tmp:
+        o.DATA_DIR = Path(tmp)
+        rows = o.recorded(day, "USO")
+        with open(o.DATA_DIR / f"OPRA_USO_{day}.csv", "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["ts_recv", "ts_event", "rtype", "publisher_id", "instrument_id", "side", "price",
+                        "size", "flags", "bid_px_00", "ask_px_00", "bid_sz_00", "ask_sz_00",
+                        "bid_pb_00", "ask_pb_00", "symbol"])
+            for r in rows:
+                t = o.parse_ts(r["quote_time"]).replace(second=0, microsecond=0)
+                osi = r["option_symbol"][:3].ljust(6) + r["option_symbol"][3:]
+                bid = "" if not r["bid"] or float(r["bid"]) == 0 else r["bid"]
+                w.writerow([t.strftime("%Y-%m-%dT%H:%M:%S.000000000Z"), "", 193, 30, 1, "N", "", 0, 0,
+                            bid, r["ask"], 0, 0, 0, 0, osi])
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                lifts = o.compare(day, "USO")
+        finally:
+            o.DATA_DIR = saved
+    worst = max(abs(a - b) for a, b in zip(lifts["free"], lifts["OPRA"])) if lifts else float("inf")
+    check(worst < 1e-9, "the OPRA comparison returns our own lift from our own quotes",
+          f"USO {day}: as registered / Cboe rule / skip "
+          + " / ".join(f"{v:+.2f}" for v in lifts["free"]) + f"; worst difference {worst:.1e}"
+          if lifts else "no lift computed")
+
+
 def main():
     print("Calibration: every instrument against a known reference truth.")
     black76_identities()
     modelfree_method()
     wide_lift_identity()
+    opra_identity()
     realised_vol()
     test_size()
     risk_free_input()

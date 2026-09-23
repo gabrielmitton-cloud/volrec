@@ -2,7 +2,7 @@
 
 **Built 23 September 2026.** Designed 19 Sep, built and tested in one session: every
 component below exists, runs, and is held to its contract by `tools/pressure_test.py`
-(sections I, M and N). No LLM sits in the daily loop - that is what keeps it free.
+(sections I, M, N and O, and `calibrate.py`). No LLM sits in the daily loop - that is what keeps it free.
 
 ## The one rule that decides everything
 
@@ -32,6 +32,7 @@ number means - and is called by a person, not by a schedule.
 | 4 | `tools/hooks/pre-push` | every push to main | runs the pressure test on the tree being pushed | a FAIL or crash blocks the push |
 | 5 | `SESSION-START.md` | every Claude session, via `CLAUDE.md` | one screen of orientation; live state comes from `daily.py` | - |
 | 6 | `tools/opra_reference.py` | by hand | OPRA quotes at the recorder's own minute; prices every request first | a request over $0.50 or past the $100 lifetime cap is refused |
+| 7 | `tools/notify.py` + `tools/launchd/install.sh` | this Mac, weekdays 13:30 local, once Gabriel installs it | pulls a separate clean clone (`~/.volrec-ops`), runs `daily.py`, texts the one-line verdict by iMessage | LOOK AT leads the message; a failed send never fails the check |
 
 The watchdog routine (Wed 09:13 Pacific, outside GitHub) predates this layer and
 still runs; `health.yml` now covers the daily checks it cannot.
@@ -50,6 +51,11 @@ still runs; `health.yml` now covers the daily checks it cannot.
 - **The hook tests the working tree**, which is what was just committed in the
   normal flow. `git push --no-verify` exists for an emergency and should be
   explained in the commit message.
+- **The iMessage job pulls its own clone, never the working copy.** A pull into a
+  tree with uncommitted edits fails, and a failed pull would text a false alarm.
+  It costs nothing: no LLM, no service - macOS Messages, driven by AppleScript, with
+  the text passed as data. Installing it changes Gabriel's Mac, so he runs the
+  installer; nothing else ever does.
 - **OPRA is priced before it is fetched, every time.** Databento's own `get_cost`
   runs first; the ledger lives beside the data, outside the repo. The dry run caught
   a timestamp bug (every minute read as local time, seven hours off) before a single

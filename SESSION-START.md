@@ -25,6 +25,9 @@ session's job is to read results, answer a question, or do one bounded thing.
     $PY tools/bloomberg_prep.py --date YYYY-MM-DD      # before a terminal session
     $PY tools/bloomberg_compare.py --date D --pull-time HH:MM   # after one
     $PY tools/opra_reference.py --date D --dry-run     # Databento: cost first, always
+    $PY tools/opra_reference.py --all                  # fetch what Databento has released
+    $PY tools/opra_reference.py --all --compare        # free feed vs OPRA, same minute
+    $PY tools/daily.py --notify                        # and text the verdict (tools/notify.py)
 
 `analysis/` runs in `.venv` instead. Pushes to main run the pressure test through
 `tools/hooks/pre-push` (install per clone: `git config core.hooksPath tools/hooks`).
@@ -37,6 +40,7 @@ session's job is to read results, answer a question, or do one bounded thing.
 | `surface.yml` (strike surface + wide band) | 14:57 cron | same |
 | `freshness.yml` | 20:00 and 23:00 daily | installs nothing, on purpose |
 | `health.yml` | 23:37 | the full daily check; emails on any FAIL or crash |
+| launchd `com.volrec.daily` (this Mac, once installed) | 13:30 Pacific | texts the verdict by iMessage |
 
 ## Standing rules - these are not up for re-argument without new, dated evidence
 

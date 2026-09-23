@@ -15,6 +15,7 @@ USAGE
 -----
   python3 tools/daily.py
   python3 tools/daily.py --no-pull
+  python3 tools/daily.py --notify         # and text Gabriel the one-line verdict (tools/notify.py)
 """
 import os
 import subprocess
@@ -40,7 +41,7 @@ def crashed(out):
 
 
 def main():
-    bad = []
+    bad, facts = [], {}
     if "--no-pull" not in sys.argv:
         section("sync")
         code, out = run(["git", "pull", "--rebase", "--quiet", "origin", "main"])
@@ -54,6 +55,13 @@ def main():
             if any(k in ln for k in ("newest", "WARN", "FAIL", "PEND", "wide band", "HEALTHY",
                                      "UNHEALTHY", "landed"))]
     print("\n".join(keep) or out)
+    for ln in out.splitlines():
+        if "Surface panel" in ln:
+            facts["panel"] = "surface"
+        if facts.get("panel") == "surface" and "newest" in ln and "surface_newest" not in facts:
+            facts["surface_newest"] = ln.split("newest", 1)[1].split()[0]
+        if facts.get("panel") == "surface" and "landed" in ln and "landed" not in facts:
+            facts["landed"] = ln.split("landed", 1)[1].split("UTC")[0].strip()
     if code or crashed(out):
         bad.append("panel_health")
 
@@ -67,6 +75,7 @@ def main():
         bad.append("pressure_test crashed")
     else:
         print("  " + result)
+        facts["pressure"] = result.replace("RESULT:", "").strip()
         for ln in lines[lines.index(result) + 1:]:
             print("  " + ln.strip())
         if code:
@@ -96,10 +105,29 @@ def main():
             if grab and ln.strip().startswith("Pre-registered in H3"):
                 grab = False
         print("\n".join(shown) if shown else "  no wide data yet")
+        uso = next((ln.split() for ln in shown if ln.strip().startswith("USO ") and "bracket" in ln), None)
+        if uso:
+            facts["h3"] = f"H3 USO lift {uso[2]} ({'inside' if 'INSIDE' in ' '.join(uso) else 'outside'} 1.4-3.2)"
+        tally = [ln.strip() for ln in shown if ln.strip().startswith(("mean |gap|", "no counted day"))]
+        if tally:
+            facts["h5e"] = "H5e: " + tally[-1].split(";")[0].replace("no counted day yet", "0 counted days")
 
     section("verdict")
     print("  ALL CLEAR - nothing needs you today." if not bad
           else "  LOOK AT: " + ", ".join(bad))
+
+    if "--notify" in sys.argv or "--notify-dry-run" in sys.argv:
+        # OPS-AGENT item 7: one line to Gabriel's phone. LOOK AT leads when it applies.
+        from datetime import date
+        msg = (f"volrec {date.today():%a %d %b}: "
+               + ("ALL CLEAR" if not bad else "LOOK AT " + ", ".join(bad)) + ". "
+               + (f"Surface {facts['surface_newest']}, landed {facts.get('landed', '?')} UTC. "
+                  if facts.get("surface_newest") else "")
+               + (f"Pressure {facts['pressure']}. " if facts.get("pressure") else "")
+               + " ".join(facts[k] + "." for k in ("h3", "h5e") if facts.get(k)))
+        import notify
+        sent, why = notify.send(msg, dry="--notify-dry-run" in sys.argv)
+        print(f"\n  notify: {why}")
     return 1 if bad else 0
 
 

@@ -1703,6 +1703,45 @@ markets, a coarse metric - which corrects the 22 Sep drift explanation. 13 far-O
 USO stubs on 21 Sep have no OPRA record at all; the `definition` schema is the next
 check. H5 has the table.
 
+### 23 September, evening: what was checked, and what was being forgotten
+
+- **The 13 stubs:** every unmatched contract is a real OPRA listing (`definition`
+  schema, $0.018); the free feed's far-OTM quotes on them were 91-130 minutes stale
+  where OPRA showed no quote at all. Part of the wing contamination is stale feed
+  quotes. H5 has the detail; H5f's exclusion rule cannot see them, stated in advance.
+- **iMessage alerts, built, not installed:** `tools/notify.py` and
+  `tools/launchd/install.sh` (OPS item 7). Gabriel saves a handle and runs the
+  installer; nothing installs it for him.
+- **Calibration:** 9 of 9, adding a known-answer check on the OPRA comparison.
+- **Forgotten, found:** the 6 Sep "IV against a technical-levels scanner" idea lived
+  only in session memory - written below. The public site's hypothesis table was a
+  week stale (H3 "one day", no H5) - updated. The watchdog routine (Wed 16:13 UTC)
+  predates `health.yml` and `daily.py` - an update is proposed to Gabriel, not made.
+- **Still open from HANDOFF 17's action list since 17 Sep:** the Bloomberg result on
+  the public site (unblocked by the licensing answer, never done).
+
+### Parked for late October: implied volatility against a technical-levels scanner
+
+**Raised by Gabriel on 6 September 2026, kept only in session memory until 23 Sep -
+written here so it cannot be lost.** The question: *does implied volatility forecast
+realized range better than a technical-levels scanner does?* It came out of assessing
+(and rejecting) an Oracle-style day-trading signal tool, whose "Resistance" and "Max"
+columns are a prediction of range. Implied volatility is also a prediction of range -
+the market's own, priced by people with capital at risk - so the two are directly
+comparable.
+
+Why it fits where a signal bot does not: it runs on the daily clock and the frozen
+109-ticker universe, on columns `record.py` already writes; no new data, API or feed.
+Why it is a good interview artifact: a test **between two methods**, not an
+advertisement for one. **Nothing before ~40 trading days of data; start late October,
+and register it in `hypotheses/` before running a single join** - the scanner's rule
+must be fixed in advance, or the comparison becomes a search.
+
+**23 Sep, the stub finding in one line:** the unmatched OPRA contracts are real listings,
+but the free feed's quotes on the far-OTM ones were 91-130 minutes stale, one-sided,
+where the consolidated market showed nothing. Part of the wing contamination is stale
+feed quotes, not only the estimator. H5 has it.
+
 ### The window this is all aimed at
 
 **40 trading days from Wed 16 September 2026 ends Wed 11 November 2026.** No market

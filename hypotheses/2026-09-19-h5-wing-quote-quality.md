@@ -259,6 +259,34 @@ lifts use only contracts both feeds quote, so they differ from `modelfree.py --w
 
 *Reference quotes: OPRA consolidated NBBO, via Databento. Aggregates only.*
 
+## The unmatched contracts are listed, and the free feed's quotes on them are stale — 23 Sep, AFTER data
+
+Databento's `definition` schema ($0.018 for two days) lists every OPRA instrument per
+day. **Every unmatched contract is a real OPRA listing** - 15 of 15 on 21 Sep, 39 of 39
+on 18 Sep - so the free feed does not invent contracts. But the out-of-the-money ones
+(13 on 21 Sep, 9 on 18 Sep) had **no consolidated quote at all** in the five-minute
+window, and the free feed's quote on each was **stale: median 91 minutes old on 21 Sep
+and 130 minutes on 18 Sep, up to five hours**, every one of them one-sided, asks from
+$0.02 to $2.16.
+
+This refines H5's claim and must be stated beside any verdict:
+
+- **Where both feeds quote a contract, the free feed matches OPRA** (0.02-0.03 of a
+  spread in the put wing).
+- **In the far wing the free feed also carries hours-old one-sided quotes on
+  contracts nobody is quoting.** Part of the as-registered contamination is therefore
+  a feed artifact - stale indicative asks - and not purely the estimator's zero-bid
+  treatment of live quotes.
+- **H5f's registered rule excludes unmatched contracts, so it cannot see the free
+  feed's worst quotes.** An H5f pass would describe the quotes both feeds carry, not
+  the whole wing. Stated now, before H5f has its five days; the rule is not changed.
+- **H5e is unaffected:** these quotes have no bid, and skip-only drops them.
+- The registered surface's staleness check (`panel_health`, 0.1-0.3% of rows over 15
+  minutes) covers `surface.csv` only; the wide file's far wing is where staleness
+  lives.
+
+*Reference data: OPRA, via Databento. Aggregates only.*
+
 ## Prior art, read 23 September 2026 — H5e's estimator is NOT new
 
 Andersen, Bondarenko & Gonzalez-Perez (2015), "Exploring Return Dynamics via
