@@ -2027,7 +2027,10 @@ as registered, with the stale-quote exclusion stated beside it.
 - ~6 Oct: H5e's verdict. **Scheduled:** `volrec-h5e-verdict` fires Wed 7 Oct 08:00 Pacific
   (6 Oct is the 10th counted day; its OVX close is needed first). A first verdict at the
   minimum, recorded in H5 and here, pushed, texted; it stops and texts if fewer than 10
-  days are counted. H5e runs to 11 Nov, and that reading is the one written up. Late October: register and run "IV against a technical-levels
+  days are counted. H5e runs to 11 Nov, and that reading is the one written up.
+  **Scheduled:** `volrec-h5e-final` fires Thu 12 Nov 07:30 Pacific (PST; 11 Nov's OVX
+  close is needed first): the final reading over 23 Sep - 11 Nov, days after 11 Nov
+  excluded, recorded, pushed, texted. The site is left for a session. Late October: register and run "IV against a technical-levels
   scanner" (parked in section 17). Wed 11 Nov: the 40-day window closes - written-up
   readings, the cron revisited. Feb 2027: the write-up, TimesFM's FAIL included.
 
