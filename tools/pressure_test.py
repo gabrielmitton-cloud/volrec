@@ -869,6 +869,30 @@ _tracked = subprocess.run(["git", "ls-files"], cwd=R, capture_output=True, text=
 _leak = [f for f in _tracked if (R / f).is_file() and (R / f).stat().st_size < 5_000_000
          and re.search(r"db-[A-Za-z0-9]{20,}", (R / f).read_text(errors="ignore"))]
 ok(not _leak, f"no Databento API key in any tracked file ({_leak or 'none'})")
+# Databento's User Agreement §1.6 (read 23 Sep 2026): every redistribution, derived
+# aggregates included, credits Databento explicitly. A section publishes OPRA figures
+# when its heading names OPRA/Databento, or one line carries both the name and a
+# figure. HANDOFF is checked from section 18 on; section 17 is history, left as written.
+ok("Data provided by Databento" in _opm.ATTRIBUTION,
+   "tools/opra_reference.py prints the Databento credit line on every run")
+_OPRA = re.compile(r"\bOPRA\b|Databento")
+_OFIG = re.compile(r"(?<![$\d.])\d+\.\d{2}\b")
+_hand = (R / "HANDOFF.md").read_text()
+_odocs = [(q.relative_to(R).as_posix(), q.read_text()) for q in (R / "hypotheses").glob("*.md")] + \
+         [("HANDOFF.md", _hand[_hand.index("\n## 18."):] if "\n## 18." in _hand else _hand)]
+_ouncited = []
+for _doc, _t in _odocs:
+    _head = "(preamble)"
+    for _chunk in re.split(r"(?m)^(#{2,4} .*)$", _t):
+        if re.match(r"#{2,4} ", _chunk):
+            _head = _chunk.strip()
+            continue
+        _pub = (_OPRA.search(_head) and _OFIG.search(_chunk)) or any(
+            _OPRA.search(_l) and _OFIG.search(_l) for _l in _chunk.splitlines())
+        if _pub and "Data provided by Databento" not in _chunk:
+            _ouncited.append(f"{_doc} :: {_head[:50]}")
+ok(not _ouncited, "every section publishing an OPRA-derived figure credits Databento"
+   + (f" -- MISSING in {'; '.join(_ouncited[:3])}" if _ouncited else ""))
 
 print("\n=== O. NOTIFICATIONS (iMessage, tools/notify.py) ===")
 _nts = _iu.spec_from_file_location("notif", R / "tools/notify.py")

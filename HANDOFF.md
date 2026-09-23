@@ -1926,7 +1926,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | H5e | counting from 23 Sep | skip-only USO against OVX; 10 counted days needed, **first verdict ~6 Oct**. Estimator is ABG (2015)'s RX*, credited |
 | H5f | OPRA, **3 of 5 days** | USO far puts within 0.01-0.03 of an OPRA spread; 38 of 38 no-bid quotes are no-bid on OPRA; inflation reproduces within 0.3-1.4%. TSLA's one-tick markets make the spread metric coarse. The free feed's hours-old quotes on contracts OPRA did not quote are excluded by the rule - say so beside any verdict |
 
-*Bloomberg figures: Source: Bloomberg Finance L.P. Reference quotes: OPRA, via Databento. Aggregates only.*
+*Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Aggregates only.*
 
 ### Decisions made, and not to be reopened without new, dated evidence
 
@@ -1934,6 +1934,16 @@ every decision. This section is the only one guaranteed current. Read it, run
 - Bloomberg aggregates are on the public site, inside Marc Vinyard's rule, read
   conservatively; `pressure_test.py` section K enforces it.
 - Databento is used for OPRA reference quotes, priced before every request.
+- **OPRA aggregates may be published, with Databento credited (terms read 23 Sep).**
+  Databento's User Agreement §1.5(e) counts any "information derived from" the data,
+  given to anyone else, as Redistribution. It is allowed when it complies with OPRA's
+  terms AND with §1.6. OPRA's fee schedule exempts redistribution limited to historical
+  data (historical from the next trading day's open); every figure here is computed
+  from next-day data. §1.6 requires explicit attribution on every redistribution, now
+  "Data provided by Databento" under each block (`pressure_test.py` section N checks
+  it), and lets Databento name Gabriel as a client in its marketing. Gabriel kept the
+  figures on those terms. Read: the User Agreement and OPRA's fee schedule, not OPRA's
+  full vendor agreement.
 - Kalshi (H6) is parked; no new hypotheses before 11 Nov unless one needs no new data.
 - The operations agent never searches for results (`OPS-AGENT.md`).
 
@@ -1957,9 +1967,10 @@ every decision. This section is the only one guaranteed current. Read it, run
 as registered, with the stale-quote exclusion stated beside it.
 
 **Open, no fixed date**
-- **Check Databento's terms on derived data.** OPRA aggregates already sit in H5 and
-  here, in a public repository; they are medians and counts, never quotes, but the
-  terms have not been read. If they forbid it, remove the figures.
+- ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution
+  (see the decisions above). OPRA aggregates could now join the site's Bloomberg
+  section under the same rule - aggregates only, the credit line under every block.
+  Not done; Gabriel's call.
 - Read Jiang & Tian when the library request arrives: "Extracting Model-Free Volatility
   from Option Prices: An Examination of the VIX Index" (*J. Derivatives*, 2007) first,
   then "The Model-Free Implied Volatility and Its Information Content" (*RFS*, 2005).

@@ -257,7 +257,7 @@ lifts use only contracts both feeds quote, so they differ from `modelfree.py --w
   known; Databento's `definition` schema can settle it for cents. Until then, H5f-b
   is silent on those 13.
 
-*Reference quotes: OPRA consolidated NBBO, via Databento. Aggregates only.*
+*Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
 
 ## The unmatched contracts are listed, and the free feed's quotes on them are stale — 23 Sep, AFTER data
 
@@ -285,7 +285,7 @@ This refines H5's claim and must be stated beside any verdict:
   minutes) covers `surface.csv` only; the wide file's far wing is where staleness
   lives.
 
-*Reference data: OPRA, via Databento. Aggregates only.*
+*Data provided by Databento (OPRA). Aggregates only.*
 
 ## Prior art, read 23 September 2026 — H5e's estimator is NOT new
 

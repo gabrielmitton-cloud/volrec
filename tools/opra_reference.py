@@ -55,7 +55,7 @@ LIFETIME_CAP_USD = 100.0
 DEFAULT_MAX_COST = 0.50
 WINDOW_BEFORE, WINDOW_AFTER = 2, 3     # minutes around the snapshot's median quote time
 MATCH_TOLERANCE_S = 120                # a contract with no OPRA record this close is excluded
-ATTRIBUTION = "Reference quotes: OPRA consolidated NBBO, via Databento. Aggregates only."
+ATTRIBUTION = "Data provided by Databento (OPRA consolidated NBBO). Aggregates only."
 REFETCH = "--refetch" in sys.argv
 
 
