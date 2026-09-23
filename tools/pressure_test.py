@@ -592,6 +592,22 @@ try:
        "Thanksgiving is not counted as a missed trading day")
     ok(_dt.date(2026, 10, 12) not in _phm.US_MARKET_HOLIDAYS,
        "Columbus Day is NOT a holiday: the stock market trades")
+    # Good Friday is the one movable closure. 2027's was listed a week late until 23 Sep
+    # 2026; check every year the list covers against a computed (Gregorian) Easter.
+    def _easter(y):
+        a_, b_, c_ = y % 19, y // 100, y % 100
+        h_ = (19 * a_ + b_ - b_ // 4 - (b_ - (b_ + 8) // 25 + 1) // 3 + 15) % 30
+        l_ = (32 + 2 * (b_ % 4) + 2 * (c_ // 4) - h_ - c_ % 4) % 7
+        m_ = (a_ + 11 * h_ + 22 * l_) // 451
+        return _dt.date(y, (h_ + l_ - 7 * m_ + 114) // 31, (h_ + l_ - 7 * m_ + 114) % 31 + 1)
+    _H = _phm.US_MARKET_HOLIDAYS
+    _gfd = lambda y: _easter(y) - _dt.timedelta(days=2)          # noqa: E731
+    # A year is covered when the list holds holidays on both sides of its Good Friday.
+    _gf = [_gfd(y) for y in sorted({d.year for d in _H})
+           if any(d < _gfd(y) for d in _H) and any(d > _gfd(y) for d in _H)]
+    ok(all(g in _phm.US_MARKET_HOLIDAYS for g in _gf)
+       and not [d for d in _H if d.month in (3, 4) and d not in _gf],
+       f"Good Friday is listed on the right date in every covered year ({[str(g) for g in _gf]})")
     # One holiday list, not two.
     _mgsrc = (R / "tools/model_gap.py").read_text()
     ok("from panel_health import US_MARKET_HOLIDAYS" in _mgsrc
@@ -813,6 +829,11 @@ _gi = (R / ".gitignore").read_text()
 ok("*.xlsx" in _gi, ".gitignore blocks spreadsheets even if one lands here")
 ok("volrec-bloomberg/" in _gi,
    ".gitignore blocks the export folder by name as well as by extension")
+# 23 Sep 2026: an interlibrary-loan paper (private study only, Title 17) landed in
+# the repo root, uncommitted. Papers live in ~/Documents/volrec-papers.
+ok("*.pdf" in _gi and not [f for f in subprocess.run(["git", "ls-files"], cwd=R, capture_output=True,
+                                                     text=True).stdout.split() if f.lower().endswith(".pdf")],
+   ".gitignore blocks PDFs and none is tracked (licensed papers stay outside the repo)")
 
 print("\n=== M. REGISTERED CONSTANTS, ZERO-BID SEMANTICS, OPERATIONS TOOLS ===")
 # A pre-registered bar that can be edited without anything noticing is not a bar.

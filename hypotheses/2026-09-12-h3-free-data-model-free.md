@@ -6,7 +6,10 @@ calibration, not as a test of the hypothesis.
 **Status:** registered. Calibrated on one day. **The series began 14 Sep and has
 3 days as of 17 Sep** - see "The series so far". Not yet long enough to test H3a.
 Cross-checked against Bloomberg 15-16 Sep; the volatility gap is identified
-as a day-count convention and does not touch the estimator. **The test of the wide
+as a day-count convention and does not touch the estimator. **Bloomberg stated
+ACT/252 in writing on 23 Sep; at 21 months a one-point gap remains that is not the
+clock** - see "The day count, stated by Bloomberg and tested at 21 months". **H3c's
+mechanism is Jiang & Tian's (2007)** - see the prior-art section of 23 Sep. **The test of the wide
 prediction was fixed and pre-registered on 18 Sep, before any wide data** - see
 "How the prediction is tested".
 **Sample:** the strike surface in `data/surface.csv`, which begins accumulating
@@ -795,6 +798,84 @@ against the 1.0 bar, pooled mean -0.25, USO carrying 61% of the error. USO's reg
 gap has settled at -1.18, -1.09, -1.00 since 18 Sep. **IWM reads positive on all six
 days** (mean +0.42), against H3b's predicted negative sign - worth watching, since H3b
 fails on a positive mean gap.
+
+## The day count, stated by Bloomberg and tested at 21 months — 23 September 2026
+
+**Stated in writing.** Asked through Live Help on 23 Sep, Bloomberg's help desk
+replied that OMON's IVM solves on business time annualised **ACT/252**, with
+weekends and exchange holidays excluded, intraday precision to expiry, and no
+setting to change it in OMON. The calendar ACT/365 convention applies in OVME and in
+OVDV's BVOL surfaces instead, which is why those can disagree with OMON on the same
+contract. Documented at `LPHP OMON:0:1 4373105` ("Migration to Business Day
+Convention", which dates OMON's move to business days to **June 2023**) and in
+`HELP OMON`. **252 is no longer an inference from prices.** Two consequences worth
+keeping: an OMON implied volatility from before mid-2023 is on a different clock, and
+an OVME or OVDV number is on this project's clock, not OMON's.
+
+**Tested at 21 months, the pull that could falsify it.** TSLA OMON on 23 Sep, three
+expiries, `tools/model_gap.py` (out-of-the-money contracts, gaps ours minus IVM):
+
+| expiry | calendar / business days | n | gap on 365 | gap on 252 | business-day divisor | American (CRR) |
+|---|---|---|---|---|---|---|
+| 23 Oct 2026 | 30 / 22 | 72 | +1.58 | **+0.08** | 251.2 | |
+| 30 Oct 2026 | 37 / 27 | 75 | +1.60 | **+0.23** | 249.7 | |
+| 16 Jun 2028 | 632 / 436 | 94 | +0.94 | **+0.95** | **241.2** | +0.90 |
+
+(USO on the two October expiries agrees: -0.43 and -0.07 on 252.)
+
+**Read as the rule written before the pull said to** (`BLOOMBERG-MONDAY.md`, ask 1:
+at long maturity the two clocks converge, so the gap "should nearly vanish. If it
+does not, the day count is not the whole story"): **at 21 months it does not vanish.**
+The clocks converge exactly as predicted (+0.94 against +0.95), but a gap of about
+one point remains that is not the clock. Early exercise is not it (+0.90). So:
+
+- **At the recorder's maturities (21-45 days) the day count is the whole story**, and
+  now documented: the solved time reproduces Bloomberg to a fraction of a day (22.1
+  business days against 22; 27.2 against 27).
+- **At long maturity it is not.** Something that grows with maturity also separates
+  the two - the forward, rate or borrow inputs inside Bloomberg's solve are the
+  candidates; not identified here.
+
+**After the fact, labelled, and not a conclusion.** Bloomberg's solved time on the
+2028 contract is 455.6 business days against 436 trading days, and would sit close to
+452 plain weekdays (holidays not removed). But the same contract on the thin 14 Sep
+export implied 523 days, and no day count can move 68 days in nine; and the desk says
+holidays are excluded. The holiday reading is therefore not supported. The next
+bounded step is a question, not a search: ask the desk which forward, rate and borrow
+IVM uses on a long-dated TSLA contract.
+
+**Consequence for H3: none.** `modelfree.py` integrates prices, never an implied
+volatility, and every expiry it uses is inside 45 days.
+
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
+
+## Prior art, read 23 September 2026 — H3c's mechanism is Jiang & Tian's, NOT new
+
+Jiang & Tian (2007), "Extracting Model-Free Volatility from Option Prices: An
+Examination of the VIX Index", *Journal of Derivatives* 14(3), 35-60, read via
+Pepperdine interlibrary loan (a private-study copy, kept outside this repository).
+The same check that corrected the day count applies here, and it lands the same way.
+
+- **Truncation bias that grows with volatility is their result.** With a fixed strike
+  range, their simulated error rises steeply as volatility rises, almost all of it
+  truncation, and they give a rule of thumb (from Jiang & Tian 2005): truncation is
+  negligible once the range reaches **three standard deviations** either side of spot.
+  That is H3c's mechanism, and the "reusable finding" under "Why this is worth doing"
+  and on the public site. It must be credited as theirs.
+- **Their errors have a sign each:** truncation biases the estimate down, a coarse
+  strike grid (discretization) biases it up, and truncation dominates in practice (SPX,
+  1996-2004). H3b's predicted negative gap is the truncation side of that.
+- **This project's calibration agrees with them and adds nothing new to the theory:**
+  a lognormal truncated at 2.4 sigma costs 0.20 points here, small as their simulation
+  says; USO's gap is its smile, and they note that flat extrapolation beyond the listed
+  strikes understates a smile for the same reason.
+- By their rule, at 30 days the registered +/-30% band covers three standard deviations
+  only up to about 35 volatility points, and the +/-60% wide band up to about 70
+  (computed here from their rule, not stated by them). USO and TSLA sit near 50.
+
+**What remains this project's:** the measurement - a free, indicative feed against the
+published index, per underlying, day by day - and H3c as a test of their mechanism on
+that data, not as a discovery. H3c stays registered exactly as written.
 
 ## Adjustment log
 

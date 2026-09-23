@@ -65,10 +65,12 @@ STALE_QUOTE_PCT = 2.0
 # US equity-market closures. The single list in this repo: tools/model_gap.py
 # imports it rather than keeping a second copy, and pressure_test.py checks that
 # it stays that way. Columbus Day and Veterans Day are deliberately absent
-# because the stock market trades on both.
+# because the stock market trades on both. Good Friday follows Easter, so it is
+# checked against a computed Easter in pressure_test.py (2027's was listed as
+# 2 Apr until 23 Sep 2026; it is 26 Mar).
 US_MARKET_HOLIDAYS = {
     date(2026, 11, 26), date(2026, 12, 25), date(2027, 1, 1), date(2027, 1, 18),
-    date(2027, 2, 15), date(2027, 4, 2), date(2027, 5, 31), date(2027, 6, 18),
+    date(2027, 2, 15), date(2027, 3, 26), date(2027, 5, 31), date(2027, 6, 18),
     date(2027, 7, 5), date(2027, 9, 6), date(2027, 11, 25), date(2027, 12, 24),
     date(2028, 1, 17), date(2028, 2, 21), date(2028, 4, 14), date(2028, 5, 29),
     date(2028, 6, 19), date(2028, 7, 4), date(2028, 9, 4), date(2028, 11, 23),

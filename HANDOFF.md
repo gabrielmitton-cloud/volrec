@@ -1886,7 +1886,7 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 every decision. This section is the only one guaranteed current. Read it, run
 `tools/daily.py`, and open section 17 only when a task needs the why.
 
-### System status, checked 23 Sep 2026 15:40 UTC
+### System status, checked 23 Sep 2026 20:50 UTC
 
 | check | result |
 |---|---|
@@ -1897,10 +1897,11 @@ every decision. This section is the only one guaranteed current. Read it, run
 | `tools/daily.py` | ALL CLEAR |
 | workflows | record, surface, freshness, health all **active**; last runs green |
 | `health.yml` | first manual run green in 32 s; **first scheduled run tonight, 23:37 UTC** |
-| watchdog routine | **updated 23 Sep**; next run **today 16:13 UTC** (Wednesdays 09:13 Pacific). Its 16 Sep run FAILED on Gabriel's Claude session limit - it runs on his usage |
+| watchdog routine | **updated 23 Sep; first run 23 Sep 16:13 UTC healthy**, 54 s, no notification (Wednesdays 09:13 Pacific). Its sandbox blocks `cdn.cboe.com` and FRED, so its `daily.py` always ends LOOK AT: modelfree - expected, and the prompt says so. It runs on Gabriel's usage |
 | iMessage alerts | test message delivered; launchd job **installed**, weekdays 13:30 Pacific, from the clean clone `~/.volrec-ops` |
 | pre-push hook | installed (`core.hooksPath tools/hooks`); every push to main runs the pressure test |
 | Databento | key saved outside the repo; **$0.0865 over 12 requests** of the $100 cap; days on disk are never bought twice (fixed 23 Sep) |
+| holiday list | `panel_health.US_MARKET_HOLIDAYS` had 2027's Good Friday a week late (2 Apr; it is 26 Mar) - **fixed 23 Sep**; the pressure test now checks every Good Friday against a computed Easter |
 | public site | live at gabrielmitton-cloud.github.io/volrec with the Bloomberg aggregates section, **the OPRA aggregates section (added 23 Sep)** and an up-to-date hypothesis table |
 
 ### What runs unattended (UTC)
@@ -1919,9 +1920,11 @@ every decision. This section is the only one guaranteed current. Read it, run
 |---|---|---|
 | H1 | tested, holds | 9 of 11 Cboe pairs survive FDR control |
 | H2 | tested, not adopted | log variance strongest (t=16.26) |
-| H3 | series running | H3a mean abs gap **0.53** over 30 readings (bar 1.0). First registered wide reading **OUTSIDE** 1.4-3.2 (+9.41): quote contamination, as the grid anticipated. **IWM reads positive on all six days**, against H3b's sign - watch |
+| H3 | series running | H3a mean abs gap **0.53** over 30 readings (bar 1.0). First registered wide reading **OUTSIDE** 1.4-3.2 (+9.41; +10.71 with 23 Sep): quote contamination, as the grid anticipated. **IWM reads positive on all six days**, against H3b's sign - watch. **Day count: Bloomberg stated ACT/252 in writing (23 Sep); at 21 months ~1 point remains that is not the clock.** H3c's mechanism is Jiang & Tian (2007)'s, credited |
 | H4 | descriptive, **strike 1 of 3** | runs break on a missed trading day since 23 Sep; date level -0.57bp over 4 dates; needs ~40 date pairs |
-| H5a-c | Bloomberg | 2 matched wing days of the 3 needed |
+| H5a | **tested 23 Sep, holds weakly** | pooled median 0.40 of a spread over 169 wing contracts on 3 days (bar 0.5); **0.67 on the 132 both feeds bid** - the two readings of "quoted" are logged, nothing adjusted |
+| H5b | **tested 23 Sep, holds** | 36 of 36 free-feed missing bids are missing on Bloomberg (bar 80%) |
+| H5c | descriptive | Bloomberg reproduces USO's inflation within 0.5% and 10.4% on 23 Sep (6.5% and 30% before); needs 10 underlying-days |
 | H5d | descriptive | 12 underlying-days on 3 dates; the date-clustered test needs more dates |
 | H5e | counting from 23 Sep | skip-only USO against OVX; 10 counted days needed, **first verdict ~6 Oct**. Estimator is ABG (2015)'s RX*, credited |
 | H5f | OPRA, **3 of 5 days** | USO far puts within 0.01-0.03 of an OPRA spread; 38 of 38 no-bid quotes are no-bid on OPRA; inflation reproduces within 0.3-1.4%. TSLA's one-tick markets make the spread metric coarse. The free feed's hours-old quotes on contracts OPRA did not quote are excluded by the rule - say so beside any verdict |
@@ -1947,24 +1950,37 @@ every decision. This section is the only one guaranteed current. Read it, run
   consolidated feed", 18-22 Sep, 3 of H5f's 5 days, labelled descriptive), under the
   same rules as Bloomberg's: medians and counts only, the credit under every block;
   `pressure_test.py` section K enforces it.
+- **Licensed papers stay outside the repo** (interlibrary loans are private-study only):
+  `~/Documents/volrec-papers`. On 23 Sep one landed in the repo root, uncommitted;
+  `.gitignore` now blocks `*.pdf` and the pressure test checks none is tracked.
+- **Bloomberg exports, one expiry per file:** `SYMBOL_OMON_DATE.xlsx` is the recorder's
+  nearer expiry; other expiries take a suffix (`_30Oct`, `_long`). The tools read the
+  canonical name only, so a second expiry runs through a subfolder of symlinks
+  (`~/Documents/volrec-bloomberg/2026-09-23_30Oct/`), `--dir` pointing at it.
 - Kalshi (H6) is parked; no new hypotheses before 11 Nov unless one needs no new data.
 - The operations agent never searches for results (`OPS-AGENT.md`).
 
 ### Next steps, dated
 
-**Today, Wed 23 Sep**
-- 16:13 UTC: the updated watchdog's first run. Healthy means one quiet line and no
-  notification; check its log once (routine `trig_01GkVL3mRpGGptXfqoNSR77d`).
-- ~18:00-19:45 UTC: today's surface lands - **H5e's first counted day** (it needs
-  tonight's OVX close to score).
-- 13:30 Pacific: the first scheduled iMessage. 23:37 UTC: the first scheduled `health.yml`.
+**Today, Wed 23 Sep - done**
+- The watchdog's first updated run: healthy (see the status table).
+- The surface landed 18:41 UTC - **H5e's first counted day** once tonight's OVX close
+  is in (`daily.py` tomorrow scores it).
+- **Bloomberg pulled 18:41-18:49 UTC, 0-4 minutes from the snapshot:** USO and TSLA on
+  23 Oct and 30 Oct, and TSLA 16 Jun 2028. H5a and H5b reached their minimum and hold
+  (H5a weakly); the long-dated test found a one-point gap the day count does not explain;
+  the help desk stated ACT/252 in writing. H3 and H5 have the sections.
+- Jiang & Tian (2007) read: H3c's mechanism is theirs (H3, prior art of 23 Sep); the
+  site credits them.
+- 23:37 UTC: the first scheduled `health.yml`.
 
 **Thu 24 Sep**
-- **Bloomberg pull:** `tools/bloomberg_prep.py --date 2026-09-24` - USO and TSLA, 23 Oct
-  AND 30 Oct, TSLA first and within 10 minutes of the landing. This is H5a-b's third
-  matched day. Optional: TSLA's expiry 18-24 months out, 50+ strikes (the pull that can
-  still falsify the day count). Then `tools/bloomberg_compare.py --date 2026-09-24 --pull-time HH:MM`.
-- `tools/opra_reference.py --all` then `--all --compare`: 23 Sep becomes H5f's fourth day.
+- `tools/opra_reference.py --all` then `--all --compare`: 23 Sep becomes H5f's fourth day,
+  and the first day checked against Bloomberg AND OPRA at the same minute.
+- No Bloomberg pull is needed for H5a-b any more. If Gabriel is at the terminal, the
+  one open question goes to the help desk (HELP twice; `BLOOMBERG-MONDAY.md` ask 3 has
+  the wording): which forward, rate and borrow OMON's IVM uses on a long-dated TSLA
+  contract. A further matched day (weekly on, both expiries) is still useful, not binding.
 
 **Fri 25 Sep** - fetch 24 Sep: H5f's fifth day, so **the first H5f verdict**, read exactly
 as registered, with the stale-quote exclusion stated beside it.
@@ -1980,9 +1996,9 @@ as registered, with the stale-quote exclusion stated beside it.
   the column open. Now `minmax(0, 1fr)` on `.section` and `.live-grid` in volrec.css:
   375 px on a fresh load and after a shrink, tables scroll in their wrappers, and the
   desktop layout is identical box for box.
-- Read Jiang & Tian when the library request arrives: "Extracting Model-Free Volatility
-  from Option Prices: An Examination of the VIX Index" (*J. Derivatives*, 2007) first,
-  then "The Model-Free Implied Volatility and Its Information Content" (*RFS*, 2005).
+- ~~Read Jiang & Tian (2007).~~ Done 23 Sep (H3 and H5, prior art). Still to read: Jiang
+  & Tian (2005, *RFS*), "The Model-Free Implied Volatility and Its Information Content".
+- The 21-month day-count residual: parked until the help desk answers; not searched.
 - A site chart logs a negative SVG width in a narrow window (pre-existing, harmless).
 - Optional: a FRED key as a repository secret, so CI's H3 reading matches the local one.
 

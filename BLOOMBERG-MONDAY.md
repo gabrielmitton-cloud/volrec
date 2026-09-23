@@ -7,6 +7,16 @@ data is. See HANDOFF section 15.1.
 
 **18 September: fourth pull (USO, 16 Oct, wide) — see ask 1b and ask 3.**
 
+**23 September: the sixth pull answered asks 1, 1b and 3.** USO and TSLA on BOTH of the
+recorder's expiries (23 Oct and 30 Oct) 0-4 minutes from the snapshot - H5a-b's third
+matched day, and both pass; TSLA 16 Jun 2028 with 134 strikes (ask 1); and the day
+count stated in writing by the help desk (ask 3). Results: H3 "The day count, stated by
+Bloomberg and tested at 21 months" and H5 "The third matched wing day". **What worked:**
+OMON shows monthly expiries only until **weekly** is switched on (the recorder's pair
+are weeklies for the rest of October); the help desk is reached with **HELP pressed
+twice** - typing a question into the command line runs it as a function (it opened
+`IN`, the index browser).
+
 **Last updated 16 September 2026, evening — after the third pull.** Sessions on
 14, 15 and 16 Sep.
 Priorities 0 and 1 below are **done** and kept only as the record of what worked.
@@ -32,6 +42,14 @@ The day-count test (ask 1) is the exception: it never leaves the export, so it w
 without the free feed. Everything about *feed quality* needs both sides.
 
 ### 1. A LONG-DATED expiry, wide strikes. This is the decisive one.
+
+**DONE 23 Sep: TSLA 16-Jun-28, 134 strikes. The gap did NOT vanish:** +0.95 points on
+the 252 clock and +0.94 on 365, so the clocks converge as predicted but about one
+point remains that is not the day count (early exercise +0.90). The day count is the
+whole story at 21-45 days, not at 21 months. H3 has it. Follow-up is ask 3's second
+question, below.
+
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
 
 **Why it is first.** The 1.7-point implied-volatility gap has been identified as a
 day count: Bloomberg's IVM is on a 252 business-day clock, the free feed on a 365
@@ -59,6 +77,10 @@ drawn from it. But it is the one observation pointing away from a finding that i
 already written down, and it should be settled rather than left.
 
 ### 1b. USO out to ±60% on both of the recorder's expiries — NEW 18 September
+
+**DONE 23 Sep, both expiries, USO and TSLA. H5a and H5b have their three days** and
+both hold (H5a weakly - see H5's Result). More matched days are still useful but no
+longer binding.
 
 **22 Sep: USO and TSLA pulled, 16 Oct only again.** USO matched cleanly (0.39 of a
 spread; wings 0.09 and 0.00). TSLA FAILED the price gate at 0.87 because it moved
@@ -123,6 +145,14 @@ unmeasured.**
 *Bloomberg figures: Source: Bloomberg Finance L.P.*
 
 ### 3. Find out whether Bloomberg STATES its day count anywhere
+
+**ANSWERED 23 Sep, in writing:** OMON's IVM is ACT/252 business time, weekends and
+exchange holidays excluded, intraday precision, not configurable; OVME and OVDV's BVOL
+surfaces use calendar ACT/365. Documented at `LPHP OMON:0:1 4373105` ("Migration to
+Business Day Convention", June 2023) and `HELP OMON`. **The one open follow-up**, same
+route (HELP twice): *"For TSLA US 06/16/28 options in OMON, which forward, interest
+rate and borrow cost does the IVM solve use, and does its business-day count exclude
+2027 and 2028 exchange holidays?"* That is what the 21-month residual turns on.
 
 **18 Sep: asked, not answered.** The reply described the `GV` template (60-day
 classical historical volatility against 3-month at-the-money implied volatility)

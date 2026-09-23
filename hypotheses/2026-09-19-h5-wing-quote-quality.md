@@ -3,7 +3,7 @@
 **Registered:** 2026-09-19, after ONE day of wing data (18 Sep, USO, one expiry) and
 before the series that tests it. What was already seen on that day is stated in full
 below, so nothing here can be mistaken for a prediction made blind.
-**Status:** registered.
+**Status:** registered. **H5a and H5b tested 23 Sep 2026** - H5b holds, H5a holds weakly (see Result).
 **Sample:** `data/surface_wide.csv` from 18 Sep 2026 onward, and the matched Bloomberg
 OMON wing exports in `~/Documents/volrec-bloomberg`. Never `data/iv_history.csv`.
 
@@ -287,6 +287,34 @@ This refines H5's claim and must be stated beside any verdict:
 
 *Data provided by Databento (OPRA). Aggregates only.*
 
+## The third matched wing day, 23 September 2026 — AFTER data
+
+USO and TSLA OMON, **both of the recorder's expiries** (23 Oct, 30 days; 30 Oct, 37
+days), pulled 18:41-18:45 UTC against the recorder's snapshot at 18:41 UTC (median
+quote time 18:41:25-31): **0 to 4 minutes apart**, the closest match yet. Every check
+in `bloomberg_compare.py` passes.
+
+| | expiry | matched, band | mids vs spread, band | put wing | call wing | zero bid on both / free only / Bloomberg only |
+|---|---|---|---|---|---|---|
+| USO | 23 Oct | 133 | 0.31 | 0.01 (n=8) | 0.19 (n=6) | 8 / 0 / 0 |
+| USO | 30 Oct | 54 | 0.20 | 0.01 (n=8) | 0.66 (n=6) | 8 / 0 / 0 |
+| TSLA | 23 Oct | 86 | 0.28 | 0.33 (n=12) | 0.83 (n=19) | 0 / 0 / 0 |
+| TSLA | 30 Oct | 75 | 0.20 | 0.33 (n=13) | 0.67 (n=16) | 0 / 0 / 0 |
+
+- **H5c on this day, descriptive:** USO's inflation (as registered minus Cboe rule) is
+  13.51 on the free feed and 13.58 on Bloomberg for 23 Oct (0.5% apart), 12.22 and
+  13.49 for 30 Oct (10.4%), both inside H5c's 25%. TSLA's is 0.00 on both feeds and
+  both expiries: no zero bids, no inflation, as H5d predicts.
+- **USO's parity forwards differ by 0.30-0.90% between the feeds** although the pulls
+  were minutes apart. USO's markets are 11-17% of the mid wide, so a forward read off
+  mids is noisy (Bloomberg's own two printed forwards, 148.18 and 149.21, differ by
+  more than a week's carry). The price gate passes; nothing is re-scored.
+- Scratch computation behind the pooled figures below: the same contract rule as
+  `bloomberg_compare.wings()` (out of the money, an ask on both feeds, a missing bid
+  read as zero), pooled over every matched wing day on disk.
+
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
+
 ## Prior art, read 23 September 2026 — H5e's estimator is NOT new
 
 Andersen, Bondarenko & Gonzalez-Perez (2015), "Exploring Return Dynamics via
@@ -320,12 +348,55 @@ finding no major VIX biases at the daily frequency - the frequency this project
 works at - and the companion working paper named in their footnote 13, "A Corridor
 Fix for High-Frequency VIX: Developing Coherent Implied Volatility Measures".
 
+**Read 23 September 2026: Jiang & Tian (2007)**, "Extracting Model-Free Volatility
+from Option Prices: An Examination of the VIX Index", *Journal of Derivatives* 14(3),
+35-60, via Pepperdine interlibrary loan (a private-study copy, kept outside this
+repository). What bears on H5:
+
+- They decompose the error in Cboe's procedure into **truncation** (strikes beyond the
+  listed range ignored: biases the estimate down), **discretization** (a coarse strike
+  grid and Cboe's integration rule: biases it up), a negligible Taylor-expansion term,
+  and maturity interpolation. H3 carries their truncation result; see H3's prior-art
+  section of the same date.
+- They name Cboe's zero-bid filter and two-consecutive-zero-bid cutoff as a reason the
+  truncation interval moves from day to day - the mechanism ABG (2015) formalise and
+  H5's 22 Sep stop-rule observation is an instance of. Credited to both.
+- **What they do not study** is pricing a no-bid quote at half its ask, as the
+  registered estimator does. That pushes the estimate UP by adding stub asks, the
+  opposite sign to truncation, and on SPX's dense ladder it would barely register. H5c's
+  inflation - its size on a sparse ETF ladder, reproduced on Bloomberg's and OPRA's
+  prices - stays this project's measurement, not their result.
+
 ## Adjustment log
 
 - **2026-09-23 — an ADDITION, not an adjustment.** H5e added after seeing 18-22 Sep,
   judged only from 23 Sep onward. H5a-H5d, their thresholds and their minimums are
   unchanged.
+- **2026-09-23 — NO adjustment; an ambiguity found at the verdict, logged.** H5a's
+  sentence says wing contracts are "quoted on both sides"; the frozen specification
+  says "with a quote on both feeds". They score differently (0.40 against 0.67, see
+  Result). H5a is scored on the specification, which is also how the registration's own
+  18 Sep figures were computed (0.07 on 18 far puts, 13 of them without a bid). Both
+  readings are printed beside the verdict. Nothing was changed.
 
 ## Result
 
-Not yet tested.
+**H5a and H5b reached their registered minimum on 23 Sep 2026:** three matched
+Bloomberg wing days (18, 22 and 23 Sep), seven symbol-expiry blocks, 169 wing contracts.
+
+- **H5b HOLDS.** Where the free feed shows no bid, Bloomberg shows none on **36 of 36**
+  matched wing contracts (100%; bar 80%). One contract went the other way (a free-feed
+  bid, none on Bloomberg, 18 Sep). OPRA agrees independently: 38 of 38 (H5f, descriptive).
+- **H5a HOLDS as specified, and weakly.** Pooled over all 169 contracts the median
+  free-feed mid sits **0.40** of Bloomberg's spread away (bar 0.5); by date 0.11, 0.71
+  and 0.38; 54% of contracts inside half a spread. **But the pass rests on the 37
+  contracts with no bid on at least one feed, whose mids agree almost by construction.**
+  On the 132 contracts with a bid on both feeds the pooled median is **0.67**, over the
+  bar. Most of that is TSLA, whose wing markets are a tick or two wide, so a one-cent
+  difference is a whole spread (TSLA 0.33-1.00 by block; USO 0.01-0.66). Read plainly:
+  the free feed's far wings carry the same empty bids as the consolidated market, and
+  its two-sided wing quotes are within a tick or two, not within half a spread.
+- **H5c, H5d:** descriptive until their 10 underlying-days support the date-clustered
+  test the specification requires. **H5e:** counting from 23 Sep. **H5f:** 3 of 5 OPRA days.
+
+*Bloomberg figures: Source: Bloomberg Finance L.P.*

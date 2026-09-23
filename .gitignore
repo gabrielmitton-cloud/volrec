@@ -37,3 +37,9 @@ volrec-databento/
 *.dbn
 *.dbn.zst
 *.key
+
+# Papers obtained through interlibrary loan are licensed for private study only
+# (Title 17; Pepperdine ILL terms) and live in ~/Documents/volrec-papers, OUTSIDE
+# this repository. On 23 Sep 2026 one landed in the repo root, uncommitted.
+*.pdf
+volrec-papers/
