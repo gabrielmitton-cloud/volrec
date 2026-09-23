@@ -1993,6 +1993,9 @@ every decision. This section is the only one guaranteed current. Read it, run
 
 **Fri 25 Sep** - fetch 24 Sep: H5f's fifth day, so **the first H5f verdict**, read exactly
 as registered, with the stale-quote exclusion stated beside it.
+  **Scheduled:** `volrec-opra-fetch-0924` fires Fri 07:15 Pacific the same way (fetch,
+  compare to `~/Documents/volrec-databento/compare_2026-09-24.txt`, text Gabriel); it
+  does not score the verdict.
 
 **Open, no fixed date**
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
