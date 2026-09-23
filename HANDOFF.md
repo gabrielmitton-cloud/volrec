@@ -1974,8 +1974,12 @@ as registered, with the stale-quote exclusion stated beside it.
   and the OPRA aggregates are on the site (see the decisions above). When H5f reaches
   its verdict, the site section's "three days, descriptive" paragraph must be updated
   by hand: it is static text.
-- The site overflows horizontally at phone width (961 px on a 375 px screen; Fig. 2,
-  Fig. 3 and both data tables). Pre-existing, found 23 Sep; layout only.
+- ~~The site overflows horizontally at phone width (961 px on a 375 px screen; Fig. 2,
+  Fig. 3 and both data tables).~~ Fixed 23 Sep: the mobile grid columns were a bare
+  `1fr`, whose auto minimum let a nowrap table, or a chart drawn at a wider width, hold
+  the column open. Now `minmax(0, 1fr)` on `.section` and `.live-grid` in volrec.css:
+  375 px on a fresh load and after a shrink, tables scroll in their wrappers, and the
+  desktop layout is identical box for box.
 - Read Jiang & Tian when the library request arrives: "Extracting Model-Free Volatility
   from Option Prices: An Examination of the VIX Index" (*J. Derivatives*, 2007) first,
   then "The Model-Free Implied Volatility and Its Information Content" (*RFS*, 2005).

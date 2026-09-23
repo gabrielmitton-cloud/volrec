@@ -439,11 +439,14 @@ svg .cur-lab { fill: var(--ink); font-size: 10px; font-weight: 500; }
   .scope-screen { border-right: 0; border-bottom: 1px solid var(--rule); }
   .readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); }
   .readout > * { min-width: 0; }
-  .section { grid-template-columns: 1fr; margin-top: 88px; }
+  /* minmax(0, 1fr), not 1fr, here and on .live-grid: a bare 1fr has an auto
+     minimum, so a nowrap table or a chart drawn at the old width held the column
+     open past the phone, and the chart never saw a narrower host to redraw at. */
+  .section { grid-template-columns: minmax(0, 1fr); margin-top: 88px; }
   .aside { grid-column: 1; grid-row: auto; position: static; margin: 8px 0 0; }
   .fig-cap { grid-template-columns: 1fr; gap: 10px; }
   .two { grid-template-columns: 1fr; gap: 0; }
-  .live-grid { grid-template-columns: 1fr; }
+  .live-grid { grid-template-columns: minmax(0, 1fr); }
   .live-grid > div + div { border-left: 0; border-top: 1px solid var(--rule); }
   .smiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pending { grid-template-columns: 1fr; }
