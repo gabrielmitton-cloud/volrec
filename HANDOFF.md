@@ -2002,6 +2002,9 @@ as registered, with the stale-quote exclusion stated beside it.
   workflow is running, and texts Gabriel. **Known in advance:** on the first three days
   H5f-a's pooled median is exactly 0.500, ON the bar, because TSLA's one-tick contracts
   sit at 0.5; the task must say so. It never touches the site's OPRA section.
+  **Scheduled:** `volrec-site-opra-update` fires Fri 09:15 Pacific: adds 23-24 Sep to
+  the site's OPRA table, puts the recorded verdict (with any on-the-bar caveat) in its
+  text and the H5 ledger row, pushes under the same conditions, and texts Gabriel.
 
 **Open, no fixed date**
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
