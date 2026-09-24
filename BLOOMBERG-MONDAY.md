@@ -157,6 +157,23 @@ wording 23 Sep, to be sent Thu 24 Sep:
 
 That is what the 21-month residual turns on. Send back the reply verbatim.
 
+**ANSWERED 24 Sep by email (recorded in H3):** the forward is IFwd and the rate is the
+expiry's own R - both what `model_gap.py` uses, so neither is the residual. American
+options use a finite-difference model; holidays in 2027-28 are unconfirmed. **The next
+and last ask on this: one `GIV` screen.** At the terminal:
+
+1. Type `TSLA US 06/16/28 C380 Equity` then `GIV` and press GO (Enter).
+2. `Actions` -> `View Calc Inputs`.
+3. Photograph or write down EVERYTHING on that inputs screen, above all: the **time to
+   expiry** (with its units: days, business days or years), the rate, any dividend,
+   borrow or carry figure, the forward, the underlying price, the exercise style and
+   model, and the implied volatility. Note the time you looked.
+4. Repeat for `TSLA US 06/16/28 P300 Equity`.
+5. Optional, in OMON: `Settings` -> `Edit Columns`, add `XTyp`, and note what it shows
+   for the 16-Jun-28 block.
+
+No timing constraint: this never touches the free feed.
+
 **18 Sep: asked, not answered.** The reply described the `GV` template (60-day
 classical historical volatility against 3-month at-the-money implied volatility)
 and said nothing about how OMON's IVM annualises time. Still open. Ask again naming

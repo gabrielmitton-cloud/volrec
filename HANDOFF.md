@@ -1985,11 +1985,11 @@ every decision. This section is the only one guaranteed current. Read it, run
 - `daily.py` scores **H5e's first counted day** (23 Sep) once OVX's close is in. **Not yet
   at 24 Sep 15:10 UTC: Cboe's own OVX file still ends at 22 Sep** - their publishing lag,
   not the project's. It scores on the next run after Cboe updates; nothing to do.
-- **Gabriel sends the help desk the follow-up** (worded in `BLOOMBERG-MONDAY.md` ask 3):
-  forward, rate, exercise model and holiday count behind IVM on TSLA 16-Jun-28. His
-  reply goes into H3's section "The day count, stated by Bloomberg and tested at 21
-  months", labelled with its date. No Bloomberg pull is needed for H5a-b any more; a
-  further matched day (weekly on, both expiries) is useful, not binding.
+- ~~Help-desk follow-up.~~ **Answered 24 Sep by email** (H3): the forward and rate
+  `model_gap.py` uses are Bloomberg's own, so the 21-month residual is the time to expiry
+  or the American solver. **Next, at the terminal, no time pressure: one `GIV` screen**
+  (TSLA 16-Jun-28 C380 and P300, Actions -> View Calc Inputs; steps in
+  `BLOOMBERG-MONDAY.md` ask 3). No Bloomberg pull is needed for H5a-b any more.
 
 **Fri 25 Sep** - fetch 24 Sep: H5f's fifth day, so **the first H5f verdict**, read exactly
 as registered, with the stale-quote exclusion stated beside it.

@@ -847,6 +847,31 @@ IVM uses on a long-dated TSLA contract.
 **Consequence for H3: none.** `modelfree.py` integrates prices, never an implied
 volatility, and every expiry it uses is inside 45 days.
 
+**The desk's second reply, 24 Sep 2026** (Bloomberg Support, London, by email, to the
+four-part question in `BLOOMBERG-MONDAY.md` ask 3). Paraphrased:
+
+- **Forward:** IVM uses the market-implied forward from put-call parity, the IFwd in the
+  expiry header, carrying the rate plus implied carry (dividends, borrow). **This is the
+  forward `model_gap.py` already uses**, so the forward is not the residual.
+- **Rate:** R is the rate for that expiry, interpolated from the curve in `OPDF`, not one
+  flat rate. **`model_gap.py` uses each block's own R**, so the rate is not it either.
+- **Model:** European-style options on Black-Scholes; **American-style on a
+  finite-difference model with early exercise.** TSLA's options are American (to confirm
+  with OMON's `XTyp` column). `model_gap.py --american` approximates this with a
+  300-step tree and moved the 21-month gap by 0.04, so a model difference is narrowed
+  but not ruled out: a finite-difference solver and a tree on a carry backed out of IFwd
+  can differ at 21 months.
+- **Day count:** business time, weekends and market holidays excluded, but **the desk
+  could not confirm that 2027-28 holidays are populated**, and pointed to `GIV`
+  (Actions, View Calc Inputs), which shows the exact time to expiry used for one contract.
+
+**What this leaves.** Two candidates: the time to expiry Bloomberg actually uses (the
+solve implies 455.6 business days against 436 trading days) and the American solver.
+`GIV` shows both for one contract, so the next step is to read one screen, not to infer:
+TSLA 16-Jun-28 C380 and P300, time to expiry, rate, carry and model as shown.
+
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
+
 *Bloomberg figures: Source: Bloomberg Finance L.P.*
 
 ## Prior art, read 23 September 2026 — H3c's mechanism is Jiang & Tian's, NOT new
