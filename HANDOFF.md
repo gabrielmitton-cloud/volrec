@@ -1927,7 +1927,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | H5c | descriptive | Bloomberg reproduces USO's inflation within 0.5% and 10.4% on 23 Sep (6.5% and 30% before); needs 10 underlying-days |
 | H5d | descriptive | 12 underlying-days on 3 dates; the date-clustered test needs more dates |
 | H5e | counting from 23 Sep | skip-only USO against OVX; 10 counted days needed, **first verdict ~6 Oct**. Estimator is ABG (2015)'s RX*, credited |
-| H5f | OPRA, **3 of 5 days** | USO far puts within 0.01-0.03 of an OPRA spread; 38 of 38 no-bid quotes are no-bid on OPRA; inflation reproduces within 0.3-1.4%. TSLA's one-tick markets make the spread metric coarse. The free feed's hours-old quotes on contracts OPRA did not quote are excluded by the rule - say so beside any verdict |
+| H5f | OPRA, **4 of 5 days** | pooled over 18-23 Sep (descriptive): H5f-a **0.500** of OPRA's spread, ON the bar (TSLA's one-tick markets); H5f-b 49 of 49 no-bid quotes no-bid on OPRA; H5f-c inflation reproduces within 0.8-1.1%. 23 Sep is the first day with Bloomberg and OPRA together, and they agree. The free feed's hours-old quotes on contracts OPRA did not quote are excluded by the rule - say so beside any verdict |
 
 *Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Aggregates only.*
 
@@ -1975,16 +1975,16 @@ every decision. This section is the only one guaranteed current. Read it, run
 - 23:37 UTC: the first scheduled `health.yml`.
 
 **Thu 24 Sep**
-- **After 13:30 UTC (06:30 Pacific)**, not before: `tools/opra_reference.py --all` then
-  `--all --compare`. 23 Sep becomes H5f's fourth day, and the first day checked against
-  Bloomberg AND OPRA at the same minute. Tried 23 Sep 20:43 UTC: priced at $0.0267 for
-  both, refused as not yet historical, nothing charged.
+- ~~OPRA for 23 Sep.~~ **Done** by the scheduled task, 24 Sep 15:08 UTC, $0.0267: H5f's
+  fourth day, recorded in H5 ("The fourth OPRA day"). Databento spend $0.1132 of $100.
   **Scheduled:** a one-off local task (`volrec-opra-fetch-0923`, the app's Scheduled
   list) fires 24 Sep 07:15 Pacific, fetches and compares, texts Gabriel, and saves
   the compare to `~/Documents/volrec-databento/compare_2026-09-23.txt`. It never
   touches the repo: recording day 4 in H5 is still this session's job. Re-running
   the fetch is harmless - days on disk are skipped, never bought twice.
-- `daily.py` scores **H5e's first counted day** (23 Sep, once OVX's close is in).
+- `daily.py` scores **H5e's first counted day** (23 Sep) once OVX's close is in. **Not yet
+  at 24 Sep 15:10 UTC: Cboe's own OVX file still ends at 22 Sep** - their publishing lag,
+  not the project's. It scores on the next run after Cboe updates; nothing to do.
 - **Gabriel sends the help desk the follow-up** (worded in `BLOOMBERG-MONDAY.md` ask 3):
   forward, rate, exercise model and holiday count behind IVM on TSLA 16-Jun-28. His
   reply goes into H3's section "The day count, stated by Bloomberg and tested at 21

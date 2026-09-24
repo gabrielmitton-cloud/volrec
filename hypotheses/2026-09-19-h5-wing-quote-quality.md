@@ -315,6 +315,35 @@ in `bloomberg_compare.py` passes.
 
 *Bloomberg figures: Source: Bloomberg Finance L.P.*
 
+## The fourth OPRA day, 23 September 2026 — AFTER data, 4 of H5f's 5 days
+
+Fetched 24 Sep 15:08 UTC by the scheduled task, $0.0267 for both. Every contract
+matched within seconds of its own quote time (median 26-28 s). **The first day with
+Bloomberg and OPRA at the same minute.**
+
+| | band | put wing | call wing | zero bid, both / one only | inflation, free / OPRA |
+|---|---|---|---|---|---|
+| USO 23 Sep | 0.05 | **0.01** | 0.06 | 11 / 0 | 19.37 / 19.18 |
+| TSLA 23 Sep | 0.50 | 0.60 | 0.67 | 0 / 0 | 0.00 / 0.00 |
+
+- **The three sources agree.** USO's far puts sit 0.01 of a spread from OPRA and 0.01
+  from Bloomberg (H5, "The third matched wing day"); every free-feed missing bid in the
+  wings is missing on both references. TSLA's wing gaps are one-tick differences on
+  both (Bloomberg 0.33-0.83, OPRA 0.60-0.67).
+- **USO's as-registered lift on the matched contracts is the largest yet**, +20.47 on the
+  free feed and +20.30 on OPRA (earlier days 4.34, 16.91, 10.13), while the Cboe rule
+  gives +1.10 and +1.12. In H3's full wide reading the day adds +14.61, continuing
+  5.25, 9.96, 13.01. The contamination grows; the reproduction on OPRA holds within 1.0%.
+- 7 USO wide rows unmatched, excluded by the rule and not examined further.
+- **Pooled over the four days, descriptive** (the pooled script written 23 Sep, before
+  days 4 and 5): H5f-a **0.500** of OPRA's spread, ON the bar, and 0.500 on the 328
+  contracts both feeds bid; H5f-b **49 of 49**; H5f-c OPRA's inflation positive on every
+  zero-bid day and within 0.8% (median per-day gap) or 1.1% (medians compared). Not a
+  verdict: that is Fri 25 Sep, on five days.
+
+*Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
+*Bloomberg figures: Source: Bloomberg Finance L.P.*
+
 ## Prior art, read 23 September 2026 — H5e's estimator is NOT new
 
 Andersen, Bondarenko & Gonzalez-Perez (2015), "Exploring Return Dynamics via
