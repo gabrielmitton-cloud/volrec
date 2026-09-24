@@ -41,6 +41,7 @@ session's job is to read results, answer a question, or do one bounded thing.
 | `freshness.yml` | 20:00 and 23:00 daily | installs nothing, on purpose |
 | `health.yml` | 23:37 | the full daily check; emails on any FAIL or crash |
 | launchd `com.volrec.daily` (this Mac, once installed) | 13:30 Pacific | texts the verdict by iMessage |
+| `volrec-licensed` daily.yml (private repo) | 23:05 UTC | OPRA fetch + registered verdicts; opens an issue there |
 
 ## Standing rules - these are not up for re-argument without new, dated evidence
 

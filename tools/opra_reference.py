@@ -48,7 +48,10 @@ os.environ.setdefault("FRED_KEY", "use-cache")   # the local cache, as daily.py 
 GATEWAY = "https://hist.databento.com/v0"
 DATASET = "OPRA.PILLAR"
 SCHEMA = "cbbo-1m"                     # consolidated BBO, one-minute; checked live against list_schemas
-DATA_DIR = Path.home() / "Documents" / "volrec-databento"
+# The Mac's folder by default. The cloud run (the private volrec-licensed repository's
+# workflow, 24 Sep 2026) points this at its own checkout; inside_repo() still refuses
+# any path inside THIS repository, whatever the variable says.
+DATA_DIR = Path(os.environ.get("VOLREC_DATABENTO_DIR") or Path.home() / "Documents" / "volrec-databento")
 KEY_FILE = Path.home() / ".config" / "volrec" / "databento.key"
 LEDGER = DATA_DIR / "spend.csv"
 LIFETIME_CAP_USD = 100.0

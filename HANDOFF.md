@@ -1913,6 +1913,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | `health.yml` | weekdays 23:37 | GitHub emails (the whole daily check) |
 | launchd `com.volrec.daily` | weekdays 13:30 Pacific | the iMessage leads with LOOK AT |
 | watchdog routine | Wednesdays 16:13 | a push notification, only when something is wrong |
+| **`volrec-licensed` daily.yml** (private repo, built 24 Sep) | weekdays 23:05 UTC | an issue in `volrec-licensed` (email + GitHub app): OPRA fetch, compare, and the H5f / H5e verdicts on their dates in fixed wording (`tools/record_verdict.py`). Pushes to THIS repo only on verdict days, never 13-21 UTC |
 
 ### Where each hypothesis stands
 
@@ -1957,6 +1958,13 @@ every decision. This section is the only one guaranteed current. Read it, run
   nearer expiry; other expiries take a suffix (`_30Oct`, `_long`). The tools read the
   canonical name only, so a second expiry runs through a subfolder of symlinks
   (`~/Documents/volrec-bloomberg/2026-09-23_30Oct/`), `--dir` pointing at it.
+- **The research runs without Gabriel from 24 Sep** (his decision): OPRA fetching and the
+  registered verdicts moved to the private repo `gabrielmitton-cloud/volrec-licensed`
+  (raw licensed data lives there, never here), whose workflow writes verdicts in FIXED
+  wording from the frozen scripts - no model judgement. `health.yml`'s rule that CI never
+  commits stands; the one exception is a verdict commit, three times in the window,
+  outside the recorders' hours. The Mac's scheduled tasks stay armed as a fallback until
+  the cloud run is proven, then are disabled; each skips a verdict already recorded.
 - Kalshi (H6) is parked; no new hypotheses before 11 Nov unless one needs no new data.
 - The operations agent never searches for results (`OPS-AGENT.md`).
 

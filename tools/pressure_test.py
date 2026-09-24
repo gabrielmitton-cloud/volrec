@@ -935,6 +935,43 @@ for _doc, _t in _odocs:
             _ouncited.append(f"{_doc} :: {_head[:50]}")
 ok(not _ouncited, "every section publishing an OPRA-derived figure credits Databento"
    + (f" -- MISSING in {'; '.join(_ouncited[:3])}" if _ouncited else ""))
+# The unattended verdicts (24 Sep 2026). h5f_pooled.py was written 23 Sep, before OPRA
+# days 4-5 existed; pinning its hash means it cannot be tuned after seeing them.
+ok(hashlib.sha256((R / "tools/h5f_pooled.py").read_bytes()).hexdigest()
+   == "fac346026b9f2c983bc7621d9549fae32d7c30ee2cc3101c478e58f19c0e88ca",
+   "tools/h5f_pooled.py is byte-for-byte the script frozen on 23 Sep")
+_rvs = _iu.spec_from_file_location("recverd", R / "tools/record_verdict.py")
+_rvm = _iu.module_from_spec(_rvs); _rvs.loader.exec_module(_rvm)
+ok((_rvm.H5F_MIN_DAYS, _rvm.H5E_MIN_DAYS, _rvm.H5E_BAR, _rvm.H5E_START, _rvm.H5E_END)
+   == (5, 10, 0.5, "2026-09-23", "2026-11-11")
+   and _rvm.H5E_MIN_DAYS == _mfm.H5E_MIN_DAYS and _rvm.H5E_BAR == _mfm.H5E_MAX_ABS_GAP
+   and _rvm.H5E_START == _mfm.H5E_START,
+   "the verdict writer carries H5f's and H5e's registered minimums, bar and window")
+_h5e_txt = ("   risk-free (DGS1MO): 3.910%\n-- H5e: USO ...\n   date  OVX ...\n"
+            "   2026-09-22    51.89       50.89   -1.00      51.89   -0.00  no - in-sample, before registration\n"
+            "   2026-09-23    52.00       51.00   -1.00      52.30   +0.30  yes\n"
+            "   2026-09-24      n/a  (no OVX close yet, or too thin)\n"
+            "   2026-09-25    52.00       51.00   -1.00      51.10   -0.90  yes\n")
+_rows, _rf, _na = _rvm.parse_h5e(_h5e_txt)
+_sc = _rvm.h5e_score(_rows)
+ok(len(_rows) == 3 and _rf == "3.910" and _na == ["2026-09-24"] and _sc["n"] == 2
+   and abs(_sc["mae"] - 0.60) < 1e-9 and _sc["closer"] == 2 and not _sc["holds"]
+   and _rvm.h5e_score(_rows, last="2026-09-24")["n"] == 1,
+   "the verdict writer parses H5e's table, skips in-sample days, and scores as registered")
+_h5f_txt = ("days with OPRA data: 5 ['a', 'b', 'c', 'd', 'e']  (minimum 5)\n"
+            "wing contracts: 400 with a spread; 60 wide rows unmatched (excluded by the rule)\n"
+            "H5f-a  pooled median 0.520 of the OPRA spread (bar 0.5) -> FAILS\n"
+            "       descriptive: both feeds bid, n=350, median 0.530\n"
+            "H5f-b  free no-bid -> OPRA no-bid 50 of 50 = 100.0% (bar 80%) -> HOLDS; OPRA-only no-bid 0\n"
+            "H5f-c  OPRA inflation positive on every zero-bid day: True; median per-day gap 0.8% (i); "
+            "median OPRA +12.56 vs median free +12.42 = 1.1% (ii); bar 25%\n"
+            "       -> (i) HOLDS, (ii) FAILS  READINGS DISAGREE: report both, flag for Gabriel, do not choose\n"
+            "Stated beside any verdict: stale.\n")
+_v = _rvm.parse_h5f(_h5f_txt)
+_blk = _rvm.block_h5f(_v, date(2026, 9, 25))
+ok(_v["days"] == 5 and _v["a_v"] == "FAILS" and "ON the bar" in _blk and "H5f-c UNSETTLED" in _blk
+   and "Gabriel decides" in _blk and "Data provided by Databento" in _blk,
+   "the verdict writer copies H5f's figures, flags on-the-bar and split readings, and credits Databento")
 
 print("\n=== O. NOTIFICATIONS (iMessage, tools/notify.py) ===")
 _nts = _iu.spec_from_file_location("notif", R / "tools/notify.py")
