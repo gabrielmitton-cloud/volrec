@@ -182,6 +182,13 @@ Next time: in GIV, click (or with `Track` on, click) a single point on the blue
 photo cut off - and the calc-inputs panel for that moment opens. The panel, not the
 chart, is what is needed: time to expiry above all.
 
+**CLOSED 24 Sep.** The inputs panel was read (H3). Its own printed inputs do not
+reproduce its own implied volatility, and the 94-contract call/put split rules out the
+forward. The residual is recorded as an open reconciliation item at long maturity and
+**not pursued further** - nothing registered depends on it. No more terminal asks on the
+day count. If ever reopened, the one fair question for the desk is why GIV's printed
+inputs for that contract do not reproduce its printed volatility.
+
 **18 Sep: asked, not answered.** The reply described the `GV` template (60-day
 classical historical volatility against 3-month at-the-money implied volatility)
 and said nothing about how OMON's IVM annualises time. Still open. Ask again naming

@@ -870,6 +870,31 @@ solve implies 455.6 business days against 436 trading days) and the American sol
 `GIV` shows both for one contract, so the next step is to read one screen, not to infer:
 TSLA 16-Jun-28 C380 and P300, time to expiry, rate, carry and model as shown.
 
+**The GIV screen, read 24 Sep - and where this stops.** Gabriel photographed GIV's
+calculation-inputs panel for the 16-Jun-28 C380 (a call on a stock with no dividend,
+so early exercise cannot matter and it isolates forward and clock). It labels the model
+Black-Scholes and prints time to expiry in CALENDAR days and hours, to the 16:00 close.
+Its printed inputs do NOT reproduce its own implied volatility under Black-Scholes or
+Black-76, on calendar or ACT/252 time: its printed forward and underlying imply a carry
+above its printed rate, while it prints zero dividend and borrow. On the documented
+convention the residual on that one contract is about one point, the same as the
+export's. (Raw panel values stay outside the repository.)
+
+A test on the 94 contracts of 23 Sep then separates the two remaining causes, because a
+forward error moves calls and puts in OPPOSITE directions and a clock error moves them
+the same way. At 21 months, on 252: **calls +0.92 (n=58), puts +1.47 (n=36) - the same
+sign.** Moving the forward to cancel the median makes the split worse (calls -0.24, puts
++2.25). At one month both types sit near zero (23 Oct +0.04 / +0.15; 30 Oct +0.31 / -0.17).
+
+**Conclusion, after the fact and bounded:** the long-maturity residual is not the
+forward and not the rate (both confirmed to be Bloomberg's own); it acts like a time or
+volatility-scale difference common to every option, with about 0.5 more on puts - the
+direction early exercise would push, though a 300-step tree did not reproduce it. It is
+**not identified**, and this project stops here: the terminal's own screen is
+internally inconsistent, nothing registered depends on it (the estimator uses prices,
+never an implied volatility, and no expiry past 45 days), and chasing it further would be
+searching. Stated in any write-up as an open reconciliation item at long maturity.
+
 *Bloomberg figures: Source: Bloomberg Finance L.P.*
 
 *Bloomberg figures: Source: Bloomberg Finance L.P.*

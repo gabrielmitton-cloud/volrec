@@ -1920,7 +1920,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 |---|---|---|
 | H1 | tested, holds | 9 of 11 Cboe pairs survive FDR control |
 | H2 | tested, not adopted | log variance strongest (t=16.26) |
-| H3 | series running | H3a mean abs gap **0.53** over 30 readings (bar 1.0). First registered wide reading **OUTSIDE** 1.4-3.2 (+9.41; +10.71 with 23 Sep): quote contamination, as the grid anticipated. **IWM reads positive on all six days**, against H3b's sign - watch. **Day count: Bloomberg stated ACT/252 in writing (23 Sep); at 21 months ~1 point remains that is not the clock.** H3c's mechanism is Jiang & Tian (2007)'s, credited |
+| H3 | series running | H3a mean abs gap **0.53** over 30 readings (bar 1.0). First registered wide reading **OUTSIDE** 1.4-3.2 (+9.41; +10.71 with 23 Sep): quote contamination, as the grid anticipated. **IWM reads positive on all six days**, against H3b's sign - watch. **Day count: Bloomberg stated ACT/252 in writing (23 Sep); at 21 months ~1 point remains, not the forward or rate, unidentified and closed (24 Sep).** H3c's mechanism is Jiang & Tian (2007)'s, credited |
 | H4 | descriptive, **strike 1 of 3** | runs break on a missed trading day since 23 Sep; date level -0.57bp over 4 dates; needs ~40 date pairs |
 | H5a | **tested 23 Sep, holds weakly** | pooled median 0.40 of a spread over 169 wing contracts on 3 days (bar 0.5); **0.67 on the 132 both feeds bid** - the two readings of "quoted" are logged, nothing adjusted |
 | H5b | **tested 23 Sep, holds** | 36 of 36 free-feed missing bids are missing on Bloomberg (bar 80%) |
@@ -1989,8 +1989,10 @@ every decision. This section is the only one guaranteed current. Read it, run
   `model_gap.py` uses are Bloomberg's own, so the 21-month residual is the time to expiry
   or the American solver. **Next, at the terminal, no time pressure: one `GIV` screen**
   (TSLA 16-Jun-28 C380 and P300, Actions -> View Calc Inputs; steps in
-  `BLOOMBERG-MONDAY.md` ask 3). 24 Sep: `XTyp` confirms American; the GIV photos showed the
-  chart, not the calc-inputs panel - still needed. No Bloomberg pull is needed for H5a-b.
+  `BLOOMBERG-MONDAY.md` ask 3). **Closed 24 Sep:** the GIV inputs panel does not reproduce
+  its own volatility, and at 21 months calls and puts read high together (H3 has the
+  figures), so it is not the forward. Recorded in H3 as an open reconciliation item at long maturity;
+  not pursued - nothing registered depends on it. No terminal asks remain on this.
 
 **Fri 25 Sep** - fetch 24 Sep: H5f's fifth day, so **the first H5f verdict**, read exactly
 as registered, with the stale-quote exclusion stated beside it.
@@ -2020,7 +2022,8 @@ as registered, with the stale-quote exclusion stated beside it.
   desktop layout is identical box for box.
 - ~~Read Jiang & Tian (2007).~~ Done 23 Sep (H3 and H5, prior art). Still to read: Jiang
   & Tian (2005, *RFS*), "The Model-Free Implied Volatility and Its Information Content".
-- The 21-month day-count residual: parked until the help desk answers; not searched.
+- The 21-month day-count residual: **closed as unidentified, 24 Sep** (H3). Not the forward
+  or rate; a time or scale effect common to calls and puts. Not to be searched further.
 - A site chart logs a negative SVG width in a narrow window (pre-existing, harmless).
 - Optional: a FRED key as a repository secret, so CI's H3 reading matches the local one.
 
