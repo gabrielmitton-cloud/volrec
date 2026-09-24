@@ -1989,7 +1989,8 @@ every decision. This section is the only one guaranteed current. Read it, run
   `model_gap.py` uses are Bloomberg's own, so the 21-month residual is the time to expiry
   or the American solver. **Next, at the terminal, no time pressure: one `GIV` screen**
   (TSLA 16-Jun-28 C380 and P300, Actions -> View Calc Inputs; steps in
-  `BLOOMBERG-MONDAY.md` ask 3). No Bloomberg pull is needed for H5a-b any more.
+  `BLOOMBERG-MONDAY.md` ask 3). 24 Sep: `XTyp` confirms American; the GIV photos showed the
+  chart, not the calc-inputs panel - still needed. No Bloomberg pull is needed for H5a-b.
 
 **Fri 25 Sep** - fetch 24 Sep: H5f's fifth day, so **the first H5f verdict**, read exactly
 as registered, with the stale-quote exclusion stated beside it.

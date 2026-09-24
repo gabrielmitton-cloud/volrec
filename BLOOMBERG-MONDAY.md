@@ -174,6 +174,14 @@ and last ask on this: one `GIV` screen.** At the terminal:
 
 No timing constraint: this never touches the free feed.
 
+**24 Sep, first attempt:** `XTyp` shows **American** for the 16-Jun-28 block (done). The
+two GIV photos showed the intraday volatility CHART for C380 and P300, not the inputs:
+the hint line reads "... to display calc inputs" - the inputs belong to ONE point.
+Next time: in GIV, click (or with `Track` on, click) a single point on the blue
+"Implied Vol Mid" line - or use `Actions` at the top-left of the red toolbar, which the
+photo cut off - and the calc-inputs panel for that moment opens. The panel, not the
+chart, is what is needed: time to expiry above all.
+
 **18 Sep: asked, not answered.** The reply described the `GV` template (60-day
 classical historical volatility against 3-month at-the-money implied volatility)
 and said nothing about how OMON's IVM annualises time. Still open. Ask again naming

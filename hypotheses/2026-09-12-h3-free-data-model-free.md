@@ -856,8 +856,8 @@ four-part question in `BLOOMBERG-MONDAY.md` ask 3). Paraphrased:
 - **Rate:** R is the rate for that expiry, interpolated from the curve in `OPDF`, not one
   flat rate. **`model_gap.py` uses each block's own R**, so the rate is not it either.
 - **Model:** European-style options on Black-Scholes; **American-style on a
-  finite-difference model with early exercise.** TSLA's options are American (to confirm
-  with OMON's `XTyp` column). `model_gap.py --american` approximates this with a
+  finite-difference model with early exercise.** TSLA's options are American (**confirmed
+  24 Sep in OMON's `XTyp` column**). `model_gap.py --american` approximates this with a
   300-step tree and moved the 21-month gap by 0.04, so a model difference is narrowed
   but not ruled out: a finite-difference solver and a tree on a carry backed out of IFwd
   can differ at 21 months.
