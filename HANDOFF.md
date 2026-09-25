@@ -1929,7 +1929,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | H5c | descriptive | Bloomberg reproduces USO's inflation within 0.5% and 10.4% on 23 Sep (6.5% and 30% before); needs 10 underlying-days |
 | H5d | descriptive | 12 underlying-days on 3 dates; the date-clustered test needs more dates |
 | H5e | counting from 23 Sep | skip-only USO against OVX; 10 counted days needed, **first verdict ~6 Oct**. Estimator is ABG (2015)'s RX*, credited |
-| H5f | OPRA, **4 of 5 days** | pooled over 18-23 Sep (descriptive): H5f-a **0.500** of OPRA's spread, ON the bar (TSLA's one-tick markets); H5f-b 49 of 49 no-bid quotes no-bid on OPRA; H5f-c inflation reproduces within 0.8-1.1%. 23 Sep is the first day with Bloomberg and OPRA together, and they agree. The free feed's hours-old quotes on contracts OPRA did not quote are excluded by the rule - say so beside any verdict |
+| H5f | **read 25 Sep at 5 days: a, b, c hold** (a ON the bar) | H5f-a **0.500** of OPRA's spread (bar 0.5); H5f-b **64 of 64** no-bid (bar 80%); H5f-c inflation gap **0.6%** per day, 0.4% on medians (bar 25%); stale quotes excluded by the rule |
 
 *Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Aggregates only.*
 
@@ -2022,6 +2022,7 @@ as registered, with the stale-quote exclusion stated beside it.
   text and the H5 ledger row, pushes under the same conditions, and texts Gabriel.
 
 **Open, no fixed date**
+- The site's OPRA section still says three days, descriptive: update it by hand to the H5f verdict (static text).
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
   and the OPRA aggregates are on the site (see the decisions above). When H5f reaches
   its verdict, the site section's "three days, descriptive" paragraph must be updated

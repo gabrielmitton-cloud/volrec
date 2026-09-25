@@ -3,7 +3,7 @@
 **Registered:** 2026-09-19, after ONE day of wing data (18 Sep, USO, one expiry) and
 before the series that tests it. What was already seen on that day is stated in full
 below, so nothing here can be mistaken for a prediction made blind.
-**Status:** registered. **H5a and H5b tested 23 Sep 2026** - H5b holds, H5a holds weakly (see Result).
+**Status:** registered. **H5a and H5b tested 23 Sep 2026** - H5b holds, H5a holds weakly (see Result). H5f read 25 Sep 2026 (see Result).
 **Sample:** `data/surface_wide.csv` from 18 Sep 2026 onward, and the matched Bloomberg
 OMON wing exports in `~/Documents/volrec-bloomberg`. Never `data/iv_history.csv`.
 
@@ -429,3 +429,21 @@ Bloomberg wing days (18, 22 and 23 Sep), seven symbol-expiry blocks, 169 wing co
   test the specification requires. **H5e:** counting from 23 Sep. **H5f:** 3 of 5 OPRA days.
 
 *Bloomberg figures: Source: Bloomberg Finance L.P.*
+
+**H5f, read 25 September 2026 at its five-day minimum** (OPRA days 18, 21, 22, 23 and
+24 Sep; 466 wing contracts with a spread; 59 wide rows unmatched, excluded by the rule):
+
+- **H5f-a HOLDS:** pooled median **0.500** of the OPRA spread (bar 0.5). Descriptive:
+  where both feeds bid, n=402, median **0.667**. The pooled figure sits **ON the bar**:
+  the pass or fail turns on TSLA's one-tick markets, where a one-cent difference is a
+  whole spread (on 3 and on 4 days it was exactly 0.500).
+- **H5f-b HOLDS:** free no-bid -> OPRA no-bid **64 of 64 = 100.0%** (bar 80%); OPRA-only
+  no-bid 0.
+- **H5f-c HOLDS on both readings** (bar 25%): OPRA inflation positive on every zero-bid
+  day; median per-day gap **0.6%** (i); median OPRA +12.48 vs median free +12.43 =
+  **0.4%** (ii). Per zero-bid day (USO), free vs OPRA inflation: 18 Sep +3.51 vs +3.49;
+  21 Sep +15.97 vs +16.19; 22 Sep +8.87 vs +8.93; 23 Sep +19.37 vs +19.18; 24 Sep +12.43
+  vs +12.48.
+- Stated beside any verdict: the rule excludes unmatched contracts, so it cannot see the free feed's hours-old one-sided quotes on far contracts OPRA did not quote (H5, 23 Sep).
+
+*Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
