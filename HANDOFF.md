@@ -2022,7 +2022,6 @@ as registered, with the stale-quote exclusion stated beside it.
   text and the H5 ledger row, pushes under the same conditions, and texts Gabriel.
 
 **Open, no fixed date**
-- The site's OPRA section still says three days, descriptive: update it by hand to the H5f verdict (static text).
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
   and the OPRA aggregates are on the site (see the decisions above). When H5f reaches
   its verdict, the site section's "three days, descriptive" paragraph must be updated
