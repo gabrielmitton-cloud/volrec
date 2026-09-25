@@ -32,6 +32,15 @@ jobs:
         run: |
           set -o pipefail
           python tools/daily.py --no-pull | tee report.txt
+      # healthchecks.io dead man's switch (25 Sep 2026): a ping on success only, so a night
+      # on which this never runs is reported by email from outside GitHub. It cannot fail
+      # this job, and it commits nothing.
+      - name: Ping healthchecks.io
+        if: success()
+        env:
+          HC: ${{ secrets.HC_HEALTH }}
+        run: |
+          if [ -n "$HC" ]; then curl -fsS -m 10 --retry 3 -o /dev/null "$HC" && echo "pinged" || echo "ping failed (ignored)"; else echo "no ping URL set"; fi
       - name: Publish the report on the run page
         if: always()
         run: |
