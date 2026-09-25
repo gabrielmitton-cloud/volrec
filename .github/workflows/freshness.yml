@@ -27,3 +27,12 @@ jobs:
       # so this job cannot break because of a dependency it never needed.
       - name: Fail loudly if either panel has gone stale or empty
         run: python tools/panel_health.py
+      # healthchecks.io dead man's switch (25 Sep 2026): a ping on success only, so a run
+      # that never happens - GitHub dropping or disabling schedules - emails Gabriel from
+      # OUTSIDE GitHub. It can never fail this job: curl's result is ignored.
+      - name: Ping healthchecks.io
+        if: success()
+        env:
+          HC: ${{ secrets.HC_RECORDERS }}
+        run: |
+          if [ -n "$HC" ]; then curl -fsS -m 10 --retry 3 -o /dev/null "$HC" && echo "pinged" || echo "ping failed (ignored)"; else echo "no ping URL set"; fi
