@@ -1913,6 +1913,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | `health.yml` | weekdays 23:37 | GitHub emails (the whole daily check) |
 | launchd `com.volrec.daily` | weekdays 13:30 Pacific | the iMessage leads with LOOK AT |
 | watchdog routine | Wednesdays 16:13 | a push notification, only when something is wrong |
+| **healthchecks.io** (outside GitHub, set up 25 Sep) | checks `volrec-recorders` (freshness, daily 20:00 UTC, 8 h grace), `volrec-health` (weekdays 23:37, 6 h), `volrec-licensed` (weekdays 23:05, 9 h) | an email when a ping is MISSING - the job never ran. Pinged on success only; ping URLs are GitHub secrets HC_*; a ping can never fail a job |
 | **`volrec-licensed` daily.yml** (private repo, built 24 Sep) | weekdays 23:05 UTC | an issue in `volrec-licensed` (email + GitHub app): OPRA fetch, compare, and the H5f / H5e verdicts on their dates in fixed wording (`tools/record_verdict.py`). Pushes to THIS repo only on verdict days, never 13-21 UTC |
 
 ### Where each hypothesis stands
