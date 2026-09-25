@@ -1965,6 +1965,9 @@ every decision. This section is the only one guaranteed current. Read it, run
   commits stands; the one exception is a verdict commit, three times in the window,
   outside the recorders' hours. The Mac's scheduled tasks stay armed as a fallback until
   the cloud run is proven, then are disabled; each skips a verdict already recorded.
+  **Proven so far (24 Sep 22:55 UTC):** both secrets set by Gabriel; a price-only run
+  passed every step, priced 18-24 Sep with the key, and reproduced the Mac's comparison
+  exactly. First real run: 24 Sep 23:05 UTC. First verdict path: Fri 25 Sep 23:05 UTC.
 - Kalshi (H6) is parked; no new hypotheses before 11 Nov unless one needs no new data.
 - The operations agent never searches for results (`OPS-AGENT.md`).
 
