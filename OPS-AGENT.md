@@ -87,6 +87,10 @@ that way on 23 Sep and ran green in 32 seconds.
 Trading, signals, screeners, backtest loops, broker connectors, correlation searches
 (Kalshi, news-to-market) - ruled out in HANDOFF sections 1 and 5 and reaffirmed 23 Sep.
 
+## Its adversary and its analyst (30 Sep 2026)
+
+`AUDITOR.md`: proves every safeguard here fails when broken (`tools/audit.py`). `SCIENTIST.md`: the research agent, dormant until a registered job. Neither changes this file's one rule.
+
 ## Possible next pieces, not built
 
 - A weekly digest in `health.yml` (Fridays): days recorded, gate results, the H5e and

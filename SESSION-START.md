@@ -28,6 +28,7 @@ session's job is to read results, answer a question, or do one bounded thing.
     $PY tools/opra_reference.py --all                  # fetch what Databento has released
     $PY tools/opra_reference.py --all --compare        # free feed vs OPRA, same minute
     $PY tools/daily.py --notify                        # and text the verdict (tools/notify.py)
+    $PY tools/audit.py                                 # break every safeguard, prove each check fails (~1.5 min)
 
 `analysis/` runs in `.venv` instead. Pushes to main run the pressure test through
 `tools/hooks/pre-push` (install per clone: `git config core.hooksPath tools/hooks`).
@@ -42,6 +43,7 @@ session's job is to read results, answer a question, or do one bounded thing.
 | `health.yml` | 23:37 | the full daily check; emails on any FAIL or crash |
 | launchd `com.volrec.daily` (this Mac, once installed) | 13:30 Pacific | texts the verdict by iMessage |
 | `volrec-licensed` daily.yml (private repo) | 23:05 UTC | OPRA fetch + registered verdicts; opens an issue there |
+| auditor routine (Claude, cloud) | Mondays 16:30 UTC | `tools/audit.py` + doc drift; notifies only on a problem |
 
 ## Standing rules - these are not up for re-argument without new, dated evidence
 

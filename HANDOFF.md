@@ -1913,6 +1913,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | `health.yml` | weekdays 23:37 | GitHub emails (the whole daily check) |
 | launchd `com.volrec.daily` | weekdays 13:30 Pacific | the iMessage leads with LOOK AT |
 | watchdog routine | Wednesdays 16:13 | a push notification, only when something is wrong |
+| **auditor routine** (built 30 Sep) | Mondays 16:30 UTC | a push notification when a safeguard does not fail when broken, `volrec-licensed` is public, or HANDOFF contradicts the live state |
 | **healthchecks.io** (outside GitHub, set up 25 Sep) | checks `volrec-recorders` (freshness, daily 20:00 UTC, 8 h grace), `volrec-health` (weekdays 23:37, 6 h), `volrec-licensed` (weekdays 23:05, 9 h) | an email when a ping is MISSING - the job never ran. Pinged on success only; ping URLs are GitHub secrets HC_*; a ping can never fail a job |
 | **`volrec-licensed` daily.yml** (private repo, built 24 Sep) | weekdays 23:05 UTC | an issue in `volrec-licensed` (email + GitHub app): OPRA fetch, compare, and the H5f / H5e verdicts on their dates in fixed wording (`tools/record_verdict.py`). Pushes to THIS repo only on verdict days, never 13-21 UTC |
 
@@ -1947,6 +1948,18 @@ every decision. This section is the only one guaranteed current. Read it, run
 - **Now failing, correctly, every night until resolved:** record lands 20:01 and surface
   20:11 at the worst delay seen; freshness's early slot can run before they land. The
   health check, healthchecks, the iMessage and the watchdog all flag it. Nothing hidden.
+- **Built the same day (Gabriel's request): the auditor and fail-safes.** `tools/audit.py`
+  breaks 21 safeguards one at a time in throwaway worktrees and requires each check to
+  fail - 21 of 21 on 30 Sep; its first run found a check that crashed instead of failing,
+  fixed. Charter `AUDITOR.md`; cloud routine `volrec auditor` (`trig_01AEH651RW1ere3psWp5opVW`),
+  Mondays 16:30 UTC, read-only, no connectors, notifies only on a problem. `SCIENTIST.md`
+  charters the research agent, DORMANT until a registered job (late Oct). Fail-safes:
+  Databento 502/503/504 retried (a 504 failed a cloud run on 30 Sep); `volrec-licensed`
+  refuses to run unless private; a due verdict is kept there, timestamped, before any
+  public push can fail, and a failure issue carries the verdict text and failing checks.
+- **The pre-push hook blocks every push while the pressure test fails,** so these commits
+  wait on Gabriel. So will the 7 Oct H5e verdict's public record (both routes require
+  0 fail) - the cloud now keeps it privately and says so if that happens.
 - **Two decisions for Gabriel, both before 7 Oct:** (1) the cron: the rule holding it to
   11 Nov predates this evidence; the pressure test allows 14:30-15:06 UTC and a delay of
   5-6h lands after the close anywhere in that window until 1 Nov, when the close moves to
