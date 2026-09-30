@@ -1969,10 +1969,13 @@ every decision. This section is the only one guaranteed current. Read it, run
   four blocked commits pushed past the hook once.
 - **Status after the build (30 Sep 22:00 UTC):** guard live and pushed; 28 Sep dropped;
   pressure test **0 fail** (the delay checks now pass because the guard is live, and warn
-  that the backup can land late); auditor **24 of 24**. **Waiting on Gabriel: the
-  cron-job.org jobs** (record 18:30, surface 18:40 UTC). From 1 Oct `panel_health` warns
-  on any day the trigger did not start. Until the jobs exist, a late GitHub run costs a
-  day instead of corrupting one.
+  that the backup can land late); auditor **24 of 24**. **Outside trigger LIVE, 30 Sep
+  22:15 UTC:** cron-job.org jobs 8548132 (record, Mon-Fri 18:30 UTC) and 8548147 (surface,
+  18:40 UTC) POST `workflow_dispatch`, notify on failure; token `volrec-trigger` (Actions
+  read/write on volrec only) expires **29 Dec 2026**. Test runs returned 204 and GitHub's
+  runs were refused by the guard (after the close) - trigger and guard proven together;
+  nothing written. **First real run: Thu 1 Oct 18:30 UTC.** From 1 Oct `panel_health`
+  warns on any day the trigger did not start (landing outside 18:28-19:00).
 - *Superseded by the line above:* two decisions for Gabriel, both before 7 Oct: (1) the cron: the rule holding it to
   11 Nov predates this evidence; the pressure test allows 14:30-15:06 UTC and a delay of
   5-6h lands after the close anywhere in that window until 1 Nov, when the close moves to
