@@ -205,11 +205,31 @@ class NotYetHistorical(Exception):
     morning after. The day is skipped and becomes fetchable later."""
 
 
-def call(endpoint, data, key, method="post"):
+TRANSIENT = (502, 503, 504)            # Databento's gateway; 30 Sep 2026 a 504 failed a whole run
+RETRY_WAITS = (5, 20, 60)              # seconds before each retry; then give up loudly
+_sleep = __import__("time").sleep      # a seam, so the pressure test retries without waiting
+
+
+def call(endpoint, data, key, method="post", _fn=None):
+    """One Databento request. A gateway timeout or overload is retried three times
+    with backoff before the run gives up; any other non-200 stops it at once."""
     import requests
-    fn = requests.post if method == "post" else requests.get
+    fn = _fn or (requests.post if method == "post" else requests.get)
     kw = {"data": data} if method == "post" else {"params": data}
-    r = fn(f"{GATEWAY}/{endpoint}", auth=(key, ""), timeout=120, **kw)
+    for wait in RETRY_WAITS + (None,):
+        try:
+            r = fn(f"{GATEWAY}/{endpoint}", auth=(key, ""), timeout=120, **kw)
+        except requests.exceptions.ConnectionError as e:
+            if wait is None:
+                sys.exit(f"Databento {endpoint}: connection failed after retries ({type(e).__name__})")
+            print(f"    Databento {endpoint}: connection error, retrying in {wait}s")
+            _sleep(wait)
+            continue
+        if r.status_code in TRANSIENT and wait is not None:
+            print(f"    Databento {endpoint} returned {r.status_code}, retrying in {wait}s")
+            _sleep(wait)
+            continue
+        break
     if r.status_code == 403 and "license" in r.text.lower():
         m = re.search(r"after (\d{4}-\d{2}-\d{2}T\d{2}:\d{2})", r.text)
         raise NotYetHistorical(m.group(1) + " UTC" if m else "a recent cutoff")

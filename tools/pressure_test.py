@@ -934,6 +934,25 @@ _tracked = subprocess.run(["git", "ls-files"], cwd=R, capture_output=True, text=
 _leak = [f for f in _tracked if (R / f).is_file() and (R / f).stat().st_size < 5_000_000
          and re.search(r"db-[A-Za-z0-9]{20,}", (R / f).read_text(errors="ignore"))]
 ok(not _leak, f"no Databento API key in any tracked file ({_leak or 'none'})")
+# 30 Sep 2026: one 504 from Databento's gateway failed a whole run. Transient gateway
+# errors are retried; anything else still stops the run at once.
+class _R:
+    def __init__(self, code): self.status_code, self.text = code, "x"
+_seq = iter([_R(504), _R(503), _R(200)])
+_opm._sleep = lambda s: None
+ok(_opm.call("metadata.get_cost", {}, "k", _fn=lambda *a, **k: next(_seq)).status_code == 200,
+   "a Databento gateway timeout (504, 503) is retried, and the request then succeeds")
+_seq2 = iter([_R(401)])
+try:
+    _opm.call("metadata.get_cost", {}, "k", _fn=lambda *a, **k: next(_seq2)); _stopped = False
+except SystemExit:
+    _stopped = True
+_seq3 = iter([_R(504)] * 4)
+try:
+    _opm.call("metadata.get_cost", {}, "k", _fn=lambda *a, **k: next(_seq3)); _gave_up = False
+except SystemExit:
+    _gave_up = True
+ok(_stopped and _gave_up, "a non-transient error stops the run at once, and four gateway errors give up loudly")
 # Databento's User Agreement §1.6 (read 23 Sep 2026): every redistribution, derived
 # aggregates included, credits Databento explicitly. A section publishes OPRA figures
 # when its heading names OPRA/Databento, or one line carries both the name and a
@@ -1012,6 +1031,26 @@ ok("except Exception" in _nsrc and "never raise" in _nsrc.lower(),
    "a failed notification cannot fail the check it reports")
 ok(not any("install.sh" in p.read_text() for p in (R / ".github/workflows").glob("*.yml")),
    "no workflow installs the launchd job: it is a change to Gabriel's Mac, run by him")
+
+print("\n=== P. THE AUDITOR (tools/audit.py, AUDITOR.md) ===")
+# Built 30 Sep 2026 after two checks passed falsely. audit.py proves each safeguard
+# fails when broken; this section keeps its list honest - a renamed or deleted check
+# must not quietly retire the mutant that guards it.
+_aus = _iu.spec_from_file_location("auditmod", R / "tools/audit.py")
+_aum = _iu.module_from_spec(_aus); _aus.loader.exec_module(_aum)
+_ptsrc = (R / "tools/pressure_test.py").read_text()
+_orphans = [m[0] for m in _aum.MUTANTS if m[3] not in _ptsrc]
+ok(len(_aum.MUTANTS) >= 20 and not _orphans,
+   f"every auditor mutant names a check the pressure test still has ({len(_aum.MUTANTS)} mutants"
+   + (f"; orphaned: {', '.join(_orphans)})" if _orphans else ")"))
+ok(len({m[0] for m in _aum.MUTANTS}) == len(_aum.MUTANTS), "auditor mutant names are unique")
+_ausrc = (R / "tools/audit.py").read_text()
+ok("git worktree" in _ausrc and "worktree\", \"remove\"" in _ausrc and "git push" not in _ausrc,
+   "the auditor breaks things only in throwaway worktrees, removes them, and never pushes")
+ok((R / "AUDITOR.md").exists() and (R / "SCIENTIST.md").exists()
+   and "DORMANT" in (R / "SCIENTIST.md").read_text()
+   and "never" in (R / "SCIENTIST.md").read_text().lower(),
+   "the auditor and scientist charters exist, and the scientist stays dormant outside registered work")
 
 print("\n" + "=" * 56)
 print(f"RESULT: {len(fails)} fail, {len(warns)} warn")
