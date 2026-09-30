@@ -1075,8 +1075,11 @@ ok(_ac("2026-09-28T20:50:00") and not _ac("2026-09-30T19:40:00") and not _ac("20
 ok(not _ac("2026-11-05T20:30:00") and _ac("2026-11-05T21:05:00"),
    "after the November clock change the guard moves to 21:00 UTC by itself")
 _recsrc, _srfsrc = (R / "record.py").read_text(), (R / "surface.py").read_text()
-ok(_recsrc.index('refuse_after_close("the ATM panel")') < _recsrc.index("done = already_recorded(today)", _recsrc.index("def main"))
-   and _srfsrc.index('R.refuse_after_close("the strike surface")') < _srfsrc.index("done = already_recorded(today)", _srfsrc.index("def main")),
+def _before(src, call):                      # find(), not index(): a missing call must FAIL, not crash
+    i, j = src.find(call), src.find("done = already_recorded(today)", max(src.find("def main"), 0))
+    return 0 <= src.find("def main") < i < j
+ok(_before(_recsrc, 'refuse_after_close("the ATM panel")')
+   and _before(_srfsrc, 'R.refuse_after_close("the strike surface")'),
    "both recorders check the close before fetching or writing anything")
 
 print("\n=== P. THE AUDITOR (tools/audit.py, AUDITOR.md) ===")
