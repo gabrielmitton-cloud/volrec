@@ -1960,7 +1960,14 @@ every decision. This section is the only one guaranteed current. Read it, run
 - **The pre-push hook blocks every push while the pressure test fails,** so these commits
   wait on Gabriel. So will the 7 Oct H5e verdict's public record (both routes require
   0 fail) - the cloud now keeps it privately and says so if that happens.
-- **Two decisions for Gabriel, both before 7 Oct:** (1) the cron: the rule holding it to
+- **Gabriel decided all four, 30 Sep:** (1) an outside trigger - cron-job.org starts
+  record 18:30 and surface 18:40 UTC by `workflow_dispatch`, GitHub's cron kept as backup;
+  (2) an **after-close guard** - `record.after_close()`: a recorder started after 16:00 New
+  York refuses to record (exit 1), both recorders, tested both DST regimes; (3) **28 Sep
+  dropped** from H5e and H4 under his 23 Sep rule (`panel_health.AFTER_CLOSE_DAYS`, both
+  adjustment logs) - H3's readings still include it, which is for him to decide; (4) the
+  four blocked commits pushed past the hook once.
+- *Superseded by the line above:* two decisions for Gabriel, both before 7 Oct: (1) the cron: the rule holding it to
   11 Nov predates this evidence; the pressure test allows 14:30-15:06 UTC and a delay of
   5-6h lands after the close anywhere in that window until 1 Nov, when the close moves to
   21:00. (2) **28 Sep in H5e and H4:** it is a closing-quote day. His 23 Sep rule says such

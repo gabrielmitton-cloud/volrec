@@ -407,6 +407,16 @@ repository). What bears on H5:
   Result). H5a is scored on the specification, which is also how the registration's own
   18 Sep figures were computed (0.07 on 18 far puts, 13 of them without a bid). Both
   readings are printed beside the verdict. Nothing was changed.
+- **2026-09-30 — 28 Sep dropped from H5e: an existing rule applied, before the verdict.**
+  28 Sep's recorders ran after the close (20:48-20:52 UTC; every quote stamped 19:59:59),
+  so its USO estimate is built from closing quotes and compared with a closing index - a
+  different measurement under the same label. Gabriel's rule of 23 Sep, written before
+  that day existed, is that such a day is dropped rather than kept; he applied it on
+  30 Sep, with H5e at 5 of its 10 counted days, knowing that dropping it makes H5e read
+  worse (mean gap 0.81 -> 0.94; closer 2 of 5 -> 1 of 4). The rows stay in the CSVs;
+  `panel_health.AFTER_CLOSE_DAYS` lists the day and every reading skips it. Recorded as
+  an adjustment for transparency; if it is counted as one, it is H5e's first. No bar,
+  window or estimator changed.
 
 ## Result
 

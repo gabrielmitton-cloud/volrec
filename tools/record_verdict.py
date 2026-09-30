@@ -105,6 +105,11 @@ def parse_h5e(out):
     return rows, (rf.group(1) if rf else "?"), na
 
 
+def dropped_days(out):
+    """Days modelfree prints as dropped (recorded after the close; panel_health.AFTER_CLOSE_DAYS)."""
+    return re.findall(r"^\s+(\d{4}-\d{2}-\d{2})\s+dropped - ", out, re.M)
+
+
 def h5e_score(rows, first=H5E_START, last=None):
     judged = [r for r in rows if r[4] and r[0] >= first and (last is None or r[0] <= last)]
     if not judged:
@@ -152,7 +157,7 @@ def block_h5f(v, today):
     return "\n".join(lines)
 
 
-def block_h5e(sc, rf, na, today, final, first_verdict=None):
+def block_h5e(sc, rf, na, today, final, first_verdict=None, dropped=()):
     if final:
         head = (f"{MARK_H5E_FINAL} over 23 Sep - 11 Nov 2026, read {today:%-d %B %Y}** - the reading "
                 f"the write-up uses; written by the cloud workflow (`tools/record_verdict.py`), "
@@ -171,6 +176,9 @@ def block_h5e(sc, rf, na, today, final, first_verdict=None):
              f"- Risk-free rate as the reading of record uses it (FRED cache): {rf}%."]
     if na:
         lines.append(f"- No OVX close or too thin, not counted: {', '.join(na)}.")
+    if dropped:
+        lines.append(f"- Dropped as recorded after the close, under Gabriel's 23 Sep rule (applied 30 Sep, "
+                     f"before this verdict): {', '.join(dropped)}.")
     if sc["near"]:
         lines.append("- **Close to its bar:** the mean gap is within 0.05 of 0.5, or the day count is within one of half.")
     if final and first_verdict:
@@ -271,7 +279,8 @@ def main():
         if final:
             fm = re.search(re.escape(MARK_H5E_FIRST) + r".*?\n\n- \*\*(HOLDS|FAILS)\*\*", h5, re.S)
             fv = fm.group(1) if fm else None
-        blk = block_h5e(sc, rf, [d for d in na if H5E_START <= d <= H5E_END], today, final, fv)
+        blk = block_h5e(sc, rf, [d for d in na if H5E_START <= d <= H5E_END], today, final, fv,
+                        [d for d in dropped_days(out) if H5E_START <= d <= H5E_END])
         if a.preview or a.dry_run:
             print(("PREVIEW (not due, not written)\n" if sc["n"] < H5E_MIN_DAYS or str(today) < due else "DUE\n") + blk + "\n")
             continue

@@ -64,7 +64,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE / "tools"))
 
 import analyze                                     # noqa: E402
-from panel_health import US_MARKET_HOLIDAYS        # noqa: E402  one list, owned there
+from panel_health import US_MARKET_HOLIDAYS, AFTER_CLOSE_DAYS  # noqa: E402  one list each, owned there
 SURF = HERE / "data" / "surface.csv"
 
 MIN_RUN = 2          # need at least two observations to hedge anything
@@ -376,6 +376,11 @@ def main():
     rows = list(csv.DictReader(SURF.open(newline="")))
     if not rows:
         sys.exit("surface.csv is empty.")
+    dropped = {d.isoformat() for d in AFTER_CLOSE_DAYS}
+    if any(r_["date"] in dropped for r_ in rows):
+        print(f"dropped as recorded after the close (23 Sep rule): {', '.join(sorted(dropped))}; "
+              f"hedging runs break across them like a missed day\n")
+        rows = [r_ for r_ in rows if r_["date"] not in dropped]
 
     import modelfree
     r = modelfree.risk_free()

@@ -161,6 +161,16 @@ ACCEPTED_GAPS = {
 }
 
 
+# Days recorded AFTER the close: closing quotes under a mid-session label. Gabriel's
+# 23 Sep rule says such a day is dropped, not kept; he applied it to 28 Sep on 30 Sep,
+# before H5e's verdict and knowing it makes H5e read worse. The rows stay in the CSVs
+# (irreplaceable, never edited); every analysis that reads days skips these. From 1 Oct
+# the recorders refuse to record after the close, so this list should not grow.
+AFTER_CLOSE_DAYS = {
+    date(2026, 9, 28): ("record and surface ran 20:48-20:52 UTC, after the 20:00 close; every "
+                        "quote stamped 19:59:59. Dropped under the 23 Sep rule (Gabriel, 30 Sep)."),
+}
+
 def report_missed(kind, missed):
     """Fail on trading days lost silently; note the ones already accepted.
 

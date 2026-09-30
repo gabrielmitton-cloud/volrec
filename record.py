@@ -400,6 +400,39 @@ def probe(sym):
     print(json.dumps(j, indent=2)[:3000])
 
 
+def after_close(now_utc=None):
+    """True once the US equity session has closed for the day (16:00 New York).
+
+    Added 30 Sep 2026, Gabriel's decision: on 28 Sep GitHub started this job after the
+    close and the free feed returned closing quotes stamped 19:59:59 - a different
+    measurement under a mid-session label. A run that starts after the close now
+    refuses to record; the missed day is then reported by freshness/panel_health
+    (his 23 Sep rule: such a day is dropped, not kept). New York time, so the
+    November clock change moves the close from 20:00 to 21:00 UTC by itself. Early
+    closes (the day after Thanksgiving, 24 Dec) are not modelled.
+    """
+    from datetime import timezone
+    now_utc = now_utc or datetime.now(timezone.utc)
+    try:
+        from zoneinfo import ZoneInfo
+        ny = now_utc.astimezone(ZoneInfo("America/New_York"))
+        return (ny.hour, ny.minute) >= (16, 0)
+    except Exception:                                  # no tz database: US DST rule by hand
+        y = now_utc.year
+        mar = date(y, 3, 8 + (6 - date(y, 3, 8).weekday()) % 7)     # second Sunday of March
+        nov = date(y, 11, 1 + (6 - date(y, 11, 1).weekday()) % 7)   # first Sunday of November
+        close_utc = 20 if mar <= now_utc.date() < nov else 21
+        return now_utc.hour >= close_utc
+
+
+def refuse_after_close(what):
+    if after_close():
+        print(f"REFUSING to record {what}: the US session has already closed, so these would be "
+              f"closing quotes under a mid-session label (28 Sep 2026). The day is left missing "
+              f"on purpose; panel_health reports it.")
+        sys.exit(1)
+
+
 def main():
     if "--probe" in sys.argv:
         i = sys.argv.index("--probe")
@@ -410,6 +443,7 @@ def main():
     if today.weekday() >= 5:
         print(f"{today} is a weekend - markets closed, nothing to record.")
         return
+    refuse_after_close("the ATM panel")
 
     done = already_recorded(today)
     todo = [s for s in WATCHLIST if s not in done]

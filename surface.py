@@ -546,6 +546,7 @@ def main():
     if today.weekday() >= 5:
         print(f"{today} is a weekend - nothing to record.")
         return
+    R.refuse_after_close("the strike surface")
     done = already_recorded(today)
     todo = [s for s in SURFACE if s not in done]
     for s in [x for x in SURFACE if x in done]:

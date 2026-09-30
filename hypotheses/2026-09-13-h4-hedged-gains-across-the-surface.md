@@ -328,3 +328,8 @@ called significant.**
   So the "H4a now points negative" reading that five dates suggested was mostly the
   spliced two-day interval. `delta_model.py` re-run on the new runs: vendor delta
   -3.41bp, ours -3.47bp over 3,310 common runs, the same small model dependence.
+- **2026-09-30 — 28 Sep dropped: an existing rule applied, not a new one.** The day was
+  recorded after the close (quotes pinned at 19:59:59). Under Gabriel's 23 Sep rule it is
+  dropped, not kept (applied by him 30 Sep); `hedged.py` removes its rows, so hedging runs
+  break across it exactly as they break across any missed trading day (strike 1's rule).
+  No threshold, bucket or window changed; not counted as a strike.

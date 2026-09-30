@@ -371,7 +371,12 @@ def h5e_report(registered, extra, r, vol):
           f"(registered 23 Sep; judged from {H5E_START})")
     print(f"   {'date':<12}{idx:>7}{'registered':>12}{'gap':>8}{'wide skip':>11}{'gap':>8}  counted")
     judged = []
+    from panel_health import AFTER_CLOSE_DAYS
+    dropped = {k.isoformat() for k in AFTER_CLOSE_DAYS}
     for d in sorted({x["date"] for x in extra if x["symbol"] == H5E_SYMBOL}):
+        if d in dropped:
+            print(f"   {d:<12} dropped - recorded after the close (23 Sep rule, applied 30 Sep)")
+            continue
         cb = (vol.get(idx) or {}).get(d)
         inner = [x for x in registered if x["date"] == d and x["symbol"] == H5E_SYMBOL]
         outer = [x for x in extra if x["date"] == d and x["symbol"] == H5E_SYMBOL]

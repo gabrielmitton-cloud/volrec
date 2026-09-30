@@ -485,11 +485,38 @@ ok(_rec_min >= US_OPEN_UTC_MIN,
 _meas, _meas_day = _measured_delay(live, _rec_min)
 WORST_DELAY_MIN = max(WORST_DELAY_MIN, _meas)
 _land = _rec_min + WORST_DELAY_MIN
+# 30 Sep 2026, Gabriel's decisions: the recorders refuse to record after the close
+# (record.after_close), and an outside trigger starts them at 18:30 / 18:40 UTC with
+# GitHub's cron kept as the backup. With the guard in place a late backup run cannot
+# write closing quotes - it refuses, the day is missing, and panel_health emails - which
+# is the premise of the 23 Sep acceptance. So a late landing is judged "costs a day,
+# never corrupts one" while the guard is really there, and FAILS again if it is removed
+# (tools/audit.py proves that). The delay is still reported, as a WARN.
+def _guard_live():
+    try:
+        _s = _iu.spec_from_file_location("recguard", R / "record.py")
+        _m = _iu.module_from_spec(_s); _s.loader.exec_module(_m)
+        from datetime import datetime as _D, timezone as _Z
+        works = (_m.after_close(_D(2026, 9, 28, 20, 50, tzinfo=_Z.utc))
+                 and not _m.after_close(_D(2026, 9, 30, 19, 40, tzinfo=_Z.utc)))
+    except Exception:
+        return False
+    rs, ss = (R / "record.py").read_text(), (R / "surface.py").read_text()
+    wired = (rs.find('refuse_after_close("the ATM panel")') > rs.find("def main")
+             and rs.find('refuse_after_close("the ATM panel")') < rs.find("done = already_recorded(today)", rs.find("def main"))
+             and ss.find('R.refuse_after_close("the strike surface")') > ss.find("def main")
+             and ss.find('R.refuse_after_close("the strike surface")') < ss.find("done = already_recorded(today)", ss.find("def main")))
+    return bool(works and wired)
+_GUARD = _guard_live()
 print(f"  INFO  worst record delay since {CRON_SINCE}: {_meas // 60}h{_meas % 60:02d}m "
       f"({_meas_day}); judged on {WORST_DELAY_MIN // 60}h{WORST_DELAY_MIN % 60:02d}m")
-ok(_land <= US_CLOSE_UTC_MIN,
-   f"record's worst delay seen still lands before the earlier close "
-   f"(lands {_land // 60:02d}:{_land % 60:02d}, close 20:00 UTC)")
+ok(_land <= US_CLOSE_UTC_MIN or _GUARD,
+   f"record's worst delay seen still lands before the earlier close, or the after-close guard "
+   f"makes a late landing a missed day rather than a wrong one "
+   f"(lands {_land // 60:02d}:{_land % 60:02d}, close 20:00 UTC; guard {'live' if _GUARD else 'ABSENT'})")
+warn(_land <= US_CLOSE_UTC_MIN,
+     f"record's GitHub-cron backup can land after the close (worst {_land // 60:02d}:{_land % 60:02d} UTC); "
+     f"the guard refuses such a run and the day is missed - the outside trigger at 18:30 is what prevents it")
 # Accepted by Gabriel on 23 Sep 2026 until the window closes: a schedule change would
 # move every remaining snapshot, while a post-close landing costs one day, which
 # panel_health FAILS on (and emails) so it is dropped rather than silently kept. The
@@ -515,8 +542,9 @@ ok(any("panel_health.py" in str(st.get("run", ""))
    "freshness actually runs panel_health.py (not a silently emptied job)")
 _fresh = sorted(cron_minutes(c["cron"])[0] for c in frs[True]["schedule"])
 ok(len(_fresh) == 2, "freshness runs twice a day")
-ok(_fresh[0] >= _rec_min + WORST_DELAY_MIN,
-   "the early freshness slot runs after the recorders typically land")
+ok(_fresh[0] >= _rec_min + WORST_DELAY_MIN or (_GUARD and _fresh[0] >= US_CLOSE_UTC_MIN),
+   "the early freshness slot runs after the recorders typically land, or at the close, after "
+   "which the guard lets nothing valid land")
 ok(_fresh[-1] >= _rec_min + WORST_DELAY_MIN + DELAY_MARGIN_MIN,
    "the late freshness slot runs after even an unusually delayed landing")
 ok(set(p.name for p in (R / ".github/workflows").glob("*.yml"))
@@ -551,9 +579,10 @@ ok(_srf_min % 15 != 0,
    "surface cron avoids the quarter hours too")
 _smeas, _ = _measured_delay(surf, _srf_min) if surf.exists() else (0, None)
 _sland = _srf_min + max(_smeas, WORST_DELAY_MIN)
-ok(_sland <= US_CLOSE_UTC_MIN,
-   f"surface's worst delay seen still lands before the earlier close "
-   f"(lands {_sland // 60:02d}:{_sland % 60:02d}, close 20:00 UTC)")
+ok(_sland <= US_CLOSE_UTC_MIN or _GUARD,
+   f"surface's worst delay seen still lands before the earlier close, or the after-close guard "
+   f"makes a late landing a missed day rather than a wrong one "
+   f"(lands {_sland // 60:02d}:{_sland % 60:02d}, close 20:00 UTC; guard {'live' if _GUARD else 'ABSENT'})")
 _srf_run = " ".join(str(st.get("run", "")) for st in srf["jobs"]["surface"]["steps"])
 ok("git add data/surface.csv" in _srf_run,
    "surface workflow stages the registered surface file")
@@ -1034,6 +1063,21 @@ ok("except Exception" in _nsrc and "never raise" in _nsrc.lower(),
    "a failed notification cannot fail the check it reports")
 ok(not any("install.sh" in p.read_text() for p in (R / ".github/workflows").glob("*.yml")),
    "no workflow installs the launchd job: it is a change to Gabriel's Mac, run by him")
+
+print("\n=== Q. THE AFTER-CLOSE GUARD (record.py, surface.py) ===")
+# 30 Sep 2026, Gabriel's decision: a recorder started after the close refuses to record.
+_rcs = _iu.spec_from_file_location("recmod", R / "record.py")
+_rcm = _iu.module_from_spec(_rcs); _rcs.loader.exec_module(_rcm)
+from datetime import datetime as _DT, timezone as _TZ
+_ac = lambda s: _rcm.after_close(_DT.fromisoformat(s).replace(tzinfo=_TZ.utc))   # noqa: E731
+ok(_ac("2026-09-28T20:50:00") and not _ac("2026-09-30T19:40:00") and not _ac("2026-09-30T13:31:00"),
+   "the guard refuses 28 Sep's 20:50 UTC start and allows 19:40 and the open (summer close 20:00 UTC)")
+ok(not _ac("2026-11-05T20:30:00") and _ac("2026-11-05T21:05:00"),
+   "after the November clock change the guard moves to 21:00 UTC by itself")
+_recsrc, _srfsrc = (R / "record.py").read_text(), (R / "surface.py").read_text()
+ok(_recsrc.index('refuse_after_close("the ATM panel")') < _recsrc.index("done = already_recorded(today)", _recsrc.index("def main"))
+   and _srfsrc.index('R.refuse_after_close("the strike surface")') < _srfsrc.index("done = already_recorded(today)", _srfsrc.index("def main")),
+   "both recorders check the close before fetching or writing anything")
 
 print("\n=== P. THE AUDITOR (tools/audit.py, AUDITOR.md) ===")
 # Built 30 Sep 2026 after two checks passed falsely. audit.py proves each safeguard
