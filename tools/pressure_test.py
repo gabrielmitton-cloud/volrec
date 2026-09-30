@@ -1093,6 +1093,12 @@ ok(_before(_recsrc, 'refuse_after_close("the ATM panel")')
    and _before(_srfsrc, 'R.refuse_after_close("the strike surface")'),
    "both recorders check the close before fetching or writing anything")
 
+_mfsrc, _hgsrc = (R / "modelfree.py").read_text(), (R / "hedged.py").read_text()
+ok(date(2026, 9, 28) in _phm.AFTER_CLOSE_DAYS
+   and _mfsrc.count("if d in dropped:") >= 3 and "wide_lift_report(registered, extra, r, dropped)" in _mfsrc
+   and "AFTER_CLOSE_DAYS" in _hgsrc and 'r_["date"] not in dropped' in _hgsrc,
+   "days recorded after the close are dropped from H3 (gap series and wide reading), H5e and H4")
+
 print("\n=== P. THE AUDITOR (tools/audit.py, AUDITOR.md) ===")
 # Built 30 Sep 2026 after two checks passed falsely. audit.py proves each safeguard
 # fails when broken; this section keeps its list honest - a renamed or deleted check

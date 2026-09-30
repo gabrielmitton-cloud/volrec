@@ -1965,7 +1965,7 @@ every decision. This section is the only one guaranteed current. Read it, run
   (2) an **after-close guard** - `record.after_close()`: a recorder started after 16:00 New
   York refuses to record (exit 1), both recorders, tested both DST regimes; (3) **28 Sep
   dropped** from H5e and H4 under his 23 Sep rule (`panel_health.AFTER_CLOSE_DAYS`, both
-  adjustment logs) - H3's readings still include it, which is for him to decide; (4) the
+  adjustment logs) - and **H3 too, the same evening** (H3a mean gap 0.471 -> 0.464, bar 1.0 either way; logged); (4) the
   four blocked commits pushed past the hook once.
 - **Status after the build (30 Sep 22:00 UTC):** guard live and pushed; 28 Sep dropped;
   pressure test **0 fail** (the delay checks now pass because the guard is live, and warn

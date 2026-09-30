@@ -995,3 +995,12 @@ that data, not as a discovery. H3c stays registered exactly as written.
   20 to +/-30% x 40 on the calibration above. Recorded rather than silently
   applied: the advised configuration was +/-10%, and it was changed because it
   was measured to be badly truncated, not because a result was disliked.
+- **2026-09-30 — 28 Sep dropped from H3's readings: an existing rule applied.** 28 Sep's
+  recorders ran after the close (quotes stamped 19:59:59), so its estimates are built from
+  closing quotes - a different measurement from every other day. Under Gabriel's 23 Sep
+  rule such a day is dropped, not kept; he applied it to H4 and H5e on 30 Sep and to H3
+  the same evening. Effect, stated both ways: H3a's mean absolute gap 0.471 -> 0.464
+  (n 55 -> 50; bar 1.0 either way); the wide reading's USO lift +12.12 -> +12.35 (outside
+  1.4-3.2 either way). Dropping it flatters H3a very slightly, the opposite of its effect
+  on H5e; the rule, not the direction, decided it. The rows stay in the CSVs
+  (`panel_health.AFTER_CLOSE_DAYS`). No bar, band, window or estimator changed.

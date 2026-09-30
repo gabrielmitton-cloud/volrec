@@ -313,11 +313,18 @@ def main():
     vol = analyze.fetch_market_vol(sorted(set(BENCH.values())))
 
     days = sorted({x["date"] for x in rows})
+    # Days recorded after the close are dropped from every reading (Gabriel's 23 Sep
+    # rule, applied to 28 Sep on 30 Sep: H4 and H5e, then H3). The rows stay in the CSVs.
+    from panel_health import AFTER_CLOSE_DAYS
+    dropped = {k.isoformat() for k in AFTER_CLOSE_DAYS}
     print(f"{'date':<12}{'sym':<6}{'ours':>8}{'cboe':>8}{'gap':>8}"
           f"{'legs':>10}{'n':>5}")
     print("-" * 58)
     gaps = {}
     for d in days:
+        if d in dropped:
+            print(f"{d:<12}dropped - recorded after the close (23 Sep rule, applied 30 Sep)")
+            continue
         for sym in sorted({x["symbol"] for x in rows if x["date"] == d}):
             sub = [x for x in rows if x["date"] == d and x["symbol"] == sym]
             got = model_free_30d(sub, r)
@@ -358,7 +365,7 @@ def main():
         print(f"   for reference, the 4 Sep ATM-vs-Cboe gap was -3.61")
 
     if extra:
-        wide_lift_report(registered, extra, r)
+        wide_lift_report(registered, extra, r, dropped)
         h5e_report(registered, extra, r, vol)
 
 
@@ -402,7 +409,7 @@ def h5e_report(registered, extra, r, vol):
     print(f"   {verdict}")
 
 
-def wide_lift_report(registered, extra, r):
+def wide_lift_report(registered, extra, r, dropped=()):
     """H3's 17 Sep prediction, tested exactly as pre-registered on 18 Sep: the lift
     is --wide minus registered, same day, same legs. See H3, "How the prediction
     is tested"."""
@@ -414,6 +421,9 @@ def wide_lift_report(registered, extra, r):
           f"{'wide rows':>10}{'0-bid':>6}  legs")
     lifts = {}
     for d in sorted({x["date"] for x in extra}):
+        if d in dropped:
+            print(f"   {d:<12}dropped - recorded after the close (23 Sep rule, applied 30 Sep)")
+            continue
         for sym in sorted({x["symbol"] for x in extra if x["date"] == d}):
             inner = [x for x in registered if x["date"] == d and x["symbol"] == sym]
             outer = [x for x in extra if x["date"] == d and x["symbol"] == sym]
