@@ -940,8 +940,11 @@ class _R:
     def __init__(self, code): self.status_code, self.text = code, "x"
 _seq = iter([_R(504), _R(503), _R(200)])
 _opm._sleep = lambda s: None
-ok(_opm.call("metadata.get_cost", {}, "k", _fn=lambda *a, **k: next(_seq)).status_code == 200,
-   "a Databento gateway timeout (504, 503) is retried, and the request then succeeds")
+try:                                   # a missing retry exits the run: report it, never crash
+    _retried = _opm.call("metadata.get_cost", {}, "k", _fn=lambda *a, **k: next(_seq)).status_code == 200
+except (SystemExit, StopIteration):
+    _retried = False
+ok(_retried, "a Databento gateway timeout (504, 503) is retried, and the request then succeeds")
 _seq2 = iter([_R(401)])
 try:
     _opm.call("metadata.get_cost", {}, "k", _fn=lambda *a, **k: next(_seq2)); _stopped = False
