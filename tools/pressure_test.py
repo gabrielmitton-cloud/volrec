@@ -676,6 +676,17 @@ try:
                            [_dt.date(2026, 9, 29)])
     ok(len(_phm.fails) == _fl,
        "a snapshot 21 minutes before the close still passes (it warns, it does not fail)")
+    _wl = len(_phm.warns)
+    with _ctx.redirect_stdout(_io.StringIO()):
+        _phm.check_landing([{"date": "2026-10-02", "quote_time": "2026-10-02T19:40:00.000000Z"}] * 20,
+                           [_dt.date(2026, 10, 2)])
+    _w_late = len(_phm.warns) > _wl
+    _wl = len(_phm.warns)
+    with _ctx.redirect_stdout(_io.StringIO()):
+        _phm.check_landing([{"date": "2026-10-02", "quote_time": "2026-10-02T18:32:00.000000Z"}] * 20,
+                           [_dt.date(2026, 10, 2)])
+    ok(_w_late and len(_phm.warns) == _wl,
+       "a day the outside trigger did not start (landed 19:40) warns; one it started (18:32) does not")
     _phm.fails.clear(); _phm.warns.clear()
 except Exception as _e:
     ok(False, f"panel_health session checks are importable ({_e})")

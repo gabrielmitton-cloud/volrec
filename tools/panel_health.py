@@ -88,6 +88,10 @@ SURFACE_START = date(2026, 9, 14)
 # and 21:00 is late enough.
 SURFACE_LANDED_HOUR_UTC = 20
 
+# The outside trigger (cron-job.org, Gabriel 30 Sep): record 18:30, surface 18:40 UTC.
+TRIGGER_SINCE = date(2026, 10, 1)
+TRIGGER_WINDOW = (18 * 60 + 28, 19 * 60)
+
 
 def now_utc():
     """Single clock seam. Everything derives from this, so the checker behaves
@@ -262,6 +266,13 @@ def check_landing(rows, days):
         elif c - mid < 20:
             warn(f"{days[-1]} landed {c - int(mid)} min before the close. The "
                  f"delay is drifting; check the cron before it lands outside.")
+    # 30 Sep 2026: from 1 Oct an outside trigger (cron-job.org) starts record at 18:30
+    # and surface at 18:40 UTC. A landing outside 18:28-19:00 means it did not fire and
+    # GitHub's delayed backup cron did the recording - still a valid day, so a WARN.
+    if days[-1] >= TRIGGER_SINCE and not (TRIGGER_WINDOW[0] <= mid <= TRIGGER_WINDOW[1]):
+        warn(f"{days[-1]} landed {int(mid)//60:02d}:{int(mid)%60:02d} UTC, not at the outside "
+             f"trigger's 18:30-18:40: it did not fire, and GitHub's backup cron recorded the day. "
+             f"Check the cron-job.org jobs.")
 
     # Drift against the days already collected, which is what breaks comparability.
     prior = []
