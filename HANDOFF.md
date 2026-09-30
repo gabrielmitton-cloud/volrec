@@ -1933,6 +1933,27 @@ every decision. This section is the only one guaranteed current. Read it, run
 
 *Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Aggregates only.*
 
+### Audit, 30 Sep 2026 - the recorders crossed the close, and two checks were passing falsely
+
+- **New, dated evidence on the cron:** GitHub's delay reached 6h01m. **28 Sep's recorders
+  ran after the close** (committed 20:50-20:52 UTC; the close is 20:00), and 29-30 Sep
+  landed ~19:40. The free feed stamps every after-close quote at 19:59:59.
+- **Two false passes, fixed:** `panel_health.check_landing` read that stamp as "landed a
+  second before the close" and passed, and the pressure test's worst-delay measure read
+  it the same way, so the record check passed. Both now treat a median in the close's
+  last minute as after the close (tested both ways). The 23 Sep acceptance of the cron
+  rested on panel_health FAILING a post-close day - on 28 Sep it did not, so the day was
+  silently kept.
+- **Now failing, correctly, every night until resolved:** record lands 20:01 and surface
+  20:11 at the worst delay seen; freshness's early slot can run before they land. The
+  health check, healthchecks, the iMessage and the watchdog all flag it. Nothing hidden.
+- **Two decisions for Gabriel, both before 7 Oct:** (1) the cron: the rule holding it to
+  11 Nov predates this evidence; the pressure test allows 14:30-15:06 UTC and a delay of
+  5-6h lands after the close anywhere in that window until 1 Nov, when the close moves to
+  21:00. (2) **28 Sep in H5e and H4:** it is a closing-quote day. His 23 Sep rule says such
+  a day is dropped, not kept; H5e currently counts it (with it: mean 0.81, closer 2 of 5;
+  without: 0.94, 1 of 4 - dropping it makes H5e look worse). Not changed until he decides.
+
 ### Decisions made, and not to be reopened without new, dated evidence
 
 - H4's run fix is strike 1 of 3 (Gabriel, 23 Sep). The cron is held to Wed 11 Nov.

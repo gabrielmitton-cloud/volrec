@@ -235,8 +235,15 @@ def check_landing(rows, days):
     bounds = session_bounds_utc(days[-1])
     if bounds:
         o, c = bounds
-        if mid < o or mid > c:
-            where = "before the open" if mid < o else "AFTER THE CLOSE"
+        # The free feed stamps every quote taken after the close at the close's last
+        # second (28 Sep 2026: run at 20:50 UTC, every stamp 19:59:59), so a median in
+        # the final minute IS an after-close snapshot. Judged on the stamp alone it
+        # passed as "landed one second before the close"; it is now caught.
+        clamped = c - 1 <= mid <= c
+        if mid < o or mid > c or clamped:
+            where = ("before the open" if mid < o else
+                     "AT THE CLOSE - quotes pinned to the closing second, so the run was after it"
+                     if clamped else "AFTER THE CLOSE")
             fail(f"{days[-1]} landed {int(mid)//60:02d}:{int(mid)%60:02d} UTC, "
                  f"{where} ({o//60:02d}:{o%60:02d}-{c//60:02d}:{c%60:02d} UTC "
                  f"that day). Those are not mid-session quotes and nothing "

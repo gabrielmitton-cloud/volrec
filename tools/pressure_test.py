@@ -453,6 +453,13 @@ def _measured_delay(path, cron_min):
         if _r["date"] >= CRON_SINCE and len(_t) >= 16:
             by.setdefault(_r["date"], []).append(int(_t[11:13]) * 60 + int(_t[14:16]))
     lands = {d: sorted(v)[len(v) // 2] for d, v in by.items()}
+    # A run after the close comes back with every quote pinned to the close's last
+    # minute (28 Sep 2026: committed 20:50 UTC, stamped 19:59). Read at face value that
+    # passed as a landing before the close; count it as landing after the close.
+    for d, m in lands.items():
+        close = 21 * 60 if d >= "2026-11-01" else 20 * 60      # US close in UTC, by DST
+        if m == close - 1:
+            lands[d] = close + 1
     return max(((m - cron_min, d) for d, m in lands.items()), default=(0, None))
 # Cron is UTC; the US session is not. Under DST the market runs 13:30-20:00 UTC,
 # and from the first Sunday in November it runs 14:30-21:00. A cron picked
@@ -546,7 +553,7 @@ _smeas, _ = _measured_delay(surf, _srf_min) if surf.exists() else (0, None)
 _sland = _srf_min + max(_smeas, WORST_DELAY_MIN)
 ok(_sland <= US_CLOSE_UTC_MIN,
    f"surface's worst delay seen still lands before the earlier close "
-   f"(lands {_sland // 60:02d}:{_sland % 60:02d})")
+   f"(lands {_sland // 60:02d}:{_sland % 60:02d}, close 20:00 UTC)")
 _srf_run = " ".join(str(st.get("run", "")) for st in srf["jobs"]["surface"]["steps"])
 ok("git add data/surface.csv" in _srf_run,
    "surface workflow stages the registered surface file")
@@ -624,6 +631,22 @@ try:
                            [_dt.date(2026, 11, 5)])
     ok(len(_phm.fails) > _fl,
        "a snapshot after the close FAILS, which is what sends the email")
+    # 28 Sep 2026: a run after the close came back with every quote stamped at the
+    # close's last second, and passed. It must fail.
+    _fl = len(_phm.fails)
+    with _ctx.redirect_stdout(_io.StringIO()):
+        _phm.check_landing([{"date": "2026-09-28",
+                             "quote_time": "2026-09-28T19:59:59.000000Z"}] * 20,
+                           [_dt.date(2026, 9, 28)])
+    ok(len(_phm.fails) > _fl,
+       "a snapshot whose quotes are pinned to the close's last second FAILS (28 Sep was after the close)")
+    _fl = len(_phm.fails)
+    with _ctx.redirect_stdout(_io.StringIO()):
+        _phm.check_landing([{"date": "2026-09-29",
+                             "quote_time": "2026-09-29T19:38:57.000000Z"}] * 20,
+                           [_dt.date(2026, 9, 29)])
+    ok(len(_phm.fails) == _fl,
+       "a snapshot 21 minutes before the close still passes (it warns, it does not fail)")
     _phm.fails.clear(); _phm.warns.clear()
 except Exception as _e:
     ok(False, f"panel_health session checks are importable ({_e})")
