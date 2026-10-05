@@ -1886,11 +1886,11 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 every decision. This section is the only one guaranteed current. Read it, run
 `tools/daily.py`, and open section 17 only when a task needs the why.
 
-### System status, checked 23 Sep 2026 20:50 UTC
+### System status, checked 5 Oct 2026 22:45 UTC (rows below the pressure test last checked 23 Sep)
 
 | check | result |
 |---|---|
-| `tools/pressure_test.py` | **0 fail, 2 warn** - both known and true: one HYG quote with no vendor greeks (ages out), and the 121-minute snapshot spread (GitHub's delays). The cron margin is ACCEPTED until 11 Nov |
+| `tools/pressure_test.py` | **0 fail, 2 warn** (5 Oct) - both known and true: the snapshot time spread over 10 days (102 min, GitHub's delays before the outside trigger) and the GitHub-cron backup can land after the close (the guard refuses it; the trigger prevents it). Auditor **27 of 27** |
 | `tools/calibrate.py` | **9 of 9** instruments calibrated against a known answer (the OPRA comparison added 23 Sep) |
 | `tools/test_hedged.py` | 21 hand-computed cases pass |
 | static scan | no undefined name in 18 files; dead imports removed |
@@ -2056,7 +2056,7 @@ every decision. This section is the only one guaranteed current. Read it, run
   figures), so it is not the forward. Recorded in H3 as an open reconciliation item at long maturity;
   not pursued - nothing registered depends on it. No terminal asks remain on this.
 
-**Fri 25 Sep** - fetch 24 Sep: H5f's fifth day, so **the first H5f verdict**, read exactly
+**Fri 25 Sep - done** (H5f read 25 Sep, see the table) - fetch 24 Sep: H5f's fifth day, so **the first H5f verdict**, read exactly
 as registered, with the stale-quote exclusion stated beside it.
   **Scheduled:** `volrec-opra-fetch-0924` fires Fri 07:15 Pacific the same way (fetch,
   compare to `~/Documents/volrec-databento/compare_2026-09-24.txt`, text Gabriel); it
@@ -2070,6 +2070,24 @@ as registered, with the stale-quote exclusion stated beside it.
   **Scheduled:** `volrec-site-opra-update` fires Fri 09:15 Pacific: adds 23-24 Sep to
   the site's OPRA table, puts the recorded verdict (with any on-the-bar caveat) in its
   text and the H5 ledger row, pushes under the same conditions, and texts Gabriel.
+
+**Mon 5 Oct - done**
+- The auditor's first weekly run (16:37 UTC): 26 of 26 proven, pressure test 0 fail; flagged
+  the 'Fri 25 Sep' heading above as stale (fixed). `volrec-licensed` visibility: not checkable
+  from a routine (not a failure).
+- **Two false failure emails:** the GitHub-cron backups started 21:37/21:41 UTC, after the
+  close, on a day the trigger had recorded at 18:30. The guard ran before the
+  already-recorded check and exited 1. Fixed (commit 5763bc2): a recorded day exits 0 after
+  the close; a day with nothing recorded is still refused. New mutant
+  `guard-before-done-check`; auditor 27 of 27.
+- **Found while fixing it: MDY, FXE, XLRE and DUK have recorded nothing since 28 Sep** -
+  "no contracts returned in the strike/expiry window". They have only monthly expiries, and
+  none sat inside `DTE_WINDOW` (21-45 days) from 26 Sep to 5 Oct: 16 Oct left the window
+  after 25 Sep and 20 Nov enters it on **Tue 6 Oct**, so they return on their own. This gap
+  recurs every month for monthly-only names and no check reported it (the run log says
+  "a gap day is not fatal"; `panel_health` counts days, not symbols). **For Gabriel, a
+  discussion, not a fix:** the universe and window are frozen; options are to accept and
+  document the monthly gap, or a dated change to the window for those four.
 
 **Open, no fixed date**
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
