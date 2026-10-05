@@ -1929,7 +1929,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | H5b | **tested 23 Sep, holds** | 36 of 36 free-feed missing bids are missing on Bloomberg (bar 80%) |
 | H5c | descriptive | Bloomberg reproduces USO's inflation within 0.5% and 10.4% on 23 Sep (6.5% and 30% before); needs 10 underlying-days |
 | H5d | descriptive | 12 underlying-days on 3 dates; the date-clustered test needs more dates |
-| H5e | counting from 23 Sep, **3 of 10** | skip-only USO against OVX; first verdict 7 Oct (scheduled, cloud + Mac fallback). **Descriptive so far, not scored:** skip-only gaps +1.31, +1.31, +0.88 (mean 1.17 against the 0.5 bar), closer than the registered estimate on 0 of 3 days. Estimator is ABG (2015)'s RX*, credited |
+| H5e | counting from 23 Sep, **7 of 10** (4 Oct) | skip-only USO against OVX; first verdict ~7-8 Oct by the cloud. **Descriptive so far, not scored:** mean skip-only gap 1.01 against the 0.5 bar, closer than the registered estimate on 1 of 7 days; the registered estimate's own mean gap is 0.39. Estimator is ABG (2015)'s RX*, credited |
 | H5f | **read 25 Sep at 5 days: a, b, c hold** (a ON the bar) | H5f-a **0.500** of OPRA's spread (bar 0.5); H5f-b **64 of 64** no-bid (bar 80%); H5f-c inflation gap **0.6%** per day, 0.4% on medians (bar 25%); stale quotes excluded by the rule |
 
 *Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Aggregates only.*
@@ -2090,10 +2090,15 @@ as registered, with the stale-quote exclusion stated beside it.
 - Optional: a FRED key as a repository secret, so CI's H3 reading matches the local one.
 
 **Later**
-- ~6 Oct: H5e's verdict. **Scheduled:** `volrec-h5e-verdict` fires Wed 7 Oct 08:00 Pacific
-  (6 Oct is the 10th counted day; its OVX close is needed first). A first verdict at the
-  minimum, recorded in H5 and here, pushed, texted; it stops and texts if fewer than 10
-  days are counted. H5e runs to 11 Nov, and that reading is the one written up.
+- ~7-8 Oct: H5e's first verdict, by the cloud (`volrec-licensed` daily.yml, tries Wed 23:05, Thu 03:05 and
+  Thu 23:05 UTC; 7 Oct is the 10th counted day since 28 Sep was dropped, and its OVX close is needed first).
+  It opens a "volrec verdict recorded" issue (email). The Mac fallback `volrec-h5e-verdict` was moved to
+  9 Oct and then **switched off by Gabriel, 4 Oct** - the cloud is the only path; on a failure issue or a
+  healthchecks email, read and record it by hand.
+  **Gabriel, 4 Oct: once the verdict is recorded, the site and any next step are a DISCUSSION first, not an
+  action.** Raise them as a decision for him - the site needs revising and adding to, and whether to register
+  anything new - and change nothing until he decides.
+  H5e runs to 11 Nov, and that reading is the one written up.
   **Scheduled:** `volrec-h5e-final` fires Thu 12 Nov 07:30 Pacific (PST; 11 Nov's OVX
   close is needed first): the final reading over 23 Sep - 11 Nov, days after 11 Nov
   excluded, recorded, pushed, texted. The site is left for a session. Late October: register and run "IV against a technical-levels
