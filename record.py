@@ -443,8 +443,6 @@ def main():
     if today.weekday() >= 5:
         print(f"{today} is a weekend - markets closed, nothing to record.")
         return
-    refuse_after_close("the ATM panel")
-
     done = already_recorded(today)
     todo = [s for s in WATCHLIST if s not in done]
     for s in [x for x in WATCHLIST if x in done]:
@@ -452,6 +450,15 @@ def main():
     if not todo:
         print("Nothing to do.")
         return
+    # After the "already recorded" exit (5 Oct 2026): a late backup on a day the trigger
+    # already recorded must not fail and email a false alarm. A day with SOME symbols in
+    # (e.g. MDY/FXE/XLRE/DUK when no monthly expiry sits in DTE_WINDOW) is a recorded day:
+    # its gaps are never filled with closing quotes, and that is not a failure either.
+    if done and after_close():
+        print(f"The session has closed; {len(done)} symbols were recorded earlier today. "
+              f"Not filling {', '.join(todo)} with closing quotes - nothing to do.")
+        return
+    refuse_after_close("the ATM panel")
 
     s = session()
     if not is_trading_day(s, today):

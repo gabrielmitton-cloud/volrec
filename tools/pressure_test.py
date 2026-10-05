@@ -502,10 +502,13 @@ def _guard_live():
     except Exception:
         return False
     rs, ss = (R / "record.py").read_text(), (R / "surface.py").read_text()
-    wired = (rs.find('refuse_after_close("the ATM panel")') > rs.find("def main")
-             and rs.find('refuse_after_close("the ATM panel")') < rs.find("done = already_recorded(today)", rs.find("def main"))
-             and ss.find('R.refuse_after_close("the strike surface")') > ss.find("def main")
-             and ss.find('R.refuse_after_close("the strike surface")') < ss.find("done = already_recorded(today)", ss.find("def main")))
+    # wired: inside main() and before the first network call (since 5 Oct 2026 it sits after
+    # the already-recorded exit, so a late backup on a recorded day exits quietly)
+    def _w(src, call, fetch):
+        m = src.find("def main")
+        return 0 <= m < src.find(call, m) < src.find(fetch, m)
+    wired = (_w(rs, 'refuse_after_close("the ATM panel")', "s = session()")
+             and _w(ss, 'R.refuse_after_close("the strike surface")', "s = R.session()"))
     return bool(works and wired)
 _GUARD = _guard_live()
 print(f"  INFO  worst record delay since {CRON_SINCE}: {_meas // 60}h{_meas % 60:02d}m "
@@ -1086,12 +1089,19 @@ ok(_ac("2026-09-28T20:50:00") and not _ac("2026-09-30T19:40:00") and not _ac("20
 ok(not _ac("2026-11-05T20:30:00") and _ac("2026-11-05T21:05:00"),
    "after the November clock change the guard moves to 21:00 UTC by itself")
 _recsrc, _srfsrc = (R / "record.py").read_text(), (R / "surface.py").read_text()
-def _before(src, call):                      # find(), not index(): a missing call must FAIL, not crash
-    i, j = src.find(call), src.find("done = already_recorded(today)", max(src.find("def main"), 0))
-    return 0 <= src.find("def main") < i < j
-ok(_before(_recsrc, 'refuse_after_close("the ATM panel")')
-   and _before(_srfsrc, 'R.refuse_after_close("the strike surface")'),
-   "both recorders check the close before fetching or writing anything")
+def _before(src, call, fetch):               # find(), not index(): a missing call must FAIL, not crash
+    m = max(src.find("def main"), 0)
+    d, n = src.find("done = already_recorded(today)", m), src.find('print("Nothing to do.")', m)
+    i, k = src.find(call, m), src.find(fetch, m)
+    return 0 <= src.find("def main") < d < n < i < k
+# 5 Oct 2026: the guard sits AFTER the "already recorded" exit - a late GitHub backup on a day
+# the outside trigger recorded exits 0 instead of failing and emailing a false alarm - and still
+# BEFORE the first network call, so a day not yet recorded is refused before anything is fetched.
+ok(_before(_recsrc, 'refuse_after_close("the ATM panel")', "s = session()")
+   and _before(_srfsrc, 'R.refuse_after_close("the strike surface")', "s = R.session()")
+   and _before(_recsrc, "if done and after_close():", 'refuse_after_close("the ATM panel")')
+   and _before(_srfsrc, "if done and R.after_close():", 'R.refuse_after_close("the strike surface")'),
+   "both recorders check the close before fetching or writing anything, after the already-recorded exit")
 
 _mfsrc, _hgsrc = (R / "modelfree.py").read_text(), (R / "hedged.py").read_text()
 ok(date(2026, 9, 28) in _phm.AFTER_CLOSE_DAYS

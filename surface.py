@@ -546,7 +546,6 @@ def main():
     if today.weekday() >= 5:
         print(f"{today} is a weekend - nothing to record.")
         return
-    R.refuse_after_close("the strike surface")
     done = already_recorded(today)
     todo = [s for s in SURFACE if s not in done]
     for s in [x for x in SURFACE if x in done]:
@@ -554,6 +553,11 @@ def main():
     if not todo:
         print("Nothing to do.")
         return
+    if done and R.after_close():      # a recorded day's gaps are never filled after the close (5 Oct 2026)
+        print(f"The session has closed; {len(done)} symbols were recorded earlier today. "
+              f"Not filling {', '.join(todo)} with closing quotes - nothing to do.")
+        return
+    R.refuse_after_close("the strike surface")   # after the "already recorded" exit (5 Oct 2026)
 
     s = R.session()
     if not R.is_trading_day(s, today):
