@@ -1974,7 +1974,7 @@ every decision. This section is the only one guaranteed current. Read it, run
   18:40 UTC) POST `workflow_dispatch`, notify on failure; token `volrec-trigger` (Actions
   read/write on volrec only) expires **29 Dec 2026**. Test runs returned 204 and GitHub's
   runs were refused by the guard (after the close) - trigger and guard proven together;
-  nothing written. **First real run: Thu 1 Oct 18:30 UTC.** From 1 Oct `panel_health`
+  nothing written. **First real runs, Thu 1 and Fri 2 Oct: worked** - workflow_dispatch at 18:30/18:40 UTC, committed 18:33/18:41, median quotes 18:32/18:40 UTC, `panel_health` HEALTHY; the GitHub-cron backups ran later and recorded nothing twice. From 1 Oct `panel_health`
   warns on any day the trigger did not start (landing outside 18:28-19:00).
 - *Superseded by the line above:* two decisions for Gabriel, both before 7 Oct: (1) the cron: the rule holding it to
   11 Nov predates this evidence; the pressure test allows 14:30-15:06 UTC and a delay of
