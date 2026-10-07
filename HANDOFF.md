@@ -2155,6 +2155,14 @@ Nothing below changes a recorded result; three items are real and undocumented u
   within eight days. On realized variance they state that log vs percentage returns, demeaning,
   and ACT/365 vs 252 "do not alter" their conclusions - D1's conventions are acknowledged choices.
 
+**LSEG at Pepperdine (raised by Gabriel 7 Oct) - a post-verdict discussion item, nothing pulled.**
+Possible uses, in order: (1) intraday OVX/GVZ at the snapshot minute (~14:30 ET), which would remove
+audit item 2's timing noise from H3/H5e gaps; (2) historical monthly USO/GLD option quotes to recompute
+under OVX's Nearest Term rule (audit item 1); (3) dividend history for an H4 correction (item 3); (4) a
+fourth price/IV reference. Unknowns: which product (Workspace, Datastream, Tick History), terminal or
+personal login, intraday history depth, and Pepperdine's LSEG terms for publishing derived figures -
+treat like Bloomberg until known: raw data never in this repository.
+
 #### Open, no fixed date
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
   and the OPRA aggregates are on the site (see the decisions above). When H5f reaches
