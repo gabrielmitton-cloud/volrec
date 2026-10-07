@@ -2089,7 +2089,47 @@ as registered, with the stale-quote exclusion stated beside it.
   discussion, not a fix:** the universe and window are frozen; options are to accept and
   document the monthly gap, or a dated change to the window for those four.
 
-**Open, no fixed date**
+#### Wed 7 Oct - methods audit (recorded; decisions AFTER the H5e verdict, Gabriel 7 Oct)
+An outside deep-research review of every equation was checked line by line against the code
+and against Cboe's own documents (Mathematics Methodology v5.0, rev. 26 Feb 2026; Selected
+Broad-Based, Equity and ETF Volatility Indices v9.0, rev. 30 Mar 2026, both read in full).
+Nothing below changes a recorded result; three items are real and undocumented until now.
+- **1. OVX and GVZ select expiries differently from `modelfree`.** Cboe v9.0 §2.1 and Step 1:
+  OVX and GVZ use only PM-settled third-Friday monthlies, exclude series under 7 days, and
+  take the two nearest (Nearest Term Method, Math v5.0 §2(b)), extrapolating when they do not
+  bracket 30 days. `modelfree.pick_pair` takes the last expiry <=30 and first >30 of all
+  recorded expiries - weeklies (Cboe's Bracket Method, used for VIX/RVX/single names). On
+  7 Oct OVX blends 16 Oct/20 Nov; we blend 30 Oct/6 Nov. `surface.py` does not record the
+  far monthly for USO/GLD on most days, so OVX's own selection cannot be recomputed from the
+  panel. Affects the reading of H3 (USO/GLD against OVX/GVZ) and H5e (gap to OVX); verdicts
+  stand as registered, the write-up must disclose it. Option for Gabriel: record the
+  monthly legs for USO/GLD from a dated day forward (an addition, not a universe change).
+- **2. Snapshot vs benchmark timing.** Our quotes are ~14:30 ET; the Cboe benchmark is the
+  index's close (~16:15 ET). The 1.5-2 h of index movement is noise in every daily gap, and
+  a mean ABSOLUTE gap (H5e, H3a) is inflated by noise. Undocumented until now. Option:
+  disclose; or an intraday index value at the snapshot time if one is freely available.
+- **3. H4 financing misses weekends; dividends not modelled.** `hedged_gain` accrues r(C-dS)/365
+  per trading-day step; weekends join runs, so 2 of every 7 calendar days earn no carry.
+  Re-run with calendar-day accrual (7 Oct): date-level mean -4.49bp (t -2.43) -> -4.58bp
+  (t -2.45); contract-level -6.76 -> -6.87bp; buckets move <= 0.6bp; no conclusion changes.
+  The `intervals()` docstring's "0.003bp" measured snapshot-hour drift, not weekends - it is
+  not evidence on this point. Dividends: the short hedge is credited the ex-date drop without
+  paying the dividend; size not yet measured (only ex-dates inside runs matter). Option: a
+  dated correction (H4 adjustment log) or document as a known small bias.
+- **Checked and NOT a problem:** forward, K0, OTM strip, edge dK on the filtered strip, the
+  sigma^2 formula and the 30-day blend match Cboe exactly (tie-break = lowest strike, as
+  Cboe). The research's "misattribution" of H5e's estimator to ABG (2015) is wrong: ABG was
+  read in full 23 Sep (H5 prior art, their 3.1.2, RX*); the reviewer saw only the abstract.
+  Fixed-b critical values affect only analyze.py's descriptive live-panel test, not H1
+  (non-overlapping). c4(n) is correct for the un-demeaned estimator (textbook c4(n+1)).
+  Cboe's Feb 2025 zero-ASK addition: zero rows in our data have ask 0 with a bid, so no effect.
+- **Wording only:** `variance_one_expiry`'s docstring says "Cboe's sigma^2" though the default
+  keeps zero bids on purpose (H3's registered choice) - say "Cboe's formula, H3's quote rule".
+- **For the write-up:** VRP is measured in vol points (H2 tested variance forms); Black-76 on a
+  parity forward is a simplification for American puts (H3's day-count section);
+  TimesFM's pretraining may include VIX, which strengthens its FAIL rather than weakening it.
+
+#### Open, no fixed date
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
   and the OPRA aggregates are on the site (see the decisions above). When H5f reaches
   its verdict, the site section's "three days, descriptive" paragraph must be updated
