@@ -2129,6 +2129,32 @@ Nothing below changes a recorded result; three items are real and undocumented u
   parity forward is a simplification for American puts (H3's day-count section);
   TimesFM's pretraining may include VIX, which strengthens its FAIL rather than weakening it.
 
+**Papers read for the audit, 7 Oct** (Pepperdine copies, kept in `~/Documents/volrec-papers/`, never in the repo):
+- **Bakshi & Kapadia (2003), RFS 16(2), eq. (6) and the empirical gain formula (p. 540):** financing is
+  r(C - Delta S) * tau/N with tau/N "set to 1 day" and the rate updated daily - equal steps whose sum is the
+  option's whole remaining life, so carry accrues over all calendar time. This SUPPORTS item 3 (our
+  1/365 per trading step drops weekends). Dividends: they subtract the present value of known dividends
+  from the stock price and use that adjusted price throughout - the standard alternative to an ex-date
+  cash flow, and the method to copy if item 3 is corrected. They report gains in dollars, scaled by S,
+  and scaled by the option price; H4's scaling by S is one of theirs. Their eq. (6) prints C_t (the
+  starting price) in the financing term where our code uses the current price C_n; ours is the
+  self-financing form and the difference is second order - document, do not change.
+- **Jiang & Tian (2005), RFS 18(4), s.1.2:** truncation error is negligible when the strike range
+  reaches more than 2 SDs either side of the forward; discretization error is negligible when the
+  strike step is at most 0.35 SD. Checked on the registered panel, 29 Sep - 6 Oct (median over
+  expiry-days, SD = sigma*sqrt(T)*S): every symbol's step is within 0.35 SD (worst median 0.23,
+  NVDA); coverage is 3.2-6.8 SDs for SPY, QQQ, IWM, GLD, AAPL, NVDA, but **USO reaches only 1.96 SD
+  each side and TSLA 2.2** - USO is just inside the zone where truncation biases the registered
+  estimate DOWN. Consistent with H3's wide-band reasoning (it is why the wide band exists), now
+  with the paper's own yardstick; for the write-up, not a change.
+- **Carr & Wu (2009), RFS 22(3), s.2:** for American options (they include QQQ and single
+  stocks) they take OptionMetrics' binomial implied volatilities, interpolate them in ln(K/F), and
+  price European options by Black-Scholes before integrating - the "European-equivalent" route the
+  review suggested as a robustness run. Their 30-day blend is linear in total variance (their
+  eq. 10) - the same as `model_free_30d`. Their two nearest maturities roll when the shorter is
+  within eight days. On realized variance they state that log vs percentage returns, demeaning,
+  and ACT/365 vs 252 "do not alter" their conclusions - D1's conventions are acknowledged choices.
+
 #### Open, no fixed date
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
   and the OPRA aggregates are on the site (see the decisions above). When H5f reaches

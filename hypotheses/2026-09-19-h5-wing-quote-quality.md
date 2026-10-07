@@ -372,7 +372,7 @@ remedy for the underlying problem, a corridor whose barriers follow the options
 themselves (their CX index), is the natural next step if H5e holds, and is not
 adopted here.
 
-**Still to read:** Jiang & Tian (2005), *RFS* 18, 1305-1342, which they cite as
+**Read 7 Oct 2026** (see HANDOFF 18, methods audit): Jiang & Tian (2005), *RFS* 18, 1305-1342, which they cite as
 finding no major VIX biases at the daily frequency - the frequency this project
 works at - and the companion working paper named in their footnote 13, "A Corridor
 Fix for High-Frequency VIX: Developing Coherent Implied Volatility Measures".
