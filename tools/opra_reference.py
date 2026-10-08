@@ -179,6 +179,45 @@ def wide_days():
     return sorted({(r["date"], r["symbol"]) for r in csv.DictReader(p.open(newline=""))})
 
 
+# H7 (registered 8 Oct 2026): the monthly legs Cboe's ETF indices use, recorded from 9 Oct to
+# data/surface_monthly.csv a minute or two after the main surface. Their OPRA reference is bought
+# at THEIR own snapshot minute, into separate files, under a separate cap Gabriel approved
+# (about $1). Nothing here changes `recorded`, `fetch`'s default path or anything H5f reads.
+H7_END = "2026-11-11"
+H7_BUDGET_USD = 1.10
+MONTHLY_TAG = "-monthly"                     # suffix on the ledger's symbol for these purchases
+
+
+def monthly_recorded(date, symbol):
+    p = ROOT / "data" / "surface_monthly.csv"
+    if not p.exists():
+        return []
+    return [r for r in csv.DictReader(p.open(newline="")) if r["date"] == date and r["symbol"] == symbol]
+
+
+def monthly_days():
+    p = ROOT / "data" / "surface_monthly.csv"
+    if not p.exists():
+        return []
+    return sorted({(r["date"], r["symbol"]) for r in csv.DictReader(p.open(newline=""))
+                   if r["date"] <= H7_END})
+
+
+def monthly_spent():
+    if not LEDGER.exists():
+        return 0.0
+    with LEDGER.open(newline="") as f:
+        return sum(float(r["usd"]) for r in csv.DictReader(f)
+                   if r.get("usd") and r.get("symbol", "").endswith(MONTHLY_TAG))
+
+
+def h7_budget_ok(cost, spent_monthly):
+    """(allowed, reason). Pure: H7's own cap, on top of budget_ok's two."""
+    if spent_monthly + cost > H7_BUDGET_USD:
+        return False, f"would take H7's monthly-leg spend to ${spent_monthly + cost:.2f}, past its ${H7_BUDGET_USD:.2f} cap"
+    return True, "within H7's cap"
+
+
 def request_params(symbol, minute):
     start = minute - timedelta(minutes=WINDOW_BEFORE)
     end = minute + timedelta(minutes=WINDOW_AFTER)
@@ -238,8 +277,8 @@ def call(endpoint, data, key, method="post", _fn=None):
     return r
 
 
-def fetch(date, symbol, key, max_cost, dry):
-    rows = recorded(date, symbol)
+def fetch(date, symbol, key, max_cost, dry, monthly=False):
+    rows = monthly_recorded(date, symbol) if monthly else recorded(date, symbol)
     minute = snapshot_minute(rows)
     if not minute:
         print(f"  {symbol} {date}: nothing recorded, nothing to request")
@@ -249,7 +288,8 @@ def fetch(date, symbol, key, max_cost, dry):
           f"{SCHEMA} {params['start'][11:16]}-{params['end'][11:16]} UTC")
     # 23 Sep 2026: `--all` re-bought 18 and 21 Sep because nothing checked the disk first.
     # Historical data does not change, so a file already here is never paid for twice.
-    if not dry and not REFETCH and (DATA_DIR / f"OPRA_{symbol}_{date}.csv").exists():
+    stem = f"OPRA_M_{symbol}_{date}" if monthly else f"OPRA_{symbol}_{date}"
+    if not dry and not REFETCH and (DATA_DIR / f"{stem}.csv").exists():
         print("    already on disk - skipped, nothing charged (--refetch to buy it again)")
         return
     if not key:
@@ -261,10 +301,12 @@ def fetch(date, symbol, key, max_cost, dry):
     cost = float(call("metadata.get_cost", params, key).json())
     spent = ledger_total()
     allowed, why = budget_ok(cost, max_cost, spent)
+    if allowed and monthly:
+        allowed, why = h7_budget_ok(cost, monthly_spent())
     print(f"    costs ${cost:.4f}; spent so far ${spent:.2f} of the ${LIFETIME_CAP_USD:.0f} cap: {why}")
     if dry or not allowed:
         return
-    out = DATA_DIR / f"OPRA_{symbol}_{date}.csv"
+    out = DATA_DIR / f"{stem}.csv"
     if inside_repo(out):
         sys.exit("Refusing to write OPRA data inside the repository.")
     body = dict(params, encoding="csv", compression="none", pretty_px="true",
@@ -282,7 +324,8 @@ def fetch(date, symbol, key, max_cost, dry):
         w = csv.writer(f)
         if new:
             w.writerow(["utc", "date", "symbol", "usd"])
-        w.writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), date, symbol, f"{cost:.6f}"])
+        w.writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), date,
+                    symbol + (MONTHLY_TAG if monthly else ""), f"{cost:.6f}"])
     print(f"    fetched {len(r.content):,} bytes -> {out}")
 
 
@@ -427,6 +470,8 @@ def main():
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--date", help="YYYY-MM-DD")
     g.add_argument("--all", action="store_true", help="every (date, symbol) with wide data")
+    g.add_argument("--monthly", action="store_true",
+                   help="H7: every (date, symbol) in surface_monthly.csv up to 11 Nov, at its own minute")
     ap.add_argument("--symbols", nargs="+", default=["USO", "TSLA"])
     ap.add_argument("--dry-run", action="store_true", help="show and price the requests; spend nothing")
     ap.add_argument("--compare", action="store_true", help="analyse files already on disk; no network")
@@ -437,6 +482,7 @@ def main():
     a = ap.parse_args()
 
     pairs = ([(d, s) for d, s in wide_days() if s in a.symbols] if a.all
+             else [(d, s) for d, s in monthly_days() if s in a.symbols] if a.monthly
              else [(a.date, s) for s in a.symbols])
     print(f"OPRA reference ({DATASET}, {SCHEMA}) - {'compare' if a.compare else 'dry run' if a.dry_run else 'fetch'}\n")
     if a.definitions:
@@ -454,7 +500,7 @@ def main():
     else:
         key = api_key()
         for d, s in pairs:
-            fetch(d, s, key, a.max_cost, a.dry_run)
+            fetch(d, s, key, a.max_cost, a.dry_run, monthly=a.monthly)
     print(f"\n{ATTRIBUTION}")
     return 0
 

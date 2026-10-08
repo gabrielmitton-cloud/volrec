@@ -1010,6 +1010,15 @@ ok(_opm.budget_ok(0.10, 0.50, 0.0)[0] and not _opm.budget_ok(0.60, 0.50, 0.0)[0]
    and not _opm.budget_ok(0.40, 0.50, 99.80)[0],
    f"the money guard refuses a request over the per-request cap and past the "
    f"${_opm.LIFETIME_CAP_USD:.0f} lifetime cap")
+# H7 (8 Oct 2026): the monthly-leg purchases have their own cap Gabriel approved (~$1), and
+# they never overwrite or retime the files H5f reads.
+ok(_opm.h7_budget_ok(0.03, 1.00)[0] and not _opm.h7_budget_ok(0.03, 1.09)[0] and _opm.H7_BUDGET_USD == 1.10
+   and _opm.H7_END == "2026-11-11",
+   "H7's monthly-leg OPRA purchases stop at their own $1.10 cap, and only up to 11 Nov")
+_opsrc = (R / "tools/opra_reference.py").read_text()
+ok('stem = f"OPRA_M_{symbol}_{date}" if monthly else f"OPRA_{symbol}_{date}"' in _opsrc
+   and "rows = monthly_recorded(date, symbol) if monthly else recorded(date, symbol)" in _opsrc,
+   "monthly-leg OPRA files are separate (OPRA_M_*) and timed to the monthly rows; H5f's files are untouched")
 ok(_opm.LIFETIME_CAP_USD <= 110 and _opm.DEFAULT_MAX_COST <= 1.0,
    "the caps leave margin inside the free credit")
 _fsrc = (R / "tools/opra_reference.py").read_text()
