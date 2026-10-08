@@ -1153,6 +1153,53 @@ ok((R / "AUDITOR.md").exists() and (R / "SCIENTIST.md").exists()
    and "never" in (R / "SCIENTIST.md").read_text().lower(),
    "the auditor and scientist charters exist, and the scientist stays dormant outside registered work")
 
+print("\n=== R. THE OVX REPLICA (tools/ovx_replicate.py, exploratory, 8 Oct 2026) ===")
+# Cboe's own rules (Math methodology v5.0 s3; ETF methodology v9.0 s2.1) for the methods
+# audit. Known answers only: nothing here reads licensed data.
+_ovs = _iu.spec_from_file_location("ovxrep", R / "tools/ovx_replicate.py")
+_ovm = _iu.module_from_spec(_ovs); _ovs.loader.exec_module(_ovm)
+import math
+from datetime import datetime, timezone
+from calibrate import black76 as _b76
+def _ovchain(S=100.0, sig=0.4, T=30 / 365):
+    q = {}
+    for K in range(70, 131, 2):
+        for k in "CP":
+            p_ = _b76(k, S, K, T, 0.0, sig); q[(K, k)] = (round(p_ * 0.98, 4), round(p_ * 1.02, 4))
+    return q
+_rows = []; _clean = {}
+for _i in range(40):
+    _K = round(100 * (0.7 + _i * 0.6 / 39), 4)
+    for _k in "CP":
+        _p = _b76(_k, 100 * math.exp(0.039 * 30 / 365), _K, 30 / 365, 0.039, 0.42)
+        _rows.append({"dte": "30", "strike": str(_K), "type": _k, "mid": str(_p), "bid": str(_p * .99), "ask": str(_p * 1.01)})
+        _clean[(_K, _k)] = (_p * .99, _p * 1.01)
+ok(abs(_mfm.variance_one_expiry(_rows, 0.039)[0] - _ovm.cboe_sigma2(_clean, 0.039, 30 / 365)[0]) < 1e-12,
+   "the OVX replica's single-term variance equals modelfree's on a clean chain")
+_base = _ovm.cboe_sigma2(_ovchain(), 0.0, 30 / 365)
+_q = _ovchain(); _q[(96, "P")] = (0.0, _q[(96, "P")][1]); _q[(94, "P")] = (0.0, _q[(94, "P")][1])
+_q1 = _ovchain(); _q1[(110, "C")] = (_q1[(110, "C")][0], 0.0)
+ok(_ovm.cboe_sigma2(_q, 0.0, 30 / 365)[3] == _base[3] - 14,
+   "the OVX replica stops the put walk after two consecutive zero bids")
+ok(_ovm.cboe_sigma2(_q1, 0.0, 30 / 365)[3] == _base[3] - 1,
+   "the OVX replica excludes zero-ask quotes (Cboe, since 10 Feb 2025)")
+_qt = {}
+for _K, _c, _p in ((98, 3.0, 1.0), (99, 2.2, 1.2), (100, 1.6, 1.6), (101, 1.6, 1.6), (102, 0.8, 2.8)):
+    _qt[(_K, "C")] = (_c, _c); _qt[(_K, "P")] = (_p, _p)
+ok(_ovm.cboe_sigma2(_qt, 0.0, 30 / 365)[1] == 100.0, "the OVX replica breaks an at-the-money tie at the lowest strike")
+ok(_ovm.third_friday(2026, 10) == date(2026, 10, 16) and _ovm.is_monthly(date(2026, 11, 20))
+   and not _ovm.is_monthly(date(2026, 10, 23)) and _ovm.third_friday(2027, 3, {date(2027, 3, 19)}) == date(2027, 3, 18),
+   "the OVX replica uses third-Friday monthlies only (Thursday when the Friday is a holiday)")
+_w = datetime(2026, 10, 7, 18, 40, tzinfo=timezone.utc)
+ok(_ovm.minutes_to(date(2026, 10, 16), _w) == 13040 and _ovm.settle_utc(date(2026, 11, 20)).hour == 21,
+   "the OVX replica counts minutes to the 16:00 New York settlement, across the clock change")
+_s1, _s2 = 0.25 ** 2, 0.27 ** 2
+ok(abs(_ovm.blend30(9 * 1440, _s1, 44 * 1440, _s1) - 25) < 1e-9 and _ovm.blend30(34 * 1440, _s1, 62 * 1440, _s2) < 25,
+   "the OVX replica's 30-day blend interpolates and extrapolates as Cboe's s3(b)")
+_ovsrc = (R / "tools/ovx_replicate.py").read_text()
+ok("write" not in re.sub(r"#.*", "", _ovsrc).replace("writes", "") and "get_range" not in _ovsrc and "get_cost" not in _ovsrc,
+   "the OVX replica buys nothing and writes nothing (licensed data stays where it is)")
+
 print("\n" + "=" * 56)
 print(f"RESULT: {len(fails)} fail, {len(warns)} warn")
 for f in fails: print("  FAIL:", f)
