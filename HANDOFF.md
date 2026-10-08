@@ -2238,6 +2238,24 @@ between snapshots (r x D x 1 day x delta, below 0.001bp).
   on branch `monthly-legs`, to merge after today's 18:40 UTC surface run so today runs on the
   known-good file; first monthly rows Fri 9 Oct.
 
+#### Thu 8 Oct - the backtest: every hypothesis, before vs after today (all from runs)
+Reproduction: this morning's code (ec545ee) in a worktree on the same data -> `modelfree.py` and
+`modelfree.py --wide` output **byte-identical**; `hedged.py` in strike-1 mode **identical** to this
+morning's full report; `record_verdict --dry-run` reproduces both recorded verdicts and writes
+nothing; `calibrate.py` 0 uncalibrated; pressure test 0 fail; auditor 34 of 34; daily ALL CLEAR.
+| hypothesis | before | after | status |
+|---|---|---|---|
+| H1 (FDR) | 9 of 11 survive BH | BH 9 of 11 (identical); BY 8 of 11 - VXSLV/SLV 0.0587 | agrees; a dependence caveat to quote |
+| H2 | log variance strongest | no code touched | agrees |
+| H3a / H3 wide | registered readings | byte-identical | agrees; the replica shows USO's closeness is partly offsetting errors |
+| H4 | date -5.22bp (t -2.52) | strike 2: -5.23bp (t -2.50); pooled -7.70 -> -7.60 | agrees; strike 2 of 3 used |
+| H5a-d | as recorded | untouched; free = OPRA on the same contracts (mean abs 0.04 USO, 0.02 GLD) | agrees, now with direct support |
+| H5e first verdict | FAILS 0.90, 2 of 10 | tally identical | agrees; a faithful Cboe replica misses OVX by 0.46 - the bar's floor |
+| H5f | recorded 25 Sep | frozen script hash unchanged | agrees |
+| TimesFM | FAIL | untouched | agrees |
+**Nothing flipped.** Open: USO's +0.45 replica residual (LSEG intraday); monthly legs merge tonight.
+*Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
+
 #### Open, no fixed date
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
   and the OPRA aggregates are on the site (see the decisions above). When H5f reaches
