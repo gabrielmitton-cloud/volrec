@@ -2271,6 +2271,20 @@ nothing; `calibrate.py` 0 uncalibrated; pressure test 0 fail; auditor 34 of 34; 
 4. Next study: draft BOTH for review, register nothing without his OK - the IV-vs-technical-
    levels scanner test, and a Cboe-rules follow-up to H5e on the monthly legs recorded from 9 Oct.
 
+#### Thu 8 Oct, end of day - state
+- **Site published** (Gabriel approved the preview): H5e FAILS, the Cboe-rules paragraph, H4 strike 2,
+  H1 under BY, H3a 0.40 over 80. Verified on the live page. Known, pre-existing: a console warning
+  from index.html line ~688 (a hit-rect width computed before layout; harmless) - small fix later.
+- **H6 and H7 registered** 17:04 UTC (before any monthly row). H7: GLD + USO OPRA at the monthly
+  minute, `opra_reference.py --monthly`, own $1.10 cap, in volrec-licensed daily.yml from tonight.
+- **Monthly legs live** (merged 21:10 UTC, after today's surface run): first rows Fri 9 Oct.
+- **Final H5e alert:** cloud routine `trig_01MG53JubGrUPhph4bd9yimY`, 13 Nov 16:30 UTC, phone push.
+  Gabriel switches off the Mac task `volrec-h5e-final` himself.
+- **To build, dated:** H6's join (needs Alpaca daily highs/lows - extend `fetch_closes`, run via a
+  temporary workflow, as H1) - before 1 Nov; H7's reader + `record_verdict` block - before 11 Nov.
+  Dividends file: add the Dec ex-dates when announced (WARN fires if stale).
+- Checks at close: pressure test 0 fail; auditor 38 of 38; calibrate 0 uncalibrated; daily ALL CLEAR.
+
 #### Open, no fixed date
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
   and the OPRA aggregates are on the site (see the decisions above). When H5f reaches
