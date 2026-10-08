@@ -150,6 +150,15 @@ a reader can judge it rather than take my word for it.
   count over eleven tests and a per-test threshold does not protect a count. The
   conclusion did not move - 9 of 11 before, 9 of 11 after - which is the only
   reason it can be reported without the addition itself needing a caveat.
+- **2026-10-08, after the test was run (methods audit, D3).** Benjamini-Yekutieli (2001,
+  *Annals of Statistics* 29(4), Thm 1.3) reported BESIDE Benjamini-Hochberg, not in place of it.
+  BH's guarantee needs independence or positive regression dependence (their Thm 1.2); H1's
+  eleven tests are two-sided t-tests on premia that share a market factor, for which that is
+  not guaranteed. BY holds under any dependence. On the recorded p-values **8 of 11 survive
+  BY; VXSLV/SLV is lost (BY-adjusted 0.0587, BH-adjusted 0.0194)**. Nothing registered moves:
+  the per-pair t-test and the count are as frozen, and BH stays the reported correction. Quote
+  H1a as "nine of eleven survive FDR control (BH); eight under the dependence-robust BY".
+  `analyze.benjamini_yekutieli`, printed by `build_sample_a.py`; pinned in the pressure test.
 
 ---
 

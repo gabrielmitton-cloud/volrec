@@ -123,6 +123,11 @@ def main():
     for k, (_mu, _t, p, _n) in sorted(results.items(), key=lambda kv: kv[1][2]):
         print(f"   {k:<14}{p:>9.4f}{adj[k]:>11.4f}"
               f"{'yes' if k in rejected else 'no':>10}")
+    # 8 Oct 2026 (methods audit D3): the same family under Benjamini-Yekutieli, which holds under
+    # any dependence. A robustness line beside BH; it does not replace BH or the registered count.
+    by_rej, by_adj = analyze.benjamini_yekutieli({k: v[2] for k, v in results.items()}, q=0.05)
+    print(f"   Benjamini-Yekutieli (any dependence): {len([k for k in wins if k in by_rej])} of "
+          f"{len(wins)} survive; " + ", ".join(f"{k} {by_adj[k]:.4f}" for k in wins if k not in by_rej))
     survivors = [k for k in wins if k in rejected]
     print(f"   {len(survivors)} of {len(wins)} raw-significant pairs survive "
           f"FDR control.")

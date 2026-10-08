@@ -2222,6 +2222,22 @@ new ex-dates by hand). Pooled -7.70 -> -7.60bp (carry -0.12, dividends +0.21); d
 full entry. Undeclared future dividends are not projected: they move a run only through discounting
 between snapshots (r x D x 1 day x delta, below 0.001bp).
 
+#### Thu 8 Oct - fix 4 DONE: the small items
+- **D3, multiple testing:** `analyze.benjamini_yekutieli` beside BH. H1: **8 of 11 survive BY**
+  (VXSLV/SLV BY-adjusted 0.0587; BH 0.0194, reproduced exactly). Logged in H1; BH stays the
+  reported correction. Quote H1a with both.
+- **D2, fixed-b:** the research's recalled "~2.4-2.5" critical value was VERIFIED by simulation
+  (numpy, 20,000 reps): b = 0.17 -> 2.48 at T 250 and 500, 2.56 at T 40; lag 0 -> 1.97. The
+  stdlib `analyze.fixed_b_pvalue` (seeded) prints beside the live panel's Newey-West p once that
+  test runs (~25 more trading days). Affects no registered number (H1 is non-overlapping).
+- **A10, single-expiry fallback:** never used (0 of 136 day-symbols); left as registered, a
+  pressure-test WARN fires if it ever is.
+- **Wording:** `variance_one_expiry`'s docstring now says Cboe's FORMULA with H3's QUOTE RULE.
+- **Fix 3 (timing)** waits on LSEG: the USO replica's +0.45 residual is the question it answers.
+- **Recorder addition (monthly USO/GLD legs)** is built, tested (section S, 2 mutants) and parked
+  on branch `monthly-legs`, to merge after today's 18:40 UTC surface run so today runs on the
+  known-good file; first monthly rows Fri 9 Oct.
+
 #### Open, no fixed date
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
   and the OPRA aggregates are on the site (see the decisions above). When H5f reaches

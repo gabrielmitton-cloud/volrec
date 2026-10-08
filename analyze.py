@@ -151,6 +151,33 @@ def newey_west(x, lag):
     return (mu, se, t, t_pvalue(t, T - 1))
 
 
+
+def fixed_b_pvalue(t, T, lag, reps=4000, seed=20261008):
+    """Two-sided p-value for a Newey-West (Bartlett) t-statistic under FIXED-b asymptotics
+    (Kiefer & Vogelsang 2005, Econometric Theory 21): the null distribution of the HAC t depends
+    on b = lag/T, and with b near 0.17 its 5% critical value is about 2.48, not t(T-1)'s 1.97.
+
+    Added 8 Oct 2026 (methods audit D2) as a robustness line BESIDE newey_west's p. Computed by
+    simulation at the panel's own T and lag (iid Gaussian null; the fixed-b limit is a functional
+    of Brownian motion and does not depend on the serial correlation), seeded, so it reproduces.
+    Checked when written: T=250 lag 42 -> 2.48; lag 0 -> 1.97 = t(249)."""
+    import random
+    if not isfinite(t) or T < 3:
+        return float("nan")
+    rng = random.Random(seed)
+    lag = max(0, min(lag, T - 1))
+    hits = 0
+    for _ in range(reps):
+        x = [rng.gauss(0.0, 1.0) for _ in range(T)]
+        mu = sum(x) / T
+        d = [v - mu for v in x]
+        var = sum(v * v for v in d) / T
+        for j in range(1, lag + 1):
+            var += 2.0 * (1.0 - j / (lag + 1.0)) * sum(d[i] * d[i - j] for i in range(j, T)) / T
+        ts = mu / sqrt(max(var, 1e-18) / T)
+        hits += abs(ts) >= abs(t)
+    return hits / reps
+
 def plain_t(x):
     T = len(x)
     if T < 2: return (mean(x), float("nan"), float("nan"), float("nan"))
@@ -213,6 +240,22 @@ def benjamini_hochberg(pvalues, q=0.05):
             k = i
     return {key for key, _p in items[:k]}, adjusted
 
+
+
+def benjamini_yekutieli(pvalues, q=0.05):
+    """Benjamini & Yekutieli (2001, Annals of Statistics 29(4), Thm 1.3): BH run at q / c(m),
+    c(m) = 1 + 1/2 + ... + 1/m, which controls the false discovery rate under ANY dependence.
+
+    Added 8 Oct 2026 (methods audit, item D3) as a robustness line BESIDE benjamini_hochberg,
+    never in place of it. BH's guarantee needs independence or positive regression dependence
+    (their Thm 1.2); H1's eleven tests are two-sided t-tests on premia that share a market factor,
+    for which that condition is not guaranteed. Same return shape as benjamini_hochberg."""
+    m = len(pvalues)
+    if not m:
+        return set(), {}
+    c = sum(1.0 / i for i in range(1, m + 1))
+    rejected, adj = benjamini_hochberg(pvalues, q=q / c)
+    return rejected, {k: min(1.0, v * c) for k, v in adj.items()}
 
 def load_rows():
     if not CSV.exists(): sys.exit(f"{CSV} not found.")
@@ -423,6 +466,8 @@ def report(panel):
           f"lag {lag} (2x {win_td} trading days)")
     mu, se, t, p = newey_west(xs, lag)
     print(f"   mean {mu:+.3f} vol pts   se {se:.3f}   t {t:+.2f}   p {p:.4f}")
+    print(f"   fixed-b p (Kiefer-Vogelsang, b = {min(lag, len(xs) - 1) / max(len(xs), 1):.2f}, simulated): "
+          f"{fixed_b_pvalue(t, len(xs), lag):.4f}   - robustness beside p, 8 Oct 2026")
     print("   Over-rejects ~3x even so. Treat p as an UPPER BOUND on significance.")
 
     print(f"\n-- (2) CONFIRMATORY: every {stride}th trading day only (the honest test)")

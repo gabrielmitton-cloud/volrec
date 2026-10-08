@@ -112,7 +112,11 @@ def _num(v):
 
 
 def variance_one_expiry(rows, r_annual, zero_bid_rule=False):
-    """Cboe's sigma^2 for a single expiry. Returns (sigma2, T, n_used) or None.
+    """Cboe's sigma^2 FORMULA for a single expiry, with H3's registered QUOTE RULE (a quote
+    counts when its mid is positive, so zero-bid stubs inside the band are kept, valued at half
+    their ask) - not Cboe's rule, which drops them. Whole days over 365, not Cboe's minutes.
+    The 8 Oct 2026 methods audit checked every step against Cboe's Math methodology v5.0 s3;
+    tools/ovx_replicate.py has Cboe's own rules for comparison. Returns (sigma2, T, n_used) or None.
 
     `rows` are every recorded contract at one expiry for one underlying on one
     day, both types.

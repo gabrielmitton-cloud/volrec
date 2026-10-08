@@ -446,6 +446,31 @@ ok(len(_bh_all) == 9, "H1's 9 of 11 survives FDR control at q=0.05")
 ok(any("benjamini_hochberg" in (R / "samples/long/build_sample_a.py").read_text()
        for _ in (0,)), "build_sample_a.py actually reports the correction")
 
+# 8 Oct 2026 (methods audit D3): Benjamini-Yekutieli, valid under ANY dependence, beside BH.
+# H1's tests are two-sided on premia sharing a market factor; under BY, VXSLV/SLV (0.0587) is lost.
+_by_all, _by_adj = _az.benjamini_yekutieli(_h1)
+ok(len(_by_all) == 8 and "VXSLV/SLV" not in _by_all and abs(_by_adj["VXSLV/SLV"] - 0.0587) < 5e-4,
+   "under Benjamini-Yekutieli H1 keeps 8 of 11 (VXSLV/SLV adjusted 0.0587), reported beside BH")
+ok("benjamini_yekutieli" in (R / "samples/long/build_sample_a.py").read_text(),
+   "build_sample_a.py reports Benjamini-Yekutieli beside Benjamini-Hochberg")
+# 8 Oct 2026 (methods audit D2): fixed-b p for the live panel's Newey-West t. Known answers:
+# at lag 0 it is the ordinary t; at b = 0.17 the 5% critical value is ~2.48 (simulated, 20,000 reps).
+_fb0 = _az.fixed_b_pvalue(1.97, 250, 0, reps=4000)
+_fb1 = _az.fixed_b_pvalue(2.48, 250, 42, reps=2000)
+ok(0.035 < _fb0 < 0.065 and 0.035 < _fb1 < 0.065 and _az.fixed_b_pvalue(1.97, 250, 42, reps=2000) > 0.08,
+   f"fixed-b p: lag 0 matches the t-test ({_fb0:.3f}); at b=0.17, 2.48 is the 5% point ({_fb1:.3f}) and 1.97 is not")
+
+# 8 Oct 2026 (methods audit A10): the single-expiry fallback in model_free_30d is cruder than
+# Cboe's extrapolation. It has never fired (0 of 136 day-symbols to 7 Oct); if it ever does,
+# that day's registered reading leans on it and should be read with that caveat.
+from collections import defaultdict as _ddict
+_bys = _ddict(list)
+for _r in csv.DictReader((R / "data/surface.csv").open(newline="")):
+    _bys[(_r["date"], _r["symbol"])].append(_r)
+_single = [k for k, v in _bys.items() if (lambda g: g and g[2].startswith("single"))(_mfm.model_free_30d(v, 0.039))]
+warn(not _single, f"the single-expiry fallback has never been used ({len(_single)} day-symbols: "
+     f"{', '.join(f'{d} {s_}' for d, s_ in _single[:3])})")
+
 print("\n=== I. WORKFLOWS ===")
 import yaml
 import datetime as _dt
