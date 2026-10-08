@@ -2088,6 +2088,9 @@ as registered, with the stale-quote exclusion stated beside it.
   "a gap day is not fatal"; `panel_health` counts days, not symbols). **For Gabriel, a
   discussion, not a fix:** the universe and window are frozen; options are to accept and
   document the monthly gap, or a dated change to the window for those four.
+  **Decided by Gabriel 8 Oct: ACCEPT AND DOCUMENT.** The window and universe stay frozen; `panel_health`
+  now names every missing ticker each day - the four monthly-only names as INFO (the accepted gap),
+  anyone else as a WARN - so the gap is never silent again. They returned 6 Oct (109 of 109 on 7 Oct).
 
 #### Wed 7 Oct - methods audit (recorded; decisions AFTER the H5e verdict, Gabriel 7 Oct)
 An outside deep-research review of every equation was checked line by line against the code
@@ -2255,6 +2258,16 @@ nothing; `calibrate.py` 0 uncalibrated; pressure test 0 fail; auditor 34 of 34; 
 | TimesFM | FAIL | untouched | agrees |
 **Nothing flipped.** Open: USO's +0.45 replica residual (LSEG intraday); monthly legs merge tonight.
 *Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
+
+#### Thu 8 Oct - Gabriel's decisions after the corrections
+1. 4-ticker monthly gap: accept and document (above; `panel_health.check_ticker_coverage`).
+2. Website: Claude drafts a PREVIEW for review; nothing goes live without his approval.
+3. Mac fallback `volrec-h5e-final` (12 Nov): Gabriel switches it off in the app (Claude cannot
+   edit scheduled tasks). Replaced by the cloud routine `trig_01MG53JubGrUPhph4bd9yimY`: 13 Nov
+   16:30 UTC, reads the FINAL block and pushes the verdict (or "NOT recorded") to his phone.
+   GitHub issue emails did not reach him for the first verdict; phone pushes did.
+4. Next study: draft BOTH for review, register nothing without his OK - the IV-vs-technical-
+   levels scanner test, and a Cboe-rules follow-up to H5e on the monthly legs recorded from 9 Oct.
 
 #### Open, no fixed date
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,

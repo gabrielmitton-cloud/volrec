@@ -305,6 +305,27 @@ def day_span(rows):
     return days, ((now_utc().date() - days[-1]).days if days else None)
 
 
+# Accepted by Gabriel 8 Oct 2026: these four list monthly options only, so for about a week
+# a month no expiry sits in record.py's 21-45 day window and they record nothing (first seen
+# 28 Sep - 5 Oct). The window and universe are frozen, so the gap is documented, not fixed;
+# what must never happen again is a gap that nobody sees.
+MONTHLY_ONLY = {"MDY", "FXE", "XLRE", "DUK"}
+
+
+def check_ticker_coverage(rows, newest):
+    """Name every ticker missing from the newest day. Monthly-only names are INFO (the
+    accepted monthly gap); anyone else missing is a WARN."""
+    newest = newest.isoformat() if hasattr(newest, "isoformat") else str(newest)   # day_span gives a date
+    universe = {r["symbol"] for r in rows}
+    have = {r["symbol"] for r in rows if r.get("date") == newest}
+    gone = sorted(universe - have)
+    known, other = [t for t in gone if t in MONTHLY_ONLY], [t for t in gone if t not in MONTHLY_ONLY]
+    print(f"  INFO  {len(have)} of {len(universe)} tickers on {newest}"
+          + (f"; monthly-only gap (accepted 8 Oct): {', '.join(known)}" if known else ""))
+    if other:
+        warn(f"{len(other)} ticker(s) missing on {newest} that are not monthly-only: {', '.join(other)}")
+
+
 def check_atm():
     print("ATM panel  data/iv_history.csv")
     rows = rows_of(ATM)
@@ -317,6 +338,7 @@ def check_atm():
     print(f"  {len(rows)} rows, {len(days)} days, newest {days[-1]} ({age}d old)")
     check_landing(rows, days)
     report_missed("ATM", missed_trading_days(days[-1], floor=None))
+    check_ticker_coverage(rows, days[-1])
     if age > STALE_DAYS:
         return fail(f"STALE: no ATM snapshot in {age} days. The recorder has "
                     f"stopped. Check the Actions tab - GitHub disables "

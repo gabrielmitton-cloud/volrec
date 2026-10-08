@@ -1194,6 +1194,18 @@ ok((R / "AUDITOR.md").exists() and (R / "SCIENTIST.md").exists()
    and "never" in (R / "SCIENTIST.md").read_text().lower(),
    "the auditor and scientist charters exist, and the scientist stays dormant outside registered work")
 
+print("\n=== T. TICKER COVERAGE (panel_health, accepted monthly gap, 8 Oct 2026) ===")
+import io as _io, contextlib as _ctx
+_cov_rows = [{"symbol": t, "date": "2026-10-01"} for t in ("SPY", "MDY", "AAPL")] + \
+            [{"symbol": "SPY", "date": "2026-10-02"}]
+_phm.warns.clear()
+with _ctx.redirect_stdout(_io.StringIO()) as _cb:
+    _phm.check_ticker_coverage(_cov_rows, date(2026, 10, 2))      # a date object, as day_span gives
+ok("MDY" in _cb.getvalue() and "accepted" in _cb.getvalue() and len(_phm.warns) == 1 and "AAPL" in _phm.warns[0],
+   "panel_health names every missing ticker: monthly-only ones as the accepted gap, any other as a WARN")
+_phm.warns.clear()
+ok(_phm.MONTHLY_ONLY == {"MDY", "FXE", "XLRE", "DUK"}, "the accepted monthly-only list is exactly the four (Gabriel, 8 Oct)")
+
 print("\n=== R. THE OVX REPLICA (tools/ovx_replicate.py, exploratory, 8 Oct 2026) ===")
 # Cboe's own rules (Math methodology v5.0 s3; ETF methodology v9.0 s2.1) for the methods
 # audit. Known answers only: nothing here reads licensed data.
