@@ -3,7 +3,7 @@
 **Registered:** 2026-09-19, after ONE day of wing data (18 Sep, USO, one expiry) and
 before the series that tests it. What was already seen on that day is stated in full
 below, so nothing here can be mistaken for a prediction made blind.
-**Status:** registered. **H5a and H5b tested 23 Sep 2026** - H5b holds, H5a holds weakly (see Result). H5f read 25 Sep 2026 (see Result).
+**Status:** registered. **H5a and H5b tested 23 Sep 2026** - H5b holds, H5a holds weakly (see Result). H5f read 25 Sep 2026 (see Result). H5e first verdict read 8 Oct 2026 (see Result).
 **Sample:** `data/surface_wide.csv` from 18 Sep 2026 onward, and the matched Bloomberg
 OMON wing exports in `~/Documents/volrec-bloomberg`. Never `data/iv_history.csv`.
 
@@ -457,3 +457,14 @@ Bloomberg wing days (18, 22 and 23 Sep), seven symbol-expiry blocks, 169 wing co
 - Stated beside any verdict: the rule excludes unmatched contracts, so it cannot see the free feed's hours-old one-sided quotes on far contracts OPRA did not quote (H5, 23 Sep).
 
 *Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
+
+**H5e, first verdict at its ten-day minimum, read 8 October 2026** - written by the cloud workflow (`tools/record_verdict.py`), numbers from `modelfree.py --wide`, wording fixed in advance.
+
+- **FAILS**: the mean gap is not under 0.5; skip-only is not closer on a majority of days.
+- Mean absolute gap of the skip-only estimate to OVX: 0.90 volatility points (bar: under 0.5).
+- Closer to OVX than the registered estimate on 2 of 10 counted days (bar: a majority).
+- Skip-only gap by day: 2026-09-23 +1.31; 2026-09-24 +1.31; 2026-09-25 +0.88; 2026-09-29 +0.27; 2026-09-30 +1.06; 2026-10-01 +1.04; 2026-10-02 +1.19; 2026-10-05 +1.02; 2026-10-06 +0.84; 2026-10-07 +0.02.
+- Risk-free rate as the reading of record uses it (FRED cache): 3.910%.
+- Dropped as recorded after the close, under Gabriel's 23 Sep rule (applied 30 Sep, before this verdict): 2026-09-28.
+- This is the verdict at the registered minimum; H5e is registered through Wed 11 Nov 2026, and the reading then is the one written up.
+- The estimator is Andersen, Bondarenko & Gonzalez-Perez (2015)'s RX*, credited above; what is this project's is its application to a free retail-grade feed on USO.

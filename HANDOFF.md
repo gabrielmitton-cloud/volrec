@@ -1929,7 +1929,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | H5b | **tested 23 Sep, holds** | 36 of 36 free-feed missing bids are missing on Bloomberg (bar 80%) |
 | H5c | descriptive | Bloomberg reproduces USO's inflation within 0.5% and 10.4% on 23 Sep (6.5% and 30% before); needs 10 underlying-days |
 | H5d | descriptive | 12 underlying-days on 3 dates; the date-clustered test needs more dates |
-| H5e | counting from 23 Sep, **7 of 10** (4 Oct) | skip-only USO against OVX; first verdict ~7-8 Oct by the cloud. **Descriptive so far, not scored:** mean skip-only gap 1.01 against the 0.5 bar, closer than the registered estimate on 1 of 7 days; the registered estimate's own mean gap is 0.39. Estimator is ABG (2015)'s RX*, credited |
+| H5e | **first verdict: FAILS** (8 Oct) | mean abs gap 0.90 (bar under 0.5); closer on 2 of 10 days; final reading 11 Nov |
 | H5f | **read 25 Sep at 5 days: a, b, c hold** (a ON the bar) | H5f-a **0.500** of OPRA's spread (bar 0.5); H5f-b **64 of 64** no-bid (bar 80%); H5f-c inflation gap **0.6%** per day, 0.4% on medians (bar 25%); stale quotes excluded by the rule |
 
 *Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Aggregates only.*
