@@ -1,9 +1,9 @@
-# DRAFT H6 — Implied volatility forecasts next-day trading range better than a technical-levels rule
+# H6 — Implied volatility forecasts next-day trading range better than a technical-levels rule
 
-> **DRAFT, 8 Oct 2026. NOT REGISTERED.** Written by Claude for Gabriel's review. Nothing here
-> is frozen until Gabriel approves it and it is committed under `hypotheses/` without the
-> DRAFT prefix; the commit date is the registration. No join has been run.
-> (The number H6 was earmarked for Kalshi, which is parked; renumber if Kalshi returns.)
+**Registered:** 2026-10-08 (before any join; the commit date is proof). Approved by Gabriel 8 Oct.
+**Status:** registered
+**Sample:** A (long validation) primary; B (own panel) descriptive only
+(H6 had been earmarked for Kalshi, which is parked; Kalshi takes the next free number if it returns.)
 
 ## Why this hypothesis exists
 
@@ -13,7 +13,7 @@ volatility is also a forecast of travel, priced by people with capital at risk. 
 which forecasts the realised range better. It is a test **between two methods**, not a search
 for a signal, which is why it fits a project that "is not a search for alpha" (HANDOFF 1).
 
-## A conflict to resolve before registering - Gabriel decides
+## Why the long sample is primary (resolved at registration)
 
 The parked plan ran this on the live 109-ticker panel after ~40 trading days. CLAUDE.md says:
 **"Never fit or evaluate any forecaster on data/iv_history.csv alone. The live panel has too
@@ -64,12 +64,12 @@ significant at 5%. Either is reported as the result.
 Intraday data, entries/exits, any trading rule or P&L, small caps, tuning the ATR length or the
 range constant, and any claim from Sample B.
 
-## Open choices for Gabriel before registering
+## Decided at registration (Gabriel, 8 Oct 2026)
 
-1. Long sample primary (this draft) vs the parked live-panel plan (conflicts with CLAUDE.md).
-2. ATR(14) as the "technical levels" rule - or name the scanner rule you have in mind.
-3. Register now (it needs no new data, so the 11 Nov rule allows it) or late October as parked.
+Long sample primary (the CLAUDE.md rule); ATR(14) as the technical-levels rule with the pivot
+range as the second fixed benchmark; registered now - it needs no new data, so the 11 Nov rule
+allows it. Not yet implemented: the join is built and tested AFTER this commit.
 
 ## Adjustment log
 
-(empty - nothing registered)
+(none)

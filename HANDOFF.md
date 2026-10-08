@@ -1931,6 +1931,8 @@ every decision. This section is the only one guaranteed current. Read it, run
 | H5d | descriptive | 12 underlying-days on 3 dates; the date-clustered test needs more dates |
 | H5e | **first verdict: FAILS** (8 Oct) | mean abs gap 0.90 (bar under 0.5); closer on 2 of 10 days; final reading 11 Nov |
 | H5f | **read 25 Sep at 5 days: a, b, c hold** (a ON the bar) | H5f-a **0.500** of OPRA's spread (bar 0.5); H5f-b **64 of 64** no-bid (bar 80%); H5f-c inflation gap **0.6%** per day, 0.4% on medians (bar 25%); stale quotes excluded by the rule |
+| H6 | **registered 8 Oct** | implied vol vs ATR(14) for next-day range; long Cboe-index sample primary; join to build (needs Alpaca daily highs/lows - a temporary workflow, as H1) |
+| H7 | **registered 8 Oct (exception to the 11 Nov rule, Gabriel)** | free feed through Cboe's rules vs OVX/GVZ on the monthly legs from 9 Oct; read once over 9 Oct - 11 Nov, min 10 days; GLD OPRA added to the cloud fetch (~$1 approved) |
 
 *Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Aggregates only.*
 
@@ -2019,7 +2021,7 @@ every decision. This section is the only one guaranteed current. Read it, run
   **Proven so far (24 Sep 22:55 UTC):** both secrets set by Gabriel; a price-only run
   passed every step, priced 18-24 Sep with the key, and reproduced the Mac's comparison
   exactly. First real run: 24 Sep 23:05 UTC. First verdict path: Fri 25 Sep 23:05 UTC.
-- Kalshi (H6) is parked; no new hypotheses before 11 Nov unless one needs no new data.
+- Kalshi is parked (it takes the next free number if it returns; H6 and H7 were registered 8 Oct); no new hypotheses before 11 Nov unless one needs no new data - **H7 is the one explicit exception, granted by Gabriel 8 Oct.**
 - The operations agent never searches for results (`OPS-AGENT.md`).
 
 ### Next steps, dated
