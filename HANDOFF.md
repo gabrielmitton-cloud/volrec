@@ -2171,7 +2171,7 @@ Rules: (1) registered verdicts never change - corrected readings sit BESIDE them
 (2) old code paths stay runnable (new modes, not replacements); (3) every number from a run, with its
 command; "the data cannot say" when it cannot. Order:
 1. OVX/GVZ Nearest Term replication (audit item 1) from Databento OPRA full USO/GLD chains for the
-   recorded days - quote the cost to Gabriel before buying; add a `modelfree` mode for the rule.
+   recorded days - free cost quote first; STOP and ask Gabriel above $1 total (he does not want to spend money); add a `modelfree` mode for the rule.
 2. H4: calendar-day carry + Bakshi-Kapadia dividend adjustment (PV of dividends off S); needs a
    dividend source (free or LSEG). Weekend part measured: date-level -4.49 -> -4.58bp.
 3. Timing (item 2) only if LSEG shows intraday .OVX/GVZ back to 23 Sep (Gabriel's screenshots).
