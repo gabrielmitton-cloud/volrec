@@ -55,6 +55,7 @@ Run:  FRED_KEY=... python hedged.py
 """
 import csv
 import sys
+from math import exp
 from collections import defaultdict
 from datetime import date, timedelta
 from pathlib import Path
@@ -66,6 +67,35 @@ sys.path.insert(0, str(HERE / "tools"))
 import analyze                                     # noqa: E402
 from panel_health import US_MARKET_HOLIDAYS, AFTER_CLOSE_DAYS  # noqa: E402  one list each, owned there
 SURF = HERE / "data" / "surface.csv"
+DIVIDENDS_FILE = HERE / "data" / "dividends.csv"
+
+# H4's specification. "strike2" (8 Oct 2026, strike 2 of 3, Gabriel) is the reading of record:
+# carry accrues over the calendar days between snapshots, and the stock price is the Bakshi &
+# Kapadia (2003, s.3) adjusted price - spot minus the present value of the dividends that go
+# ex after the observation and on or before the option's expiry. "strike1" is the reading that
+# stood from 23 Sep to 8 Oct (1/365 of carry per trading-day step, raw spot); kept runnable so
+# every earlier number reproduces exactly.
+SPEC = "strike2"
+_DIVS = None
+
+
+def load_dividends(path=None):
+    """{symbol: [(ex_date, amount), ...]} from data/dividends.csv (public figures, sourced and
+    dated in the file). Declared or paid dividends only: an undeclared future dividend changes a
+    run only through its discounting between snapshots, which is negligible (HANDOFF 18, fix 2)."""
+    path = Path(path) if path else DIVIDENDS_FILE
+    out = defaultdict(list)
+    if path.exists():
+        for r_ in csv.DictReader(path.open(newline="")):
+            out[r_["symbol"]].append((date.fromisoformat(r_["ex_date"]), float(r_["amount"])))
+    return dict(out)
+
+
+def pv_dividends(divs, on, expiry, r_annual):
+    """Present value at `on` of dividends going ex in (on, expiry]. A dividend that went ex ON the
+    snapshot day is already out of that day's price, so it is excluded."""
+    return sum(amt * exp(-r_annual * (ex - on).days / 365.0)
+               for ex, amt in divs if on < ex <= expiry)
 
 MIN_RUN = 2          # need at least two observations to hedge anything
 MONEYNESS_BUCKETS = [
@@ -133,8 +163,13 @@ def runs_for_contract(obs):
     return out
 
 
-def hedged_gain(run, r_annual, delta_of=None):
+def hedged_gain(run, r_annual, delta_of=None, spec=None, dividends=None):
     """Delta-hedged P&L over one run. Returns a dict, or None if unusable.
+
+    `spec` is SPEC unless given: "strike2" accrues carry over the calendar days between
+    snapshots and hedges the dividend-adjusted price (Bakshi & Kapadia 2003); "strike1" is the
+    23 Sep - 8 Oct reading (1/365 per step, raw spot). `dividends` is load_dividends()'s map;
+    None loads data/dividends.csv once.
 
     `delta_of` optionally replaces the recorded delta with a callable taking a row
     and returning a delta, so the identical runs can be re-hedged under a different
@@ -153,8 +188,27 @@ def hedged_gain(run, r_annual, delta_of=None):
     if n < MIN_RUN:
         return None
 
+    spec = spec or SPEC
+    if spec == "strike2":
+        global _DIVS
+        if dividends is None:
+            if _DIVS is None:
+                _DIVS = load_dividends()
+            dividends = _DIVS
+        divs = dividends.get(run[0]["symbol"], [])
+        days = [date.fromisoformat(row["date"]) for row in run]
+        expiry = date.fromisoformat(run[0]["expiration"]) if run[0].get("expiration") else None
+        if divs and expiry is None:
+            return None                       # a dividend payer needs its expiry to be adjusted
+        S = [S[i] - (pv_dividends(divs, days[i], expiry, r_annual) if divs else 0.0) for i in range(n)]
+        step = [(days[i + 1] - days[i]).days / 365.0 for i in range(n - 1)]
+    elif spec == "strike1":
+        step = [1 / 365.0] * (n - 1)
+    else:
+        raise ValueError(f"unknown H4 specification {spec!r}")
+
     hedge = sum(D[i] * (S[i + 1] - S[i]) for i in range(n - 1))
-    financing = sum(r_annual * (C[i] - D[i] * S[i]) / 365.0 for i in range(n - 1))
+    financing = sum(r_annual * (C[i] - D[i] * S[i]) * step[i] for i in range(n - 1))
     pnl = (C[-1] - C[0]) - hedge - financing
 
     first = run[0]
@@ -393,14 +447,44 @@ def main():
     for row in rows:
         by_contract[row["option_symbol"]].append(row)
 
-    results = []
+    results, legacy = [], []
     for osym, obs in by_contract.items():
         obs.sort(key=lambda x: x["date"])
         for run in runs_for_contract(obs):
             g = hedged_gain(run, r)
             if g:
                 results.append(g)
+            g1 = hedged_gain(run, r, spec="strike1")
+            if g1:
+                legacy.append(g1)
+    print(f"H4 specification: {SPEC} (strike 2 of 3, 8 Oct 2026 - calendar-day carry, "
+          f"Bakshi-Kapadia dividend-adjusted price; data/dividends.csv)")
     report(results)
+    compare_specs(results, legacy)
+
+
+def compare_specs(new, old):
+    """The reading of record beside the strike-1 reading it replaced, same runs."""
+    print("\n-- strike 2 (reading of record) beside strike 1 (23 Sep - 8 Oct), same runs")
+    print(f"   {'line':<22}{'strike 1':>12}{'strike 2':>12}{'change':>9}")
+    def mean_bp(rs):
+        return sum(q["scaled"] for q in rs) / len(rs) * 10000 if rs else float("nan")
+    def date_level(rs):
+        by = defaultdict(list)
+        for q in rs:
+            by[q["start"]].append(q["scaled"])
+        x = [sum(v) / len(v) * 10000 for v in by.values()]
+        return analyze.plain_t(x)[:3:2] if len(x) > 1 else (float("nan"), float("nan"))
+    lines = [("pooled (contract)", mean_bp(old), mean_bp(new))]
+    for name, _, _ in MONEYNESS_BUCKETS:
+        lines.append((name, mean_bp([q for q in old if q["moneyness"] is not None and bucket_of(q["moneyness"]) == name]),
+                      mean_bp([q for q in new if q["moneyness"] is not None and bucket_of(q["moneyness"]) == name])))
+    (m1, t1), (m2, t2) = date_level(old), date_level(new)
+    lines.append(("date level (mean)", m1, m2))
+    for label, a, b in lines:
+        print(f"   {label:<22}{a:>10.2f}bp{b:>10.2f}bp{b - a:>+8.2f}")
+    print(f"   {'date level (t)':<22}{t1:>12.2f}{t2:>12.2f}{t2 - t1:>+9.2f}")
+    print(f"   runs: {len(old)} under strike 1, {len(new)} under strike 2")
 
 
 if __name__ == "__main__":

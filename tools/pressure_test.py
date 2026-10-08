@@ -383,6 +383,22 @@ ok(_t.returncode == 0 and _nfail == 0,
    f"hedged.py unit tests pass ({_nfail} failures)" if _nfail
    else f"hedged.py unit tests pass ({_npass} hand-computed cases)")
 
+# H4 strike 2 (8 Oct 2026, Gabriel): the reading of record is the calendar-carry, dividend-
+# adjusted specification, with strike 1 kept runnable; the dividends it uses must be current.
+_hsrc = (R / "hedged.py").read_text()
+ok('SPEC = "strike2"' in _hsrc and 'spec="strike1"' in _hsrc and "compare_specs" in _hsrc,
+   "H4's reading of record is strike 2, with strike 1 printed beside it")
+_h4log = next((R / "hypotheses").glob("*h4*")).read_text()
+ok("STRIKE 2 of 3" in _h4log, "H4's adjustment log records strike 2 of 3")
+_dv = list(csv.DictReader((R / "data/dividends.csv").open(newline=""))) if (R / "data/dividends.csv").exists() else []
+_payers = {"SPY", "QQQ", "IWM", "NVDA", "AAPL"}
+ok(_dv and _payers <= {d_["symbol"] for d_ in _dv} and all(d_["source"] and d_["checked"] for d_ in _dv),
+   "data/dividends.csv lists every dividend payer on the surface, each with its source and check date")
+_stale = [p_ for p_ in _payers if _dv and date.today() > max(date.fromisoformat(d_["ex_date"])
+          for d_ in _dv if d_["symbol"] == p_) + _td(days=100)]
+warn(not _stale, f"data/dividends.csv is current for quarterly payers (stale: {', '.join(sorted(_stale))} - "
+     f"add the newest ex-dates)")
+
 print("\n=== H3b. CALIBRATION (every instrument against a known reference truth) ===")
 # Each instrument is fed an input whose right answer is known in advance - parity,
 # invertibility, Carr-Madan's sigma^2, a simulated known vol, a no-premium world -

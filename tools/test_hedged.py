@@ -64,6 +64,41 @@ g = h.hedged_gain([row("2026-01-05", spot=100, mid=5.0, delta=0.5),
 check("three observations, hedge rebalanced, nets to zero", g["pnl"], 0.0)
 check("day count is intervals not observations", float(g["days"]), 2.0)
 
+print("\n=== strike 2 (8 Oct 2026): carry over CALENDAR days, Bakshi-Kapadia dividends ===")
+# Friday -> Monday is 3 days of carry, not 1: long call + short half a share holds 45 in cash.
+check("Friday -> Monday earns 3 days of carry",
+      h.hedged_gain([row("2026-01-09", spot=100, mid=5.0, delta=0.5),
+                     row("2026-01-12", spot=102, mid=6.0, delta=0.5)], 0.05, dividends={})["pnl"],
+      0.05 * 45 * 3 / 365)
+check("strike 1 kept 1/365 per step (reproducible)",
+      h.hedged_gain([row("2026-01-09", spot=100, mid=5.0, delta=0.5),
+                     row("2026-01-12", spot=102, mid=6.0, delta=0.5)], 0.05, spec="strike1")["pnl"],
+      0.05 * 45 / 365)
+# An ex-dividend day: spot falls by exactly the dividend and a properly priced call does not move.
+# The short hedge must NOT be credited the drop (strike 1 credits it: +delta x D).
+_div = {"TST": [(h.date(2026, 9, 18), 1.0)]}
+def _xd(spec):
+    r1 = row("2026-09-17", spot=100, mid=5.0, delta=0.5); r1["expiration"] = "2026-10-16"
+    r2 = row("2026-09-18", spot=99, mid=5.0, delta=0.5); r2["expiration"] = "2026-10-16"
+    return h.hedged_gain([r1, r2], 0.0, spec=spec, dividends=_div)["pnl"]
+check("a pure ex-dividend drop is no gain under strike 2", _xd("strike2"), 0.0)
+check("strike 1 credited it as +delta x D", _xd("strike1"), 0.5)
+check("a dividend going ex ON the snapshot day is already out of that price",
+      h.pv_dividends([(h.date(2026, 9, 18), 1.0)], h.date(2026, 9, 18), h.date(2026, 10, 16), 0.0), 0.0)
+check("a dividend after expiry is not subtracted",
+      h.pv_dividends([(h.date(2026, 11, 2), 1.0)], h.date(2026, 9, 18), h.date(2026, 10, 16), 0.0), 0.0)
+check("a dividend inside the life is discounted",
+      h.pv_dividends([(h.date(2026, 9, 28), 1.0)], h.date(2026, 9, 18), h.date(2026, 10, 16), 0.05),
+      h.exp(-0.05 * 10 / 365))
+_r = row("2026-09-17"); _r["symbol"] = "TST"
+istrue("a dividend payer without an expiry is rejected, not hedged unadjusted",
+       h.hedged_gain([_r, row("2026-09-18")], 0.0, dividends=_div) is None)
+try:
+    h.hedged_gain([row("2026-01-05"), row("2026-01-06")], 0.0, spec="nonsense")
+    istrue("an unknown specification raises", False)
+except ValueError:
+    istrue("an unknown specification raises", True)
+
 print("\n=== scaling ===")
 check("scaled == pnl / S0",
       h.hedged_gain([row("2026-01-05", spot=200, mid=5.0, delta=0.5),

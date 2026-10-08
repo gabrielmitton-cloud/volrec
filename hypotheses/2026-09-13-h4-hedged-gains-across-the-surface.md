@@ -333,3 +333,29 @@ called significant.**
   dropped, not kept (applied by him 30 Sep); `hedged.py` removes its rows, so hedging runs
   break across it exactly as they break across any missed trading day (strike 1's rule).
   No threshold, bucket or window changed; not counted as a strike.
+- **2026-10-08 — STRIKE 2 of 3, after seeing output. Carry over calendar days; the
+  Bakshi & Kapadia dividend-adjusted price.** Approved by Gabriel 7 Oct (night). The 7 Oct
+  methods audit, checked against Bakshi & Kapadia (2003, *RFS* 16(2), eq. 6 and s.3, read in
+  full 7 Oct), found two departures from the paper the specification cites: (1) carry
+  accrued 1/365 per trading-day step, so weekends earned none, where BK's tau/N steps sum to
+  the option's whole calendar life; (2) dividends were ignored, so on an ex-date the short
+  hedge was credited the price drop (+delta x D) without paying the dividend. BK subtract the
+  present value of known dividends from the stock price and use that adjusted price
+  throughout; `hedged.py` now does the same (`data/dividends.csv`: SPY, QQQ, IWM, NVDA, AAPL,
+  public ex-dates and amounts with sources; QQQ, NVDA and AAPL agree on Yahoo and Nasdaq, SPY
+  and IWM are Yahoo only). Strike 1 stays runnable (`spec="strike1"`) and reproduces every
+  earlier number exactly; `hedged.py` prints both.
+
+  Counted as a strike because it changes the outcome variable after output was seen. Buckets,
+  terciles, outcome definition (P&L / spot - now the adjusted spot, as BK) and thresholds are
+  as registered. 622 of 7,214 runs cross an ex-date (SPY 265, QQQ 242, IWM 115). The effect,
+  all descriptive, same 7,214 runs (data to 7 Oct):
+
+  | unit | strike 1 | strike 2 | of which carry | of which dividends |
+  |---|---|---|---|---|
+  | contract (pooled) | -7.70bp | -7.60bp | -0.12 | +0.21 |
+  | date level | -5.22bp (t -2.52) | -5.23bp (t -2.50) | -0.09 | +0.07 |
+
+  Signs checked by option type: the dividend term lowers call gains and raises put gains, the
+  carry term the reverse - as the paper implies. No conclusion moves. One strike remains;
+  the template's rule is that a third post-output adjustment abandons H4 and reports it.

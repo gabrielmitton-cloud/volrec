@@ -1924,7 +1924,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | H1 | tested, holds | 9 of 11 Cboe pairs survive FDR control |
 | H2 | tested, not adopted | log variance strongest (t=16.26) |
 | H3 | series running | H3a mean abs gap **0.53** over 30 readings (bar 1.0). First registered wide reading **OUTSIDE** 1.4-3.2 (+9.41; +10.71 with 23 Sep): quote contamination, as the grid anticipated. **IWM reads positive on all six days**, against H3b's sign - watch. **Day count: Bloomberg stated ACT/252 in writing (23 Sep); at 21 months ~1 point remains, not the forward or rate, unidentified and closed (24 Sep).** H3c's mechanism is Jiang & Tian (2007)'s, credited |
-| H4 | descriptive, **strike 1 of 3** | runs break on a missed trading day since 23 Sep; date level -0.57bp over 4 dates; needs ~40 date pairs |
+| H4 | descriptive, **strike 2 of 3** (8 Oct) | strike 2: calendar-day carry + Bakshi-Kapadia dividend-adjusted price (strike 1, 23 Sep: runs break on a missed trading day). Data to 7 Oct: date level -5.23bp (t -2.50) vs -5.22bp under strike 1; no conclusion moved. One strike left |
 | H5a | **tested 23 Sep, holds weakly** | pooled median 0.40 of a spread over 169 wing contracts on 3 days (bar 0.5); **0.67 on the 132 both feeds bid** - the two readings of "quoted" are logged, nothing adjusted |
 | H5b | **tested 23 Sep, holds** | 36 of 36 free-feed missing bids are missing on Bloomberg (bar 80%) |
 | H5c | descriptive | Bloomberg reproduces USO's inflation within 0.5% and 10.4% on 23 Sep (6.5% and 30% before); needs 10 underlying-days |
@@ -2212,6 +2212,15 @@ close) still shows +0.41. LSEG intraday OVX would test it. The registered quote 
 a full chain: ~25 zero-bid stubs at strikes down to $10 take USO to 144-281 points (54.6 / 49.7 with
 them removed) - the +/-30% band is what keeps the registered estimator sane.
 *Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
+
+#### Thu 8 Oct - fix 2 DONE: H4 strike 2 (calendar carry + Bakshi-Kapadia dividends)
+`hedged.py` SPEC = "strike2"; strike 1 runnable and printed beside it (`compare_specs`), and it
+reproduces the saved baseline exactly (pooled -7.70bp, date -5.22bp t -2.52). `data/dividends.csv`
+(sources and check dates; a pressure-test WARN when a payer's newest ex-date is > 100 days old - add
+new ex-dates by hand). Pooled -7.70 -> -7.60bp (carry -0.12, dividends +0.21); date level -5.22 ->
+-5.23bp. 622 runs cross an ex-date. 9 hand-computed unit tests; 2 auditor mutants. H4's log has the
+full entry. Undeclared future dividends are not projected: they move a run only through discounting
+between snapshots (r x D x 1 day x delta, below 0.001bp).
 
 #### Open, no fixed date
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
