@@ -188,14 +188,14 @@ def as_quote_rows(chain, exp, dte):
     return rows
 
 
-def day_readings(day, opra_path, r_bey, ovx_close, holidays=()):
-    rows = ore.recorded(day, "USO")
+def day_readings(day, opra_path, r_bey, ovx_close, holidays=(), root="USO"):
+    rows = ore.recorded(day, root)
     band = [r for r in rows if r["_file"] == "surface.csv"]
     when = ore.snapshot_minute(rows)
     if not band or not when:
         return None
     opra = ore.load_opra(opra_path)
-    chain = chain_at(opra, when)
+    chain = chain_at(opra, when, root)
     out = {"day": day, "ovx": ovx_close, "when": when}
 
     # S0 - the registered estimate, exactly as modelfree computes it
@@ -264,7 +264,7 @@ def summarise(label, days):
         return
     m = lambda f: st.mean(f(x) for x in full)
     print(f"\n{label} - {len(full)} complete days")
-    print("  mean gap to the OVX close  " + "  ".join(f"{k} {m(lambda x, k=k: x[k] - x['ovx']):+.2f}" for k in keys))
+    print("  mean gap to the index close " + "  ".join(f"{k} {m(lambda x, k=k: x[k] - x['ovx']):+.2f}" for k in keys))
     print("  mean |gap|                 " + "  ".join(f"{k} {m(lambda x, k=k: abs(x[k] - x['ovx'])):.2f}" for k in keys))
     print("  median |gap|               " + "  ".join(
         f"{k} {st.median(abs(x[k] - x['ovx']) for x in full):.2f}" for k in keys))
@@ -275,36 +275,43 @@ def summarise(label, days):
           + f"  left {m(lambda x: abs(x['S3'] - x['ovx'])):.2f}")
 
 
+PAIRS = (("USO", "OVX"), ("GLD", "GVZ"))          # both are Nearest Term, monthly-only (v9.0 s2.1)
+
+
 def main():
     import analyze
     from panel_health import US_MARKET_HOLIDAYS, AFTER_CLOSE_DAYS
-    files = sorted(ore.DATA_DIR.glob("OPRA_USO_*.csv"))
-    if not files:
-        sys.exit(f"no OPRA USO files in {ore.DATA_DIR} (set VOLREC_DATABENTO_DIR)")
-    ovx = analyze.fetch_market_vol(["OVX"]).get("OVX", {})
     r = modelfree.risk_free()
-    print(f"OVX replication from OPRA - EXPLORATORY (HANDOFF 18, methods audit item 1). r = {r:.3%} (DGS1MO)")
+    print(f"Cboe ETF-index replication from OPRA - EXPLORATORY (HANDOFF 18, methods audit item 1). "
+          f"r = {r:.3%} (DGS1MO)")
     print("S0 free/registered  S1 OPRA same contracts  S1c +Cboe quote rules & clock  S2 +all strikes  "
-          "S3 +Cboe's monthly legs\n")
-    print(f"{'date':<11}{'OVX':>7}{'S0':>7}{'S1':>7}{'S1c':>7}{'S2':>7}{'S3':>7}  "
-          f"{'data':>6}{'rules':>7}{'cover':>7}{'expiry':>7}{'left':>7}  legs ours -> Cboe")
-    res = []
-    for f in files:
-        day = f.stem.split("_")[-1]
-        got = day_readings(day, f, r, ovx.get(day), US_MARKET_HOLIDAYS)
-        if not got:
+          "S3 +Cboe's monthly legs; 'left' = S3 - the index close")
+    for root, index in PAIRS:
+        files = sorted(ore.DATA_DIR.glob(f"OPRA_{root}_*.csv"))
+        if not files:
+            print(f"\n{root}/{index}: no OPRA files in {ore.DATA_DIR} (set VOLREC_DATABENTO_DIR)")
             continue
-        got["dropped"] = date.fromisoformat(day) in AFTER_CLOSE_DAYS
-        res.append(got)
-        v = lambda k: f"{got[k]:7.2f}" if got.get(k) is not None else "    n/a"
-        def d(a, b):
-            return f"{got[a] - got[b]:+7.2f}" if got.get(a) is not None and got.get(b) is not None else "    n/a"
-        print(f"{day:<11}{v('ovx')}{v('S0')}{v('S1')}{v('S1c')}{v('S2')}{v('S3')}  "
-              f"{d('S1','S0')[1:]}{d('S1c','S1')}{d('S2','S1c')}{d('S3','S2')}{d('S3','ovx')}  "
-              f"{got['legs_ours']} -> {got['legs_cboe']}" + ("  (after the close: dropped)" if got["dropped"] else ""))
-    summarise("ALL days with OPRA", res)
-    summarise("H5e's counted days (from 23 Sep, after-close days dropped)",
-              [x for x in res if x["day"] >= modelfree.H5E_START and not x["dropped"]])
+        close = analyze.fetch_market_vol([index]).get(index, {})
+        print(f"\n==== {root} against {index} ====")
+        print(f"{'date':<11}{index:>7}{'S0':>7}{'S1':>7}{'S1c':>7}{'S2':>7}{'S3':>7}  "
+              f"{'data':>6}{'rules':>7}{'cover':>7}{'expiry':>7}{'left':>7}  legs ours -> Cboe")
+        res = []
+        for f in files:
+            day = f.stem.split("_")[-1]
+            got = day_readings(day, f, r, close.get(day), US_MARKET_HOLIDAYS, root)
+            if not got:
+                continue
+            got["dropped"] = date.fromisoformat(day) in AFTER_CLOSE_DAYS
+            res.append(got)
+            v = lambda k: f"{got[k]:7.2f}" if got.get(k) is not None else "    n/a"
+            def d(a, b):
+                return f"{got[a] - got[b]:+7.2f}" if got.get(a) is not None and got.get(b) is not None else "    n/a"
+            print(f"{day:<11}{v('ovx')}{v('S0')}{v('S1')}{v('S1c')}{v('S2')}{v('S3')}  "
+                  f"{d('S1','S0')[1:]}{d('S1c','S1')}{d('S2','S1c')}{d('S3','S2')}{d('S3','ovx')}  "
+                  f"{got['legs_ours']} -> {got['legs_cboe']}" + ("  (after the close: dropped)" if got["dropped"] else ""))
+        summarise(f"{root}: all days with OPRA", res)
+        summarise(f"{root}: from 23 Sep, after-close days dropped (H5e's window)",
+                  [x for x in res if x["day"] >= modelfree.H5E_START and not x["dropped"]])
     print(f"\n{ore.ATTRIBUTION}")
 
 

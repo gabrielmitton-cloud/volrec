@@ -2187,6 +2187,32 @@ known answers; a reproduction test that the original paths still give every regi
 exactly (a moved registered number is a bug - stop and root-cause). Then one backtest table: every
 hypothesis, original vs corrected, agrees / moves / would flip, with the reason.
 
+#### Thu 8 Oct - fix 1 DONE: the OVX/GVZ replication (`tools/ovx_replicate.py`, exploratory)
+Cboe's own rules (Math v5.0 s3, ETF v9.0 s2.1: third-Friday monthlies, >= 7 days, nearest two,
+minutes to 16:00 ET, zero-bid-or-ask exclusion with the two-strike stop, BEY->continuous rate) applied
+to Databento OPRA quotes at the snapshot minute, as four measured steps from the registered estimate.
+USO files were already owned (H5f); GLD bought for this, $0.305 (lifetime $0.649 of the free credit).
+Run: `VOLREC_DATABENTO_DIR=~/Documents/volrec-licensed/opra FRED_KEY=use-cache python tools/ovx_replicate.py`.
+Known answers in the pressure test (section R) and 3 auditor mutants (30 of 30 proven).
+| | USO vs OVX, H5e window (9 days) | GLD vs GVZ, same window (10 days) |
+|---|---|---|
+| data: free -> OPRA, same contracts | mean +0.02, mean abs 0.04 | mean -0.01, mean abs 0.02 |
+| Cboe quote rules on the band | -0.13 | -0.03 |
+| coverage: +/-30% band -> full chain | **+1.19** | +0.28 |
+| expiry: our weeklies -> Cboe's monthlies | **-0.55** (mean abs 0.55) | +0.19 |
+| left: faithful replica minus the index close | **+0.45** (mean abs 0.46, median 0.62) | +0.03 (median abs 0.07) |
+| registered estimate's mean abs gap | 0.33 | 0.40 |
+Findings: (1) the free feed's prices equal OPRA's NBBO on the same contracts, both names; (2) the
+GVZ replica lands a median 0.07 from the close - the method is right; (3) USO's registered closeness
+to OVX is partly offsetting errors (band truncation -1.2, expiry/residual +1.0); (4) a faithful Cboe
+replica on consolidated quotes at the snapshot misses OVX's close by 0.46 on average - about H5e's
+0.5 bar, so the bar left almost no room (the verdict stands as registered; the write-up says so);
+(5) USO's +0.45 residual is unexplained: timing is the lead suspect, but 28 Sep (snapshot after the
+close) still shows +0.41. LSEG intraday OVX would test it. The registered quote rule cannot be run on
+a full chain: ~25 zero-bid stubs at strikes down to $10 take USO to 144-281 points (54.6 / 49.7 with
+them removed) - the +/-30% band is what keeps the registered estimator sane.
+*Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
+
 #### Open, no fixed date
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
   and the OPRA aggregates are on the site (see the decisions above). When H5f reaches
