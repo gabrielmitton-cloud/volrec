@@ -1178,10 +1178,13 @@ ok(abs(_mfm.variance_one_expiry(_rows, 0.039)[0] - _ovm.cboe_sigma2(_clean, 0.03
    "the OVX replica's single-term variance equals modelfree's on a clean chain")
 _base = _ovm.cboe_sigma2(_ovchain(), 0.0, 30 / 365)
 _q = _ovchain(); _q[(96, "P")] = (0.0, _q[(96, "P")][1]); _q[(94, "P")] = (0.0, _q[(94, "P")][1])
-_q1 = _ovchain(); _q1[(110, "C")] = (_q1[(110, "C")][0], 0.0)
+_q1 = _ovchain(); _q1[(110, "C")] = (_q1[(110, "C")][0], 0.0); _q1[(112, "C")] = (_q1[(112, "C")][0], 0.0)
 ok(_ovm.cboe_sigma2(_q, 0.0, 30 / 365)[3] == _base[3] - 14,
    "the OVX replica stops the put walk after two consecutive zero bids")
-ok(_ovm.cboe_sigma2(_q1, 0.0, 30 / 365)[3] == _base[3] - 1,
+# Two consecutive zero ASKS must end the call walk (calls 110-130 out: 11 strikes). A zero
+# ask with a bid is also crossed, so a single one would be dropped anyway - only the stop
+# tells the zero-ask rule apart (the auditor caught the first version of this check).
+ok(_ovm.cboe_sigma2(_q1, 0.0, 30 / 365)[3] == _base[3] - 11,
    "the OVX replica excludes zero-ask quotes (Cboe, since 10 Feb 2025)")
 _qt = {}
 for _K, _c, _p in ((98, 3.0, 1.0), (99, 2.2, 1.2), (100, 1.6, 1.6), (101, 1.6, 1.6), (102, 0.8, 2.8)):
