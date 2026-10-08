@@ -2177,6 +2177,11 @@ command; "the data cannot say" when it cannot. Order:
 3. Timing (item 2) only if LSEG shows intraday .OVX/GVZ back to 23 Sep (Gabriel's screenshots).
 4. Small: docstring wording; Cboe extrapolation for the single-expiry path; fixed-b and BY lines as
    robustness beside the existing tests.
+**Gabriel decided, 7 Oct night:** (a) the H4 carry + dividend correction is **strike 2 of 3**
+(TEMPLATE: three post-output adjustments = abandon and report) - applied as H4's reading, original
+kept beside it, logged in H4's adjustment log; (b) **start recording the monthly USO and GLD expiries**
+OVX/GVZ use (an addition: same tickers, extra expiries; existing rows and registered numbers
+untouched; fully tested before it goes live; pick a clean start date and log it in H3/H5).
 Tests for every change: pressure test 0 fail; an auditor mutant per new safeguard; calibrate.py
 known answers; a reproduction test that the original paths still give every registered number
 exactly (a moved registered number is a bug - stop and root-cause). Then one backtest table: every
