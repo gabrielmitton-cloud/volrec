@@ -2163,6 +2163,25 @@ fourth price/IV reference. Unknowns: which product (Workspace, Datastream, Tick 
 personal login, intraday history depth, and Pepperdine's LSEG terms for publishing derived figures -
 treat like Bloomberg until known: raw data never in this repository.
 
+#### Thu 8 Oct - the corrections session (Gabriel's instruction, 7 Oct night)
+The H5e first verdict is RECORDED (FAILS, 0.90, 2 of 10; cloud, 8 Oct 02:50 UTC, after the writer's
+rounding fix 9bbc7b4). Gabriel: make every calculation correct, without breaking the system; test
+heavily; investigate any break to its root; backtest every hypothesis; data, not stories.
+Rules: (1) registered verdicts never change - corrected readings sit BESIDE them, dated and labelled;
+(2) old code paths stay runnable (new modes, not replacements); (3) every number from a run, with its
+command; "the data cannot say" when it cannot. Order:
+1. OVX/GVZ Nearest Term replication (audit item 1) from Databento OPRA full USO/GLD chains for the
+   recorded days - quote the cost to Gabriel before buying; add a `modelfree` mode for the rule.
+2. H4: calendar-day carry + Bakshi-Kapadia dividend adjustment (PV of dividends off S); needs a
+   dividend source (free or LSEG). Weekend part measured: date-level -4.49 -> -4.58bp.
+3. Timing (item 2) only if LSEG shows intraday .OVX/GVZ back to 23 Sep (Gabriel's screenshots).
+4. Small: docstring wording; Cboe extrapolation for the single-expiry path; fixed-b and BY lines as
+   robustness beside the existing tests.
+Tests for every change: pressure test 0 fail; an auditor mutant per new safeguard; calibrate.py
+known answers; a reproduction test that the original paths still give every registered number
+exactly (a moved registered number is a bug - stop and root-cause). Then one backtest table: every
+hypothesis, original vs corrected, agrees / moves / would flip, with the reason.
+
 #### Open, no fixed date
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
   and the OPRA aggregates are on the site (see the decisions above). When H5f reaches
