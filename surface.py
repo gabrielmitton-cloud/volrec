@@ -516,6 +516,146 @@ def record_wide(s, spots, rows, today):
         print(f"Wide pass abandoned, registered file unaffected: {type(e).__name__}: {e}")
 
 
+# --- the MONTHLY legs Cboe's ETF indices use, recorded to a SEPARATE file --------
+# Added 8 Oct 2026 (Gabriel, 7 Oct; HANDOFF 18 methods audit item 1). Cboe builds OVX
+# and GVZ from PM-settled third-Friday monthlies only, excluding series under 7 days,
+# and takes the two nearest (ETF methodology v9.0 s2.1; Math methodology v5.0 s2(b)).
+# The registered surface records weeklies either side of 30 days, so OVX's own legs
+# were missing on most days. This pass records, for USO and GLD only, EVERY listed
+# strike within +/-MONTHLY_BAND at exactly those two expiries, so Cboe's strike walk
+# can be replayed exactly. Same isolation as the wide pass: its own file, written only
+# after surface.csv is on disk, never raises, and nothing registered reads it.
+MONTHLY_SYMBOLS = ("USO", "GLD")        # OVX and GVZ: the surface names with a Nearest Term index
+MONTHLY_BAND = WIDE_CAP                 # 0.60: > 3 SD at USO's 50-day move (Jiang & Tian's 2 SD bar)
+MONTHLY_MIN_DAYS = 7
+MONTHLY_START = date(2026, 10, 9)
+MONTHLY_OUT = Path(__file__).parent / "data" / "surface_monthly.csv"
+
+
+def third_friday(y, m, holidays=()):
+    """Third Friday of the month, the Thursday before if that Friday is a holiday. Kept
+    identical to tools/ovx_replicate.py's; pressure_test.py checks they agree."""
+    d = date(y, m, 15)
+    d += timedelta(days=(4 - d.weekday()) % 7)
+    return d - timedelta(days=1) if d in holidays else d
+
+
+def monthly_expiries(today, holidays=()):
+    """The two expiries Cboe's Nearest Term Method takes on `today`. Pure."""
+    out, y, m = [], today.year, today.month
+    for _ in range(6):
+        e = third_friday(y, m, holidays)
+        if (e - today).days >= MONTHLY_MIN_DAYS:
+            out.append(e)
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    return out[:2]
+
+
+def monthly_chain(s, symbol, spot, exp, kind):
+    p = dict(feed=R.OPTION_FEED, limit=1000, type=kind, expiration_date=exp.isoformat(),
+             strike_price_gte=round(spot * (1 - MONTHLY_BAND), 2),
+             strike_price_lte=round(spot * (1 + MONTHLY_BAND), 2))
+    out = {}
+    for _ in range(R.MAX_PAGES):
+        j = R.get(s, f"{R.DATA}/v1beta1/options/snapshots/{symbol}", **p)
+        page = j.get("snapshots") or {}
+        out.update(page)
+        token = j.get("next_page_token")
+        if not token or not page:
+            break
+        p["page_token"] = token
+        time.sleep(PACE)
+    return out
+
+
+def monthly_rows(snaps, symbol, spot, today, wanted):
+    """Snapshot dict -> rows in FIELDS order, only at the `wanted` expiries. Pure."""
+    out = []
+    for osym, snap in snaps.items():
+        try:
+            exp, strike, kind = R.parse_occ(osym)
+        except ValueError:
+            continue
+        if exp not in wanted:
+            continue
+        q = snap.get("latestQuote") or {}
+        g = snap.get("greeks") or {}
+        bid, ask = q.get("bp"), q.get("ap")
+        mid = (bid + ask) / 2 if (bid is not None and ask is not None) else None
+        day = snap.get("dailyBar") or {}
+        out.append({
+            "date": today.isoformat(), "symbol": symbol, "spot": round(spot, 4),
+            "quote_time": q.get("t", ""),
+            "expiration": exp.isoformat(), "dte": (exp - today).days,
+            "type": kind, "strike": strike,
+            "moneyness": round(strike / spot, 6) if spot else "",
+            "option_symbol": osym,
+            "bid": bid, "ask": ask,
+            "mid": round(mid, 6) if mid is not None else "",
+            "volume": day.get("v", ""),
+            "open_interest": "", "open_interest_date": "",
+            "iv": snap.get("impliedVolatility", ""),
+            "delta": g.get("delta", ""), "gamma": g.get("gamma", ""),
+            "theta": g.get("theta", ""), "vega": g.get("vega", ""),
+            "rho": g.get("rho", ""),
+        })
+    return sorted(out, key=lambda r: (r["expiration"], r["type"], r["strike"]))
+
+
+def append_monthly(rows):
+    """Idempotent per (date, option_symbol); refuses a mismatched header."""
+    MONTHLY_OUT.parent.mkdir(parents=True, exist_ok=True)
+    new = not MONTHLY_OUT.exists() or MONTHLY_OUT.stat().st_size == 0
+    seen = set()
+    if not new:
+        with MONTHLY_OUT.open(newline="") as f:
+            rd = csv.DictReader(f)
+            if rd.fieldnames != FIELDS:
+                print("    (monthly: header mismatch, not appending)")
+                return 0
+            seen = {(r["date"], r["option_symbol"]) for r in rd}
+    fresh = [r for r in rows if (r["date"], r["option_symbol"]) not in seen]
+    with MONTHLY_OUT.open("a", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        if new:
+            w.writeheader()
+        w.writerows(fresh)
+    return len(fresh)
+
+
+def record_monthly(s, spots, today):
+    """The monthly pass. NEVER raises and never exits (see the note above WIDE_SIGMAS)."""
+    try:
+        if today < MONTHLY_START:
+            return
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parent / "tools"))
+            from panel_health import US_MARKET_HOLIDAYS as hol
+        except Exception:
+            hol = ()
+        wanted = set(monthly_expiries(today, hol))
+        got = []
+        for sym in MONTHLY_SYMBOLS:
+            if sym not in spots:
+                continue
+            try:
+                snaps = {}
+                for e in sorted(wanted):
+                    for kind in ("call", "put"):
+                        snaps.update(monthly_chain(s, sym, spots[sym], e, kind))
+                        time.sleep(PACE)
+                rows = monthly_rows(snaps, sym, spots[sym], today, wanted)
+                got.extend(rows)
+                print(f"  {sym:6s} monthly legs {'/'.join(sorted(e.isoformat() for e in wanted))}: "
+                      f"{len(rows)} contracts")
+            except Exception as e:
+                print(f"  {sym:6s} monthly pass failed, registered file unaffected: {type(e).__name__}: {e}")
+        if got:
+            print(f"Wrote {append_monthly(got)} monthly row(s) to {MONTHLY_OUT}")
+    except (Exception, SystemExit) as e:
+        print(f"Monthly pass abandoned, registered file unaffected: {type(e).__name__}: {e}")
+
+
 def already_recorded(today):
     if not OUT.exists():
         return set()
@@ -594,6 +734,7 @@ def main():
         print(f"\nWrote {len(rows)} row(s) to {OUT}")
         # Only after the registered file is safely on disk.
         record_wide(s, spots, rows, today)
+        record_monthly(s, spots, today)
     if failed:
         print(f"Failed: {', '.join(failed)} - a gap is not fatal.")
 

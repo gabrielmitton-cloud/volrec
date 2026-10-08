@@ -641,7 +641,8 @@ ok("if [ -f data/surface_wide.csv ]; then git add data/surface_wide.csv; fi" in 
    "surface workflow stages the wide file ONLY if it exists (a bare git add on a "
    "missing path exits 128 and would lose surface.csv)")
 ok("git add data/" not in _srf_run.replace("git add data/surface.csv", "")
-                                  .replace("git add data/surface_wide.csv", ""),
+                                  .replace("git add data/surface_wide.csv", "")
+                                  .replace("git add data/surface_monthly.csv", ""),
    "surface workflow stages nothing else under data/ - never the ATM panel")
 ok(any("git diff --exit-code -- data/iv_history.csv" in str(st.get("run", ""))
        for st in srf["jobs"]["surface"]["steps"]),
@@ -1215,6 +1216,43 @@ ok("1 of 3 tickers on 2026-10-02" in _cb.getvalue() and "accepted 8 Oct): MDY" i
    "panel_health names every missing ticker: monthly-only ones as the accepted gap, any other as a WARN")
 _phm.warns.clear()
 ok(_phm.MONTHLY_ONLY == {"MDY", "FXE", "XLRE", "DUK"}, "the accepted monthly-only list is exactly the four (Gabriel, 8 Oct)")
+print("\n=== S. THE MONTHLY LEGS (surface.py, data/surface_monthly.csv, from 9 Oct 2026) ===")
+# Cboe's own legs for OVX/GVZ, recorded so they can be replayed (Gabriel, 7 Oct). Isolated like
+# the wide band: its own file, written after surface.csv, never read by registered code.
+import surface as _srf
+_ovsp = _iu.spec_from_file_location("ovxrep_s", R / "tools/ovx_replicate.py")
+_ovx2 = _iu.module_from_spec(_ovsp); _ovsp.loader.exec_module(_ovx2)
+from panel_health import US_MARKET_HOLIDAYS as _hol
+_dd, _agree = date(2026, 10, 1), True
+while _dd < date(2029, 1, 1):
+    _agree &= _srf.third_friday(_dd.year, _dd.month, _hol) == _ovx2.third_friday(_dd.year, _dd.month, _hol)
+    _dd += _td(days=28)
+ok(_agree, "the recorder's third Friday agrees with the OVX replica's on every month to 2028")
+ok(_srf.monthly_expiries(date(2026, 10, 9), _hol) == [date(2026, 10, 16), date(2026, 11, 20)]
+   and _srf.monthly_expiries(date(2026, 10, 12), _hol) == [date(2026, 11, 20), date(2026, 12, 18)]
+   and _srf.monthly_expiries(date(2027, 6, 10), _hol)[0] == date(2027, 6, 17),
+   "the monthly pass takes Cboe's two nearest monthlies, none under 7 days, Thursday on a holiday")
+ok(_srf.MONTHLY_SYMBOLS == ("USO", "GLD") and _srf.MONTHLY_START == date(2026, 10, 9),
+   "the monthly pass records USO and GLD only, from 9 Oct 2026")
+_ssrc = (R / "surface.py").read_text()
+_smain = _ssrc.split("\ndef main():")[1]          # the CALLS, not the definitions
+ok(0 <= _smain.find("        append(rows)") < _smain.find("record_wide(s, spots, rows, today)")
+   < _smain.find("record_monthly(s, spots, today)")
+   and "except (Exception, SystemExit)" in _ssrc.split("def record_monthly")[1].split("\ndef ")[0],
+   "the monthly pass runs only after surface.csv is written, and cannot fail the run")
+_regsrc = "".join((R / f).read_text() for f in ("modelfree.py", "hedged.py", "analyze.py"))
+ok("surface_monthly" not in _regsrc, "no registered reading reads the monthly file")
+ok("data/surface_monthly.csv" in (R / ".github/workflows/surface.yml").read_text(),
+   "the surface workflow commits the monthly file when it exists")
+_mf = R / "data" / "surface_monthly.csv"
+if _mf.exists():
+    _mrows = list(csv.DictReader(_mf.open(newline="")))
+    ok(list(_mrows[0].keys()) == _srf.FIELDS if _mrows else True, "the monthly file has the surface's columns")
+    ok(all(r_["symbol"] in ("USO", "GLD") and _ovx2.is_monthly(date.fromisoformat(r_["expiration"]), _hol)
+           and int(r_["dte"]) >= 7 for r_ in _mrows),
+       "every monthly row is USO or GLD, at a third-Friday expiry at least 7 days out")
+else:
+    print("  PEND  data/surface_monthly.csv not written yet (first run Fri 9 Oct)")
 
 print("\n=== R. THE OVX REPLICA (tools/ovx_replicate.py, exploratory, 8 Oct 2026) ===")
 # Cboe's own rules (Math methodology v5.0 s3; ETF methodology v9.0 s2.1) for the methods

@@ -46,6 +46,8 @@ jobs:
           # An explicit if, never `[ -f ] && git add`, so the step cannot inherit
           # a non-zero status from a file that simply is not there.
           if [ -f data/surface_wide.csv ]; then git add data/surface_wide.csv; fi
+          # The monthly legs (8 Oct 2026, from 9 Oct): same rule, same reason.
+          if [ -f data/surface_monthly.csv ]; then git add data/surface_monthly.csv; fi
           git diff --staged --quiet && exit 0
           git commit -m "surface $(date +%F)"
           # record.yml may be committing at the same time. Rebase and retry

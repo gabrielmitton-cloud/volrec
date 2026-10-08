@@ -163,6 +163,13 @@ MUTANTS = [
     ("h7-cap-ignored", "H7's own spending cap stops being applied",
      lambda w: _sub(w / "tools/opra_reference.py", "    if spent_monthly + cost > H7_BUDGET_USD:", "    if False:"),
      "H7's monthly-leg OPRA purchases stop at their own"),
+    ("monthly-short-legs", "the monthly pass accepts expiries under 7 days",
+     lambda w: _sub(w / "surface.py", "MONTHLY_MIN_DAYS = 7", "MONTHLY_MIN_DAYS = 0"),
+     "the monthly pass takes Cboe's two nearest monthlies"),
+    ("monthly-before-registered", "the monthly pass runs before surface.csv is written",
+     lambda w: _sub(w / "surface.py", "        record_monthly(s, spots, today)\n", "") or
+               _sub(w / "surface.py", "    if rows:\n        append(rows)", "    if rows:\n        record_monthly(s, spots, today)\n        append(rows)"),
+     "the monthly pass runs only after surface.csv is written"),
     ("guard-clock-wrong", "the guard treats 20:50 UTC as mid-session",
      lambda w: _sub(w / "record.py", "return (ny.hour, ny.minute) >= (16, 0)", "return (ny.hour, ny.minute) >= (17, 0)"),
      "the guard refuses 28 Sep's 20:50 UTC start"),
