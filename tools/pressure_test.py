@@ -1201,7 +1201,8 @@ _cov_rows = [{"symbol": t, "date": "2026-10-01"} for t in ("SPY", "MDY", "AAPL")
 _phm.warns.clear()
 with _ctx.redirect_stdout(_io.StringIO()) as _cb:
     _phm.check_ticker_coverage(_cov_rows, date(2026, 10, 2))      # a date object, as day_span gives
-ok("MDY" in _cb.getvalue() and "accepted" in _cb.getvalue() and len(_phm.warns) == 1 and "AAPL" in _phm.warns[0],
+ok("1 of 3 tickers on 2026-10-02" in _cb.getvalue() and "accepted 8 Oct): MDY" in _cb.getvalue()
+   and _phm.warns == ["1 ticker(s) missing on 2026-10-02 that are not monthly-only: AAPL"],
    "panel_health names every missing ticker: monthly-only ones as the accepted gap, any other as a WARN")
 _phm.warns.clear()
 ok(_phm.MONTHLY_ONLY == {"MDY", "FXE", "XLRE", "DUK"}, "the accepted monthly-only list is exactly the four (Gabriel, 8 Oct)")
