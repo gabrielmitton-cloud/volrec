@@ -123,6 +123,30 @@ def h5e_score(rows, first=H5E_START, last=None):
             "near": round(abs(mae - H5E_BAR), 6) <= 0.05 or abs(closer - n / 2) <= 1}
 
 
+# Rounding budget for the cross-check (7 Oct 2026). The parser re-scores from the per-day gaps
+# modelfree PRINTS at 2 decimals (each off by <= 0.005, so their mean is too), and modelfree's
+# own mean is printed at 2 decimals (<= 0.005 more): two honest readings can differ by 0.010.
+# The first limit, 0.006, was tighter than that and refused the real first verdict on 7 Oct
+# (parser 0.894 from rounded gaps, modelfree 0.90 from full precision).
+MAE_ROUNDING = 0.0105
+
+
+def crosscheck(out, sc):
+    """None when modelfree's printed tally agrees with this parser's score; else the reason.
+    On agreement the written mean becomes modelfree's own (full-precision) figure."""
+    m = re.search(r"mean \|gap\| ([\d.]+) against 0\.5 .*closer than registered on (\d+) of (\d+) days", out)
+    if not m:
+        return "modelfree printed no H5e tally"
+    mf = float(m.group(1))
+    if abs(mf - sc["mae"]) > MAE_ROUNDING or int(m.group(2)) != sc["closer"] or int(m.group(3)) != sc["n"]:
+        return m.group(0)
+    if (mf < H5E_BAR) != sc["under"]:
+        return f"{m.group(0)} - rounding straddles the bar; read it by hand"
+    sc["mae"] = mf
+    sc["near"] = round(abs(mf - H5E_BAR), 6) <= 0.05 or abs(sc["closer"] - sc["n"] / 2) <= 1
+    return None
+
+
 # ---------------- the fixed wording ----------------
 def block_h5f(v, today):
     a_on = round(abs(v["a"] - 0.5), 6) <= 0.02
@@ -272,15 +296,15 @@ def main():
             notes.append(f"{label}: {sc['n'] if sc else 0} of {H5E_MIN_DAYS} counted days - not yet")
             continue
         if not final:                                       # cross-check against modelfree's own tally
-            m = re.search(r"mean \|gap\| ([\d.]+) against 0\.5 .*closer than registered on (\d+) of (\d+) days", out)
-            if not m or abs(float(m.group(1)) - sc["mae"]) > 0.006 or int(m.group(2)) != sc["closer"] or int(m.group(3)) != sc["n"]:
-                raise SystemExit(f"{label}: this parser and modelfree disagree - refusing to write ({m and m.group(0)})")
+            bad = crosscheck(out, sc)
+            if bad:
+                raise SystemExit(f"{label}: this parser and modelfree disagree - refusing to write ({bad})")
         fv = None
         if final:
             fm = re.search(re.escape(MARK_H5E_FIRST) + r".*?\n\n- \*\*(HOLDS|FAILS)\*\*", h5, re.S)
             fv = fm.group(1) if fm else None
         blk = block_h5e(sc, rf, [d for d in na if H5E_START <= d <= H5E_END], today, final, fv,
-                        [d for d in dropped_days(out) if H5E_START <= d <= H5E_END])
+                        sorted({d for d in dropped_days(out) if H5E_START <= d <= H5E_END}))   # H3 and H5e both print it
         if a.preview or a.dry_run:
             print(("PREVIEW (not due, not written)\n" if sc["n"] < H5E_MIN_DAYS or str(today) < due else "DUE\n") + blk + "\n")
             continue

@@ -75,7 +75,14 @@ print(f"  INFO  {len(rows)} rows over {len(days)} trading days, {days[0]} to {da
 
 print("\n=== C. VALUE SANITY (all rows) ===")
 ok(all(float(r["bid"]) <= float(r["mid"]) <= float(r["ask"]) for r in rows), "bid <= mid <= ask")
-ok(all(float(r["bid"]) > 0 for r in rows), "no one-sided quotes")
+# 7 Oct 2026: FXE returned after its monthly-expiry gap with a one-sided ATM quote (bid 0,
+# ask 3.23) and NO vendor IV. The panel records what the feed said and is never rewritten;
+# what must hold is that a one-sided quote never carries an IV into the analysis (analyze.py
+# drops rows without one). Any one-sided row is still shown as a warning.
+_onesided = [f'{r["date"]} {r["symbol"]}' for r in rows if float(r["bid"]) <= 0]
+ok(all(float(r["bid"]) > 0 or not (r.get("iv") or "").strip() for r in rows),
+   "no one-sided quote carries an IV into the analysis")
+warn(not _onesided, f"no one-sided quotes ({len(_onesided)}: {', '.join(_onesided[-3:])})")
 iv = [float(r["iv"]) for r in rows if r["iv"]]
 ok(all(0.01 < v < 3.0 for v in iv), f"IV sane ({min(iv):.3f}-{max(iv):.3f})")
 d = [int(r["dte"]) for r in rows]
@@ -1046,6 +1053,23 @@ ok(len(_rows) == 3 and _rf == "3.910" and _na == ["2026-09-24"] and _sc["n"] == 
    and abs(_sc["mae"] - 0.60) < 1e-9 and _sc["closer"] == 2 and not _sc["holds"]
    and _rvm.h5e_score(_rows, last="2026-09-24")["n"] == 1,
    "the verdict writer parses H5e's table, skips in-sample days, and scores as registered")
+# 7 Oct 2026: the real first verdict was refused - the parser's mean of 2-decimal gaps (0.894)
+# and modelfree's full-precision mean (printed 0.90) differ by rounding alone. The cross-check
+# must accept rounding, refuse a real disagreement, and refuse a mean that rounding puts on
+# both sides of the bar.
+_real = [("2026-09-23", 53.24, 0.16, 1.31, True), ("2026-09-24", 54.45, -0.98, 1.31, True),
+         ("2026-09-25", 55.09, 0.08, 0.88, True), ("2026-09-29", 53.74, -0.82, 0.27, True),
+         ("2026-09-30", 52.24, -0.05, 1.06, True), ("2026-10-01", 51.69, 0.21, 1.04, True),
+         ("2026-10-02", 51.00, 0.46, 1.19, True), ("2026-10-05", 48.65, 0.21, 1.02, True),
+         ("2026-10-06", 48.79, -0.03, 0.84, True), ("2026-10-07", 48.61, -0.69, 0.02, True)]
+_tally = "   mean |gap| {} against 0.5 (OVER); closer than registered on {} of 10 days (NOT a majority)\n"
+_s1 = _rvm.h5e_score(_real); _ok1 = _rvm.crosscheck(_tally.format("0.90", 2), _s1) is None and _s1["mae"] == 0.90
+_s2 = _rvm.h5e_score(_real); _bad2 = _rvm.crosscheck(_tally.format("0.95", 2), _s2)
+_s3 = _rvm.h5e_score(_real); _bad3 = _rvm.crosscheck(_tally.format("0.90", 3), _s3)
+_s4 = _rvm.h5e_score(_real); _s4["mae"], _s4["under"] = 0.496, True
+_bad4 = _rvm.crosscheck(_tally.format("0.50", 2), _s4)
+ok(_ok1 and _bad2 and _bad3 and _bad4 and "straddles" in _bad4,
+   "the verdict cross-check accepts rounding (7 Oct's 0.894 vs 0.90), refuses real disagreement, and a straddled bar")
 _h5f_txt = ("days with OPRA data: 5 ['a', 'b', 'c', 'd', 'e']  (minimum 5)\n"
             "wing contracts: 400 with a spread; 60 wide rows unmatched (excluded by the rule)\n"
             "H5f-a  pooled median 0.520 of the OPRA spread (bar 0.5) -> FAILS\n"
