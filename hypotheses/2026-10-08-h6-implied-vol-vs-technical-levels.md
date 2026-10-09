@@ -95,3 +95,12 @@ allows it. Not yet implemented: the join is built and tested AFTER this commit.
      two-sided p < 0.05.
   7. **The pivot forecast** is reported with the same statistics, as a second benchmark; H6a and
      H6b are judged against ATR only.
+- **2026-10-09 — EVZ's source, fixed BEFORE any H6 output existed (not a strike).** The first run
+  stopped before computing anything: Cboe's EVZ file now returns 403 (access denied). Cboe
+  discontinued EVZ in March 2025 (its ETF methodology notes decommissioning, 10 Feb 2025; FRED's
+  EVZCLS ends 11 Mar 2025). EVZ/FXE is a registered pair, so it stays, read from FRED's EVZCLS -
+  FRED republishes Cboe's closes, and on GVZ the two sources agree on all 2,704 common days since
+  2016 (largest difference 0.00). Its window is therefore 2016-01-04 to 2025-03-11; every other
+  pair runs to the last complete day. Unlike VXGDX and VXXLE (excluded up front: fragmented, ended
+  2022) it has over nine years. Also fixed: the workflow reported success when the script crashed
+  (`| tee` without pipefail) - it now fails as it should.

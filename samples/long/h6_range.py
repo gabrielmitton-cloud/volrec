@@ -29,6 +29,25 @@ SPIKE_LOOKBACK, SPIKE_PCT, SPIKE_WINDOW = 252, 0.90, 21
 IV_TO_RANGE = sqrt(8 / pi) / sqrt(252)            # Parkinson (1980): E ln(H/L) = sqrt(8/pi) sigma sqrt(dt)
 
 
+# EVZ: discontinued by Cboe in March 2025 and its file withdrawn (403). FRED republishes Cboe's
+# closes; checked identical to Cboe's own file on GVZ (2,704 days, 9 Oct 2026). H6 log, 9 Oct.
+FRED_ONLY = {"EVZ": "EVZCLS"}
+
+
+def fred_closes(series_id):
+    """{date: close} from FRED's public CSV (no key). Missing values ('.' or empty) are skipped."""
+    import csv
+    import io
+    import requests
+    r = requests.get("https://fred.stlouisfed.org/graph/fredgraph.csv", params={"id": series_id}, timeout=60)
+    r.raise_for_status()
+    out = {}
+    for row in list(csv.reader(io.StringIO(r.text)))[1:]:
+        if len(row) == 2 and row[1] not in ("", "."):
+            out[row[0]] = float(row[1])
+    return out
+
+
 # ---------------- pure pieces (tested in tools/test_h6.py) ----------------
 def wilder_atr(bars, n=ATR_N):
     """bars: [(date, high, low, close)] sorted. -> {date: ATR}. True range needs the previous close,
@@ -112,7 +131,11 @@ def main():
     end = date.today()
     print(f"H6 - implied volatility vs ATR({ATR_N}) for the next day's range. Sample A, {START} to "
           f"the last complete day. Specification: H6's file and its 9 Oct adjustment log.\n")
-    vol = analyze.fetch_market_vol([p[0] for p in PAIRS])
+    vol = analyze.fetch_market_vol([p[0] for p in PAIRS if p[0] not in FRED_ONLY])
+    for idx, fid in FRED_ONLY.items():
+        vol[idx] = fred_closes(fid)
+        print(f"  {idx}: {len(vol[idx])} daily closes from FRED {fid} (Cboe's file is withdrawn), "
+              f"{min(vol[idx])} to {max(vol[idx])}")
     ohlc = analyze.fetch_ohlc([p[1] for p in PAIRS], START, end)
 
     print(f"{'pair':<11}{'N':>6}  {'MSLE IV':>8}{'MSLE ATR':>9}{'MSLE piv':>9}   {'d IV-ATR':>9}{'DM':>7}"

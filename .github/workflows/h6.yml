@@ -22,7 +22,9 @@ jobs:
         env:
           ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
           ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
-        run: python samples/long/h6_range.py | tee h6_output.txt
+        run: |
+          set -o pipefail
+          python samples/long/h6_range.py | tee h6_output.txt
       - uses: actions/upload-artifact@v4
         with:
           name: h6-output

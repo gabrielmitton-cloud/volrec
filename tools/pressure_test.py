@@ -612,7 +612,9 @@ _ANALYSIS_WF = {"h6.yml"}
 def _readonly_manual(p_):
     _y = yaml.safe_load(p_.read_text()); _on = _y.get(True, _y.get("on")) or {}
     return (set(_on) == {"workflow_dispatch"} and _y.get("permissions") == {"contents": "read"}
-            and "git push" not in p_.read_text() and "git commit" not in p_.read_text())
+            and "git push" not in p_.read_text() and "git commit" not in p_.read_text()
+            # 9 Oct: `| tee` without pipefail reported a crashed H6 run as a success
+            and ("| tee" not in p_.read_text() or "set -o pipefail" in p_.read_text()))
 _wfs = {p.name: p for p in (R / ".github/workflows").glob("*.yml")}
 ok(set(_wfs) - _ANALYSIS_WF == {"record.yml", "freshness.yml", "surface.yml", "health.yml"}
    and all(_readonly_manual(_wfs[n]) for n in set(_wfs) & _ANALYSIS_WF),
