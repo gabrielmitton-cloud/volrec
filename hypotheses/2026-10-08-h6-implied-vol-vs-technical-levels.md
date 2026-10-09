@@ -1,7 +1,7 @@
 # H6 — Implied volatility forecasts next-day trading range better than a technical-levels rule
 
 **Registered:** 2026-10-08 (before any join; the commit date is proof). Approved by Gabriel 8 Oct.
-**Status:** registered
+**Status:** tested 9 Oct 2026 - H6a FAILS, H6b HOLDS
 **Sample:** A (long validation) primary; B (own panel) descriptive only
 (H6 had been earmarked for Kalshi, which is parked; Kalshi takes the next free number if it returns.)
 
@@ -69,6 +69,44 @@ range constant, and any claim from Sample B.
 Long sample primary (the CLAUDE.md rule); ATR(14) as the technical-levels rule with the pivot
 range as the second fixed benchmark; registered now - it needs no new data, so the 11 Nov rule
 allows it. Not yet implemented: the join is built and tested AFTER this commit.
+
+## Result — tested 2026-10-09
+
+Run: `.github/workflows/h6.yml` (Actions runs 37898574657 and, with the exploratory lines,
+37899028880), `samples/long/h6_range.py` at the specification above and its 9 Oct details.
+Sample A, 2016-01-04 to 2026-10-08 (EVZ/FXE to 2025-03-11, FRED). 1,873 to 2,692 days per pair.
+
+| pair | N | MSLE IV | MSLE ATR | mean d (IV - ATR) | DM-HLN | IV lower? |
+|---|---|---|---|---|---|---|
+| VIX/SPY | 2692 | 0.6296 | 0.2665 | +0.3631 | 23.67 | no |
+| VXN/QQQ | 2692 | 0.4830 | 0.2295 | +0.2535 | 22.41 | no |
+| RVX/IWM | 2687 | 0.3464 | 0.1800 | +0.1664 | 21.92 | no |
+| VXD/DIA | 2689 | 0.5962 | 0.2444 | +0.3518 | 23.68 | no |
+| OVX/USO | 2688 | 0.5439 | 0.2459 | +0.2979 | 29.55 | no |
+| GVZ/GLD | 2688 | 0.7163 | 0.3175 | +0.3988 | 41.49 | no |
+| VXSLV/SLV | 1873 | 0.7263 | 0.3225 | +0.4038 | 33.35 | no |
+| VXEEM/EEM | 2688 | 0.8819 | 0.3399 | +0.5420 | 41.95 | no |
+| EVZ/FXE | 2296 | 0.8250 | 0.3754 | +0.4496 | 28.04 | no |
+
+**H6a — FAILS.** Implied volatility has the lower error in 0 of 9 pairs (registered: at least 7);
+pooled date-level mean d +0.3531, DM-HLN 44.34, p < 0.0001 over 2,692 dates - significant, in
+ATR's favour. All nine per-pair differences survive BH and BY. The pivot range also beats implied
+volatility in all nine.
+
+**H6b — HOLDS.** Pooled mean d after a spike +0.3272 (1,910 dates) against +0.4165 on calm days
+(782); difference -0.0893, Welch t -7.95, p < 0.0001: implied volatility's disadvantage shrinks
+after spikes, as predicted. The pooled reading flags a date when ANY index spiked (71% of dates);
+per pair, by its own index, the same direction holds in 8 of 9 (exploratory, below).
+
+**Why H6a fails, from the run (exploratory, added after the output - see the log):** implied
+volatility overshoots the LEVEL of the next day's high-low range - mean log bias +0.45 to +0.84
+(a forecast 1.6 to 2.3 times the range), against ATR's +0.17 to +0.42. It prices close-to-close
+risk, overnight gaps included, plus the variance risk premium H1 measured; an intraday range
+contains neither. With the level removed, its TIMING error (variance of the log error) is smaller
+than ATR's in **8 of 9 pairs** (all but EVZ/FXE). So: as a level forecast of tomorrow's range, a
+trailing range rule wins; as a signal of how volatility is moving, implied volatility leads.
+That second sentence is exploratory and in-sample: it would need its own registration and data
+H6 did not use before it could be claimed.
 
 ## Adjustment log
 

@@ -1931,7 +1931,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | H5d | descriptive | 12 underlying-days on 3 dates; the date-clustered test needs more dates |
 | H5e | **first verdict: FAILS** (8 Oct) | mean abs gap 0.90 (bar under 0.5); closer on 2 of 10 days; final reading 11 Nov |
 | H5f | **read 25 Sep at 5 days: a, b, c hold** (a ON the bar) | H5f-a **0.500** of OPRA's spread (bar 0.5); H5f-b **64 of 64** no-bid (bar 80%); H5f-c inflation gap **0.6%** per day, 0.4% on medians (bar 25%); stale quotes excluded by the rule |
-| H6 | **registered 8 Oct** | implied vol vs ATR(14) for next-day range; long Cboe-index sample primary; join to build (needs Alpaca daily highs/lows - a temporary workflow, as H1) |
+| H6 | **tested 9 Oct: H6a FAILS, H6b HOLDS** | ATR(14) beats implied vol on the next day's range in 9 of 9 pairs (IV overshoots the level 1.6-2.3x: close-to-close risk plus the premium); IV's disadvantage shrinks after spikes; exploratory: with the level removed IV's timing error is smaller in 8 of 9 |
 | H7 | **registered 8 Oct (exception to the 11 Nov rule, Gabriel)** | free feed through Cboe's rules vs OVX/GVZ on the monthly legs from 9 Oct; read once over 9 Oct - 11 Nov, min 10 days; GLD OPRA added to the cloud fetch (~$1 approved) |
 
 *Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Aggregates only.*
