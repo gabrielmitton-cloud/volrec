@@ -469,6 +469,20 @@ except SystemExit as _e7:
     _xc = "disagree" in str(_e7)
 ok(_xc, "the H5e FINAL is cross-checked against modelfree's own tally and refused on disagreement")
 
+# 9 Oct 2026 (PROTOCOL.md): every hypothesis registered from 10 Oct carries the three sections the
+# full audit showed were missing in practice - instrument readiness, the measured noise floor, and the
+# smallest detectable effect - and the template asks for them.
+_PROTO = ("## Instrument readiness", "## Noise floor", "## Smallest detectable effect")
+_tmpl = (R / "hypotheses/TEMPLATE.md").read_text()
+_late = []
+for _hf in sorted((R / "hypotheses").glob("20*.md")):
+    _m = re.search(r"\*\*Registered:\*\* (\d{4}-\d{2}-\d{2})", _hf.read_text())
+    if _m and _m.group(1) >= "2026-10-10" and not all(h in _hf.read_text() for h in _PROTO):
+        _late.append(_hf.name)
+ok(all(h in _tmpl for h in _PROTO) and (R / "PROTOCOL.md").exists() and not _late,
+   f"the protocol holds: TEMPLATE asks for readiness, noise floor and detectable effect, and every hypothesis "
+   f"registered from 10 Oct has them ({', '.join(_late) or 'none missing'})")
+
 print("\n=== H3b. CALIBRATION (every instrument against a known reference truth) ===")
 # Each instrument is fed an input whose right answer is known in advance - parity,
 # invertibility, Carr-Madan's sigma^2, a simulated known vol, a no-premium world -

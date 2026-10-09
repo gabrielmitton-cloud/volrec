@@ -7,7 +7,7 @@ session's job is to read results, answer a question, or do one bounded thing.
 
 ## Read in this order, and stop as soon as you know enough
 
-1. **This file.**
+1. **This file.** New hypotheses follow `PROTOCOL.md`; the paper plan is `PAPER-OUTLINE.md`.
 2. **The live state** - never trust a document for it:
    `.../python3 tools/daily.py` -> did today land, 0 fail / n warn, the H3 reading,
    the H5e tally, and ALL CLEAR or LOOK AT.
