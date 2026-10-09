@@ -2285,6 +2285,22 @@ nothing; `calibrate.py` 0 uncalibrated; pressure test 0 fail; auditor 34 of 34; 
   Dividends file: add the Dec ex-dates when announced (WARN fires if stale).
 - Checks at close: pressure test 0 fail; auditor 38 of 38; calibrate 0 uncalibrated; daily ALL CLEAR.
 
+#### Fri 9 Oct - everything left from 8 Oct is built
+- **H6 TESTED** (details fixed in its log before any data; EVZ from FRED, identical source, also
+  before output): H6a FAILS (ATR beats implied vol on the next day's range, 9 of 9), H6b HOLDS.
+  Exploratory, logged after output: implied vol overshoots the range's level 1.6-2.3x but times
+  volatility better in 8 of 9. `samples/long/h6_range.py`, `.github/workflows/h6.yml` (manual,
+  read-only; the pressure test allows only such analysis workflows), `tools/test_h6.py` (25 cases).
+  The first H6 workflow run crashed but read "success" (`| tee` without pipefail) - fixed and guarded.
+- **H7 reader + verdict built:** `tools/h7_reader.py` (on the validated replica), fixed-wording block
+  in `record_verdict.py` (due 12 Nov; bars 0.25 / 0.30; min 10 days each; never guesses on missing
+  data), `tools/test_h7.py` (15 cases). volrec-licensed commits the H7 file with a verdict. The 13 Nov
+  phone check now reports H5e FINAL and H7 together.
+- **Site console warning fixed** (two rect sizes clamped at zero); console clean on a fresh load.
+- LSEG: Gabriel's screenshot was the public catalogue; the useful product is Workspace - he checks
+  `.OVX` 1-minute history back to 23 Sep.
+- Checks: pressure test 0 fail; auditor 45 of 45.
+
 #### Open, no fixed date
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
   and the OPRA aggregates are on the site (see the decisions above). When H5f reaches
