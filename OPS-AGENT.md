@@ -24,7 +24,7 @@ number means - and is called by a person, not by a schedule.
 
 | # | component | runs | does | fails loudly when |
 |---|---|---|---|---|
-| - | `record.yml`, `surface.yml` | CI, weekdays 18:30 / 18:40 UTC (cron-job.org trigger; GitHub cron 14:47 / 14:57 as backup) | record the panels (the irreplaceable part) | a run errors |
+| - | `record.yml`, `surface.yml` | CI, weekdays 14:30 / 14:40 New York (cron-job.org trigger; GitHub cron 14:47 / 14:57 UTC as backup) | record the panels (the irreplaceable part) | a run errors |
 | - | `freshness.yml` | CI, 20:00 and 23:00 UTC daily | `panel_health` alone; installs nothing | a trading day is missed, a snapshot lands outside the session |
 | 1 | `tools/bloomberg_prep.py` | by hand, before a terminal session | names both expiries, the strike range, the landing window, what to write down | - |
 | 2 | `tools/daily.py` | by hand, any time | pull, panel health, pressure test, H3 reading, H5e tally, one verdict | any FAIL or crash (a crash is never a pass) |

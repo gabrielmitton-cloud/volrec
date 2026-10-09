@@ -136,10 +136,14 @@ for r in rows:
 # genuine ongoing drift still fires. Full history is printed as context.
 DRIFT_WINDOW_DAYS = 10
 if len(times) >= 2:
-    mids = {d: sorted(v)[len(v) // 2] for d, v in times.items()}
-    mins = {d: int(t[:2]) * 60 + int(t[3:]) for d, t in mids.items()}
+    # In NEW YORK minutes (9 Oct 2026): the trigger is held at 14:30 New York, so the November clock
+    # change moves it an hour in UTC without moving it in the session. Early-close days are recorded
+    # at 11:30 by design and are left out of the spread.
+    import panel_health as _phe
+    mids = {d: sorted(v)[len(v) // 2] for d, v in times.items() if date.fromisoformat(d) not in _phe.EARLY_CLOSES}
+    mins = {d: _phe.ny_minutes(date.fromisoformat(d), int(t[:2]) * 60 + int(t[3:])) for d, t in mids.items()}
     for dd, t in sorted(mids.items()):
-        print(f"  {dd}  median quote {t}Z")
+        print(f"  {dd}  median quote {t}Z ({mins[dd] // 60:02d}:{mins[dd] % 60:02d} New York)")
     recent = [mins[d] for d in sorted(mins)[-DRIFT_WINDOW_DAYS:]]
     spread = max(recent) - min(recent)
     full = max(mins.values()) - min(mins.values())
@@ -626,7 +630,7 @@ _meas, _meas_day = _measured_delay(live, _rec_min)
 WORST_DELAY_MIN = max(WORST_DELAY_MIN, _meas)
 _land = _rec_min + WORST_DELAY_MIN
 # 30 Sep 2026, Gabriel's decisions: the recorders refuse to record after the close
-# (record.after_close), and an outside trigger starts them at 18:30 / 18:40 UTC with
+# (record.after_close), and an outside trigger starts them at 14:30 / 14:40 New York with
 # GitHub's cron kept as the backup. With the guard in place a late backup run cannot
 # write closing quotes - it refuses, the day is missing, and panel_health emails - which
 # is the premise of the 23 Sep acceptance. So a late landing is judged "costs a day,
@@ -659,7 +663,16 @@ ok(_land <= US_CLOSE_UTC_MIN or _GUARD,
    f"(lands {_land // 60:02d}:{_land % 60:02d}, close 20:00 UTC; guard {'live' if _GUARD else 'ABSENT'})")
 warn(_land <= US_CLOSE_UTC_MIN,
      f"record's GitHub-cron backup can land after the close (worst {_land // 60:02d}:{_land % 60:02d} UTC); "
-     f"the guard refuses such a run and the day is missed - the outside trigger at 18:30 is what prevents it")
+     f"the guard refuses such a run and the day is missed - the outside trigger at 14:30 New York is what prevents it")
+# 9 Oct 2026: the outside trigger authenticates to GitHub with the fine-grained token `volrec-trigger`
+# (Actions read/write, volrec only), which EXPIRES. Lapsed, the trigger stops silently and only GitHub's
+# delayed backup is left. Warn four weeks ahead; FAIL (health.yml emails) the last week. Renewing: make a
+# new token, paste it into every cron-job.org job's Authorization header, then update the date here.
+TRIGGER_TOKEN_EXPIRES = date(2026, 12, 29)
+_tk_left = (TRIGGER_TOKEN_EXPIRES - date.today()).days
+(ok if _tk_left <= 7 else warn)(_tk_left > 28,
+   f"the cron-job.org trigger's GitHub token expires {TRIGGER_TOKEN_EXPIRES} ({_tk_left} days): renew it, "
+   f"update every cron-job.org job, then TRIGGER_TOKEN_EXPIRES in pressure_test.py")
 # Accepted by Gabriel on 23 Sep 2026 until the window closes: a schedule change would
 # move every remaining snapshot, while a post-close landing costs one day, which
 # panel_health FAILS on (and emails) so it is dropped rather than silently kept. The
@@ -1266,6 +1279,25 @@ ok(_ac("2026-09-28T20:50:00") and not _ac("2026-09-30T19:40:00") and not _ac("20
    "the guard refuses 28 Sep's 20:50 UTC start and allows 19:40 and the open (summer close 20:00 UTC)")
 ok(not _ac("2026-11-05T20:30:00") and _ac("2026-11-05T21:05:00"),
    "after the November clock change the guard moves to 21:00 UTC by itself")
+# 9 Oct 2026: NYSE's 1 p.m. early closes. 27 Nov 2026 is in winter time (close 18:00 UTC), 3 Jul 2028
+# in summer time (17:00 UTC). Both lists must agree and match NYSE's published dates.
+ok(_ac("2026-11-27T18:30:00") and not _ac("2026-11-27T16:40:00") and _ac("2026-12-24T18:01:00")
+   and _ac("2028-07-03T17:05:00") and not _ac("2028-07-03T16:55:00") and not _ac("2026-11-30T18:30:00"),
+   "the guard knows NYSE's 1 p.m. early closes (27 Nov, 24 Dec 2026), in either clock")
+ok(_rcm.EARLY_CLOSES == _phm.EARLY_CLOSES == {date(2026, 11, 27), date(2026, 12, 24), date(2027, 11, 26),
+                                               date(2028, 7, 3), date(2028, 11, 24)}
+   and not (_rcm.EARLY_CLOSES & _phm.US_MARKET_HOLIDAYS)
+   and _phm.session_bounds_utc(date(2026, 11, 27)) == (14 * 60 + 30, 18 * 60),
+   "record.py and panel_health carry the same early closes (NYSE's list), none a holiday; the session ends 18:00 UTC on 27 Nov")
+# 9 Oct 2026: a GitHub backup that starts before the outside trigger's slot (14:30 New York + 15 min;
+# surface +10) leaves the day to it; the trigger itself, and a run by hand, are never held back.
+_bte = lambda s, ev="schedule", off=0: _rcm.backup_too_early(_DT.fromisoformat(s).replace(tzinfo=_TZ.utc), ev, off)  # noqa: E731
+ok(_bte("2026-09-24T18:05:00") and not _bte("2026-10-09T19:45:00")
+   and _bte("2026-11-03T19:00:00") and not _bte("2026-11-03T19:46:00")
+   and _bte("2026-11-03T19:50:00", off=10) and not _bte("2026-11-03T19:56:00", off=10)
+   and not _bte("2026-11-03T17:00:00", "workflow_dispatch") and not _bte("2026-11-03T17:00:00", "")
+   and _bte("2026-11-27T16:40:00") and not _bte("2026-11-27T16:46:00"),
+   "a GitHub backup starting before the trigger's slot (14:30 New York + 15 min) leaves the day to it; the trigger never waits")
 _recsrc, _srfsrc = (R / "record.py").read_text(), (R / "surface.py").read_text()
 def _before(src, call, fetch):               # find(), not index(): a missing call must FAIL, not crash
     m = max(src.find("def main"), 0)
@@ -1280,6 +1312,9 @@ ok(_before(_recsrc, 'refuse_after_close("the ATM panel")', "s = session()")
    and _before(_recsrc, "if done and after_close():", 'refuse_after_close("the ATM panel")')
    and _before(_srfsrc, "if done and R.after_close():", 'R.refuse_after_close("the strike surface")'),
    "both recorders check the close before fetching or writing anything, after the already-recorded exit")
+ok(_before(_recsrc, "if backup_too_early():", 'refuse_after_close("the ATM panel")')
+   and _before(_srfsrc, "if R.backup_too_early(offset_min=10):", 'R.refuse_after_close("the strike surface")'),
+   "both recorders apply the backup rule after the already-recorded exit and before fetching anything")
 
 _mfsrc, _hgsrc = (R / "modelfree.py").read_text(), (R / "hedged.py").read_text()
 ok(date(2026, 9, 28) in _phm.AFTER_CLOSE_DAYS

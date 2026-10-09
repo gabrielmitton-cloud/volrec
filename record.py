@@ -400,28 +400,62 @@ def probe(sym):
     print(json.dumps(j, indent=2)[:3000])
 
 
+# NYSE's early closes, 1:00 p.m. New York (nyse.com/markets/hours-calendars, read 9 Oct 2026; eligible
+# options trade to 1:15). panel_health.EARLY_CLOSES is the same set; pressure_test.py checks they agree.
+EARLY_CLOSES = {date(2026, 11, 27), date(2026, 12, 24), date(2027, 11, 26), date(2028, 7, 3), date(2028, 11, 24)}
+# The outside trigger (cron-job.org) starts this recorder at 14:30 New York all year - 11:30 on an
+# early-close day - and surface ten minutes later. GitHub's own cron is the backup.
+TRIGGER_NY, EARLY_TRIGGER_NY, BACKUP_GRACE_MIN = (14, 30), (11, 30), 15
+
+
+def backup_too_early(now_utc=None, event=None, offset_min=0):
+    """True when GitHub's backup cron started this run before the outside trigger's slot plus
+    BACKUP_GRACE_MIN, in New York time. Added 9 Oct 2026: GitHub's delay has run from three hours
+    (September) to nearly seven (October), so a backup can start BEFORE the trigger and record the
+    day at a different point in the session. Such a run leaves the day to the trigger; if the
+    trigger also fails, panel_health reports the missed day. Only `schedule` runs are affected -
+    the trigger (workflow_dispatch) and a run by hand never are - and without a zone database it
+    never blocks. `offset_min` is the recorder's slot after the record trigger (surface: 10).
+    """
+    import os
+    from datetime import timezone
+    if (event if event is not None else os.environ.get("GITHUB_EVENT_NAME", "")) != "schedule":
+        return False
+    now_utc = now_utc or datetime.now(timezone.utc)
+    try:
+        from zoneinfo import ZoneInfo
+        ny = now_utc.astimezone(ZoneInfo("America/New_York"))
+    except Exception:
+        return False
+    h, m = EARLY_TRIGGER_NY if ny.date() in EARLY_CLOSES else TRIGGER_NY
+    return ny.hour * 60 + ny.minute < h * 60 + m + offset_min + BACKUP_GRACE_MIN
+
+
 def after_close(now_utc=None):
-    """True once the US equity session has closed for the day (16:00 New York).
+    """True once the US equity session has closed for the day (16:00 New York; 13:00 on the
+    EARLY_CLOSES days, added 9 Oct 2026 - without them 27 Nov and 24 Dec would have been recorded
+    after their 1 p.m. close under a mid-session label, the 28 Sep problem again).
 
     Added 30 Sep 2026, Gabriel's decision: on 28 Sep GitHub started this job after the
     close and the free feed returned closing quotes stamped 19:59:59 - a different
     measurement under a mid-session label. A run that starts after the close now
     refuses to record; the missed day is then reported by freshness/panel_health
     (his 23 Sep rule: such a day is dropped, not kept). New York time, so the
-    November clock change moves the close from 20:00 to 21:00 UTC by itself. Early
-    closes (the day after Thanksgiving, 24 Dec) are not modelled.
+    November clock change moves the close from 20:00 to 21:00 UTC by itself.
     """
     from datetime import timezone
     now_utc = now_utc or datetime.now(timezone.utc)
     try:
         from zoneinfo import ZoneInfo
         ny = now_utc.astimezone(ZoneInfo("America/New_York"))
+        if ny.date() in EARLY_CLOSES:
+            return (ny.hour, ny.minute) >= (13, 0)
         return (ny.hour, ny.minute) >= (16, 0)
     except Exception:                                  # no tz database: US DST rule by hand
         y = now_utc.year
         mar = date(y, 3, 8 + (6 - date(y, 3, 8).weekday()) % 7)     # second Sunday of March
         nov = date(y, 11, 1 + (6 - date(y, 11, 1).weekday()) % 7)   # first Sunday of November
-        close_utc = 20 if mar <= now_utc.date() < nov else 21
+        close_utc = (20 if mar <= now_utc.date() < nov else 21) - (3 if now_utc.date() in EARLY_CLOSES else 0)
         return now_utc.hour >= close_utc
 
 
@@ -457,6 +491,11 @@ def main():
     if done and after_close():
         print(f"The session has closed; {len(done)} symbols were recorded earlier today. "
               f"Not filling {', '.join(todo)} with closing quotes - nothing to do.")
+        return
+    if backup_too_early():
+        print("GitHub's backup cron started before the outside trigger's slot (14:30 New York; 11:30 on "
+              "an early close): leaving the day to the trigger, so every day is recorded at the same "
+              "point in the session. If the trigger fails, panel_health reports the missed day.")
         return
     refuse_after_close("the ATM panel")
 

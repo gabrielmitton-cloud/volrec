@@ -29,7 +29,7 @@ own six months of proprietary history for a fixed universe. Started 4 September
 
 ## Method
 
-`record.py` runs every weekday at 18:30 UTC via GitHub Actions, started by an
+`record.py` runs every weekday at 14:30 New York time via GitHub Actions, started by an
 outside trigger (GitHub's own scheduler, kept as a backup, was delayed by up to six
 hours), and refuses to record once the US session has closed. For each of 109
 tickers it:

@@ -697,6 +697,10 @@ def main():
         print(f"The session has closed; {len(done)} symbols were recorded earlier today. "
               f"Not filling {', '.join(todo)} with closing quotes - nothing to do.")
         return
+    if R.backup_too_early(offset_min=10):   # 9 Oct 2026: an early GitHub backup leaves the day to the trigger
+        print("GitHub's backup cron started before the outside trigger's slot (14:40 New York for this "
+              "recorder; 11:40 on an early close): leaving the day to the trigger.")
+        return
     R.refuse_after_close("the strike surface")   # after the "already recorded" exit (5 Oct 2026)
 
     s = R.session()

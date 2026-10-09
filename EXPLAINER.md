@@ -42,7 +42,7 @@ volatility insurance get paid, the way insurance companies do.
 
 ## 3. What the recorder actually collects
 
-Every weekday at 18:30 UTC, an outside trigger starts a script on GitHub's servers,
+Every weekday at 14:30 New York time, an outside trigger starts a script on GitHub's servers,
 which asks Alpaca for option prices on 109 tickers. (Until 30 September GitHub's own
 scheduler started it, and ran it as much as six hours late - once after the close,
 which is why the script now refuses to record once the market has shut.) For each

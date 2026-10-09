@@ -88,9 +88,16 @@ SURFACE_START = date(2026, 9, 14)
 # and 21:00 is late enough.
 SURFACE_LANDED_HOUR_UTC = 20
 
-# The outside trigger (cron-job.org, Gabriel 30 Sep): record 18:30, surface 18:40 UTC.
+# The outside trigger (cron-job.org, Gabriel 30 Sep): record 14:30, surface 14:40 NEW YORK time - 18:30 /
+# 18:40 UTC in summer time, 19:30 / 19:40 UTC from 2 Nov 2026 (moved to New York time 9 Oct, so the
+# snapshot keeps its place in the session through every clock change). On an early-close day it fires
+# at 11:30 / 11:40. The window is judged in New York minutes.
 TRIGGER_SINCE = date(2026, 10, 1)
-TRIGGER_WINDOW = (18 * 60 + 28, 19 * 60)
+TRIGGER_WINDOW_NY = (14 * 60 + 28, 15 * 60)
+EARLY_TRIGGER_WINDOW_NY = (11 * 60 + 28, 12 * 60)
+# NYSE's early closes, 1:00 p.m. New York (nyse.com/markets/hours-calendars, read 9 Oct 2026).
+# record.EARLY_CLOSES is the same set; pressure_test.py checks they agree.
+EARLY_CLOSES = {date(2026, 11, 27), date(2026, 12, 24), date(2027, 11, 26), date(2028, 7, 3), date(2028, 11, 24)}
 
 
 def now_utc():
@@ -144,10 +151,16 @@ def session_bounds_utc(day):
     except Exception:
         return None
     out = []
-    for hh, mm in ((9, 30), (16, 0)):
+    for hh, mm in ((9, 30), (13, 0) if day in EARLY_CLOSES else (16, 0)):
         u = datetime(day.year, day.month, day.day, hh, mm, tzinfo=et).astimezone(timezone.utc)
         out.append(u.hour * 60 + u.minute)
     return tuple(out)
+
+
+def ny_minutes(day, utc_min):
+    """UTC minutes of the day -> New York minutes, by that day's offset; None without a zone database."""
+    b = session_bounds_utc(day)
+    return None if not b else utc_min - (b[0] - (9 * 60 + 30))
 
 
 # A trading day that is gone, and that has been accepted as gone. Without this the
@@ -266,24 +279,31 @@ def check_landing(rows, days):
         elif c - mid < 20:
             warn(f"{days[-1]} landed {c - int(mid)} min before the close. The "
                  f"delay is drifting; check the cron before it lands outside.")
-    # 30 Sep 2026: from 1 Oct an outside trigger (cron-job.org) starts record at 18:30
-    # and surface at 18:40 UTC. A landing outside 18:28-19:00 means it did not fire and
-    # GitHub's delayed backup cron did the recording - still a valid day, so a WARN.
-    if days[-1] >= TRIGGER_SINCE and not (TRIGGER_WINDOW[0] <= mid <= TRIGGER_WINDOW[1]):
-        warn(f"{days[-1]} landed {int(mid)//60:02d}:{int(mid)%60:02d} UTC, not at the outside "
-             f"trigger's 18:30-18:40: it did not fire, and GitHub's backup cron recorded the day. "
-             f"Check the cron-job.org jobs.")
+    # From 1 Oct an outside trigger (cron-job.org) starts record at 14:30 and surface at 14:40 New
+    # York (11:30 / 11:40 on an early close). A landing outside its window means it did not fire, or
+    # fired at the wrong time - still a valid day, so a WARN. Judged in New York minutes (9 Oct 2026).
+    if days[-1] >= TRIGGER_SINCE:
+        lo, hi = EARLY_TRIGGER_WINDOW_NY if days[-1] in EARLY_CLOSES else TRIGGER_WINDOW_NY
+        ny = ny_minutes(days[-1], mid)
+        if ny is not None and not (lo <= ny <= hi):
+            warn(f"{days[-1]} landed {int(ny)//60:02d}:{int(ny)%60:02d} New York, not at the outside "
+                 f"trigger's {lo//60:02d}:{lo%60:02d}-{hi//60:02d}:{hi%60:02d}: it did not fire (GitHub's "
+                 f"backup recorded the day) or its schedule is wrong. Check the cron-job.org jobs.")
 
-    # Drift against the days already collected, which is what breaks comparability.
+    # Drift against the days already collected, which is what breaks comparability - in New York
+    # minutes (9 Oct 2026), so a trigger held at 14:30 New York is not read as an hour's drift when
+    # the clocks change. Early-close days are recorded earlier by design and are not compared.
     prior = []
     for d in days[:-1]:
         ts = sorted(t for t in (_quote_minutes(r.get("quote_time"))
                                 for r in rows if r["date"] == d.isoformat())
                     if t is not None)
-        if ts:
-            prior.append(ts[len(ts) // 2])
-    if prior:
+        if ts and d not in EARLY_CLOSES:
+            prior.append(ny_minutes(d, ts[len(ts) // 2]) or ts[len(ts) // 2])
+    here = ny_minutes(days[-1], mid) or mid
+    if prior and days[-1] not in EARLY_CLOSES:
         ref = sorted(prior)[len(prior) // 2]
+        mid = here
         if abs(mid - ref) > 60:
             warn(f"{days[-1]} landed {abs(int(mid - ref))} min "
                  f"{'later' if mid > ref else 'earlier'} than the median of the "

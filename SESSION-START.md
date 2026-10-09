@@ -37,8 +37,8 @@ session's job is to read results, answer a question, or do one bounded thing.
 
 | what | when | if it goes wrong |
 |---|---|---|
-| `record.yml` (ATM panel) | 18:30, started by cron-job.org (`workflow_dispatch`); GitHub's 14:47 cron is the backup | `freshness` FAILS on a missed day, and emails |
-| `surface.yml` (strike surface, wide band, from 9 Oct the monthly USO/GLD legs) | 18:40 the same way; 14:57 cron backup | same |
+| `record.yml` (ATM panel) | 14:30 New York (18:30 UTC in summer time, 19:30 from 2 Nov; 11:30 on an early close), started by cron-job.org (`workflow_dispatch`); GitHub's 14:47 UTC cron is the backup, and stands aside if it starts before 14:45 New York | `freshness` FAILS on a missed day, and emails |
+| `surface.yml` (strike surface, wide band, from 9 Oct the monthly USO/GLD legs) | 14:40 New York the same way; 14:57 UTC cron backup | same |
 | `freshness.yml` | 20:00 and 23:00 daily | installs nothing, on purpose |
 | `health.yml` | 23:37 | the full daily check; emails on any FAIL or crash |
 | launchd `com.volrec.daily` (this Mac, once installed) | 13:30 Pacific | texts the verdict by iMessage |
