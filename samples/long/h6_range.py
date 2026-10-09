@@ -141,6 +141,7 @@ def main():
     print(f"{'pair':<11}{'N':>6}  {'MSLE IV':>8}{'MSLE ATR':>9}{'MSLE piv':>9}   {'d IV-ATR':>9}{'DM':>7}"
           f"{'p':>8}  IV lower?   {'d IV-piv':>9}{'p':>8}")
     per_pair, pvals, by_date, spike_by_date = {}, {}, {}, {}
+    per_pair_rows, per_pair_flags = {}, {}
     for idx, sym in PAIRS:
         bars = sorted((d, *v) for d, v in (ohlc.get(sym) or {}).items()
                       if not d.startswith("_") and d >= START.isoformat())
@@ -159,6 +160,7 @@ def main():
         mup, _, pp = dm_hln(dp)
         key = f"{idx}/{sym}"
         per_pair[key] = (len(rows), mu, st_, p)
+        per_pair_rows[key], per_pair_flags[key] = rows, flags
         pvals[key] = p
         for r, x in zip(rows, d):
             by_date.setdefault(r[0], []).append(x)
@@ -189,6 +191,36 @@ def main():
               f"{sum(calm)/len(calm):+.4f} ({len(calm)}); difference {diff:+.4f}, Welch t {t:.2f}, p {pw:.4f}")
         print(f"   H6b {'HOLDS' if holds_b else 'FAILS'} (registered: lower after spikes, p < 0.05)")
     print("\nNegative d means implied volatility forecast the range better. Losses are squared log errors.")
+    exploratory(per_pair_rows, per_pair_flags)
+
+
+def exploratory(per_pair_rows, per_pair_flags):
+    """ADDED 9 Oct 2026 AFTER the first output (H6 adjustment log). Not part of either verdict.
+    (1) Level bias: the mean log ratio of each forecast to the realised range. (2) Timing, with
+    the level removed: the variance of each forecast's log error (MSLE minus squared bias), so a
+    forecast that is right in shape but wrong in scale is judged on shape. (3) H6b per pair: each
+    pair's days flagged by ITS OWN index, since the pooled reading flags a date if ANY index spiked."""
+    print("\n== EXPLORATORY, added after the first output - not part of the H6a/H6b verdicts ==")
+    print(f"{'pair':<11}{'bias IV':>9}{'bias ATR':>9}   {'var IV':>8}{'var ATR':>8}  timing better   "
+          f"{'H6b own-index: after - calm':>28}")
+    better, own_neg = 0, 0
+    for key, rows in per_pair_rows.items():
+        eiv = [log(r[2]) - log(r[1]) for r in rows]
+        eat = [log(r[3]) - log(r[1]) for r in rows]
+        biv, bat = sum(eiv) / len(eiv), sum(eat) / len(eat)
+        viv = sum((x - biv) ** 2 for x in eiv) / len(eiv)
+        vat = sum((x - bat) ** 2 for x in eat) / len(eat)
+        better += viv < vat
+        flags = per_pair_flags[key]
+        d = [loss(r[2], r[1]) - loss(r[3], r[1]) for r in rows]
+        a = [x for r, x in zip(rows, d) if flags.get(r[0])]
+        c = [x for r, x in zip(rows, d) if not flags.get(r[0])]
+        diff = (sum(a) / len(a) - sum(c) / len(c)) if a and c else float("nan")
+        own_neg += diff < 0
+        print(f"{key:<11}{biv:>+9.3f}{bat:>+9.3f}   {viv:>8.4f}{vat:>8.4f}  {'IV' if viv < vat else 'ATR':>8}       "
+              f"{diff:>+12.4f} ({len(a)} after / {len(c)} calm)")
+    print(f"   implied volatility has the smaller timing error (level removed) in {better} of {len(per_pair_rows)} pairs")
+    print(f"   per pair, IV's disadvantage is smaller after its own index spikes in {own_neg} of {len(per_pair_rows)} pairs")
 
 
 if __name__ == "__main__":

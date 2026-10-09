@@ -104,3 +104,11 @@ allows it. Not yet implemented: the join is built and tested AFTER this commit.
   pair runs to the last complete day. Unlike VXGDX and VXXLE (excluded up front: fragmented, ended
   2022) it has over nine years. Also fixed: the workflow reported success when the script crashed
   (`| tee` without pipefail) - it now fails as it should.
+- **2026-10-09 — AFTER the first output: exploratory diagnostics added, outside both verdicts.**
+  The first complete run (Actions run 37898574657) gave H6a FAILS (0 of 9) and H6b HOLDS. Two things
+  were added to the script's output, labelled exploratory, changing neither verdict: (1) each
+  forecast's level bias and its timing error with the level removed (variance of the log error) -
+  because implied volatility prices close-to-close risk plus the variance premium (H1), so its
+  LEVEL overshoots an intraday high-low range by construction; (2) H6b per pair, each pair's days
+  flagged by its own index - the registered pooled reading flags a date when ANY index spiked
+  (71% of dates), a choice the 9 Oct details left implicit and the code made before any output.
