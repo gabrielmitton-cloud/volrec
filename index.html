@@ -282,6 +282,18 @@
     </figure>
   </section>
 
+  <section class="section">
+    <h2>A forecast of tomorrow's range</h2>
+    <div class="prose">
+      <p>A technical-levels scanner draws support and resistance from recent prices, and its spacing is a forecast of how far the price will travel. Implied volatility is also a forecast of travel, set by people with money at risk. H6 asked which better predicts the next day's high-to-low range, across nine Cboe index and fund pairs from 2016 to 2026, against the standard trailing-range rule, the 14-day Average True Range. The rule and the test were written down before any data was fetched.</p>
+      <p><b>The trailing range wins, on every pair.</b> Implied volatility's squared log error is roughly twice the trailing rule's, from <span class="m">0.35</span> against <span class="m">0.18</span> on small caps to <span class="m">0.88</span> against <span class="m">0.34</span> on emerging markets. The reason is its level. Implied volatility prices the whole day, including the overnight gap, plus the premium measured above, so as a forecast of the trading-hours range it runs <span class="m">1.6</span> to <span class="m">2.3</span> times too high. The second prediction did hold: implied volatility's disadvantage narrows after volatility spikes, when it reprices at once and a trailing rule lags.</p>
+      <p>Looked at with the level set aside, implied volatility tracked the swings in volatility more closely than the trailing rule on <span class="m">8</span> of <span class="m">9</span> pairs. That was examined after the result and is not part of it; it would need its own registration before it could be claimed.</p>
+    </div>
+    <div class="fig" style="grid-column:1/-1;margin-top:20px">
+      <div class="src">Cboe index closes; EVZ from FRED (series EVZCLS), as Cboe has withdrawn its file. Fund prices: daily bars from Alpaca. 1,873 to 2,692 trading days per pair: <a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/hypotheses/2026-10-08-h6-implied-vol-vs-technical-levels.md">hypotheses/H6</a>.</div>
+    </div>
+  </section>
+
   <!-- Ledger -------------------------------------------------------------- -->
   <section class="section">
     <h2>Written down before the data arrived</h2>
@@ -783,7 +795,9 @@
       ["H2", "The premium is better measured in variance than in volatility, following Carr and Wu (2009).", "9 Sep 2026", ["tested", "Tested, not adopted"], ["log variance t = 16.26", "volatility 9.28, raw variance 2.14"], "2026-09-09-h2-variance-formulation.md"],
       ["H3", "A model-free estimate built from free data reproduces the published Cboe index.", "12 Sep 2026", ["calibrated", "Series running"], ["0.40 mean gap over 80 readings, against a 1.0 limit", "first wide-band reading fell outside its bracket: quote contamination, as registered"], "2026-09-12-h3-free-data-model-free.md"],
       ["H4", "Delta-hedged gains are negative, vary across the strike surface, and relate to where volume sits.", "13 Sep 2026", [h4[0], h4[1]], ["strike 2 of 3 (8 Oct): calendar-day carry, dividend-adjusted price", h4[2]], "2026-09-13-h4-hedged-gains-across-the-surface.md"],
-      ["H5", "What free option data costs sits in the far wings, and it is the estimator's handling of missing bids rather than the quotes.", "19 Sep 2026", ["tested", "Partly tested"], ["H5e FAILS at its ten-day minimum: 0.90 against a 0.5 bar, closer on 2 of 10 days", "H5b holds (36 of 36); H5a holds weakly (0.40 of a spread); H5f holds, H5f-a exactly on the bar"], "2026-09-19-h5-wing-quote-quality.md"]
+      ["H5", "What free option data costs sits in the far wings, and it is the estimator's handling of missing bids rather than the quotes.", "19 Sep 2026", ["tested", "Partly tested"], ["H5e FAILS at its ten-day minimum: 0.90 against a 0.5 bar, closer on 2 of 10 days", "H5b holds (36 of 36); H5a holds weakly (0.40 of a spread); H5f holds, H5f-a exactly on the bar"], "2026-09-19-h5-wing-quote-quality.md"],
+      ["H6", "Implied volatility forecasts tomorrow's trading range better than a technical-levels rule (14-day ATR).", "8 Oct 2026", ["tested", "Tested, fails"], ["ATR has the lower error on all 9 pairs, 2016 to 2026", "implied volatility overshoots the range 1.6 to 2.3 times; its edge after volatility spikes holds"], "2026-10-08-h6-implied-vol-vs-technical-levels.md"],
+      ["H7", "The free feed, run through Cboe's own rules, reproduces Cboe's oil and gold volatility indices.", "8 Oct 2026", ["waiting", "Collecting"], ["read once, after 11 November 2026", "registered before its first day of data"], "2026-10-08-h7-free-feed-cboe-replica.md"]
     ];
     rows.forEach(([id, claim, reg, st, ev, file]) => {
       const tr = V.h("tr", null, tb);
