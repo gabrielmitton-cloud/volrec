@@ -406,6 +406,23 @@ _n6p = sum(1 for _ln in _t6.stdout.splitlines() if _ln.strip().startswith("PASS"
 ok(_t6.returncode == 0 and _n6f == 0 and _n6p >= 25,
    f"H6's unit tests pass ({_n6p} hand-computed cases, {_n6f} failures)")
 
+# H7 (registered 8 Oct 2026): the reader's pieces on synthetic chains, and the verdict writer's
+# fixed rules: bars 0.25 / 0.30, minimum 10 days, H7a needs BOTH symbols, never a guess.
+_t7 = _sp.run([sys.executable, str(R / "tools/test_h7.py")], capture_output=True, text=True)
+_n7f = sum(1 for _ln in _t7.stdout.splitlines() if _ln.strip().startswith("FAIL"))
+_n7p = sum(1 for _ln in _t7.stdout.splitlines() if _ln.strip().startswith("PASS"))
+ok(_t7.returncode == 0 and _n7f == 0 and _n7p >= 15, f"H7's reader tests pass ({_n7p} cases, {_n7f} failures)")
+_rv7 = _iu.module_from_spec(_iu.spec_from_file_location("rv7", R / "tools/record_verdict.py"))
+_iu.spec_from_file_location("rv7", R / "tools/record_verdict.py").loader.exec_module(_rv7)
+_o7 = ("H7a USO: n=12 mean |free - OPRA| 0.180 (bar 0.25)\nH7a GLD: n=12 mean |free - OPRA| 0.090 (bar 0.25)\n"
+       "H7b GLD: n=12 mean |free - GVZ| 0.310 (bar 0.3)\nH7c USO: n=12 mean free - OVX +0.440 (descriptive)\n")
+_v7 = _rv7.parse_h7(_o7)
+_v7b = _rv7.parse_h7(_o7.replace("n=12 mean |free - OPRA| 0.180", "n=9 mean |free - OPRA| 0.180"))
+ok((_rv7.H7_DUE, _rv7.H7_MIN_DAYS, _rv7.H7_BAR_A, _rv7.H7_BAR_B) == ("2026-11-12", 10, 0.25, 0.30)
+   and _rv7.h7_verdicts(_v7) == ("HOLDS", "FAILS") and _rv7.h7_verdicts(_v7b)[0] is None
+   and "H7b FAILS" in _rv7.block_h7(_v7, date(2026, 11, 12)) and "Databento" in _rv7.block_h7(_v7, date(2026, 11, 12)),
+   "the verdict writer reads H7 by its registered bars (0.25, 0.30), minimum 10 days each, in fixed wording")
+
 print("\n=== H3b. CALIBRATION (every instrument against a known reference truth) ===")
 # Each instrument is fed an input whose right answer is known in advance - parity,
 # invertibility, Carr-Madan's sigma^2, a simulated known vol, a no-premium world -

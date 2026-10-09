@@ -66,6 +66,10 @@ H7a: a mean absolute free-vs-OPRA difference above 0.25 for either symbol. H7b: 
 Re-scoring H5e or H3 (their verdicts stand as registered), any change to the registered
 surface or estimator, USO-vs-OVX claims (H7c is descriptive), intraday index values.
 
+## Result
+
+Not read yet: due 12 Nov 2026 (`tools/record_verdict.py`, from `tools/h7_reader.py`).
+
 ## Adjustment log
 
 (none)

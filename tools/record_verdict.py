@@ -48,6 +48,10 @@ H5E_FIRST_DUE, H5E_FINAL_DUE = "2026-10-07", "2026-11-12"
 MARK_H5F = "**H5f, read "
 MARK_H5E_FIRST = "**H5e, first verdict"
 MARK_H5E_FINAL = "**H5e, FINAL reading"
+# H7 (registered 8 Oct 2026): read once over 9 Oct - 11 Nov, from tools/h7_reader.py.
+H7 = ROOT / "hypotheses" / "2026-10-08-h7-free-feed-cboe-replica.md"
+H7_DUE, H7_MIN_DAYS, H7_BAR_A, H7_BAR_B = "2026-11-12", 10, 0.25, 0.30
+MARK_H7 = "**H7, reading over 9 Oct - 11 Nov 2026"
 
 
 def run(args):
@@ -217,6 +221,51 @@ def block_h5e(sc, rf, na, today, final, first_verdict=None, dropped=()):
 
 
 # ---------------- writing ----------------
+def parse_h7(out):
+    """h7_reader.py's summary lines -> {"USO_a": (n, m), "GLD_a": ..., "GLD_b": ..., "USO_c": ...}."""
+    v = {}
+    for sym, part, pat in (("USO", "a", r"H7a USO: n=(\d+) mean \|free - OPRA\| ([\d.]+|n/a)"),
+                           ("GLD", "a", r"H7a GLD: n=(\d+) mean \|free - OPRA\| ([\d.]+|n/a)"),
+                           ("GLD", "b", r"H7b GLD: n=(\d+) mean \|free - GVZ\| ([\d.]+|n/a)"),
+                           ("USO", "c", r"H7c USO: n=(\d+) mean free - OVX ([+-][\d.]+|n/a)")):
+        m = re.search(pat, out)
+        if not m:
+            raise SystemExit(f"h7_reader output lacks the {sym} {part} line - refusing to write")
+        v[f"{sym}_{part}"] = (int(m.group(1)), None if m.group(2) == "n/a" else float(m.group(2)))
+    return v
+
+
+def h7_verdicts(v):
+    """The registered rules, applied to parse_h7's numbers. None = below the minimum."""
+    a_ok = all(v[k][0] >= H7_MIN_DAYS and v[k][1] is not None for k in ("USO_a", "GLD_a"))
+    b_ok = v["GLD_b"][0] >= H7_MIN_DAYS and v["GLD_b"][1] is not None
+    a = None if not a_ok else ("HOLDS" if all(v[k][1] <= H7_BAR_A for k in ("USO_a", "GLD_a")) else "FAILS")
+    b = None if not b_ok else ("HOLDS" if v["GLD_b"][1] <= H7_BAR_B else "FAILS")
+    return a, b
+
+
+def _f3(x, sign=False):
+    return "n/a" if x is None else (f"{x:+.3f}" if sign else f"{x:.3f}")
+
+
+def block_h7(v, today):
+    a, b = h7_verdicts(v)
+    a, b = a or "NOT READ (below its minimum)", b or "NOT READ (below its minimum)"
+    c = v["USO_c"]
+    lines = [f"{MARK_H7}, read {today:%-d %B %Y}** - written by the cloud workflow (`tools/record_verdict.py`) "
+             f"from `tools/h7_reader.py`; numbers copied from its output, wording fixed in advance.", "",
+             f"- **H7a {a}:** mean absolute difference between the free-feed and OPRA Cboe replicas at the "
+             f"same minute: USO {_f3(v['USO_a'][1])} over {v['USO_a'][0]} days, GLD {_f3(v['GLD_a'][1])} over "
+             f"{v['GLD_a'][0]} days (bar: 0.25 or less, each).",
+             f"- **H7b {b}:** the free-feed replica for GLD lies a mean absolute {_f3(v['GLD_b'][1])} points from "
+             f"GVZ's close over {v['GLD_b'][0]} days (bar: 0.30 or less).",
+             f"- H7c (descriptive): the free-feed replica for USO minus OVX's close averaged "
+             f"{_f3(c[1], sign=True)} over {c[0]} days.",
+             "- The method is Cboe's own (Volatility Index Mathematics Methodology v5.0; ETF index methodology "
+             "v9.0), applied to the monthly legs recorded from 9 Oct; after-close days dropped.", "", DB_CREDIT]
+    return "\n".join(lines)
+
+
 def append_result(text, block):
     i = text.index("\n## Result\n")
     j = text.find("\n## ", i + 1)
@@ -319,9 +368,38 @@ def main():
                      + ("" if ok else " [HANDOFF row not found; H5 file updated]"))
         break                                                # one H5e block per run
 
+    # H7, read once
+    h7 = H7.read_text() if H7.exists() else ""
+    h7_wrote = False
+    if h7 and MARK_H7 in h7 and not a.preview:
+        notes.append("H7: already recorded - skipped")
+    elif h7 and str(today) < H7_DUE and not a.preview:
+        notes.append(f"H7: due {H7_DUE}")
+    elif h7:
+        v = parse_h7(run(["tools/h7_reader.py"]))
+        va, vb = h7_verdicts(v)
+        if (va is None or vb is None) and not a.preview:
+            notes.append(f"H7: below its minimum (USO {v['USO_a'][0]}, GLD {v['GLD_a'][0]} days for H7a; "
+                         f"{v['GLD_b'][0]} for H7b; need {H7_MIN_DAYS}) - not written")
+        else:
+            blk = block_h7(v, today)
+            if a.preview or a.dry_run:
+                print(("PREVIEW (not due, not written)\n" if str(today) < H7_DUE else "DUE\n") + blk + "\n")
+            else:
+                h7 = append_status(append_result(h7, blk), f"H7 read {today:%-d %b %Y} (see Result).")
+                row = (f"| H7 | **read {today:%-d %b}: H7a {va}, H7b {vb}** | free vs OPRA replica: USO "
+                       f"{_f3(v['USO_a'][1])}, GLD {_f3(v['GLD_a'][1])} (bar 0.25); GLD vs GVZ {_f3(v['GLD_b'][1])} "
+                       f"(bar 0.30); USO vs OVX {_f3(v['USO_c'][1], sign=True)}, descriptive |")
+                hand, ok = replace_row(hand, "H7", row)
+                h7_wrote = True
+                wrote.append(f"H7: H7a {va} (USO {_f3(v['USO_a'][1])}, GLD {_f3(v['GLD_a'][1])} vs 0.25), "
+                             f"H7b {vb} (GLD {_f3(v['GLD_b'][1])} vs 0.30)" + ("" if ok else " [HANDOFF row not found]"))
+
     if wrote and not (a.dry_run or a.preview):
         H5.write_text(h5)
         HANDOFF.write_text(hand)
+        if h7_wrote:
+            H7.write_text(h7)
     for line in notes + wrote:
         print(line)
     if a.summary:
