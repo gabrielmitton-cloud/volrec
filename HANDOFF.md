@@ -2388,14 +2388,12 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 - Optional: a FRED key as a repository secret, so CI's H3 reading matches the local one.
 
 **Fri 9 Oct - the dated plan from here (replaces the old "Later" list; done items are in the entries above)**
-- **Gabriel, any day before Sun 1 Nov (5 minutes, cron-job.org):** set the two daily jobs - 8548132 (record)
-  and 8548147 (surface) - to time zone **America/New_York**, 14:30 and 14:40, Monday-Friday. Nothing moves
-  until the clocks change (14:30 New York = 18:30 UTC now); from Mon 2 Nov they fire at 19:30 / 19:40 UTC and
-  the snapshot keeps its place in the session. If it is not done, they fire at 13:30 New York and
-  `panel_health` warns every day until it is. The repo side is done and tested (9 Oct).
-- **Gabriel, before Fri 27 Nov (cron-job.org):** clone each job for **Fri 27 Nov and Thu 24 Dec 2026** at
-  11:30 (record) / 11:40 (surface) New York, those dates only. NYSE closes at 1 p.m. both days; without these
-  jobs the guard refuses the late trigger and the two days are missed cleanly (dropped, as for 28 Sep).
+- **cron-job.org - DONE 9 Oct (checked in the console by Claude):** jobs 8548132 (record) and 8548147
+  (surface) run in time zone America/New_York at 14:30 / 14:40, Mon-Fri - next runs Mon 12 Oct 14:30 /
+  14:40 New York; from 2 Nov that is 19:30 / 19:40 UTC. Early-close copies, enabled, each firing once:
+  record 8614856 (Fri 27 Nov 11:30) and 8614871 (Thu 24 Dec 11:30), surface 8614873 (27 Nov 11:40) and
+  8614874 (24 Dec 11:40), New York time; all carry the same URL, POST, headers and body as the originals.
+  Delete the four copies after 24 Dec. When the token is renewed (by 22 Dec), the two main jobs need it.
 - **Mon 12 Oct 16:30 UTC:** the auditor routine (58 safeguards now). **Wed 14 Oct:** the watchdog.
 - **Every weekday:** recorders 14:30 / 14:40 New York; the cloud buys OPRA for each day about two days later,
   H7's monthly legs inside their own $1.10 cap.
