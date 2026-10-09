@@ -1908,7 +1908,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 
 | what | when | on failure |
 |---|---|---|
-| `record.yml`, `surface.yml` | weekdays 14:47 / 14:57, landing 3-5 h later | `freshness` fails and GitHub emails |
+| `record.yml`, `surface.yml` | weekdays **14:30 / 14:40 New York** via cron-job.org `workflow_dispatch` (11:30 / 11:40 on NYSE's early closes); GitHub's 14:47 / 14:57 UTC cron is the backup and stands aside if it starts before the trigger's slot + 15 min | `freshness` fails and GitHub emails; `panel_health` warns when a landing is off the trigger's slot |
 | `freshness.yml` | 20:00 and 23:00 daily | GitHub emails |
 | `health.yml` | weekdays 23:37 | GitHub emails (the whole daily check) |
 | launchd `com.volrec.daily` | weekdays 13:30 Pacific | the iMessage leads with LOOK AT |
@@ -2038,7 +2038,7 @@ every decision. This section is the only one guaranteed current. Read it, run
   site credits them.
 - 23:37 UTC: the first scheduled `health.yml`.
 
-**Thu 24 Sep**
+**Thu 24 Sep - done**
 - ~~OPRA for 23 Sep.~~ **Done** by the scheduled task, 24 Sep 15:08 UTC, $0.0267: H5f's
   fourth day, recorded in H5 ("The fourth OPRA day"). Databento spend $0.1132 of $100.
   **Scheduled:** a one-off local task (`volrec-opra-fetch-0923`, the app's Scheduled
@@ -2380,35 +2380,46 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   the column open. Now `minmax(0, 1fr)` on `.section` and `.live-grid` in volrec.css:
   375 px on a fresh load and after a shrink, tables scroll in their wrappers, and the
   desktop layout is identical box for box.
-- ~~Read Jiang & Tian (2007).~~ Done 23 Sep (H3 and H5, prior art). Still to read: Jiang
-  & Tian (2005, *RFS*), "The Model-Free Implied Volatility and Its Information Content".
+- ~~Read Jiang & Tian (2007).~~ Done 23 Sep (H3 and H5, prior art). ~~Jiang & Tian (2005)~~ read 7 Oct
+  (methods audit); the two papers' 2 vs 3 SD rule is noted in H3 (9 Oct).
 - The 21-month day-count residual: **closed as unidentified, 24 Sep** (H3). Not the forward
   or rate; a time or scale effect common to calls and puts. Not to be searched further.
-- A site chart logs a negative SVG width in a narrow window (pre-existing, harmless).
+- ~~A site chart logs a negative SVG width in a narrow window.~~ Fixed 9 Oct (rect sizes clamped).
 - Optional: a FRED key as a repository secret, so CI's H3 reading matches the local one.
 
-**Later**
-- ~7-8 Oct: H5e's first verdict, by the cloud (`volrec-licensed` daily.yml, tries Wed 23:05, Thu 03:05 and
-  Thu 23:05 UTC; 7 Oct is the 10th counted day since 28 Sep was dropped, and its OVX close is needed first).
-  It opens a "volrec verdict recorded" issue (email). The Mac fallback `volrec-h5e-verdict` was moved to
-  9 Oct and then **switched off by Gabriel, 4 Oct** - the cloud is the only path; on a failure issue or a
-  healthchecks email, read and record it by hand.
-  **Gabriel, 4 Oct: once the verdict is recorded, the site and any next step are a DISCUSSION first, not an
-  action.** Raise them as a decision for him - the site needs revising and adding to, and whether to register
-  anything new - and change nothing until he decides.
-  H5e runs to 11 Nov, and that reading is the one written up.
-  **Scheduled:** `volrec-h5e-final` fires Thu 12 Nov 07:30 Pacific (PST; 11 Nov's OVX
-  close is needed first): the final reading over 23 Sep - 11 Nov, days after 11 Nov
-  excluded, recorded, pushed, texted. The site is left for a session. Late October: register and run "IV against a technical-levels
-  scanner" (parked in section 17). Wed 11 Nov: the 40-day window closes - written-up
-  readings, the cron revisited. Feb 2027: the write-up, TimesFM's FAIL included.
+**Fri 9 Oct - the dated plan from here (replaces the old "Later" list; done items are in the entries above)**
+- **Gabriel, any day before Sun 1 Nov (5 minutes, cron-job.org):** set the two daily jobs - 8548132 (record)
+  and 8548147 (surface) - to time zone **America/New_York**, 14:30 and 14:40, Monday-Friday. Nothing moves
+  until the clocks change (14:30 New York = 18:30 UTC now); from Mon 2 Nov they fire at 19:30 / 19:40 UTC and
+  the snapshot keeps its place in the session. If it is not done, they fire at 13:30 New York and
+  `panel_health` warns every day until it is. The repo side is done and tested (9 Oct).
+- **Gabriel, before Fri 27 Nov (cron-job.org):** clone each job for **Fri 27 Nov and Thu 24 Dec 2026** at
+  11:30 (record) / 11:40 (surface) New York, those dates only. NYSE closes at 1 p.m. both days; without these
+  jobs the guard refuses the late trigger and the two days are missed cleanly (dropped, as for 28 Sep).
+- **Mon 12 Oct 16:30 UTC:** the auditor routine (58 safeguards now). **Wed 14 Oct:** the watchdog.
+- **Every weekday:** recorders 14:30 / 14:40 New York; the cloud buys OPRA for each day about two days later,
+  H7's monthly legs inside their own $1.10 cap.
+- **LSEG:** student Workspace access requested by Gabriel 9 Oct; email to Marc Vinyard drafted (may derived
+  figures be published, with what credit line, how much intraday history). When access arrives: `.OVX`
+  1-minute history back to 23 Sep. Its use: the timing part of the replica's 0.29 residual. Nothing
+  LSEG-derived is published before Marc answers.
+- **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
+  (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
+  register what it will read before running it.
+- **Thu 12 - Thu 19 Nov:** the cloud writes H5e FINAL and H7 once each window's data is complete (11 Nov's
+  OPRA arrives about 13 Nov) and by 19 Nov regardless. **Fri 13 Nov 16:30 UTC:** the phone alert
+  (`trig_01MG53JubGrUPhph4bd9yimY`); "NOT recorded yet" then means waiting for data, not a failure.
+- **After the verdicts:** the site and any next step are a discussion with Gabriel first (his 4 Oct rule).
+- **December:** add the December ex-dates for SPY, QQQ, IWM, NVDA and AAPL to `data/dividends.csv` when
+  declared (a WARN fires from about 27 Dec). **By Tue 22 Dec:** renew the cron-job.org GitHub token
+  `volrec-trigger` (expires 29 Dec), paste it into every job, then update `TRIGGER_TOKEN_EXPIRES` in
+  `pressure_test.py` (WARN from 1 Dec, FAIL - an email - from 22 Dec).
+- **February 2027:** the write-up, TimesFM's FAIL included.
 
 ### Prompt for the next session
 
-> Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is
-> history. Run `tools/daily.py` with the framework python and report its verdict,
-> including H5e's first counted day. Then work down section 18's dated next steps:
-> after 13:30 UTC fetch and compare 23 Sep from OPRA (`opra_reference.py --all`, then
-> `--all --compare`), and if Gabriel brings the help desk's reply on the long-dated
-> day count, record it in H3. Report numbers before recommending; never adjust a
-> registered threshold; keep licensed data out of the repo.
+> Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
+> `tools/daily.py` with the framework python and report its verdict. Then work from section 18's dated plan
+> ("Fri 9 Oct - the dated plan from here") and the newest dated entries above it. Report numbers before
+> recommending; never adjust a registered threshold; keep licensed data out of the repo; push only when
+> `tools/audit.py` reads N of N.
