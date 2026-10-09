@@ -189,13 +189,19 @@ def plain_t(x):
 
 
 def sign_test(x):
-    """Distribution-free: how often is the spread positive? Exact binomial."""
+    """Distribution-free: how often is the spread positive? Exact two-sided binomial,
+    p = 2 * min(P(X >= pos), P(X <= pos)) under Binomial(n, 1/2), capped at 1. Zeros dropped.
+
+    9 Oct 2026: the lower tail was 1 - P(X >= pos+1) + P(X = pos), counting P(X = pos) twice,
+    so p came out too LARGE whenever fewer than half were positive (n=10, pos=2: 0.197 for
+    the exact 0.109). The upper tail, the one every result so far has used, was right. H1
+    prints only the share positive from this, never its p, so no registered number moves."""
     pos = sum(1 for v in x if v > 0); n = sum(1 for v in x if v != 0)
     if n == 0: return (0, 0, float("nan"))
     from math import comb
     def tail(k):
         return sum(comb(n, i) for i in range(k, n + 1)) / (2.0 ** n)
-    p = 2.0 * min(tail(pos), 1.0 - tail(pos + 1) + (comb(n, pos) / 2.0 ** n))
+    p = 2.0 * min(tail(pos), 1.0 - tail(pos + 1))
     return (pos, n, min(1.0, max(0.0, p)))
 
 
@@ -478,11 +484,17 @@ def build_panel(rows, closes, vol=None):
 
 
 def cost_adjusted(rec, fraction):
-    """Half the quoted spread converted to vol points via vega. `fraction` is how
-    much of the quoted spread you assume you cross: 0 = mid, 0.25, 1.0 = full."""
+    """Half the quoted spread converted to volatility via vega. `fraction` is how
+    much of the quoted spread you assume you cross: 0 = mid, 0.25, 1.0 = full.
+
+    Units: the feed's vega is dollars per ONE volatility POINT (SPY 29d ATM on 8 Oct 2026:
+    0.865, against Black-Scholes' 86.7 per unit of volatility), so half-spread / vega is in
+    points, and `spread` is in decimal volatility. Hence the /100. 9 Oct 2026: it was missing,
+    which charged every row 100 times its cost; the block had never run (the live panel is
+    under 40 days), so nothing was ever printed from it."""
     v, b, a = rec["vega"], rec["bid"], rec["ask"]
     if not v or b is None or a is None or v <= 0: return None
-    return rec["spread"] - fraction * ((a - b) / 2.0) / v
+    return rec["spread"] - fraction * ((a - b) / 2.0) / v / 100.0
 
 
 # ------------------------------------------------------------------- reports
@@ -516,8 +528,10 @@ def report(panel):
           f"{fixed_b_pvalue(t, len(xs), lag):.4f}   - robustness beside p, 8 Oct 2026")
     print("   Over-rejects ~3x even so. Treat p as an UPPER BOUND on significance.")
 
-    print(f"\n-- (2) CONFIRMATORY: every {stride}th trading day only (the honest test)")
     stride = max(NONOVERLAP_STRIDE, win_td)   # never shorter than the window itself
+    # 9 Oct 2026: this line printed `stride` before assigning it - an UnboundLocalError the
+    # first time report() ran, which would have been the live panel's 40-day reading (~11 Nov).
+    print(f"\n-- (2) CONFIRMATORY: every {stride}th trading day only (the honest test)")
     sub = xs[::stride]
     mu2, se2, t2, p2 = plain_t(sub)
     print(f"   n {len(sub)} of {len(xs)} days   mean {mu2:+.3f}   t {t2:+.2f}   p {p2:.4f}"

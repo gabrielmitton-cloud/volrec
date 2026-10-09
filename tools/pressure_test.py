@@ -484,6 +484,32 @@ _fb1 = _az.fixed_b_pvalue(2.48, 250, 42, reps=2000)
 ok(0.035 < _fb0 < 0.065 and 0.035 < _fb1 < 0.065 and _az.fixed_b_pvalue(1.97, 250, 42, reps=2000) > 0.08,
    f"fixed-b p: lag 0 matches the t-test ({_fb0:.3f}); at b=0.17, 2.48 is the 5% point ({_fb1:.3f}) and 1.97 is not")
 
+# 9 Oct 2026 (the full audit): three faults in analyze.py's live-panel report, which has never run
+# (it waits for 40 trading days, ~11 Nov). Known answers for each, so none can come back silently.
+from math import comb as _comb2
+def _binom2(pos, n):
+    pmf = [_comb2(n, i) / 2 ** n for i in range(n + 1)]
+    return min(1.0, 2 * min(sum(pmf[pos:]), sum(pmf[:pos + 1])))
+ok(all(abs(_az.sign_test([1] * k + [-1] * (n - k))[2] - _binom2(k, n)) < 1e-12 for n in range(1, 21) for k in range(n + 1)),
+   "the sign test's p is the exact two-sided binomial on both tails (n=10, 2 positive: 0.109)")
+_rec = {"spread": 0.02, "vega": 0.8, "bid": 10.0, "ask": 10.1}
+ok(abs(_az.cost_adjusted(_rec, 1.0) - (0.02 - 0.05 / 0.8 / 100)) < 1e-12,
+   "the cost block converts half-spread / vega (vol POINTS, the feed's vega unit) to decimal volatility")
+import io as _io3, contextlib as _ctx3, random as _rnd3
+_rg = _rnd3.Random(5)
+_pnl = [dict(date=f"2026-{9 + d // 28:02d}-{1 + d % 28:02d}", symbol=s_, group=_az.group_of(s_), iv=0.2,
+             realized=0.18, spread=0.02 + _rg.gauss(0, 0.02), dte=30, n=21, vega=0.8, bid=10.0, ask=10.1,
+             mid=10.05, put_iv=None, far_iv=None, far_dte=None, slope=None)
+        for d in range(50) for s_ in ("SPY", "TSLA", "GLD")]
+try:
+    _buf3 = _io3.StringIO()
+    with _ctx3.redirect_stdout(_buf3):
+        _az.report(_pnl)
+    _rep_ok = "CONFIRMATORY" in _buf3.getvalue() and "full quoted spread" in _buf3.getvalue()
+except Exception as _e3:
+    _rep_ok = False
+ok(_rep_ok, "analyze.py's live-panel report runs end to end on a synthetic 50-day panel")
+
 # 8 Oct 2026 (methods audit A10): the single-expiry fallback in model_free_30d is cruder than
 # Cboe's extrapolation. It has never fired (0 of 136 day-symbols to 7 Oct); if it ever does,
 # that day's registered reading leans on it and should be read with that caveat.
