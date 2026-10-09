@@ -1,0 +1,29 @@
+# H6 (registered 8 Oct 2026; details fixed 9 Oct before any data). Manual only - no schedule, so it
+# cannot touch the recorders. Reads Cboe's public index closes and Alpaca's daily bars (keys are
+# GitHub secrets, as for record.yml), prints aggregates, commits nothing.
+name: h6
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  h6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Unit tests first
+        run: python tools/test_h6.py
+      - name: The H6 run (aggregates only)
+        env:
+          ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
+          ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
+        run: python samples/long/h6_range.py | tee h6_output.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: h6-output
+          path: h6_output.txt

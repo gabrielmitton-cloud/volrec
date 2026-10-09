@@ -4,6 +4,7 @@ log.txt
 .env
 .DS_Store
 data/prices.json
+data/ohlc.json
 data/market_vol.json
 data/fred_cache.json
 

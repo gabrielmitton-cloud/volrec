@@ -340,6 +340,52 @@ def fetch_closes(symbols, start, end, feed="sip"):
     return cache
 
 
+
+OHLC_CACHE = HERE / "data" / "ohlc.json"
+
+
+def fetch_ohlc(symbols, start, end, feed="sip"):
+    """Daily (high, low, close) from Alpaca - fetch_closes' twin, for H6 (registered 8 Oct 2026),
+    which needs the day's range. Same feed, same clamp to yesterday, same adjustment ("all"), its
+    own cache so the closes cache and every number built on it cannot change. Returns
+    {symbol: {"YYYY-MM-DD": [high, low, close]}}."""
+    import requests
+    if feed == "sip":
+        end = min(end, date.today() - timedelta(days=1))
+    cache = json.loads(OHLC_CACHE.read_text()) if OHLC_CACHE.exists() else {}
+    key, sec = os.environ.get("ALPACA_KEY"), os.environ.get("ALPACA_SECRET")
+    need = [s for s in symbols
+            if s not in cache or cache[s].get("_end", "") < end.isoformat()
+            or cache[s].get("_feed") != feed or cache[s].get("_start", "9999") > start.isoformat()]
+    if need:
+        if not key or not sec:
+            sys.exit("ALPACA_KEY / ALPACA_SECRET not set - needed to fetch daily bars.")
+        s = requests.Session()
+        s.headers.update({"APCA-API-KEY-ID": key, "APCA-API-SECRET-KEY": sec, "accept": "application/json"})
+        for i in range(0, len(need), 50):
+            batch = need[i:i + 50]
+            token, got = None, {b: {} for b in batch}
+            while True:
+                p = dict(symbols=",".join(batch), timeframe="1Day", feed=feed, start=start.isoformat(),
+                         end=end.isoformat(), limit=10000, adjustment="all")
+                if token: p["page_token"] = token
+                r = s.get(f"{DATA_URL}/v2/stocks/bars", params=p, timeout=30)
+                r.raise_for_status()
+                j = r.json()
+                for sym, bars in (j.get("bars") or {}).items():
+                    for b in bars:
+                        got.setdefault(sym, {})[b["t"][:10]] = [b["h"], b["l"], b["c"]]
+                token = j.get("next_page_token")
+                if not token: break
+                time.sleep(0.4)
+            for sym in batch:
+                d = got.get(sym, {})
+                d["_end"], d["_start"], d["_feed"] = end.isoformat(), start.isoformat(), feed
+                cache[sym] = d
+            time.sleep(0.4)
+        OHLC_CACHE.write_text(json.dumps(cache))
+    return cache
+
 def fetch_market_vol(series=None):
     """Cboe daily closes for the market volatility indices. Free, no key.
     Returns {index_name: {"YYYY-MM-DD": close}}."""

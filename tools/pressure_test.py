@@ -399,6 +399,13 @@ _stale = [p_ for p_ in _payers if _dv and date.today() > max(date.fromisoformat(
 warn(not _stale, f"data/dividends.csv is current for quarterly payers (stale: {', '.join(sorted(_stale))} - "
      f"add the newest ex-dates)")
 
+# H6 (registered 8 Oct 2026; details fixed 9 Oct before any data): its pure pieces, hand-computed.
+_t6 = _sp.run([sys.executable, str(R / "tools/test_h6.py")], capture_output=True, text=True)
+_n6f = sum(1 for _ln in _t6.stdout.splitlines() if _ln.strip().startswith("FAIL"))
+_n6p = sum(1 for _ln in _t6.stdout.splitlines() if _ln.strip().startswith("PASS"))
+ok(_t6.returncode == 0 and _n6f == 0 and _n6p >= 25,
+   f"H6's unit tests pass ({_n6p} hand-computed cases, {_n6f} failures)")
+
 print("\n=== H3b. CALIBRATION (every instrument against a known reference truth) ===")
 # Each instrument is fed an input whose right answer is known in advance - parity,
 # invertibility, Carr-Madan's sigma^2, a simulated known vol, a no-premium world -
@@ -598,9 +605,18 @@ ok(_fresh[0] >= _rec_min + WORST_DELAY_MIN or (_GUARD and _fresh[0] >= US_CLOSE_
    "which the guard lets nothing valid land")
 ok(_fresh[-1] >= _rec_min + WORST_DELAY_MIN + DELAY_MARGIN_MIN,
    "the late freshness slot runs after even an unusually delayed landing")
-ok(set(p.name for p in (R / ".github/workflows").glob("*.yml"))
-   == {"record.yml", "freshness.yml", "surface.yml", "health.yml"},
-   "no leftover TEMP workflows")
+# 9 Oct 2026: a manual, read-only ANALYSIS workflow is allowed beside the four (h6.yml: the keys
+# live only in GitHub secrets). It must have no schedule, read-only permissions and no push;
+# anything else extra is still a leftover TEMP workflow.
+_ANALYSIS_WF = {"h6.yml"}
+def _readonly_manual(p_):
+    _y = yaml.safe_load(p_.read_text()); _on = _y.get(True, _y.get("on")) or {}
+    return (set(_on) == {"workflow_dispatch"} and _y.get("permissions") == {"contents": "read"}
+            and "git push" not in p_.read_text() and "git commit" not in p_.read_text())
+_wfs = {p.name: p for p in (R / ".github/workflows").glob("*.yml")}
+ok(set(_wfs) - _ANALYSIS_WF == {"record.yml", "freshness.yml", "surface.yml", "health.yml"}
+   and all(_readonly_manual(_wfs[n]) for n in set(_wfs) & _ANALYSIS_WF),
+   "no leftover TEMP workflows (analysis workflows are manual-only and read-only)")
 # health.yml (23 Sep 2026): the daily check in CI. It must stay read-only - two
 # recorders already push to main - must actually run the check, and must never
 # keep the temporary push trigger it was tested with on a branch.
