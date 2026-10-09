@@ -2354,6 +2354,16 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   BH/BY; fixed-b; H1's windows; H6's Parkinson constant, Wilder ATR, HLN factor and no look-ahead; the
   pricer (parity to 1e-9); the site's numbers. **Jiang & Tian:** the 2007 paper (p. 40) says three SDs,
   citing the 2005 paper, which itself says two; both quoted as written (H3 note).
+- **Every published number re-derived from a run:** modelfree, `--wide` and hedged.py byte-identical
+  to this morning's code on the same data; the site's Bloomberg table (21 figures), the day-count fit
+  (10 blocks: +1.15/+0.07, slope 1.013, R^2 0.881) and the OPRA table (5 days) reproduce from the
+  stored exports; Fig. 4's 63.8% / 93.0% from `analyze.py --simulate`; the 11.43-point truncation model
+  recomputed independently. **H1 and H2 could no longer be re-run** - Cboe withdrew the EVZ and VXXLE
+  files (403). Now: FRED fallback for exactly those two, `--end` to stop at the registered data end, and
+  a manual read-only `sample_a.yml`. Run 37990784842: 9 of 11 pairs and every headline exact (H2 t 16.26);
+  EVZ/FXE +0.83 -> +0.88 and VXXLE/XLE +1.80 -> +1.77 because FRED carries four dates Cboe's file
+  lacked (values identical on all 2,166 common days, checked against Cboe's archived Aug 2024 file),
+  which shifts the non-overlapping grid. Recorded in H1 and H2.
 - **The first monthly rows landed** 9 Oct 18:41 UTC: 1,066 contracts, USO and GLD, 16 Oct / 20 Nov
   (7 and 42 days), exactly Cboe's legs; the H7 reader computes on them (values not looked at).
 

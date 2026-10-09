@@ -160,3 +160,7 @@ H6 did not use before it could be claimed.
   Welch test ignores autocorrelation; `hac_dummy` prints the same after-minus-calm difference with
   Newey-West errors at lags 21 and 63 beside it (Result). The lags were chosen as the spike window and
   a quarter, before the run that printed them. Two unit tests in `tools/test_h6.py`.
+- **2026-10-09 (full audit) — EVZ's FRED source checked directly (no change):** Cboe's own EVZ file,
+  as archived in August 2024, and FRED's EVZCLS agree on every one of the 2,166 common days since 2016;
+  FRED carries four extra dates (3 Dec 2018, 20 Feb 2019, 5 Jul 2019, 16 Oct 2020), which add at most
+  four rows to EVZ/FXE here.
