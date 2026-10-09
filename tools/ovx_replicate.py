@@ -27,9 +27,18 @@ it computes four readings at the snapshot minute and compares each with Cboe's O
   S1c OPRA, the same band and legs, Cboe's quote rules and minute clock -> Cboe's QUOTE RULES;
   S2  OPRA, the same two legs, every listed strike, Cboe's rules        -> strike COVERAGE;
   S3  OPRA, Cboe's own legs, strikes, rules and clock                  -> the EXPIRY effect;
-  S3 - OVX close is what is left: the snapshot is ~2-5 h before the close (timing), Cboe's
-  rate curve vs one 1-month rate, and Cboe's index-level filter (holds the last value when the
-  index jumps more than 0.5 points in 30 s), none of which a single snapshot reproduces.
+  S3 - OVX close is what is left: the snapshot is up to 2 h before the 16:00 close (timing; 1 h 20 min since 1 Oct), Cboe's
+  rate curve vs one 1-month rate, and Cboe's index-level filter (it republishes the last value
+  when the index FALLS 0.5 points or more within 30 s; rises are not filtered - Math v5.0 s5(a),
+  ETF v9.0 s3), none of which a single snapshot reproduces.
+
+ABSENT SIDES (corrected 9 Oct 2026). Databento writes OPRA's no-bid as a BLANK bid (1.25 million
+records checked: never a 0.00 bid), the free feed as 0. In Cboe's terms both are a ZERO bid, which
+counts toward the two-strike stop; only a quote with neither side is null. The 8 Oct version read
+the blank as null, so on OPRA the walk skipped no-bid strikes instead of stopping at them and took
+in stray far bids Cboe never reaches: that was most of USO's "+0.45 unexplained" residual (H5e
+window, 10 days: mean S3 - OVX +0.41 -> +0.05, mean |gap| 0.42 -> 0.29; GLD 0.11 -> 0.10).
+`--absent-as-null` reproduces the 8 Oct readings.
 
 LIMITS, STATE THEM. One snapshot minute per day, not Cboe's close. Databento's cbbo-1m is a
 one-minute consolidated BBO, Cboe uses its own NBBO feed. The rate is DGS1MO for both terms.
@@ -155,6 +164,19 @@ def blend30(m1, s1, m2, s2):
     return 100.0 * math.sqrt(v) if v > 0 else None
 
 
+def cboe_quote(bid, ask):
+    """(bid, ask) as Cboe reads it. A side that is ABSENT while the other is quoted is a quote of
+    ZERO on that side (Databento writes OPRA's no-bid as a blank; the free feed writes 0): Cboe's
+    zero bid or zero ask, excluded and counted toward the two-strike stop (Math v5.0 s3(a)(iii)).
+    Only a quote with neither side is null, and null quotes are removed before the walk."""
+    if bid is None and ask is None:
+        return (None, None)
+    return (0.0 if bid is None else bid, 0.0 if ask is None else ask)
+
+
+ABSENT_AS_ZERO = True                              # False only to reproduce the 8 Oct readings
+
+
 def bey_to_continuous(bey):
     """Cboe v5.0 s2.1: APY = (1 + BEY/2)^2 - 1, then R = ln(1 + APY)."""
     return math.log((1 + bey / 2) ** 2)
@@ -172,7 +194,8 @@ def chain_at(opra, when, root="USO"):
         if not hit:
             continue
         exp = datetime.strptime(m.group(2), "%y%m%d").date()
-        out.setdefault(exp, {})[(int(m.group(4)) / 1000.0, m.group(3))] = (hit[1], hit[2])
+        out.setdefault(exp, {})[(int(m.group(4)) / 1000.0, m.group(3))] = \
+            cboe_quote(hit[1], hit[2]) if ABSENT_AS_ZERO else (hit[1], hit[2])
     return out
 
 
@@ -279,8 +302,12 @@ PAIRS = (("USO", "OVX"), ("GLD", "GVZ"))          # both are Nearest Term, month
 
 
 def main():
+    global ABSENT_AS_ZERO
     import analyze
     from panel_health import US_MARKET_HOLIDAYS, AFTER_CLOSE_DAYS
+    ABSENT_AS_ZERO = "--absent-as-null" not in sys.argv
+    if not ABSENT_AS_ZERO:
+        print("--absent-as-null: OPRA's blank bids read as NULL, the 8 Oct 2026 version (superseded 9 Oct)")
     r = modelfree.risk_free()
     print(f"Cboe ETF-index replication from OPRA - EXPLORATORY (HANDOFF 18, methods audit item 1). "
           f"r = {r:.3%} (DGS1MO)")

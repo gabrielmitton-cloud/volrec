@@ -37,7 +37,9 @@ INDEX = {"USO": "OVX", "GLD": "GVZ"}
 
 
 def quotes_from_rows(rows):
-    """surface_monthly rows -> {expiry date: {(strike, 'C'|'P'): (bid, ask)}}; a blank side is None."""
+    """surface_monthly rows -> {expiry date: {(strike, 'C'|'P'): (bid, ask)}}, each quote through
+    O.cboe_quote - the same reading the OPRA side gets in O.chain_at, so the two feeds' different
+    ways of writing "no bid" (the free feed 0, Databento a blank) cannot open a gap between them."""
     def num(v):
         try:
             return float(v)
@@ -46,7 +48,7 @@ def quotes_from_rows(rows):
     out = {}
     for r in rows:
         e = date.fromisoformat(r["expiration"])
-        out.setdefault(e, {})[(float(r["strike"]), r["type"])] = (num(r["bid"]), num(r["ask"]))
+        out.setdefault(e, {})[(float(r["strike"]), r["type"])] = O.cboe_quote(num(r["bid"]), num(r["ask"]))
     return out
 
 

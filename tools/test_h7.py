@@ -48,13 +48,19 @@ check("one expiry is not enough", h7.replica(chain(0.45), [E1], WHEN, 0.0) is No
 
 print("\n=== rows -> quotes ===")
 rows = [{"expiration": "2026-10-16", "strike": "80.0", "type": "C", "bid": "1.2", "ask": "1.3"},
-        {"expiration": "2026-10-16", "strike": "80.0", "type": "P", "bid": "", "ask": "0.9"}]
+        {"expiration": "2026-10-16", "strike": "80.0", "type": "P", "bid": "", "ask": "0.9"},
+        {"expiration": "2026-10-16", "strike": "81.0", "type": "P", "bid": "", "ask": ""}]
 q = h7.quotes_from_rows(rows)
-check("blank bid becomes None, numbers parse", q[E1][(80.0, "P")] == (None, 0.9) and q[E1][(80.0, "C")] == (1.2, 1.3))
+check("numbers parse; a blank bid beside an ask is a ZERO bid (Cboe); no quote at all stays null",
+      q[E1][(80.0, "C")] == (1.2, 1.3) and q[E1][(80.0, "P")] == (0.0, 0.9) and q[E1][(81.0, "P")] == (None, None))
 
 print("\n=== end to end on synthetic files (monthly rows + an OPRA_M file) ===")
 tmp = Path(tempfile.mkdtemp())
 ch = chain(0.30)
+# A stray far bid BEYOND the two-zero-bid stop (as OPRA's wings carry): Cboe's walk never reaches
+# it. Databento writes a no-bid as a BLANK and the free feed as 0; both must stop the walk there.
+for e in ch:
+    ch[e][(40.0, "P")] = (0.01, 0.05)
 mrows, lines = [], ["ts_recv,ts_event,rtype,publisher_id,instrument_id,side,price,size,flags,"
                     "bid_px_00,ask_px_00,bid_sz_00,ask_sz_00,bid_pb_00,ask_pb_00,symbol"]
 for e, qq in ch.items():
@@ -63,13 +69,21 @@ for e, qq in ch.items():
         mrows.append({"date": "2026-10-09", "symbol": "USO", "expiration": e.isoformat(), "strike": str(K),
                       "type": k, "bid": str(b), "ask": str(a), "quote_time": "2026-10-09T18:42:10Z"})
         occ = f"USO   {e:%y%m%d}{k}{int(K * 1000):08d}"
-        lines.append(f"2026-10-09T18:42:00.000000000Z,,193,30,1,N,,0,0,{b},{a},1,1,1,1,{occ}")
+        bb = "" if b == 0 else b                     # Databento's own form: no bid -> blank
+        lines.append(f"2026-10-09T18:42:00.000000000Z,,193,30,1,N,,0,0,{bb},{a},1,1,1,1,{occ}")
 (tmp / "OPRA_M_USO_2026-10-09.csv").write_text("\n".join(lines) + "\n")
 h7.ore.monthly_recorded = lambda d, s: mrows if (d, s) == ("2026-10-09", "USO") else []
 x = h7.day_reading("2026-10-09", "USO", 0.0, tmp)
 check(f"free and OPRA agree when the quotes are the same ({x['free']:.3f} vs {x['opra']:.3f})",
       x and x["free"] is not None and x["opra"] is not None and abs(x["free"] - x["opra"]) < 1e-9)
 check("the legs are the two monthlies, 7 and 42 days out", x["legs"] == [7, 42])
+check("the blank-bid OPRA file really carries blanks (the case this test exists for)",
+      ",,0.01," in (tmp / "OPRA_M_USO_2026-10-09.csv").read_text())
+h7.O.ABSENT_AS_ZERO = False                          # the 8 Oct reading: blank = null
+old = h7.day_reading("2026-10-09", "USO", 0.0, tmp)
+h7.O.ABSENT_AS_ZERO = True
+check(f"read as null, the blank bids let the walk past the stop and the feeds disagree ({old['opra']:.3f} vs {old['free']:.3f})",
+      old["opra"] is not None and old["opra"] - old["free"] > 0.01)
 y = h7.day_reading("2026-10-09", "USO", 0.0, tmp / "missing")
 check("no OPRA file -> opra is None, never a guess", y["opra"] is None and y["free"] is not None)
 

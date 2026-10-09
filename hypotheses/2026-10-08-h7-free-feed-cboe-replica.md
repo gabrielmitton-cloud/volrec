@@ -72,6 +72,25 @@ Not read yet: due 12 Nov 2026 (`tools/record_verdict.py`, from `tools/h7_reader.
 
 ## Adjustment log
 
-(none)
+**1. 9 Oct 2026, ~18:00 UTC - BEFORE any H7 data (the first monthly row lands 18:40 UTC today, its
+OPRA file tonight): a reading error in the input, fixed; nothing registered moves.** Databento writes
+OPRA's no-bid as a BLANK bid (all 1.25 million records on disk: never a 0.00 bid); the free feed
+writes 0. In Cboe's terms both are a zero bid, which counts toward the two-strike stop (Math v5.0
+s3(a)(iii)); only a quote with neither side is null. `ovx_replicate.chain_at` read the blank as null,
+so on OPRA the walk skipped no-bid strikes instead of stopping at them. For H7 that would have opened
+a free-vs-OPRA gap made of nothing but the two feeds' spelling of "no bid" - on a synthetic chain
+with one stray far bid, 1.9 points against H7a's 0.25 bar. Fixed in `ovx_replicate.cboe_quote`,
+applied to BOTH feeds (`chain_at` and `h7_reader.quotes_from_rows`); `cboe_sigma2`, `blend30`, the
+bars, window and minimum are untouched. Tests: `tools/test_h7.py` now writes the OPRA file in
+Databento's own blank form; pressure test section R; auditor mutants `ovx-blank-bid-null`,
+`h7-blank-bid-null`. **This is a correction before output, not a post-output adjustment.**
+
+*In-sample context moves (the bars do not):* on the 8 Oct data, read correctly, Cboe's rules on OPRA
+land a mean 0.12 (median 0.08) from GVZ's close (was 0.15 / 0.07) over 17 days, and USO's residual
+to OVX is +0.01 over 14 days (H5e's window, 10 days: +0.05, mean absolute 0.29, median 0.23) - the
+"+0.45 unexplained" quoted above was mostly this reading error. H7b's 0.30 bar was set as twice 0.15;
+it stays 0.30. H7c stays descriptive, as registered.
+
+*Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
 
 *Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*

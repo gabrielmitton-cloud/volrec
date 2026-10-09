@@ -411,7 +411,7 @@ ok(_t6.returncode == 0 and _n6f == 0 and _n6p >= 25,
 _t7 = _sp.run([sys.executable, str(R / "tools/test_h7.py")], capture_output=True, text=True)
 _n7f = sum(1 for _ln in _t7.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _n7p = sum(1 for _ln in _t7.stdout.splitlines() if _ln.strip().startswith("PASS"))
-ok(_t7.returncode == 0 and _n7f == 0 and _n7p >= 15, f"H7's reader tests pass ({_n7p} cases, {_n7f} failures)")
+ok(_t7.returncode == 0 and _n7f == 0 and _n7p >= 17, f"H7's reader tests pass ({_n7p} cases, {_n7f} failures)")
 _rv7 = _iu.module_from_spec(_iu.spec_from_file_location("rv7", R / "tools/record_verdict.py"))
 _iu.spec_from_file_location("rv7", R / "tools/record_verdict.py").loader.exec_module(_rv7)
 _o7 = ("H7a USO: n=12 mean |free - OPRA| 0.180 (bar 0.25)\nH7a GLD: n=12 mean |free - OPRA| 0.090 (bar 0.25)\n"
@@ -1326,6 +1326,19 @@ _qt = {}
 for _K, _c, _p in ((98, 3.0, 1.0), (99, 2.2, 1.2), (100, 1.6, 1.6), (101, 1.6, 1.6), (102, 0.8, 2.8)):
     _qt[(_K, "C")] = (_c, _c); _qt[(_K, "P")] = (_p, _p)
 ok(_ovm.cboe_sigma2(_qt, 0.0, 30 / 365)[1] == 100.0, "the OVX replica breaks an at-the-money tie at the lowest strike")
+# 9 Oct 2026: Databento writes OPRA's no-bid as a BLANK, the free feed as 0. Both are Cboe's zero
+# bid and must stop the walk; reading the blank as null let the walk run past the stop and took in
+# stray far bids (most of USO's "+0.45" replica residual). A stray bid beyond two blanks must stay out.
+_qb = _ovchain(); _qb[(70, "P")] = (0.05, 0.10)
+_w0 = datetime(2026, 10, 7, 18, 40, tzinfo=timezone.utc)
+_raw = {f"XYZ261106{k}{int(K * 1000):08d}": [(_w0, None if (K in (74, 72) and k == "P") else b_, a_)]
+        for (K, k), (b_, a_) in _qb.items()}
+_cb = _ovm.chain_at(_raw, _w0, "XYZ")[date(2026, 11, 6)]
+_qz = dict(_qb); _qz[(74, "P")] = (0.0, _qz[(74, "P")][1]); _qz[(72, "P")] = (0.0, _qz[(72, "P")][1])
+ok(_ovm.cboe_quote(None, 0.05) == (0.0, 0.05) and _ovm.cboe_quote(None, None) == (None, None)
+   and _cb[(74.0, "P")] == (0.0, _qb[(74, "P")][1])
+   and _ovm.cboe_sigma2(_cb, 0.0, 30 / 365)[3] == _ovm.cboe_sigma2(_qz, 0.0, 30 / 365)[3] == _base[3] - 3,
+   "the OVX replica reads OPRA's blank bid as a zero bid: the walk stops there, a stray bid beyond stays out")
 ok(_ovm.third_friday(2026, 10) == date(2026, 10, 16) and _ovm.is_monthly(date(2026, 11, 20))
    and not _ovm.is_monthly(date(2026, 10, 23)) and _ovm.third_friday(2027, 3, {date(2027, 3, 19)}) == date(2027, 3, 18),
    "the OVX replica uses third-Friday monthlies only (Thursday when the Friday is a holiday)")
