@@ -115,6 +115,10 @@ Equity indices pooled (n=508). Positive = insurance overpriced, our convention.
 | `IV^2 - RV^2` variance, raw | 62.16 | **2.14** | 3.3e-02 |
 | `ln(IV^2) - ln(RV^2)` log variance | 47.94 | **16.26** | 3.6e-48 |
 
+**Reproduced 9 October 2026** (Actions run 37990784842, `--end 2026-09-06`): log variance t = **16.26**,
+volatility t = 9.28, variance t = 2.14 on the equity indices, exactly as recorded. EVZ and VXXLE now come
+from FRED (Cboe withdrew the files); their rows move slightly, for the reason given in H1's note.
+
 ## H2a — HOLDS, but with a result that was not anticipated
 
 The variance form is significant, so the direction agrees with Carr & Wu. But

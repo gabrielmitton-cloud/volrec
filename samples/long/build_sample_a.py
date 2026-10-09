@@ -159,7 +159,7 @@ def main():
     print("\n-- H1c  market term-structure slope (VIX3M - VIX9D)")
     slopes = {d: vol["VIX3M"][d] - vol["VIX9D"][d]
               for d in (vol.get("VIX3M") or {})
-              if d in (vol.get("VIX9D") or {}) and d >= START.isoformat()}
+              if d in (vol.get("VIX9D") or {}) and START.isoformat() <= d <= end.isoformat()}
     if slopes:
         inv = sum(1 for v in slopes.values() if v < 0)
         print(f"   slope positive on {100*(len(slopes)-inv)/len(slopes):.1f}% "

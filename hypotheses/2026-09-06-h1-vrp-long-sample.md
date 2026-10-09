@@ -184,6 +184,17 @@ usable observation is 21 trading days before the data ends, by construction).
 
 Premium in annualised volatility points.
 
+**Reproduced 9 October 2026** (the full audit; `.github/workflows/sample_a.yml`, Actions run
+37990784842, `--end 2026-09-06`, the registered run's data end). Cboe has since withdrawn the EVZ and
+VXXLE files (403), so those two come from FRED (EVZCLS, VXXLECLS); every other series is Cboe's own.
+**Nine of the eleven pairs reproduce exactly**, and so does every headline: 9 of 11 significant, BH 9,
+BY 8 (VXSLV/SLV 0.0587), equity index +3.14 (t 9.28), commodity +3.42; H1c 87.3% of 2,684 days once its
+slope window is cut at the same end (the cut was added the same day). The two FRED pairs move slightly:
+EVZ/FXE +0.83 (t 5.63) -> +0.88 (t 5.42); VXXLE/XLE +1.80 (t 1.32) -> +1.77 (t 1.22). The cause was
+measured, not assumed: FRED's EVZ values equal Cboe's own (archived file, Aug 2024) on all 2,166 common
+days since 2016, but FRED carries four dates Cboe's file lacked, and the non-overlapping grid steps
+forward a day wherever the index is missing, so the windows shift. No conclusion moves.
+
 **H1a — HOLDS.** 9 of 11 pairs significantly positive at p<0.05. The two that
 fail are the sector ETFs whose indices were discontinued in Feb 2022, and which
 therefore have the fewest and most fragmented observations. This is the
