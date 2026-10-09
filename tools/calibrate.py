@@ -158,13 +158,15 @@ def risk_free_input():
         return
     last = max(obs)
     age = (date.today() - date.fromisoformat(last)).days
-    # A 10bp rate error moves one run's scaled hedged gain by about 0.013bp, against
-    # a smallest detectable H4 effect of 0.56bp. So staleness is reported, not failed,
-    # until it is large enough to matter: a full month.
-    print(f"  {'INFO' if age <= 31 else 'WARN'}  DGS1MO cached through {last} "
-          f"({age} days old), {obs[last]:.2f}%.")
-    print("        Immaterial to H4 below a month: 10bp moves a hedged gain ~0.013bp,")
-    print("        against a smallest detectable effect of 0.56bp.")
+    # The cache is FROZEN ON PURPOSE (the cloud copies the same file): every registered reading, the
+    # 12 Nov final readings included, is computed at one rate, so each reproduces exactly. Measured
+    # 9 Oct 2026: the actual DGS1MO had risen 23bp (3.91% -> 4.14%); at 4.14% H5e's mean gap moves
+    # 0.836 -> 0.841 and a hedged gain ~0.03bp (10bp ~ 0.013bp), against H4's smallest detectable
+    # effect of 0.56bp. So its age is reported, never failed; refreshing it would change registered
+    # numbers by those amounts and must be a dated, logged decision.
+    print(f"  INFO  DGS1MO frozen at {last} ({age} days old), {obs[last]:.2f}% - on purpose, so every")
+    print("        registered reading uses one rate. A 23bp move shifts H5e's mean gap 0.005")
+    print("        and a hedged gain ~0.03bp (measured 9 Oct 2026); refresh only by a logged decision.")
 
 
 def wide_lift_identity():
