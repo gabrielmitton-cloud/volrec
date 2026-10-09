@@ -392,10 +392,11 @@ def fetch_ohlc(symbols, start, end, feed="sip"):
         OHLC_CACHE.write_text(json.dumps(cache))
     return cache
 
-# Cboe withdrew EVZ's history file (403, found 9 Oct 2026; EVZ was discontinued in March 2025).
-# FRED republishes Cboe's closes - identical to Cboe's own file on all 2,704 GVZ days checked (H6 log).
-# Used ONLY when Cboe refuses the file, so no other series, and no index Cboe still serves, changes.
-FRED_FALLBACK = {"EVZ": "EVZCLS"}
+# Cboe has withdrawn the history files of discontinued indices (403, found 9 Oct 2026): EVZ (ended
+# March 2025) and VXXLE (ended February 2022). FRED republishes Cboe's closes - identical to Cboe's own
+# file on all 2,704 GVZ days checked (H6 log). Used ONLY when Cboe refuses the file, so no index Cboe
+# still serves changes.
+FRED_FALLBACK = {"EVZ": "EVZCLS", "VXXLE": "VXXLECLS"}
 
 
 def fred_public_closes(series_id):
