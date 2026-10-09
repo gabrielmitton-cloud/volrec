@@ -910,6 +910,10 @@ The same check that corrected the day count applies here, and it lands the same 
   range, their simulated error rises steeply as volatility rises, almost all of it
   truncation, and they give a rule of thumb (from Jiang & Tian 2005): truncation is
   negligible once the range reaches **three standard deviations** either side of spot.
+  *(9 Oct 2026, checked against both papers: the 2007 paper, p. 40, says "at least three
+  standard deviations from the initial asset price" and cites the 2005 paper for it; the 2005 paper
+  (RFS 18(4), s.1.2) itself says truncation is negligible beyond TWO standard deviations from the
+  forward. Both are quoted as written; USO's registered band, at 1.96, is short of either.)*
   That is H3c's mechanism, and the "reusable finding" under "Why this is worth doing"
   and on the public site. It must be credited as theirs.
 - **Their errors have a sign each:** truncation biases the estimate down, a coarse

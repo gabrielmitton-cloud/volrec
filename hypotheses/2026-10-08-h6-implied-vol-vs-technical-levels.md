@@ -97,6 +97,12 @@ volatility in all nine.
 (782); difference -0.0893, Welch t -7.95, p < 0.0001: implied volatility's disadvantage shrinks
 after spikes, as predicted. The pooled reading flags a date when ANY index spiked (71% of dates);
 per pair, by its own index, the same direction holds in 8 of 9 (exploratory, below).
+*Robustness, added 9 Oct 2026 in the full audit, after the output; the verdict is unchanged:* the
+Welch test treats the 2,692 dates as independent, but date-level d is autocorrelated and the spike
+flag comes in runs of 21 days or more. The same difference as an OLS slope on the spike dummy with
+Newey-West errors: lag 21, t -3.80, p 0.0001; lag 63, t -3.12, p 0.0018 (Actions run 37987277538,
+which also reproduced every registered figure above exactly). H6b survives; the Welch t overstated
+its precision about 2.5-fold.
 
 **Why H6a fails, from the run (exploratory, added after the output - see the log):** implied
 volatility overshoots the LEVEL of the next day's high-low range - mean log bias +0.45 to +0.84
@@ -150,3 +156,7 @@ H6 did not use before it could be claimed.
   LEVEL overshoots an intraday high-low range by construction; (2) H6b per pair, each pair's days
   flagged by its own index - the registered pooled reading flags a date when ANY index spiked
   (71% of dates), a choice the 9 Oct details left implicit and the code made before any output.
+- **2026-10-09 (full audit) — AFTER the output: one robustness line, outside both verdicts.** H6b's
+  Welch test ignores autocorrelation; `hac_dummy` prints the same after-minus-calm difference with
+  Newey-West errors at lags 21 and 63 beside it (Result). The lags were chosen as the spike window and
+  a quarter, before the run that printed them. Two unit tests in `tools/test_h6.py`.

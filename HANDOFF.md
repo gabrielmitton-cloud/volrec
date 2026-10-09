@@ -1886,11 +1886,11 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 every decision. This section is the only one guaranteed current. Read it, run
 `tools/daily.py`, and open section 17 only when a task needs the why.
 
-### System status, checked 5 Oct 2026 22:45 UTC (rows below the pressure test last checked 23 Sep)
+### System status, checked 9 Oct 2026 21:00 UTC (rows below the pressure test last checked 23 Sep)
 
 | check | result |
 |---|---|
-| `tools/pressure_test.py` | **0 fail, 2 warn** (5 Oct) - both known and true: the snapshot time spread over 10 days (102 min, GitHub's delays before the outside trigger) and the GitHub-cron backup can land after the close (the guard refuses it; the trigger prevents it). Auditor **27 of 27** |
+| `tools/pressure_test.py` | **0 fail, 3 warn** (9 Oct, after the full audit) - all known and true: FXE's one-sided 7 Oct quote (no IV carried), the snapshot time spread over 10 days (88 min, from before the outside trigger), and the GitHub-cron backup can land after the close (the guard refuses it; the trigger prevents it). Auditor **53 of 53** |
 | `tools/calibrate.py` | **9 of 9** instruments calibrated against a known answer (the OPRA comparison added 23 Sep) |
 | `tools/test_hedged.py` | 21 hand-computed cases pass |
 | static scan | no undefined name in 18 files; dead imports removed |
@@ -1931,8 +1931,8 @@ every decision. This section is the only one guaranteed current. Read it, run
 | H5d | descriptive | 12 underlying-days on 3 dates; the date-clustered test needs more dates |
 | H5e | **first verdict: FAILS** (8 Oct) | mean abs gap 0.90 (bar under 0.5); closer on 2 of 10 days; final reading 11 Nov |
 | H5f | **read 25 Sep at 5 days: a, b, c hold** (a ON the bar) | H5f-a **0.500** of OPRA's spread (bar 0.5); H5f-b **64 of 64** no-bid (bar 80%); H5f-c inflation gap **0.6%** per day, 0.4% on medians (bar 25%); stale quotes excluded by the rule |
-| H6 | **tested 9 Oct: H6a FAILS, H6b HOLDS** | ATR(14) beats implied vol on the next day's range in 9 of 9 pairs (IV overshoots the level 1.6-2.3x: close-to-close risk plus the premium); IV's disadvantage shrinks after spikes; exploratory: with the level removed IV's timing error is smaller in 8 of 9 |
-| H7 | **registered 8 Oct (exception to the 11 Nov rule, Gabriel)** | free feed through Cboe's rules vs OVX/GVZ on the monthly legs from 9 Oct; read once over 9 Oct - 11 Nov, min 10 days; GLD OPRA added to the cloud fetch (~$1 approved) |
+| H6 | **tested 9 Oct: H6a FAILS, H6b HOLDS** | ATR(14) beats implied vol on the next day's range in 9 of 9 pairs (IV overshoots the level 1.6-2.3x: close-to-close risk plus the premium); IV's disadvantage shrinks after spikes (Welch t -7.95; with Newey-West errors t -3.80 at lag 21, -3.12 at lag 63 - still holds); exploratory: with the level removed IV's timing error is smaller in 8 of 9 |
+| H7 | **registered 8 Oct (exception to the 11 Nov rule, Gabriel); collecting from 9 Oct** | free feed through Cboe's rules vs OVX/GVZ on the monthly legs (first rows 9 Oct, 1,066 contracts); read once over 9 Oct - 11 Nov, min 10 days, written when the window's data is complete (by 19 Nov at the latest); reader corrected before any data (blank OPRA bid = zero bid, H7 log 1); GLD OPRA in the cloud fetch (~$1 approved) |
 
 *Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Aggregates only.*
 
@@ -2207,6 +2207,10 @@ Known answers in the pressure test (section R) and 3 auditor mutants (30 of 30 p
 | expiry: our weeklies -> Cboe's monthlies | **-0.55** (mean abs 0.55) | +0.19 |
 | left: faithful replica minus the index close | **+0.45** (mean abs 0.46, median 0.62) | +0.03 (median abs 0.07) |
 | registered estimate's mean abs gap | 0.33 | 0.40 |
+
+**SUPERSEDED 9 Oct (the full audit, below): this table read OPRA's blank bids as null quotes.** Read as
+Cboe's zero bids, USO's "left" is +0.05 (mean abs 0.29, median 0.23) over 10 days; findings (4)-(5) below
+are corrected there. Kept as it stood, for the record.
 Findings: (1) the free feed's prices equal OPRA's NBBO on the same contracts, both names; (2) the
 GVZ replica lands a median 0.07 from the close - the method is right; (3) USO's registered closeness
 to OVX is partly offsetting errors (band truncation -1.2, expiry/residual +1.0); (4) a faithful Cboe
@@ -2310,6 +2314,50 @@ nothing; `calibrate.py` 0 uncalibrated; pressure test 0 fail; auditor 34 of 34; 
   publishing LSEG-derived figures waits on the librarian's answer; until then, Bloomberg rules -
   nothing in the repo, aggregates only. First check: `.OVX` 1-minute history back to 23 Sep (the
   CodeBook script given to Gabriel 9 Oct prints only the row count and date range).
+
+#### Fri 9 Oct, evening - the full audit (Gabriel: "go through EVERYTHING ... no hallucinations")
+Every calculation file read line by line against its source (Cboe Math v5.0 and ETF v9.0 re-read from
+Cboe's PDFs; Bakshi-Kapadia; Jiang-Tian 2005 and 2007; Parkinson; HLN). Seven real faults found and
+fixed, none of which moves a registered verdict. Each has a known-answer check and an auditor mutant
+(auditor **53 of 53**, pressure test **0 fail**, calibrate 0 uncalibrated, all pushed).
+1. **The OVX replica read OPRA's blank bid as a NULL quote** (3d0525d, pushed 18:03 UTC, before the
+   first monthly row at 18:41). Databento writes OPRA's no-bid as a blank (1.25M records: never 0.00);
+   the free feed writes 0; Cboe counts both toward its two-strike stop. Read as null, the walk ran past
+   the stop and took stray far bids. Corrected, H5e window (10 days each; `--absent-as-null`
+   reproduces 8 Oct exactly):
+   | step (mean) | USO vs OVX | GLD vs GVZ |
+   |---|---|---|
+   | data: free -> OPRA, same contracts | +0.02 (mean abs 0.04) | -0.01 (0.02) |
+   | Cboe quote rules on the band | -0.48 | -0.03 |
+   | coverage: band -> full chain | +0.93 | +0.28 |
+   | expiry: weeklies -> Cboe's monthlies | -0.28 (mean abs 0.81) | +0.17 |
+   | **left: replica minus the close** | **+0.05** (mean abs **0.29**, median 0.23) | +0.02 (0.10, median 0.08) |
+   USO's "+0.45 unexplained" was mostly this. The remainder (0.29) includes the 19-80 minutes from
+   snapshot to OVX's 16:00 close. **For H7 it would have opened a fake free-vs-OPRA gap** (1.9 points on
+   a synthetic chain against a 0.25 bar): fixed before any H7 data; H7's log, entry 1. Site corrected.
+2. **analyze.py's live-panel report could not run** (`stride` printed before assignment) - it would have
+   crashed at the 40-day reading (~11 Nov). 3. **Its cost block charged 100x** (vega is per vol POINT,
+   the spread decimal). 4. **Its sign test's lower tail double-counted P(X = pos)**; H1 uses only the
+   share positive, so no registered number moves. (98e80f9)
+5. **The final readings (H5e FINAL, H7) could be written before their window's data exists.** The
+   cloud also runs at 03:05 UTC on 12 Nov; Databento serves day D at ~D+2 02:00 UTC in practice. Both
+   now wait while any day lacks its close or OPRA file, and write regardless from **19 Nov**, naming
+   what is missing. 6. **The H5e FINAL had no full-precision cross-check**: modelfree gains `--through`
+   (default output byte-identical, checked) and the final reads `--through 2026-11-11`; `--through
+   2026-10-07` reproduces the first verdict exactly (0.90, 2 of 10). (75993d3; H5 and H7 logs)
+7. **H6b's Welch test ignored autocorrelation** (robustness line, after the output): Newey-West lag 21
+   t -3.80 p 0.0001; lag 63 t -3.12 p 0.0018. H6b survives; the site says so. (H6 Result)
+- **Checked and right:** modelfree's formula, forward, K0, strip, dK, blend (Cboe v5.0 verbatim); the
+  replica's ATM tie, K0 rule, zero-ask stop, minute clock, blend/extrapolation, 7-day exclusion (v9.0:
+  "excluded if Days to Expiration is Less than 7 Days"); Cboe's index filter only holds FALLS of 0.5 in
+  30 s (wording fixed in the replica); hedged.py's gain, carry and dividend adjustment; c4; Newey-West;
+  BH/BY; fixed-b; H1's windows; H6's Parkinson constant, Wilder ATR, HLN factor and no look-ahead; the
+  pricer (parity to 1e-9); the site's numbers. **Jiang & Tian:** the 2007 paper (p. 40) says three SDs,
+  citing the 2005 paper, which itself says two; both quoted as written (H3 note).
+- **The first monthly rows landed** 9 Oct 18:41 UTC: 1,066 contracts, USO and GLD, 16 Oct / 20 Nov
+  (7 and 42 days), exactly Cboe's legs; the H7 reader computes on them (values not looked at).
+
+*Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
 
 #### Open, no fixed date
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
