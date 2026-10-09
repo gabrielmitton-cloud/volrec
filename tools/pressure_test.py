@@ -855,6 +855,18 @@ try:
                            [_dt.date(2026, 10, 2)])
     ok(_w_late and len(_phm.warns) == _wl,
        "a day the outside trigger did not start (landed 19:40) warns; one it started (18:32) does not")
+    # 9 Oct 2026: the window is New York time. After the clock change the trigger lands 19:31 UTC
+    # (14:31 New York) - quiet; a trigger left at 18:30 UTC lands 13:31 New York - warns; on an early
+    # close the 11:31 New York landing is the expected one.
+    def _landing_warns(day, stamp):
+        _w0 = len(_phm.warns)
+        with _ctx.redirect_stdout(_io.StringIO()):
+            _phm.check_landing([{"date": day, "quote_time": f"{day}T{stamp}:00.000000Z"}] * 20,
+                               [_dt.date.fromisoformat(day)])
+        return len(_phm.warns) > _w0
+    ok(not _landing_warns("2026-11-02", "19:31") and _landing_warns("2026-11-02", "18:31")
+       and not _landing_warns("2026-11-27", "16:31"),
+       "the trigger window is judged in New York time: 14:31 New York quiet after the clock change, 13:31 warns; 11:31 on an early close quiet")
     _phm.fails.clear(); _phm.warns.clear()
 except Exception as _e:
     ok(False, f"panel_health session checks are importable ({_e})")
