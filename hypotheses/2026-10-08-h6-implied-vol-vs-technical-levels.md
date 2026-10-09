@@ -72,4 +72,26 @@ allows it. Not yet implemented: the join is built and tested AFTER this commit.
 
 ## Adjustment log
 
-(none)
+- **2026-10-09 — implementation details fixed BEFORE any data was fetched or joined (not a
+  strike; no output exists).** The registered text left these open; they are fixed here, and the
+  commit is timestamped before the first run:
+  1. **Pairs:** VIX/SPY, VXN/QQQ, RVX/IWM, VXD/DIA, OVX/USO, GVZ/GLD, VXSLV/SLV, VXEEM/EEM, EVZ/FXE.
+  2. **Data:** Cboe index closes (`analyze.fetch_market_vol`); Alpaca daily bars, sip feed,
+     `adjustment=all` (`analyze.fetch_ohlc`). Day t needs the index close and the ETF's bar at t and
+     the ETF's NEXT bar; a next bar more than 5 calendar days later is a gap and the day is dropped.
+     Start 2016-01-04; end the last complete day at run time.
+  3. **Forecasts of day t+1's range, all known at t's close:** IV = sqrt(8/pi) x I_t/100 x
+     sqrt(1/252); ATR = Wilder's ATR(14) at t / C_t, Wilder smoothing (ATR_t = (13 ATR_{t-1} + TR_t)
+     / 14, seeded with the mean of the first 14 true ranges); pivot = (H_t - L_t) / C_t.
+     Target: ln(H_{t+1} / L_{t+1}); days with H = L dropped. Loss: (ln forecast - ln target)^2.
+  4. **Per pair:** d_t = loss(IV) - loss(ATR). IV "has the lower error" when mean d < 0. Diebold-
+     Mariano statistic with Newey-West lag 5, times the Harvey-Leybourne-Newbold factor
+     sqrt((T-1)/T) for h = 1, against Student t(T-1), two-sided; those p-values feed BH and BY.
+  5. **Pooled (H6a's significance):** per date, the mean of d across the pairs present that day;
+     the same DM-HLN test on that series, two-sided at 5%.
+  6. **H6b:** a spike day s has I_s above the 90th percentile of the index's previous 252 closes;
+     day t is "after a spike" if a spike day falls in the 21 index days ending at t. H6b holds if
+     the pooled date-level mean d is lower (more negative) after spikes than on calm days, Welch
+     two-sided p < 0.05.
+  7. **The pivot forecast** is reported with the same statistics, as a second benchmark; H6a and
+     H6b are judged against ATR only.
