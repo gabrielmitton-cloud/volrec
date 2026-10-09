@@ -126,6 +126,24 @@ def welch(a, b):
     return ma - mb, t, analyze.t_pvalue(t, df)
 
 
+def hac_dummy(y, flag, lag):
+    """OLS of y on a constant and a 0/1 dummy: the slope IS the after-minus-calm difference of means,
+    with a Newey-West (Bartlett, `lag`) standard error. -> (difference, t, two-sided p on t(T-2)).
+    Added 9 Oct 2026, AFTER H6's output, beside the registered Welch test: date-level d is
+    autocorrelated and the spike flag comes in blocks of 21 days or more, which Welch treats as
+    independent draws."""
+    T = len(y)
+    x = [1.0 if f else 0.0 for f in flag]
+    mx, my = sum(x) / T, sum(y) / T
+    sxx = sum((v - mx) ** 2 for v in x) / T
+    b = sum((x[i] - mx) * (y[i] - my) for i in range(T)) / T / sxx
+    a = my - b * mx
+    score = [(x[i] - mx) * (y[i] - a - b * x[i]) / sxx for i in range(T)]
+    se = analyze.newey_west(score, lag)[1]
+    t = b / se
+    return b, t, analyze.t_pvalue(t, T - 2)
+
+
 # ---------------- the run ----------------
 def main():
     end = date.today()
@@ -191,10 +209,10 @@ def main():
               f"{sum(calm)/len(calm):+.4f} ({len(calm)}); difference {diff:+.4f}, Welch t {t:.2f}, p {pw:.4f}")
         print(f"   H6b {'HOLDS' if holds_b else 'FAILS'} (registered: lower after spikes, p < 0.05)")
     print("\nNegative d means implied volatility forecast the range better. Losses are squared log errors.")
-    exploratory(per_pair_rows, per_pair_flags)
+    exploratory(per_pair_rows, per_pair_flags, by_date, spike_by_date)
 
 
-def exploratory(per_pair_rows, per_pair_flags):
+def exploratory(per_pair_rows, per_pair_flags, by_date=None, spike_by_date=None):
     """ADDED 9 Oct 2026 AFTER the first output (H6 adjustment log). Not part of either verdict.
     (1) Level bias: the mean log ratio of each forecast to the realised range. (2) Timing, with
     the level removed: the variance of each forecast's log error (MSLE minus squared bias), so a
@@ -221,6 +239,15 @@ def exploratory(per_pair_rows, per_pair_flags):
               f"{diff:>+12.4f} ({len(a)} after / {len(c)} calm)")
     print(f"   implied volatility has the smaller timing error (level removed) in {better} of {len(per_pair_rows)} pairs")
     print(f"   per pair, IV's disadvantage is smaller after its own index spikes in {own_neg} of {len(per_pair_rows)} pairs")
+    if by_date:
+        # (4) Added 9 Oct 2026 in the full audit, AFTER the output: H6b's Welch test treats each date
+        # as independent; the same difference with Newey-West errors at one month and one quarter.
+        ds = sorted(by_date)
+        y = [sum(by_date[d]) / len(by_date[d]) for d in ds]
+        fl = [bool(spike_by_date.get(d)) for d in ds]
+        for lag in (21, 63):
+            b, t, p = hac_dummy(y, fl, lag)
+            print(f"   H6b with Newey-West errors, lag {lag}: after - calm {b:+.4f}, t {t:.2f}, p {p:.4f}")
 
 
 if __name__ == "__main__":

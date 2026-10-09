@@ -87,6 +87,20 @@ check("identical samples: difference 0, p 1", abs(d_) < 1e-12 and abs(p_ - 1) < 
 d_, t_, p_ = h6.welch([0.0, 0.1, -0.1] * 20, [5.0, 5.1, 4.9] * 20)
 check("well-separated samples: negative difference, tiny p", d_ < 0 and p_ < 1e-10)
 
+print("\n=== H6b with Newey-West errors (exploratory, 9 Oct) ===")
+random.seed(11)
+yi = [random.gauss(0, 1) for _ in range(2000)]
+fi = [i % 2 == 0 for i in range(2000)]                 # alternating: no block structure
+bw, tw, pw = h6.welch([v for v, f in zip(yi, fi) if f], [v for v, f in zip(yi, fi) if not f])
+bh_, th_, ph_ = h6.hac_dummy(yi, fi, 0)
+check("lag 0 on iid data: the slope is the difference of means, t close to Welch's",
+      abs(bh_ - bw) < 1e-12 and abs(th_ - tw) < 0.05)
+blk = [((i // 50) % 2 == 0) for i in range(2000)]      # 50-day blocks, and a shock shared within each block
+sh = [random.gauss(0, 1) for _ in range(40)]
+yb = [sh[i // 50] + random.gauss(0, 1) for i in range(2000)]
+t0 = abs(h6.hac_dummy(yb, blk, 0)[1]); t50 = abs(h6.hac_dummy(yb, blk, 50)[1])
+check(f"block-correlated data: Newey-West shrinks the t (lag 0 {t0:.1f} -> lag 50 {t50:.1f})", t50 < t0 / 2)
+
 print("\n" + "=" * 52)
 print(f"RESULT: {len(fails)} failure(s)" + (f": {fails}" if fails else ""))
 sys.exit(1 if fails else 0)
