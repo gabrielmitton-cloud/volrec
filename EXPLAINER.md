@@ -42,11 +42,11 @@ volatility insurance get paid, the way insurance companies do.
 
 ## 3. What the recorder actually collects
 
-Every weekday at 14:47 UTC, a script wakes up on GitHub's servers and asks
-Alpaca for option prices on 109 tickers. GitHub runs scheduled jobs late when it
-is busy - three to four hours, in practice - so the reading is usually taken
-around 18:00-19:20 UTC, comfortably inside the trading day. For each ticker it
-writes a row:
+Every weekday at 18:30 UTC, an outside trigger starts a script on GitHub's servers,
+which asks Alpaca for option prices on 109 tickers. (Until 30 September GitHub's own
+scheduler started it, and ran it as much as six hours late - once after the close,
+which is why the script now refuses to record once the market has shut.) For each
+ticker it writes a row:
 
 | what | why it is there |
 |---|---|
@@ -72,7 +72,7 @@ guarded against holidays, and why nothing else is allowed to write to that file.
 This is the part worth actually understanding, because it explains almost every
 choice in the repo.
 
-By late October there will be about 40 trading days of 109 tickers, so roughly
+By 11 November there will be about 40 trading days of 109 tickers, so roughly
 4,400 rows. That *feels* like 4,400 pieces of evidence. **It is not.**
 
 **Reason one: tickers move together.** When the market falls, nearly everything

@@ -526,7 +526,7 @@ def report(panel):
     print(f"   mean {mu:+.3f} vol pts   se {se:.3f}   t {t:+.2f}   p {p:.4f}")
     print(f"   fixed-b p (Kiefer-Vogelsang, b = {min(lag, len(xs) - 1) / max(len(xs), 1):.2f}, simulated): "
           f"{fixed_b_pvalue(t, len(xs), lag):.4f}   - robustness beside p, 8 Oct 2026")
-    print("   Over-rejects ~3x even so. Treat p as an UPPER BOUND on significance.")
+    print("   Over-rejects ~5x even so (23.5% at a nominal 5%, --simulate). Treat p as a LOWER bound on the true p.")
 
     stride = max(NONOVERLAP_STRIDE, win_td)   # never shorter than the window itself
     # 9 Oct 2026: this line printed `stride` before assigning it - an UnboundLocalError the

@@ -29,8 +29,10 @@ own six months of proprietary history for a fixed universe. Started 4 September
 
 ## Method
 
-`record.py` runs every weekday at 8:30am Pacific via GitHub Actions. For each of
-109 tickers it:
+`record.py` runs every weekday at 18:30 UTC via GitHub Actions, started by an
+outside trigger (GitHub's own scheduler, kept as a backup, was delayed by up to six
+hours), and refuses to record once the US session has closed. For each of 109
+tickers it:
 
 1. Fetches the underlying's spot price
 2. Pulls the option chain filtered to strikes within ±8% of spot and expiries
@@ -218,18 +220,27 @@ arrived, which is a positive variance risk premium.
 
 ```
 record.py                  the daily ATM recorder, 109 tickers
-surface.py                 the daily strike-surface recorder, 8 underlyings
-analyze.py                 shared estimators, used by both samples
-modelfree.py               Cboe's variance methodology, and the gap against it
-hedged.py                  per-contract delta-hedged P&L
-data/iv_history.csv        the ATM panel, append-only, never written elsewhere
+surface.py                 the daily strike-surface recorder, 8 underlyings, plus two
+                           separate passes: a wide band (high-volatility names) and,
+                           from 9 Oct 2026, the monthly USO/GLD legs Cboe's OVX/GVZ use
+analyze.py                 shared estimators and statistics, used by every sample
+modelfree.py               Cboe's variance formula on the surface, and the gap to Cboe
+hedged.py                  per-contract delta-hedged P&L (Bakshi & Kapadia 2003)
+data/iv_history.csv        the ATM panel (Sample B), append-only
 data/iv_history.pre-17col.csv   one-time migration backup, immutable
-data/surface.csv           the strike surface
+data/surface.csv           the strike surface, +/-30% (H3/H4 read only this)
+data/surface_wide.csv      beyond +/-30% on high-volatility names (sensitivity, H5e)
+data/surface_monthly.csv   USO/GLD third-Friday legs from 9 Oct 2026 (H7)
+data/dividends.csv         ex-dates and amounts for H4's dividend adjustment
 hypotheses/                pre-registered, dated, committed BEFORE the test
-samples/long/              Sample A
-samples/panel/             Sample B
-tools/pressure_test.py     49 read-only integrity checks
-tools/test_hedged.py       18 hand-computed cases for the hedging math
+samples/long/              Sample A: ten years of Cboe indices (H1, H2, H6)
+tools/ovx_replicate.py     Cboe's own OVX/GVZ rules on OPRA quotes (exploratory)
+tools/h7_reader.py         H7's reading, on that replica
+tools/record_verdict.py    writes due verdicts in fixed wording, unattended
+tools/pressure_test.py     240 read-only integrity and known-answer checks
+tools/audit.py             breaks each safeguard on purpose; each check must fail
+tools/calibrate.py         every instrument against a known reference truth
+tools/test_hedged.py, test_h6.py, test_h7.py   hand-computed unit tests
 ```
 
 The rule that holds the rest together: **nothing becomes a model variable
@@ -256,7 +267,9 @@ Automated via `.github/workflows/record.yml`; keys live in repository secrets.
 - [x] Sample A built and H1 tested, 9 of 11 pairs significant
 - [x] Strike surface recording, with volume and open interest, from 2026-09-14
 - [x] Model-free estimator matching the published VIX to 0.01 vol points
-- [x] Delta-hedged P&L estimator, 18 unit tests
-- [ ] ~40 trading days accumulated (late October)
-- [ ] Realized-vs-implied analysis
+- [x] Delta-hedged P&L estimator, 30 hand-computed unit tests
+- [x] H5 (quote quality in the wings) and H6 (implied volatility against a trailing
+      range) tested; H7 (the free feed through Cboe's own rules) collecting from 9 Oct
+- [ ] ~40 trading days accumulated (Wed 11 Nov 2026), H5e's final reading and H7
+- [ ] Realized-vs-implied analysis on the live panel
 - [ ] Write-up (February 2027)
