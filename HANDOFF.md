@@ -2301,6 +2301,16 @@ nothing; `calibrate.py` 0 uncalibrated; pressure test 0 fail; auditor 34 of 34; 
   `.OVX` 1-minute history back to 23 Sep.
 - Checks: pressure test 0 fail; auditor 45 of 45.
 
+#### Fri 9 Oct - H6 published; LSEG access
+- Site: H6 section + H6/H7 ledger rows published (Gabriel approved); verified on the live page.
+- LSEG: Pepperdine provides **LSEG Workspace for students** (app or web; includes Datastream and
+  CodeBook, a Python notebook on LSEG's APIs). lseg.com is only the sales site - searching it finds
+  no data. The Workspace end-user notice: credentials are personal (never shared, never given to
+  Claude); use is governed by Pepperdine's contract with LSEG, which the notice does not quote. So
+  publishing LSEG-derived figures waits on the librarian's answer; until then, Bloomberg rules -
+  nothing in the repo, aggregates only. First check: `.OVX` 1-minute history back to 23 Sep (the
+  CodeBook script given to Gabriel 9 Oct prints only the row count and date range).
+
 #### Open, no fixed date
 - ~~Check Databento's terms on derived data.~~ Done 23 Sep: allowed, with attribution,
   and the OPRA aggregates are on the site (see the decisions above). When H5f reaches
