@@ -1,0 +1,37 @@
+# H1 and H2 (Sample A), re-run to reproduce their recorded results (added 9 Oct 2026, the full audit).
+# Manual only - no schedule, so it cannot touch the recorders. Reads Cboe's public index closes, FRED's
+# EVZ, and Alpaca's daily bars (keys are GitHub secrets, as for record.yml); prints aggregates, commits
+# nothing. `end` cuts the closes where the registered runs' data stopped (6 Sep 2026); blank runs to yesterday.
+name: sample-a
+on:
+  workflow_dispatch:
+    inputs:
+      end:
+        description: "last date of closes (YYYY-MM-DD); 2026-09-06 reproduces H1/H2 as recorded; blank = to yesterday"
+        default: "2026-09-06"
+permissions:
+  contents: read
+jobs:
+  sample_a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: H1 and H2 (aggregates only)
+        env:
+          ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
+          ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
+          END: ${{ inputs.end }}
+        run: |
+          set -o pipefail
+          ARGS=""; if [ -n "$END" ]; then ARGS="--end $END"; fi
+          python samples/long/build_sample_a.py $ARGS | tee sample_a_output.txt
+          python samples/long/test_h2_variance.py $ARGS | tee -a sample_a_output.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sample-a-output
+          path: sample_a_output.txt

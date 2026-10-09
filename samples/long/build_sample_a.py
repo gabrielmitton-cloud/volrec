@@ -70,7 +70,11 @@ def observations(iv_series, closes, dates):
 
 
 def main():
-    end = date.today()
+    # --end YYYY-MM-DD (9 Oct 2026): stop the closes where the registered run's data stopped, so the
+    # recorded result can be reproduced (H1 and H2 ran 7 Sep 2026: closes through 4 Sep, end 6 Sep).
+    # Without it the sample runs to yesterday, as it always has.
+    end = (date.fromisoformat(sys.argv[sys.argv.index("--end") + 1]) if "--end" in sys.argv
+           else date.today())
     names = sorted({p[0] for p in PAIRS} | {"VIX9D", "VIX3M"})
     print(f"Sample A: {START} to {end}, horizon {H} trading days, "
           f"non-overlapping.\n")

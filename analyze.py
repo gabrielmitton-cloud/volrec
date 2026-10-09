@@ -392,6 +392,21 @@ def fetch_ohlc(symbols, start, end, feed="sip"):
         OHLC_CACHE.write_text(json.dumps(cache))
     return cache
 
+# Cboe withdrew EVZ's history file (403, found 9 Oct 2026; EVZ was discontinued in March 2025).
+# FRED republishes Cboe's closes - identical to Cboe's own file on all 2,704 GVZ days checked (H6 log).
+# Used ONLY when Cboe refuses the file, so no other series, and no index Cboe still serves, changes.
+FRED_FALLBACK = {"EVZ": "EVZCLS"}
+
+
+def fred_public_closes(series_id):
+    """{date: close} from FRED's public CSV (no key); missing values ('.' or empty) skipped."""
+    import csv as _csv, io as _io, requests
+    r = requests.get("https://fred.stlouisfed.org/graph/fredgraph.csv", params={"id": series_id}, timeout=60)
+    r.raise_for_status()
+    return {row[0]: float(row[1]) for row in list(_csv.reader(_io.StringIO(r.text)))[1:]
+            if len(row) == 2 and row[1] not in ("", ".")}
+
+
 def fetch_market_vol(series=None):
     """Cboe daily closes for the market volatility indices. Free, no key.
     Returns {index_name: {"YYYY-MM-DD": close}}."""
@@ -408,6 +423,12 @@ def fetch_market_vol(series=None):
     need = [x for x in series if x not in cache or fetched.get(x) != today]
     for name in need:
         r = requests.get(f"{CBOE}/{name}_History.csv", timeout=30)
+        if r.status_code in (403, 404) and name in FRED_FALLBACK:
+            out = fred_public_closes(FRED_FALLBACK[name])
+            cache[name], fetched[name] = out, today
+            print(f"  {name}: Cboe's file refused ({r.status_code}); {len(out)} closes from FRED "
+                  f"{FRED_FALLBACK[name]}, {min(out)} to {max(out)}")
+            continue
         r.raise_for_status()
         lines = r.text.strip().split("\n")
         head = [h.strip().upper() for h in lines[0].split(",")]
