@@ -116,7 +116,7 @@ def main():
     closes = {sym: {k: v for k, v in (vol.get(ix) or {}).items() if not k.startswith("_")} for sym, ix in INDEX.items()}
     print(f"H7 - the free feed through Cboe's own rules, {H7_START} to {H7_END}; r = {r:.3%} (DGS1MO)\n")
     print(f"{'date':<11}{'sym':<5}{'free':>8}{'OPRA':>8}{'close':>8}{'free-OPRA':>11}{'free-close':>11}  legs")
-    readings = []
+    readings, waiting = [], []
     for day, sym in ore.monthly_days():
         if not (H7_START <= day <= H7_END) or sym not in INDEX or day in dropped:
             continue
@@ -125,6 +125,12 @@ def main():
             continue
         readings.append(x)
         c = closes[sym].get(day)
+        # 9 Oct 2026: OPRA for day D is served historically only about a day later and Cboe's
+        # closes can lag, so the verdict writer waits while any day in the window lacks either.
+        if not (Path(ore.DATA_DIR) / f"OPRA_M_{sym}_{day}.csv").exists():
+            waiting.append(f"{day} {sym} OPRA")
+        if c is None:
+            waiting.append(f"{day} {sym} {INDEX[sym]} close")
         f = lambda v: f"{v:8.2f}" if v is not None else "     n/a"
         d = lambda a, b: f"{a - b:+11.2f}" if a is not None and b is not None else "        n/a"
         print(f"{day:<11}{sym:<5}{f(x['free'])}{f(x['opra'])}{f(c)}{d(x['free'], x['opra'])}{d(x['free'], c)}  {x['legs']}")
@@ -139,6 +145,7 @@ def main():
     print(f"H7c USO: n={n} mean free - OVX {'n/a' if m is None else f'{m:+.3f}'} (descriptive)")
     h7a, h7b = verdicts(s)
     print(f"H7a {h7a or f'NOT YET (minimum {MIN_DAYS} days each)'}; H7b {h7b or f'NOT YET (minimum {MIN_DAYS} days)'}")
+    print(f"H7 waiting on: {', '.join(waiting) if waiting else 'nothing'}")
     print(f"\n{ore.ATTRIBUTION}")
 
 

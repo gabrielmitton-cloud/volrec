@@ -52,6 +52,11 @@ MARK_H5E_FINAL = "**H5e, FINAL reading"
 H7 = ROOT / "hypotheses" / "2026-10-08-h7-free-feed-cboe-replica.md"
 H7_DUE, H7_MIN_DAYS, H7_BAR_A, H7_BAR_B = "2026-11-12", 10, 0.25, 0.30
 MARK_H7 = "**H7, reading over 9 Oct - 11 Nov 2026"
+# The final readings (H5e FINAL, H7) are written once and never rewritten, so they wait until every
+# day in their window has its data (9 Oct 2026): Databento serves day D's OPRA about a day later and
+# Cboe's closes can lag a day or two, while this workflow also runs at 03:05 UTC on 12 Nov itself.
+# From COMPLETE_BY they are written with whatever is in, and the missing days are named in the block.
+COMPLETE_BY = "2026-11-19"
 
 
 def run(args):
@@ -248,7 +253,15 @@ def _f3(x, sign=False):
     return "n/a" if x is None else (f"{x:+.3f}" if sign else f"{x:.3f}")
 
 
-def block_h7(v, today):
+def parse_h7_waiting(out):
+    """h7_reader.py's 'H7 waiting on:' line -> list of missing items ([] when complete)."""
+    m = re.search(r"^H7 waiting on: (.*)$", out, re.M)
+    if not m:
+        raise SystemExit("h7_reader output lacks its 'waiting on' line - refusing to write")
+    return [] if m.group(1).strip() == "nothing" else [w.strip() for w in m.group(1).split(",")]
+
+
+def block_h7(v, today, waiting=()):
     a, b = h7_verdicts(v)
     a, b = a or "NOT READ (below its minimum)", b or "NOT READ (below its minimum)"
     c = v["USO_c"]
@@ -262,7 +275,10 @@ def block_h7(v, today):
              f"- H7c (descriptive): the free-feed replica for USO minus OVX's close averaged "
              f"{_f3(c[1], sign=True)} over {c[0]} days.",
              "- The method is Cboe's own (Volatility Index Mathematics Methodology v5.0; ETF index methodology "
-             "v9.0), applied to the monthly legs recorded from 9 Oct; after-close days dropped.", "", DB_CREDIT]
+             "v9.0), applied to the monthly legs recorded from 9 Oct; after-close days dropped."]
+    if waiting:
+        lines.append(f"- Still missing at the {COMPLETE_BY} deadline, so not counted: {', '.join(waiting)}.")
+    lines += ["", DB_CREDIT]
     return "\n".join(lines)
 
 
@@ -338,16 +354,21 @@ def main():
         if final and MARK_H5E_FIRST not in h5 and not a.preview:
             notes.append("H5e final: the first verdict is not recorded yet - recording the first one first")
             continue
-        out = run(["modelfree.py", "--wide"])
+        # The final reads modelfree --through 11 Nov, so modelfree's own full-precision tally covers
+        # exactly the final window and the cross-check below applies to it as to the first (9 Oct 2026).
+        out = run(["modelfree.py", "--wide"] + (["--through", H5E_END] if final else []))
         rows, rf, na = parse_h5e(out)
         sc = h5e_score(rows, last=H5E_END if final else None)
         if not sc or (sc["n"] < H5E_MIN_DAYS and not a.preview):
             notes.append(f"{label}: {sc['n'] if sc else 0} of {H5E_MIN_DAYS} counted days - not yet")
             continue
-        if not final:                                       # cross-check against modelfree's own tally
-            bad = crosscheck(out, sc)
-            if bad:
-                raise SystemExit(f"{label}: this parser and modelfree disagree - refusing to write ({bad})")
+        late = [d for d in na if H5E_START <= d <= H5E_END]
+        if final and late and str(today) < COMPLETE_BY and not a.preview:
+            notes.append(f"{label}: waiting for the OVX close on {', '.join(late)} (written regardless from {COMPLETE_BY})")
+            continue
+        bad = crosscheck(out, sc)                           # against modelfree's own tally
+        if bad:
+            raise SystemExit(f"{label}: this parser and modelfree disagree - refusing to write ({bad})")
         fv = None
         if final:
             fm = re.search(re.escape(MARK_H5E_FIRST) + r".*?\n\n- \*\*(HOLDS|FAILS)\*\*", h5, re.S)
@@ -376,13 +397,16 @@ def main():
     elif h7 and str(today) < H7_DUE and not a.preview:
         notes.append(f"H7: due {H7_DUE}")
     elif h7:
-        v = parse_h7(run(["tools/h7_reader.py"]))
+        h7out = run(["tools/h7_reader.py"])
+        v, waiting = parse_h7(h7out), parse_h7_waiting(h7out)
         va, vb = h7_verdicts(v)
-        if (va is None or vb is None) and not a.preview:
+        if waiting and str(today) < COMPLETE_BY and not a.preview:
+            notes.append(f"H7: waiting on {', '.join(waiting)} (written regardless from {COMPLETE_BY})")
+        elif (va is None or vb is None) and not a.preview:
             notes.append(f"H7: below its minimum (USO {v['USO_a'][0]}, GLD {v['GLD_a'][0]} days for H7a; "
                          f"{v['GLD_b'][0]} for H7b; need {H7_MIN_DAYS}) - not written")
         else:
-            blk = block_h7(v, today)
+            blk = block_h7(v, today, waiting)
             if a.preview or a.dry_run:
                 print(("PREVIEW (not due, not written)\n" if str(today) < H7_DUE else "DUE\n") + blk + "\n")
             else:

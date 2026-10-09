@@ -422,6 +422,48 @@ ok((_rv7.H7_DUE, _rv7.H7_MIN_DAYS, _rv7.H7_BAR_A, _rv7.H7_BAR_B) == ("2026-11-12
    and _rv7.h7_verdicts(_v7) == ("HOLDS", "FAILS") and _rv7.h7_verdicts(_v7b)[0] is None
    and "H7b FAILS" in _rv7.block_h7(_v7, date(2026, 11, 12)) and "Databento" in _rv7.block_h7(_v7, date(2026, 11, 12)),
    "the verdict writer reads H7 by its registered bars (0.25, 0.30), minimum 10 days each, in fixed wording")
+# 9 Oct 2026: the final readings are written once, and the cloud also runs at 03:05 UTC on 12 Nov,
+# before Databento serves 11 Nov's OPRA (day D arrives ~D+1). They must WAIT while a day in the window
+# lacks its close or OPRA file, write at COMPLETE_BY naming what is missing, and the H5e final must be
+# cross-checked against modelfree's own tally (`--through 11 Nov`), as the first verdict was.
+import io as _io3, contextlib as _ctx3
+_first10 = [("2026-09-23", 53.24, 0.16, 1.31), ("2026-09-24", 54.45, -0.98, 1.31), ("2026-09-25", 55.09, 0.08, 0.88),
+            ("2026-09-29", 53.74, -0.82, 0.27), ("2026-09-30", 52.24, -0.05, 1.06), ("2026-10-01", 51.69, 0.21, 1.04),
+            ("2026-10-02", 51.00, 0.46, 1.19), ("2026-10-05", 48.65, 0.21, 1.02), ("2026-10-06", 48.79, -0.03, 0.84),
+            ("2026-10-07", 48.61, -0.69, 0.02)]          # the recorded first verdict's ten days
+_mf_canned = ("risk-free (DGS1MO): 3.910%\n-- H5e: USO ...\n   date ...\n"
+              + "".join(f"   {d}    {o:.2f}       50.00   {g1:+.2f}      50.00   {g2:+.2f}  yes\n" for d, o, g1, g2 in _first10)
+              + "   2026-11-11      n/a  (no OVX close yet, or too thin)\n"
+              + "   mean |gap| 0.90 against 0.5 (OVER); closer than registered on 2 of 10 days (NOT a majority)\n")
+_h7_canned = _o7 + "H7 waiting on: 2026-11-11 USO OPRA\n"
+_seen_args = []
+def _fake_run(args, _s=_seen_args):
+    _s.append(args)
+    return _h7_canned if "h7_reader" in args[0] else _mf_canned
+_rv7.run, _argv0 = _fake_run, sys.argv
+def _verdict_dry(day):
+    sys.argv = ["record_verdict.py", "--dry-run", "--today", day]
+    _b = _io3.StringIO()
+    try:
+        with _ctx3.redirect_stdout(_b):
+            _rv7.main()
+    finally:
+        sys.argv = _argv0
+    return _b.getvalue()
+_d12, _d19 = _verdict_dry("2026-11-12"), _verdict_dry("2026-11-19")
+ok("H5e final: waiting for the OVX close on 2026-11-11" in _d12 and "H7: waiting on 2026-11-11 USO OPRA" in _d12
+   and "DUE" not in _d12 and _rv7.COMPLETE_BY == "2026-11-19",
+   "the final readings WAIT while a day in their window lacks its close or OPRA (12 Nov, before Databento serves 11 Nov)")
+ok("FINAL reading" in _d19 and "Still missing at the 2026-11-19 deadline, so not counted: 2026-11-11 USO OPRA" in _d19
+   and any(a_[-2:] == ["--through", "2026-11-11"] for a_ in _seen_args),
+   "at the deadline both are written, naming what is missing; the H5e final reads modelfree --through 11 Nov")
+_mf_bad = _mf_canned.replace("mean |gap| 0.90", "mean |gap| 0.70")
+_rv7.run = lambda args: _h7_canned if "h7_reader" in args[0] else _mf_bad
+try:
+    _verdict_dry("2026-11-19"); _xc = False
+except SystemExit as _e7:
+    _xc = "disagree" in str(_e7)
+ok(_xc, "the H5e FINAL is cross-checked against modelfree's own tally and refused on disagreement")
 
 print("\n=== H3b. CALIBRATION (every instrument against a known reference truth) ===")
 # Each instrument is fed an input whose right answer is known in advance - parity,

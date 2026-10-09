@@ -85,6 +85,13 @@ bars, window and minimum are untouched. Tests: `tools/test_h7.py` now writes the
 Databento's own blank form; pressure test section R; auditor mutants `ovx-blank-bid-null`,
 `h7-blank-bid-null`. **This is a correction before output, not a post-output adjustment.**
 
+**2. 9 Oct 2026, ~20:30 UTC - BEFORE any H7 reading; when it is read, not what.** Databento serves
+day D's OPRA about a day later (the cloud has bought each day at ~D+2 02:00 UTC), and the workflow
+also runs at 03:05 UTC on 12 Nov - when 11 Nov's file cannot exist yet. Read once, H7 would have
+lost its last day for good. The verdict writer now waits while any monthly day in the window lacks
+its OPRA file or its index close (`h7_reader` prints what it is waiting on), and from 19 Nov writes
+regardless, naming what is missing. Window, bars, minimum and estimator unchanged.
+
 *In-sample context moves (the bars do not):* on the 8 Oct data, read correctly, Cboe's rules on OPRA
 land a mean 0.12 (median 0.08) from GVZ's close (was 0.15 / 0.07) over 17 days, and USO's residual
 to OVX is +0.01 over 14 days (H5e's window, 10 days: +0.05, mean absolute 0.29, median 0.23) - the

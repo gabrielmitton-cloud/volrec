@@ -297,6 +297,13 @@ def main():
     rows = list(csv.DictReader(SURF.open(newline="")))
     if not rows:
         sys.exit("surface.csv is empty.")
+    # --through YYYY-MM-DD (9 Oct 2026): read only days on or before that date. Added so the
+    # verdict writer can cross-check H5e's FINAL reading (23 Sep - 11 Nov) against modelfree's own
+    # full-precision tally, as it already does the first. Without the flag nothing changes.
+    through = sys.argv[sys.argv.index("--through") + 1] if "--through" in sys.argv else None
+    if through:
+        rows = [x for x in rows if x["date"] <= through]
+        print(f"--through {through}: days after it are not read.\n")
     registered, extra = rows, []
     # --wide adds the contracts beyond the registered band. The integral then
     # reaches further into the tails, which is exactly what H3c predicts should
@@ -304,7 +311,8 @@ def main():
     # this is a sensitivity, never a replacement for the frozen specification.
     if "--wide" in sys.argv:
         if SURF_WIDE.exists():
-            extra = list(csv.DictReader(SURF_WIDE.open(newline="")))
+            extra = [x for x in csv.DictReader(SURF_WIDE.open(newline=""))
+                     if not through or x["date"] <= through]
             rows = rows + extra
             print(f"--wide: adding {len(extra)} contracts beyond the registered "
                   f"+/-30% band. SENSITIVITY ONLY - not H3's registered estimate.\n")

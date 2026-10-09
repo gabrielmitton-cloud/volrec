@@ -417,6 +417,13 @@ repository). What bears on H5:
   `panel_health.AFTER_CLOSE_DAYS` lists the day and every reading skips it. Recorded as
   an adjustment for transparency; if it is counted as one, it is H5e's first. No bar,
   window or estimator changed.
+- **2026-10-09 — NO adjustment; how the FINAL reading is taken, set before it exists.** The
+  verdict writer now (1) waits while any day in 23 Sep - 11 Nov lacks its OVX close, writing
+  regardless from 19 Nov and naming any missing day - the cloud also runs at 03:05 UTC on
+  12 Nov, and a reading written once must not lose 11 Nov to Cboe's publishing lag; and (2)
+  cross-checks the final against modelfree's own full-precision tally (`modelfree.py --wide
+  --through 2026-11-11`), as the first verdict already was. `--through 2026-10-07` reproduces
+  the first verdict exactly (0.90, 2 of 10). No bar, window, minimum or estimator changed.
 
 ## Result
 
