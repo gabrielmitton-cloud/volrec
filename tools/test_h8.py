@@ -100,5 +100,20 @@ check(f"a free quote hours older than every OPRA record is excluded, not matched
 check("excluded contracts leave the free-only estimate S0 on the full band", z["S0"] == x["S0"])
 check("an empty band gives no reading", h8.day_pair([], opra, 0.0) is None)
 
+print("\n=== the purchase trim keeps exactly what H8 reads ===")
+ore = h8.ore
+raw = path.read_text()
+keep = {ore.compact(r["option_symbol"]) for r in rows[:10]}
+tr = ore.h8_trim(raw, keep)
+check("the trimmed file keeps Databento's header line", tr.splitlines()[0] == raw.splitlines()[0])
+check("it keeps every line of the kept contracts and no other",
+      len(tr.splitlines()) - 1 == sum(1 for ln in raw.splitlines()[1:] if ore.compact(ln.rsplit(",", 1)[-1]) in keep))
+tmp2 = path.with_name("OPRA_XYZ_trim.csv"); tmp2.write_text(tr)
+o2 = ore.load_opra(tmp2)
+check("kept contracts read back identically (blank bids still blank -> zero)",
+      all(o2[k] == opra[k] for k in keep) and any(rec[1] is None for k in keep for rec in o2[k]))
+check("the full-chain funds are not trimmed while H7's window runs, and are after it",
+      not ore.h8_trims("2026-10-20", "USO") and ore.h8_trims("2026-11-12", "USO") and ore.h8_trims("2026-10-20", "SPY"))
+
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)

@@ -421,7 +421,7 @@ ok(_t7.returncode == 0 and _n7f == 0 and _n7p >= 17, f"H7's reader tests pass ({
 _t8 = _sp.run([sys.executable, str(R / "tools/test_h8.py")], capture_output=True, text=True)
 _n8f = sum(1 for _ln in _t8.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _n8p = sum(1 for _ln in _t8.stdout.splitlines() if _ln.strip().startswith("PASS"))
-ok(_t8.returncode == 0 and _n8f == 0 and _n8p >= 20, f"H8's instrument tests pass ({_n8p} cases, {_n8f} failures)")
+ok(_t8.returncode == 0 and _n8f == 0 and _n8p >= 24, f"H8's instrument tests pass ({_n8p} cases, {_n8f} failures)")
 _rv7 = _iu.module_from_spec(_iu.spec_from_file_location("rv7", R / "tools/record_verdict.py"))
 _iu.spec_from_file_location("rv7", R / "tools/record_verdict.py").loader.exec_module(_rv7)
 _o7 = ("H7a USO: n=12 mean |free - OPRA| 0.180 (bar 0.25)\nH7a GLD: n=12 mean |free - OPRA| 0.090 (bar 0.25)\n"
@@ -1195,6 +1195,10 @@ ok(_opm.budget_ok(0.10, 0.50, 0.0)[0] and not _opm.budget_ok(0.60, 0.50, 0.0)[0]
 ok(_opm.h7_budget_ok(0.03, 1.00)[0] and not _opm.h7_budget_ok(0.03, 1.09)[0] and _opm.H7_BUDGET_USD == 1.10
    and _opm.H7_END == "2026-11-11",
    "H7's monthly-leg OPRA purchases stop at their own $1.10 cap, and only up to 11 Nov")
+# H8 (10 Oct 2026): the eight funds' daily purchases have their own cap and stop at the window's end.
+ok(_opm.h8_budget_ok(0.20, 14.70)[0] and not _opm.h8_budget_ok(0.20, 14.90)[0] and _opm.H8_BUDGET_USD == 15.00
+   and (_opm.H8_FROM, _opm.H8_END) == ("2026-10-09", "2027-01-29") and len(_opm.H8_FUNDS) == 8,
+   "H8's OPRA purchases stop at their own $15 cap, and only from 9 Oct 2026 to 29 Jan 2027")
 _opsrc = (R / "tools/opra_reference.py").read_text()
 ok('stem = f"OPRA_M_{symbol}_{date}" if monthly else f"OPRA_{symbol}_{date}"' in _opsrc
    and "rows = monthly_recorded(date, symbol) if monthly else recorded(date, symbol)" in _opsrc,

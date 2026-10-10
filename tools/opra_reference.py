@@ -277,7 +277,7 @@ def call(endpoint, data, key, method="post", _fn=None):
     return r
 
 
-def fetch(date, symbol, key, max_cost, dry, monthly=False):
+def fetch(date, symbol, key, max_cost, dry, monthly=False, h8=False):
     rows = monthly_recorded(date, symbol) if monthly else recorded(date, symbol)
     minute = snapshot_minute(rows)
     if not minute:
@@ -303,6 +303,8 @@ def fetch(date, symbol, key, max_cost, dry, monthly=False):
     allowed, why = budget_ok(cost, max_cost, spent)
     if allowed and monthly:
         allowed, why = h7_budget_ok(cost, monthly_spent())
+    if allowed and h8:
+        allowed, why = h8_budget_ok(cost, h8_spent())
     print(f"    costs ${cost:.4f}; spent so far ${spent:.2f} of the ${LIFETIME_CAP_USD:.0f} cap: {why}")
     if dry or not allowed:
         return
@@ -318,14 +320,18 @@ def fetch(date, symbol, key, max_cost, dry, monthly=False):
               f"nothing charged - run again tomorrow")
         return
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    out.write_bytes(r.content)
+    if h8 and h8_trims(date, symbol):
+        keep = {compact(x["option_symbol"]) for x in rows}
+        out.write_text(h8_trim(r.content.decode(), keep))
+    else:
+        out.write_bytes(r.content)
     new = not LEDGER.exists()
     with LEDGER.open("a", newline="") as f:
         w = csv.writer(f)
         if new:
             w.writerow(["utc", "date", "symbol", "usd"])
         w.writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), date,
-                    symbol + (MONTHLY_TAG if monthly else ""), f"{cost:.6f}"])
+                    symbol + (MONTHLY_TAG if monthly else H8_TAG if h8 else ""), f"{cost:.6f}"])
     print(f"    fetched {len(r.content):,} bytes -> {out}")
 
 
@@ -465,6 +471,64 @@ def compare(date, symbol):
     return lifts
 
 
+# H8 (BUILDING, not registered; scope B, Gabriel 10 Oct 2026, "sub $10 is fine", then "if we need to
+# increase the budget then that's fine"): the main surface's own contracts, all eight funds, every
+# trading day from 9 Oct 2026 (calibration bought by hand up to 8 Oct) through the test window's end.
+# Same files and minute as `recorded`/`fetch` - a USO or TSLA day the --all pass already bought is
+# never bought twice - with its own cap and ledger tag, on top of budget_ok's two.
+H8_FUNDS = ("SPY", "QQQ", "IWM", "GLD", "USO", "TSLA", "NVDA", "AAPL")
+H8_FROM, H8_END = "2026-10-09", "2027-01-29"
+H8_BUDGET_USD = 15.00
+H8_TAG = "-h8"
+
+
+def h8_days():
+    p = ROOT / "data" / "surface.csv"
+    if not p.exists():
+        return []
+    return sorted({(r["date"], r["symbol"]) for r in csv.DictReader(p.open(newline=""))
+                   if r["symbol"] in H8_FUNDS and H8_FROM <= r["date"] <= H8_END})
+
+
+def h8_spent():
+    if not LEDGER.exists():
+        return 0.0
+    with LEDGER.open(newline="") as f:
+        return sum(float(r["usd"]) for r in csv.DictReader(f)
+                   if r.get("usd") and r.get("symbol", "").endswith(H8_TAG))
+
+
+H8_FULL_CHAIN = ("USO", "GLD", "TSLA")      # H5f, H7 and the exploratory replica read whole chains to 11 Nov
+
+
+def h8_trim(text, keep):
+    """Only the rows for `keep` (compact OSI symbols), header first, everything else byte for byte.
+    A full SPY day is ~8.5 MB and H8 reads ~5% of it (the recorded band); trimmed, the private repo
+    stays small enough to clone on every run. Blank bids and every other field are left untouched."""
+    lines = text.splitlines(keepends=True)
+    if not lines:
+        return text
+    c = columns(next(csv.reader([lines[0]])))
+    out = [lines[0]]
+    for ln in lines[1:]:
+        r = next(csv.reader([ln]), [])
+        if len(r) > c["symbol"] and compact(r[c["symbol"]]) in keep:
+            out.append(ln)
+    return "".join(out)
+
+
+def h8_trims(date, symbol):
+    """Trim this H8 purchase? Not the full-chain funds while their registered windows run."""
+    return symbol not in H8_FULL_CHAIN or date > H7_END
+
+
+def h8_budget_ok(cost, spent_h8):
+    """(allowed, reason). Pure: H8's own cap, on top of budget_ok's two."""
+    if spent_h8 + cost > H8_BUDGET_USD:
+        return False, f"would take H8's spend to ${spent_h8 + cost:.2f}, past its ${H8_BUDGET_USD:.2f} cap"
+    return True, "within H8's cap"
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     g = ap.add_mutually_exclusive_group(required=True)
@@ -472,6 +536,8 @@ def main():
     g.add_argument("--all", action="store_true", help="every (date, symbol) with wide data")
     g.add_argument("--monthly", action="store_true",
                    help="H7: every (date, symbol) in surface_monthly.csv up to 11 Nov, at its own minute")
+    g.add_argument("--h8", action="store_true",
+                   help="H8: every (date, fund) in surface.csv for the eight funds, 9 Oct 2026 - 29 Jan 2027")
     ap.add_argument("--symbols", nargs="+", default=["USO", "TSLA"])
     ap.add_argument("--dry-run", action="store_true", help="show and price the requests; spend nothing")
     ap.add_argument("--compare", action="store_true", help="analyse files already on disk; no network")
@@ -483,6 +549,7 @@ def main():
 
     pairs = ([(d, s) for d, s in wide_days() if s in a.symbols] if a.all
              else [(d, s) for d, s in monthly_days() if s in a.symbols] if a.monthly
+             else h8_days() if a.h8
              else [(a.date, s) for s in a.symbols])
     print(f"OPRA reference ({DATASET}, {SCHEMA}) - {'compare' if a.compare else 'dry run' if a.dry_run else 'fetch'}\n")
     if a.definitions:
@@ -500,7 +567,7 @@ def main():
     else:
         key = api_key()
         for d, s in pairs:
-            fetch(d, s, key, a.max_cost, a.dry_run, monthly=a.monthly)
+            fetch(d, s, key, a.max_cost, a.dry_run, monthly=a.monthly, h8=a.h8)
     print(f"\n{ATTRIBUTION}")
     return 0
 
