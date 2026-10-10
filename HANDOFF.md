@@ -2546,7 +2546,7 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   (philosophical reasoning) course, with corporate finance experience. DESIGN-MEMO.md draft 3 asks her to
   judge the REASONING (claims vs evidence, the decomposition's order, honesty of the testing) and to
   sponsor; a PDF copy is on Gabriel's Desktop (Mitton-design-memo.pdf). Gabriel replaces his scheduled
-  Monday email with the new one, memo attached.
+  Monday email with the new one, memo attached. **Done 10 Oct: the new email is scheduled for Mon 12 Oct.**
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
