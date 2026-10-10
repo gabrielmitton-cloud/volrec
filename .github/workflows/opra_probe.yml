@@ -1,0 +1,30 @@
+# Does Alpaca's free plan serve OPRA data older than 15 minutes? (added 9 Oct 2026, from the research report)
+# Manual only - no schedule, so it cannot touch the recorders. Prints status codes, counts and
+# aggregate agreement only, never a price (this log is public); commits nothing.
+name: opra-probe
+on:
+  workflow_dispatch:
+    inputs:
+      day:
+        description: "trading day to ask about (YYYY-MM-DD); blank = previous weekday"
+        default: ""
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Probe (aggregates only)
+        env:
+          ALPACA_KEY: ${{ secrets.ALPACA_KEY }}
+          ALPACA_SECRET: ${{ secrets.ALPACA_SECRET }}
+          DAY: ${{ inputs.day }}
+        run: |
+          ARGS=""; if [ -n "$DAY" ]; then ARGS="--day $DAY"; fi
+          python tools/alpaca_opra_probe.py $ARGS
