@@ -2477,7 +2477,9 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   Data Analysis" template, freezing H5e and H7 as committed (ac237a6, 1d1bef7; repository at 8d3a555),
   disclosing what was seen first. **Registered 10 Oct by Claude in Gabriel's browser at his request:
   https://osf.io/z5gfu** (public, no embargo, MIT licence; OSF auto-approves after 48 h unless Gabriel
-  approves by email first). Linked from both hypothesis files and PAPER-OUTLINE appendix A. **LSEG:** Gabriel requested Pepperdine's student Workspace
+  approves by email first). **APPROVED and live** (OSF API, 10 Oct: date_registered 2026-10-10T17:43:18 UTC,
+  public, not embargoed, subject Finance and Financial Management). Linked from both hypothesis files and
+  PAPER-OUTLINE appendix A. **LSEG:** Gabriel requested Pepperdine's student Workspace
   access 10 Oct - the right route; his credentials stay his.
 - **The upgrade (H8, not registered) - scope B chosen 10 Oct.** Databento's own get_cost (free) for one
   day at the snapshot minute, cbbo-1m, all eight surface funds: SPY 0.0194, QQQ 0.0164, GLD 0.0105, IWM
