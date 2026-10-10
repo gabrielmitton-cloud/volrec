@@ -81,7 +81,9 @@ minutes before the index's close; American options treated with European formula
 before the protocol (PROTOCOL.md) existed (H5e's sat near its noise floor); few independent
 observations (n_eff reported for every series); the step order of the decomposition (the
 orderings the data allows, and their range); Cboe's methodology breaks inside the ten-year
-validation sample (PROTOCOL.md lists them). These belong in the
+validation sample (PROTOCOL.md lists them); the snapshot's time of day changed inside H5e's and
+H7's windows (GitHub's delayed cron until 30 Sep, the 14:30 New York trigger since), so a
+before/after split is reported beside the pooled figure. These belong in the
 paper's main text, not a footnote.
 
 **7. Conclusion (0.5 page).** What a researcher with no budget can trust, and what to fix first.
@@ -91,7 +93,8 @@ paper's main text, not a footnote.
   failures included (H5e, H6a, TimesFM).
 - B. Side studies: H2 (variance vs volatility), H4 (hedged gains), H6 (implied volatility against a
   trailing range).
-- C. Reproducing every number: the scripts and commands, and a Data Availability statement per
+- C. Reproducing every number: the scripts and commands (a fresh clone reproduces the registered
+  readings byte-for-byte after `tools/seed_frozen_rate.py`, checked 10 Oct 2026), and a Data Availability statement per
   source (Social Science Data Editors' template README): what each licence allows, and that the
   raw licensed data is not in the package.
 - D. The literature search log: what was searched, when, and what was found (9 Oct 2026 reports).

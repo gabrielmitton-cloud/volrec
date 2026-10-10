@@ -1112,6 +1112,17 @@ _FRED_NOTICE = "This product uses the FRED® API but is not endorsed or certifie
 ok(_FRED_NOTICE in (R / "README.md").read_text() and _FRED_NOTICE in (R / "index.html").read_text(),
    "README and the site carry the notice FRED's API terms require")
 
+# 10 Oct 2026: a fresh clone reproduces the registered numbers only through this seed.
+import importlib.util as _ilu
+_sp = _ilu.spec_from_file_location("seed_frozen_rate", R / "tools/seed_frozen_rate.py")
+_sfr = _ilu.module_from_spec(_sp); _sp.loader.exec_module(_sfr)
+_fc = R / "data/fred_cache.json"
+import json as _json
+_fc_rate = (_json.loads(_fc.read_text()).get("DGS1MO||") or {}) if _fc.exists() else {}
+ok(_sfr.FROZEN == {"DGS1MO||": {"2026-09-10": 3.91}}
+   and (not _fc_rate or (max(_fc_rate) == "2026-09-10" and _fc_rate[max(_fc_rate)] == 3.91)),
+   "the fresh-clone seed carries the registered rate (DGS1MO 3.91% on 2026-09-10), and so does the cache")
+
 print("\n=== M. REGISTERED CONSTANTS, ZERO-BID SEMANTICS, OPERATIONS TOOLS ===")
 # A pre-registered bar that can be edited without anything noticing is not a bar.
 ok(_mfm.PREDICTED_LIFT == {"USO": (1.4, 3.2)} and _mfm.NULL_LIFT_MAX == 0.3

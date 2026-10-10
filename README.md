@@ -259,6 +259,7 @@ tools/record_verdict.py    writes due verdicts in fixed wording, unattended
 tools/pressure_test.py     240 read-only integrity and known-answer checks
 tools/audit.py             breaks each safeguard on purpose; each check must fail
 tools/calibrate.py         every instrument against a known reference truth
+tools/seed_frozen_rate.py  gives a fresh clone the frozen rate the registered numbers use
 tools/test_hedged.py, test_h6.py, test_h7.py   hand-computed unit tests
 ```
 
@@ -277,6 +278,22 @@ python record.py
 `python record.py --probe SPY` dumps a raw API response for debugging.
 
 Automated via `.github/workflows/record.yml`; keys live in repository secrets.
+
+### Reproducing the registered numbers from a fresh clone
+
+Every registered reading discounts at the 1-month Treasury rate frozen on 10 Sep 2026 (3.91%,
+DGS1MO). The FRED cache that holds it is git-ignored, so seed that one value first:
+
+```bash
+python tools/seed_frozen_rate.py
+FRED_KEY=use-cache python modelfree.py          # H3/H5e, as registered
+FRED_KEY=use-cache python modelfree.py --wide   # H5e's wider band
+FRED_KEY=use-cache python hedged.py             # H4
+```
+
+Checked 10 Oct 2026: a fresh clone of this repository printed all three byte-for-byte identical
+to the registered runs. Running without `FRED_KEY` uses r = 0, and with a real key today's rate,
+so the numbers move slightly; that is the frozen input missing, not a different result.
 
 ## Status
 
