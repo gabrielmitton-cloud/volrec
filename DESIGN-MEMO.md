@@ -1,9 +1,9 @@
 # Design memo for a faculty reader (DRAFT 3, 10 Oct 2026 - to revise with Gabriel)
 
-**From:** Gabriel Mitton, Pepperdine University (first-year)
-**To:** Professor Connie James
-**Project:** volrec - github.com/gabrielmitton-cloud/volrec (site: gabrielmitton-cloud.github.io/volrec)
-**What I am asking for:** your judgement on whether the design holds up (about 20 minutes to read,
+**From:** Gabriel Mitton, Pepperdine University (first-year)  
+**To:** Professor Connie James  
+**Project:** volrec - github.com/gabrielmitton-cloud/volrec (site: gabrielmitton-cloud.github.io/volrec)  
+**What I am asking for:** your judgement on whether the reasoning holds up (about 20 minutes to read,
 and a short conversation), and whether you would act as faculty sponsor for presenting it.
 
 ## The question
@@ -44,14 +44,20 @@ the free prices themselves or from the way people turn prices into a volatility 
    premium for protection against volatility) on ten years of Cboe data, in 9 of 11 cases.
 
 ## Where your judgement would help most
-1. **What can about two months of data honestly claim?** Daily readings are not independent, so 40
-   days are worth fewer observations; I report that adjustment beside every result. Is the scope of
-   my claims right?
-2. **Is "method, not data" a fair conclusion?** The answer depends a little on the order in which the
-   steps are taken apart, so I report every order the data allows. Does that read as convincing?
-3. **Where should it go?** I plan SCCUR (November), the Seaver symposium (spring) and the Journal of
-   Undergraduate Research in Finance (May). Is that the right path, and would you sponsor it?
-4. **What would you check first** if you were reviewing it?
+This project is, underneath the finance, an exercise in reasoning from evidence, which is why I am
+asking you.
+
+1. **Do my conclusions follow from the evidence?** About two months of daily readings are not
+   independent of each other, so they are worth fewer observations than their count. Am I claiming
+   only what that evidence supports?
+2. **Is "the method, not the data" a fair inference?** How much of the error each step "explains"
+   depends a little on the order in which the steps are taken apart, so I report every order the data
+   allows. Does that answer the objection, or only describe it?
+3. **Is the testing honest?** Each prediction is fixed in writing before its evidence exists, and a
+   failure counts as a failure. Is there a way I could still be fooling myself?
+4. **Would you act as faculty sponsor?** I plan to present at SCCUR (November) and the Seaver symposium
+   (spring), and to submit to the Journal of Undergraduate Research in Finance (May); most of these
+   need a faculty mentor.
 
 *Data credits: OPRA data provided by Databento; Bloomberg figures: Source: Bloomberg Finance L.P.
 Aggregates only - no licensed data is redistributed.*
