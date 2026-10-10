@@ -2542,6 +2542,11 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   waits until he says it is ready (script in this section's LSEG entry). Cost of waiting: the 30-day
   window loses one early day per day after ~20 Oct (H5e's window starts 23 Sep). Fallback if still
   blocked by ~15 Oct: ask Marc Vinyard to run the same pull on his account. Exploratory only either way.
+- **Faculty sponsor, 10 Oct:** Professor Connie James teaches Gabriel's Foundations of Reasoning
+  (philosophical reasoning) course, with corporate finance experience. DESIGN-MEMO.md draft 3 asks her to
+  judge the REASONING (claims vs evidence, the decomposition's order, honesty of the testing) and to
+  sponsor; a PDF copy is on Gabriel's Desktop (Mitton-design-memo.pdf). Gabriel replaces his scheduled
+  Monday email with the new one, memo attached.
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
