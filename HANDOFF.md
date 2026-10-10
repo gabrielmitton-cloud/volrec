@@ -2488,6 +2488,18 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   same contracts priced on both feeds (the "data" step, S1 vs S0) for each fund, an equivalence test
   whose bound sits above the noise floor measured on Sep-Nov (OPRA at minute t against minute t+1),
   register after the 12-19 Nov verdicts, test 1 Dec - 29 Jan. Instrument first (tools/h8_quotes.py).
+  **Instrument built 10 Oct** (`tools/h8_quotes.py`, 20 known-answer tests in `tools/test_h8.py` on files
+  in Databento's own blank-bid form, pressure-test check, auditor mutants h8-blank-bid-dropped,
+  h8-tost-one-sided, h8-neff-ignores-rho; auditor 66/66). **Pilot readings on OPRA already owned** (Sep-Oct,
+  in-sample, NOT a verdict; mean |free - OPRA| on matched contracts / OPRA-vs-OPRA one-minute floor):
+  GLD 16 days 0.023 / 0.004; USO 14 days 0.038 / 0.051; TSLA 14 days 0.050 / 0.015; 97-100% of band
+  contracts matched; day-to-day rho negative (-0.2 to -0.3), so n_eff = T. *Data provided by Databento
+  (OPRA consolidated NBBO). Aggregates only.* **Next, in order:** (1) re-read the instrument cold after a
+  day (protocol step 2); (2) buy ~15 calibration days for SPY, QQQ, IWM, NVDA, AAPL (~$0.83, priced first,
+  logged in the cloud ledger; decide whether the cloud workflow buys all eight daily from 1 Dec); (3) set
+  the bound as a stated multiple of the measured floor and of something practical (half a typical
+  spread in vol points), and the n_eff/MDE check; (4) write the registration with Gabriel after the
+  12-19 Nov verdicts, freeze it on OSF.
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
