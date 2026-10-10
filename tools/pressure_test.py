@@ -1083,18 +1083,19 @@ ok(not _sheets, "no spreadsheet is sitting in the repo"
 # .gitignore entry catches it without anyone running anything, so the entry
 # itself is now a checked invariant rather than a good intention.
 _gi = (R / ".gitignore").read_text()
-ok("*.xlsx" in _gi, ".gitignore blocks spreadsheets even if one lands here")
-ok("volrec-bloomberg/" in _gi,
+_gi_live = {_l.strip() for _l in _gi.splitlines()}   # live rules only: a commented-out line must not pass
+ok("*.xlsx" in _gi_live, ".gitignore blocks spreadsheets even if one lands here")
+ok("volrec-bloomberg/" in _gi_live,
    ".gitignore blocks the export folder by name as well as by extension")
 # 23 Sep 2026: an interlibrary-loan paper (private study only, Title 17) landed in
 # the repo root, uncommitted. Papers live in ~/Documents/volrec-papers.
-ok("*.pdf" in _gi and not [f for f in subprocess.run(["git", "ls-files"], cwd=R, capture_output=True,
+ok("*.pdf" in _gi_live and not [f for f in subprocess.run(["git", "ls-files"], cwd=R, capture_output=True,
                                                      text=True).stdout.split() if f.lower().endswith(".pdf")],
    ".gitignore blocks PDFs and none is tracked (licensed papers stay outside the repo)")
 
 # 10 Oct 2026, the terms audit. LSEG exports stay in ~/Documents/volrec-lseg (library terms:
 # summary statistics only), and FRED's API terms require their notice on the product.
-ok("volrec-lseg/" in {_l.strip() for _l in _gi.splitlines()},   # a live line, not a comment
+ok("volrec-lseg/" in _gi_live,
    ".gitignore blocks the LSEG export folder by name")
 _LSEG_FIELDS = ("TRDPRC_1", "OPEN_PRC", "HIGH_1", "LOW_1", "HST_CLOSE")
 _lseg_like = []
@@ -1189,7 +1190,7 @@ ok("already on disk" in _fetch and _fetch.index("already on disk") < _fetch.inde
    "a day already on disk is skipped BEFORE anything is priced or bought (23 Sep: --all re-bought two days)")
 ok(not _opm.inside_repo(_opm.DATA_DIR) and not _opm.inside_repo(_opm.KEY_FILE),
    "OPRA data and the Databento key live outside the repository")
-ok(all(x in _gi for x in ("volrec-databento/", "*.key")),
+ok(all(x in _gi_live for x in ("volrec-databento/", "*.key")),
    ".gitignore blocks the OPRA folder and key files")
 # No API key may ever be committed: scan every tracked file for a Databento key.
 _tracked = subprocess.run(["git", "ls-files"], cwd=R, capture_output=True, text=True).stdout.split()
