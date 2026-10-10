@@ -416,6 +416,12 @@ _t7 = _sp.run([sys.executable, str(R / "tools/test_h7.py")], capture_output=True
 _n7f = sum(1 for _ln in _t7.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _n7p = sum(1 for _ln in _t7.stdout.splitlines() if _ln.strip().startswith("PASS"))
 ok(_t7.returncode == 0 and _n7f == 0 and _n7p >= 17, f"H7's reader tests pass ({_n7p} cases, {_n7f} failures)")
+# H8's instrument (BUILDING, not registered; 10 Oct 2026): arithmetic against hand-computed answers,
+# the equivalence test both ways, and one fund-day from files in Databento's own blank-bid form.
+_t8 = _sp.run([sys.executable, str(R / "tools/test_h8.py")], capture_output=True, text=True)
+_n8f = sum(1 for _ln in _t8.stdout.splitlines() if _ln.strip().startswith("FAIL"))
+_n8p = sum(1 for _ln in _t8.stdout.splitlines() if _ln.strip().startswith("PASS"))
+ok(_t8.returncode == 0 and _n8f == 0 and _n8p >= 20, f"H8's instrument tests pass ({_n8p} cases, {_n8f} failures)")
 _rv7 = _iu.module_from_spec(_iu.spec_from_file_location("rv7", R / "tools/record_verdict.py"))
 _iu.spec_from_file_location("rv7", R / "tools/record_verdict.py").loader.exec_module(_rv7)
 _o7 = ("H7a USO: n=12 mean |free - OPRA| 0.180 (bar 0.25)\nH7a GLD: n=12 mean |free - OPRA| 0.090 (bar 0.25)\n"
