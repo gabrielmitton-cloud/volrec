@@ -36,6 +36,15 @@ version of the measurement against its reference, on data that already exists. T
 sit clearly above that floor. Record the floor, how it was measured, and the bar as a
 multiple of it. A bar at or below the floor tests the noise, not the hypothesis.
 
+Two ways where possible (added 10 Oct from the research reports): reference against
+reference (our OPRA replica against the published index; Osterrieder, Vetter & Röschli got
+about 0.02 points replicating VIX with Cboe's own quotes at matched timestamps, so timing is
+the first suspect when ours is larger), and the same measurement repeated seconds apart. Expect
+a higher floor for OVX and GVZ than for VIX: they use monthly options only, and Andersen,
+Bondarenko & Gonzalez-Perez (2025) show monthly-only indices carry about ten times VIX's
+interpolation error. The references are measurements too (Bloomberg's IVs come from its own
+model), so the bar is "agrees within the floor plus a margin", never "equals the reference".
+
 ## 4. What the sample can detect [required: "Smallest detectable effect"]
 Before registering, estimate the smallest effect the planned sample would find most of the
 time: by simulation (`analyze.py --simulate-surface` is the model), or from the noise floor
@@ -43,11 +52,42 @@ and the number of independent observations. Say plainly if the sample is too sho
 detect the effect the hypothesis cares about. That is a reason to wait or to drop it, not
 to loosen the test.
 
+The arithmetic (added 10 Oct): daily gaps are persistent, so N days are worth fewer
+independent ones. Report T, the day-to-day autocorrelation ρ, and n_eff = T(1 - ρ)/(1 + ρ);
+at T = 40 and ρ = 0.9, n_eff is about 2. The smallest effect found 80% of the time at 5%
+two-sided is about 2.8 σ / √n_eff. If that exceeds the bar, register the test as descriptive.
+Inference: Newey-West with fixed-b critical values over time (already the house method); when
+pooling the eight underlyings, a wild cluster bootstrap with Webb's six-point weights (at least
+9,999 draws), because ±1 weights give only 2^8 = 256 distinct draws with eight clusters.
+
+How agreement is tested: as equivalence (two one-sided tests against a bound, ±Δ), not as
+"no significant difference" - an insignificant gap is absence of evidence. Never cite a
+correlation as agreement; show the differences (a Bland-Altman plot per underlying).
+
+Decompositions: a step-by-step decomposition depends on the order of the steps. Register the
+order, what "fixed" means for each factor, and report every feasible ordering's range (the
+Shapley value where all sub-models can be computed). Where some orderings cannot exist -
+the free feed has no full chain, so "free quotes, every strike" cannot be computed - say so
+and justify the order the data allows.
+
 ## 5. Written down, then left alone
 The bar, window, minimum, estimator and test are fixed in the file and committed before the
 data exists (`hypotheses/TEMPLATE.md`). Later changes are logged with a date. Each one is
 marked before or after output, and three after-output changes abandon the hypothesis.
 Verdicts are written in fixed wording by `tools/record_verdict.py`, never by judgement.
+
+Data already seen is a pilot (added 10 Oct). A new bar applies only to days not yet recorded
+when it is committed; list in the file every series and date range already looked at. A git
+commit's date is set by the committer's own machine, so for anything in the paper also freeze
+the registration somewhere independent: an OSF registration (the "Preregistration Template for
+Secondary Data Analysis", van den Akker et al. 2021) or a Zenodo DOI of a tagged release.
+Deviations follow Lakens (2024); the three-strikes rule is ours, stricter than any published
+norm, and the paper says so.
+
+Known breaks in the long Cboe sample, for anything that uses it: USO's 1-for-8 reverse split
+(29 Apr 2020; our daily bars are split-adjusted), negative WTI (20 Apr 2020), OVX/GVZ moving
+from Cboe-only to NBBO quotes (probably 11 May 2022, not confirmed by a Cboe notice), the
+index filter (8 Jul 2024), and the zero-bid-or-zero-ask rule (10 Feb 2025, VIX included).
 
 ## 6. A second reader
 Before a result is published or written up, someone other than its builder reads the code

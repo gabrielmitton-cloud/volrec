@@ -1,4 +1,4 @@
-# Design memo for a faculty reader (DRAFT 1, 9 Oct 2026 - to revise with Gabriel)
+# Design memo for a faculty reader (DRAFT 2, 10 Oct 2026 - to revise with Gabriel)
 
 **From:** Gabriel Mitton, Pepperdine University (first-year)
 **Project:** volrec - github.com/gabrielmitton-cloud/volrec (site: gabrielmitton-cloud.github.io/volrec)
@@ -45,10 +45,17 @@ checked against the authoritative number, day by day.
 
 ## Where I would value your judgement
 1. Is "estimator choices, not data quality" a fair reading of the decomposition, given the order of
-   the steps affects how much each one appears to explain?
+   the steps affects how much each one appears to explain? My plan is to report every ordering
+   the data allows and its range (Shapley where possible). Some orderings cannot exist: the free
+   feed has no full strike chain, so "free quotes, every strike" cannot be computed.
 2. Two months of daily data and eight underlyings: what can and cannot honestly be claimed from it?
 3. The snapshot is about 80 minutes before the index's close. Is the remaining 0.29 better presented
    as timing noise, or should it be tested with intraday index data (available through LSEG)?
-4. Is this the right shape for an undergraduate empirical paper, and is there a venue (a student
-   journal or conference) where it would fit?
+4. Is this the right shape for an undergraduate empirical paper? The venues I have found are
+   SCCUR (November), the Seaver symposium (spring), the Journal of Undergraduate Research in
+   Finance (late May) and the IAES undergraduate award (June). Would you be willing to act as
+   faculty sponsor, which most of them require?
 5. What would you check first if you were refereeing it?
+6. Alpaca's terms forbid republishing its data without written consent, and Cboe's index
+   disclaimers restrict using index values "to verify or correct other data". I am asking both
+   in writing. Is that the right way to handle it for a public replication package?

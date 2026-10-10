@@ -2,11 +2,16 @@
 
 The 9 Oct research report quoted Alpaca's own pages against each other: one says "Data older
 than 15 minutes is accessible on all feeds", another that OPRA "is only available to subscribed
-users". This asks the API directly, for one near-the-money USO call on the previous trading day,
+users". This asks the API directly, for one USO call from the free chain on the previous trading day,
 and prints ONLY status codes, record counts and aggregate agreement - never a price, because the
 Actions log of a public repository is publication (Alpaca's terms forbid republishing its data).
 
     ALPACA_KEY=... ALPACA_SECRET=... python tools/alpaca_opra_probe.py [--day YYYY-MM-DD]
+
+ANSWER (run 38015882270, 10 Oct 2026): the historical bars and trades endpoints reject any `feed`
+parameter (HTTP 400) and serve a single source; latest quotes and snapshots refuse feed=opra with
+HTTP 403 "OPRA agreement is not signed". There is no historical quotes endpoint, so the free plan
+offers no OPRA quote reference. Databento remains the reference (HANDOFF 18).
 """
 import argparse
 import os

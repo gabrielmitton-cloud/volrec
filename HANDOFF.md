@@ -2405,6 +2405,27 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   never in this repository. Its use is exploratory: how much of the replica's 0.29 residual is the move
   between snapshot and close. 30-minute bars bracket the 14:30-14:41 snapshot rather than hitting it,
   and that limit is stated with any figure. A timing hypothesis, if any, goes through PROTOCOL.md first.
+- **Research reports read 10 Oct** (Gabriel's two chat-mode reports, 9 Oct; kept outside the repo).
+  Adopted into PROTOCOL.md (two-way noise floor, n_eff and the 2.8σ/√n_eff detectable effect,
+  equivalence testing, Webb-weight wild bootstrap for pooled tests, decomposition orderings, data-seen
+  = pilot, an independent timestamp (OSF/Zenodo), the Cboe breaks), PAPER-OUTLINE.md (closest papers:
+  Hentschel 2003, Duarte-Jones-Wang 2024, Osterrieder et al., Wallmeier 2024; a registered-test table
+  first; venues) and DESIGN-MEMO.md (draft 2). **Checked, not taken on trust:**
+  - *"Free plan gets OPRA data older than 15 minutes"* - asked the API (`opra_probe.yml`, run
+    38015882270, aggregates only): the historical bars/trades endpoints accept NO `feed` parameter
+    (HTTP 400 "unexpected query parameter(s): feed") and serve one source; the latest-quote and snapshot
+    endpoints refuse `feed=opra` with HTTP 403 "OPRA agreement is not signed". There is no historical
+    quotes endpoint, so a free OPRA *quote* reference does not exist here; Databento stays the reference.
+    Whether signing the agreement in Alpaca's dashboard is free is Gabriel's question to check, not ours.
+  - *Alpaca's terms* (files.alpaca.markets TermsAndConditions.pdf, read 10 Oct): Content may not be
+    "republished, uploaded, posted ... to any other computer, server, web site or other medium for
+    publication" without Alpaca's prior written consent. `data/iv_history.csv` and `data/surface*.csv`
+    in this public repository carry the free feed's bids and asks. **Open, Gabriel's decision:** ask
+    Alpaca for written consent (email drafted 10 Oct); nothing moved or rewritten meanwhile.
+  - *Our break exposure:* H1's ETF bars are split-adjusted (`adjustment="all"`), so USO's 2020 reverse
+    split is handled; the replica already applies Cboe's zero-bid-OR-zero-ask rule.
+  - *SCCUR 2026:* abstracts closed 9 Oct 11:59 p.m. (decisions by 20 Oct; conference 21 Nov, $90 early
+    registration to 23 Oct). A 244-word abstract was drafted for Gabriel the same evening.
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
