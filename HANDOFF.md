@@ -2426,6 +2426,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
     split is handled; the replica already applies Cboe's zero-bid-OR-zero-ask rule.
   - *SCCUR 2026:* abstracts closed 9 Oct 11:59 p.m. (decisions by 20 Oct; conference 21 Nov, $90 early
     registration to 23 Oct). A 244-word abstract was drafted for Gabriel the same evening.
+  - **Done by Gabriel 9 Oct evening:** SCCUR abstract submitted (decision by 20 Oct; if accepted,
+    register by 23 Oct for $90); the consent email sent to Alpaca (record its reply verbatim here). Next:
+    ask Professor Connie James to be faculty sponsor (email drafted 10 Oct, DESIGN-MEMO.md attached);
+    an OSF account (Gabriel creates it) to freeze H5e/H7 registrations before 11 Nov.
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
