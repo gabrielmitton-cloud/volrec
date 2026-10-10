@@ -2510,6 +2510,20 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   already owned, Dec-Jan about $2 (~$0.048 a day). TSLA added to A because it is already in the pipeline and
   gives a single stock beside the two commodity funds. **Nothing was bought**; lifetime spend $0.70. Lesson:
   price the real requests, never a single sample minute.
+- **H8 scope back to B, 10 Oct (Gabriel: "sub $10 is fine... make the decision").** All eight funds
+  (~$8 total): the index funds are what most free-data users price, so the broader claim is worth the
+  cost. **Calibration bought 10 Oct:** 75 files (SPY/QQQ/IWM/NVDA/AAPL x 15 days, 17 Sep - 8 Oct, 28 Sep
+  excluded), $1.385, every request priced first; lifetime spend **$2.09**. Ledger pushed to volrec-licensed
+  (spend.csv only); the 340 MB of files stay on Gabriel's Mac in ~/Documents/volrec-licensed/opra
+  (git-excluded locally). **Calibration readings, all eight** (in-sample, NOT a verdict; mean |free - OPRA|
+  on matched contracts / mean free - OPRA / OPRA one-minute floor, vol points): SPY 0.059 / +0.059 /
+  0.010; QQQ 0.038 / +0.038 / 0.009; IWM 0.090 / +0.090 / 0.007; GLD 0.023 / +0.014 / 0.004; USO 0.038 /
+  -0.013 / 0.051; TSLA 0.050 / +0.041 / 0.015; NVDA 0.071 / +0.071 / 0.014; AAPL 0.020 / +0.010 / 0.016.
+  97-100% of band contracts matched; n_eff 9-16. Read plainly: the free feed reads a few hundredths of a
+  point HIGH on 7 of 8 funds - small, but systematic and above the floor, which the registration must
+  face honestly (an equivalence bound, not a "no difference" test). *Data provided by Databento (OPRA
+  consolidated NBBO). Aggregates only.* **To do before 1 Dec:** the cloud workflow buys all eight daily
+  for the window (~$0.16 a day), with H8's own cap.
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
