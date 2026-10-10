@@ -7,7 +7,9 @@ session's job is to read results, answer a question, or do one bounded thing.
 
 ## Read in this order, and stop as soon as you know enough
 
-1. **This file.** New hypotheses follow `PROTOCOL.md`; the paper plan is `PAPER-OUTLINE.md`.
+1. **This file.** New hypotheses follow `PROTOCOL.md`; the paper plan is `PAPER-OUTLINE.md`. H8 is being
+   built (`H8-DRAFT.md`, not registered); H5e and H7 are also on OSF (https://osf.io/z5gfu); the faculty
+   memo is `DESIGN-MEMO.md`; every data source's terms are in README, "Data availability".
 2. **The live state** - never trust a document for it:
    `.../python3 tools/daily.py` -> did today land, 0 fail / n warn, the H3 reading,
    the H5e tally, and ALL CLEAR or LOOK AT.
@@ -42,7 +44,7 @@ session's job is to read results, answer a question, or do one bounded thing.
 | `freshness.yml` | 20:00 and 23:00 daily | installs nothing, on purpose |
 | `health.yml` | 23:37 | the full daily check; emails on any FAIL or crash |
 | launchd `com.volrec.daily` (this Mac, once installed) | 13:30 Pacific | texts the verdict by iMessage |
-| `volrec-licensed` daily.yml (private repo) | 23:05 UTC | OPRA fetch + registered verdicts; opens an issue there |
+| `volrec-licensed` daily.yml (private repo) | 23:05 UTC | OPRA fetch (USO/TSLA wide days, H7's monthly legs, H8's eight funds) + registered verdicts; opens an issue there |
 | auditor routine (Claude, cloud) | Mondays 16:30 UTC | `tools/audit.py` + doc drift; notifies only on a problem |
 
 ## Standing rules - these are not up for re-argument without new, dated evidence

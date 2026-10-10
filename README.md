@@ -114,12 +114,13 @@ vol, and jumps, and sweeps rebalance frequency to find where net profit peaks.
   low single-digit share of volume, so its close is not the official closing
   print, and its free history is both shallower and ragged.
 - **Snapshot timing**: one reading per day, so intraday volatility is
-  invisible. Since 9 Oct 2026 an outside trigger (cron-job.org, set in New York
-  time) starts the recorder at 14:30 New York (11:30 on NYSE early-close days),
-  so the snapshot lands about 14:30-14:41 New York all year and the 1 November
-  clock change does not move it within the session. Before that, GitHub's cron
-  fired at 14:47 UTC and ran three to seven hours late, so September's snapshots
-  sit later and more scattered in the session; `pressure_test.py` warns while
+  invisible. Since 1 Oct 2026 an outside trigger (cron-job.org) starts the
+  recorder at 14:30 New York (11:30 on NYSE early-close days); the surface
+  follows at 14:40, so its quotes sit at about 18:40 UTC in summer time. The
+  trigger has been set in New York time since 9 Oct, so the 1 November clock
+  change does not move the snapshot within the session. Before 1 Oct, GitHub's
+  own cron (14:47 UTC) ran late and unevenly, putting September's surface
+  snapshots between about 18:40 and 20:00 UTC; `pressure_test.py` warns while
   the last ten days span more than an hour. GitHub's cron stays as a backup and
   exits without recording if it fires before the trigger's slot.
   `tools/panel_health.py` fails if a snapshot ever lands outside the session.
@@ -260,12 +261,14 @@ hypotheses/                pre-registered, dated, committed BEFORE the test
 samples/long/              Sample A: ten years of Cboe indices (H1, H2, H6)
 tools/ovx_replicate.py     Cboe's own OVX/GVZ rules on OPRA quotes (exploratory)
 tools/h7_reader.py         H7's reading, on that replica
+tools/h8_quotes.py         H8's instrument (building): the same contracts, free vs OPRA
+tools/alpaca_opra_probe.py does Alpaca's free plan serve OPRA? (answered no, 10 Oct)
 tools/record_verdict.py    writes due verdicts in fixed wording, unattended
-tools/pressure_test.py     240 read-only integrity and known-answer checks
+tools/pressure_test.py     247 read-only integrity and known-answer checks
 tools/audit.py             breaks each safeguard on purpose; each check must fail
 tools/calibrate.py         every instrument against a known reference truth
 tools/seed_frozen_rate.py  gives a fresh clone the frozen rate the registered numbers use
-tools/test_hedged.py, test_h6.py, test_h7.py   hand-computed unit tests
+tools/test_hedged.py, test_h6.py, test_h7.py, test_h8.py   hand-computed unit tests
 ```
 
 The rule that holds the rest together: **nothing becomes a model variable

@@ -1886,10 +1886,13 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 every decision. This section is the only one guaranteed current. Read it, run
 `tools/daily.py`, and open section 17 only when a task needs the why.
 
-### System status, checked 9 Oct 2026 21:00 UTC (rows below the pressure test last checked 23 Sep)
+### System status, checked 10 Oct 2026 ~19:30 UTC (rows below "public site" last checked 23 Sep)
 
 | check | result |
 |---|---|
+| diagnostic, 10 Oct (after the weekend's changes) | `daily.py` **ALL CLEAR**; pressure test **247 checks, 0 fail, 3 warn** (the same three known warnings); auditor **68 of 68**; calibrate **9 of 9**; unit tests hedged 30, H6 27, H7 17, H8 26 - all pass; every registered reader (modelfree, `--wide`, hedged, h7_reader, record_verdict dry run, ovx_replicate, calibrate) **byte-identical** to the code before the weekend (24b9a2a), same data; a fresh public clone reproduces them too |
+| Databento, 10 Oct | lifetime **$2.27** of the $100 cap (H8 calibration $1.39; the cloud's first H8 day $0.17); H7 under its own $1.10 cap, H8 under its own $15 |
+| OSF | H5e and H7 registered and live, https://osf.io/z5gfu (10 Oct 17:43 UTC) |
 | `tools/pressure_test.py` | **0 fail, 3 warn** (9 Oct, after the full audit) - all known and true: FXE's one-sided 7 Oct quote (no IV carried), the snapshot time spread over 10 days (88 min, from before the outside trigger), and the GitHub-cron backup can land after the close (the guard refuses it; the trigger prevents it). Auditor **53 of 53** |
 | `tools/calibrate.py` | **9 of 9** instruments calibrated against a known answer (the OPRA comparison added 23 Sep) |
 | `tools/test_hedged.py` | 21 hand-computed cases pass |
@@ -2394,7 +2397,7 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   record 8614856 (Fri 27 Nov 11:30) and 8614871 (Thu 24 Dec 11:30), surface 8614873 (27 Nov 11:40) and
   8614874 (24 Dec 11:40), New York time; all carry the same URL, POST, headers and body as the originals.
   Delete the four copies after 24 Dec. When the token is renewed (by 22 Dec), the two main jobs need it.
-- **Mon 12 Oct 16:30 UTC:** the auditor routine (58 safeguards now). **Wed 14 Oct:** the watchdog.
+- **Mon 12 Oct 16:30 UTC:** the auditor routine (68 safeguards now). **Wed 14 Oct:** the watchdog.
 - **Every weekday:** recorders 14:30 / 14:40 New York; the cloud buys OPRA for each day about two days later,
   H7's monthly legs inside their own $1.10 cap.
 - **LSEG - Marc Vinyard answered 9 Oct:** "Summary statistics are fine as long as you don't share raw
@@ -2558,4 +2561,5 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 > `tools/daily.py` with the framework python and report its verdict. Then work from section 18's dated plan
 > ("Fri 9 Oct - the dated plan from here") and the newest dated entries above it. Report numbers before
 > recommending; never adjust a registered threshold; keep licensed data out of the repo; push only when
-> `tools/audit.py` reads N of N.
+> `tools/audit.py` reads N of N. Open work: H8 is being built under `PROTOCOL.md` (`H8-DRAFT.md`, not
+> registered; the cloud buys its OPRA daily), and `DESIGN-MEMO.md` is being revised with Gabriel.

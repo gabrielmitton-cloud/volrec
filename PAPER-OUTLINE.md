@@ -67,6 +67,8 @@ registered test: its bar, its window, its verdict, failures included. Then the m
 with an interval.
 - 5.1 *The quotes.* Free versus OPRA at the same minute, and versus Bloomberg (H5a, H5b, H5f).
   Prices within a fraction of a spread; empty bids match the market.
+  [H8's confirmatory reading goes here, 1 Dec 2026 - 29 Jan 2027, all eight funds; registered after
+  the November verdicts under PROTOCOL.md - see H8-DRAFT.md.]
 - 5.2 *Strike coverage.* The ±10% band reads oil 12 points light; ±30% brings the mean gap to 0.59.
   Truncation scales with volatility: Jiang & Tian's mechanism, measured (H3).
 - 5.3 *Empty bids in the wings.* What zero-bid quotes do to the estimate, and H5e's test.

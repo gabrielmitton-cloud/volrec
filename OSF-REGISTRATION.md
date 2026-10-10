@@ -1,5 +1,10 @@
 # OSF registration: what to paste (prepared 10 Oct 2026)
 
+**DONE 10 Oct 2026: registered and live at https://osf.io/z5gfu** (17:43 UTC; Secondary Data
+Preregistration; public, MIT). Claude filled it in Gabriel's browser at his request; a few answers were
+tightened while filling (e.g. H5e's expected sample is about 35 trading days). The OSF page, not this
+file, is the record of what was submitted.
+
 **What this freezes:** the two hypotheses still open, H5e (final reading over 23 Sep - 11 Nov) and
 H7 (9 Oct - 11 Nov), exactly as the repository already records them, with an independent timestamp.
 Both were registered first in git (H5e: commit `ac237a6`, 23 Sep 2026; H7: commit `1d1bef7`,
