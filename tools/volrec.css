@@ -387,7 +387,8 @@ svg .cur-lab { fill: var(--ink); font-size: 10px; font-weight: 500; }
   border-bottom: 1px solid var(--rule);
 }
 .daybar .ctl-k { margin: 0; }
-.daybar .seg { grid-auto-columns: minmax(64px, auto); }
+.daybar .seg { grid-auto-columns: minmax(64px, auto); flex: 1 1 0; min-width: 0; max-width: max-content;
+  overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }   /* one button per trading day: the row scrolls, the page does not */
 .daybar .aux { margin-left: auto; font-size: 10.5px; color: var(--ink-3); }
 
 .panel { margin-top: 22px; background: var(--panel); border: 1px solid var(--rule); min-width: 0; }
