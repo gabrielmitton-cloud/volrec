@@ -2524,6 +2524,15 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   face honestly (an equivalence bound, not a "no difference" test). *Data provided by Databento (OPRA
   consolidated NBBO). Aggregates only.* **To do before 1 Dec:** the cloud workflow buys all eight daily
   for the window (~$0.16 a day), with H8's own cap.
+- **H8 'still to do' done, 10 Oct.** (1) The cloud now buys all eight funds daily (`daily.yml` H8 step,
+  `opra_reference.py --h8`, own $15 cap, 9 Oct 2026 - 29 Jan 2027; price-only run 38077233404 priced 9 Oct
+  at ~$0.16 a day; the first real buy is tonight's 23:05 UTC run). Full chains kept for USO/GLD/TSLA to
+  11 Nov; everything else trimmed to the recorded band (~5% of a file) so the private repo stays small.
+  Expected H8 spend to 29 Jan: about $10.5 tagged "-h8", lifetime about $15 by then, inside the $100 cap
+  (Gabriel 10 Oct: budget can rise). (2) Cold re-read: added the user's-view reading (both feeds at the
+  snapshot minute, stale quotes kept); stale quotes add at most ~0.01 inside the band. (3) Draft
+  registration: `H8-DRAFT.md` (proposed bar 0.10 points: about SPY's ATM half-spread, 2x the largest
+  noise floor; decided with Gabriel after 19 Nov, then frozen on OSF).
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
