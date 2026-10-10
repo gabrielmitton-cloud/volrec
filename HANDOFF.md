@@ -2535,6 +2535,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   snapshot minute, stale quotes kept); stale quotes add at most ~0.01 inside the band. (3) Draft
   registration: `H8-DRAFT.md` (proposed bar 0.10 points: about SPY's ATM half-spread, 2x the largest
   noise floor; decided with Gabriel after 19 Nov, then frozen on OSF).
+- **LSEG on hold, 10 Oct (Gabriel):** student Workspace access has not come through; the CodeBook pull
+  waits until he says it is ready (script in this section's LSEG entry). Cost of waiting: the 30-day
+  window loses one early day per day after ~20 Oct (H5e's window starts 23 Sep). Fallback if still
+  blocked by ~15 Oct: ask Marc Vinyard to run the same pull on his account. Exploratory only either way.
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
