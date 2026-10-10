@@ -4,6 +4,7 @@
 before the series that tests it. What was already seen on that day is stated in full
 below, so nothing here can be mistaken for a prediction made blind.
 **Status:** registered. **H5a and H5b tested 23 Sep 2026** - H5b holds, H5a holds weakly (see Result). H5f read 25 Sep 2026 (see Result). H5e first verdict read 8 Oct 2026 (see Result).
+**Independently timestamped:** OSF registration https://osf.io/z5gfu (H5e and H7, submitted 10 Oct 2026; secondary-data template; discloses what was seen first).
 **Sample:** `data/surface_wide.csv` from 18 Sep 2026 onward, and the matched Bloomberg
 OMON wing exports in `~/Documents/volrec-bloomberg`. Never `data/iv_history.csv`.
 

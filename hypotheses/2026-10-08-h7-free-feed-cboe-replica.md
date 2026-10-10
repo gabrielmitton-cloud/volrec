@@ -3,6 +3,7 @@
 **Registered:** 2026-10-08, before the first monthly-leg row exists (it lands Fri 9 Oct); the
 commit date is proof. Approved by Gabriel 8 Oct.
 **Status:** registered
+**Independently timestamped:** OSF registration https://osf.io/z5gfu (H5e and H7, submitted 10 Oct 2026; secondary-data template; discloses what was seen first).
 **Sample:** B (own panel), from 9 Oct 2026
 
 ## Why this hypothesis exists

@@ -89,7 +89,7 @@ paper's main text, not a footnote.
 **7. Conclusion (0.5 page).** What a researcher with no budget can trust, and what to fix first.
 
 **Appendix.**
-- A. The pre-registration record: every hypothesis, its bar, its verdict and its adjustment log,
+- A. The pre-registration record (OSF: https://osf.io/z5gfu for H5e and H7): every hypothesis, its bar, its verdict and its adjustment log,
   failures included (H5e, H6a, TimesFM).
 - B. Side studies: H2 (variance vs volatility), H4 (hedged gains), H6 (implied volatility against a
   trailing range).

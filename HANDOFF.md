@@ -2475,9 +2475,19 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   every third-party dataset.
 - **OSF, 10 Oct:** Gabriel's account works. `OSF-REGISTRATION.md` holds every field for the "Secondary
   Data Analysis" template, freezing H5e and H7 as committed (ac237a6, 1d1bef7; repository at 8d3a555),
-  disclosing what was seen first. When Gabriel sends the registration link: add it to both hypothesis
-  files, here, and PAPER-OUTLINE appendix A. **LSEG:** Gabriel requested Pepperdine's student Workspace
+  disclosing what was seen first. **Registered 10 Oct by Claude in Gabriel's browser at his request:
+  https://osf.io/z5gfu** (public, no embargo, MIT licence; OSF auto-approves after 48 h unless Gabriel
+  approves by email first). Linked from both hypothesis files and PAPER-OUTLINE appendix A. **LSEG:** Gabriel requested Pepperdine's student Workspace
   access 10 Oct - the right route; his credentials stay his.
+- **The upgrade (H8, not registered) - scope B chosen 10 Oct.** Databento's own get_cost (free) for one
+  day at the snapshot minute, cbbo-1m, all eight surface funds: SPY 0.0194, QQQ 0.0164, GLD 0.0105, IWM
+  0.0084, TSLA 0.0071, USO 0.0069, NVDA 0.0062, AAPL 0.0050 = **$0.080 a day**; 41 trading days 1 Dec - 29 Jan
+  = **about $3.28**, plus about $0.83 to give SPY/QQQ/IWM/NVDA/AAPL 15 calibration days (USO, GLD and TSLA
+  are already owned). About $4.10 in all. **Gabriel approved up to $5 for H8 (10 Oct)**, inside the $100
+  free credit; every buy is still priced first and logged in spend.csv. The plan, per PROTOCOL.md: the
+  same contracts priced on both feeds (the "data" step, S1 vs S0) for each fund, an equivalence test
+  whose bound sits above the noise floor measured on Sep-Nov (OPRA at minute t against minute t+1),
+  register after the 12-19 Nov verdicts, test 1 Dec - 29 Jan. Instrument first (tools/h8_quotes.py).
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
