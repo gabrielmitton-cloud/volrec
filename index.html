@@ -255,11 +255,11 @@
     <h2>The premium, where it can be measured</h2>
     <div class="prose">
       <p>Before trusting any estimator on a short sample, the project pointed it at a decade of Cboe index data. The premium is a documented phenomenon, so this was a test of the code rather than a discovery. If the estimators could not find it there, nothing they reported about a few weeks of collection would be worth reading.</p>
-      <p>They found it on <span class="m">9</span> of <span class="m">11</span> pairs. The two that fail are sector indices Cboe discontinued in February 2022, which have the fewest observations. Under the stricter Benjamini-Yekutieli correction, which holds however the pairs move together, <span class="m">8</span> of <span class="m">11</span> survive: silver drops out, at an adjusted <span class="m">0.059</span>. Measured in log variance rather than volatility, the same premium is stronger still, with <span class="m">t = 16.26</span> against <span class="m">9.28</span>. That result is registered but not adopted.</p>
+      <p>They found it on <span class="m">9</span> of <span class="m">11</span> pairs. The two that fail are sector indices Cboe stopped publishing in February 2022 (energy's never returned; gold miners' resumed only in September 2025), so they have the fewest observations. Under the stricter Benjamini-Yekutieli correction, which holds however the pairs move together, <span class="m">8</span> of <span class="m">11</span> survive: silver drops out, at an adjusted <span class="m">0.059</span>. Measured in log variance rather than volatility, the same premium is stronger still, with <span class="m">t = 16.26</span> against <span class="m">9.28</span>. That result is registered but not adopted.</p>
     </div>
     <aside class="aside">
       <div><b>Intervals</b> are approximate: the mean plus or minus 1.96 standard errors, with the standard error recovered from the reported t-statistic.</div>
-      <div><b>Premium</b> is implied minus realised volatility, in annualised points. Positive means the insurance was overpriced.</div>
+      <div><b>Premium</b> is implied minus realised volatility, in annualised points. Positive means the options priced in more movement than the market then delivered: buyers of protection paid more than it turned out to be worth.</div>
     </aside>
     <figure class="fig" id="fig5">
       <div class="fig-frame">
@@ -298,11 +298,22 @@
   <section class="section">
     <h2>Written down before the data arrived</h2>
     <div class="prose">
-      <p>Every hypothesis is committed to the repository before the data that tests it is examined, and the commit date is the evidence. Post-hoc adjustments are logged in the same file, and a third adjustment means abandoning the hypothesis.</p>
+      <p>Every hypothesis is committed to the repository before the data that tests it is examined, and the commit date is the evidence. Post-hoc adjustments are logged in the same file, and a third adjustment means abandoning the hypothesis. The two still running, H5e and H7, are also frozen on the Open Science Framework, whose timestamp the author cannot change: <a href="https://osf.io/z5gfu">osf.io/z5gfu</a>.</p>
     </div>
     <div class="fig" style="grid-column:1/-1;margin-top:28px">
       <div class="ledger-wrap"><table class="ledger" id="ledger"></table></div>
     </div>
+  </section>
+
+  <!-- What comes next ---------------------------------------------------- -->
+  <section class="section">
+    <h2>What comes next</h2>
+    <ul class="limits">
+      <li><b>11 November 2026.</b> The collection windows for H5e and H7 close.</li>
+      <li><b>12 to 19 November.</b> Both are read once, in wording fixed before the data, by the unattended workflow, and the results go here whether they hold or fail.</li>
+      <li><b>1 December to 29 January.</b> A confirmatory test of the free feed's quotes against the consolidated feed across all eight recorded funds, written down under the project's research protocol and registered before its window opens.</li>
+      <li><b>February 2027.</b> The write-up, failures included.</li>
+    </ul>
   </section>
 
   <!-- Live instrument ----------------------------------------------------- -->
@@ -328,9 +339,10 @@
   <section class="section">
     <h2>What this cannot show</h2>
     <ul class="limits">
-      <li><b>The series is young.</b> The model-free comparison was calibrated on a single day, 11 September 2026. The series behind H3 began on 14 September and holds only a handful of days; H3 is tested on that series, not on the calibration.</li>
+      <li><b>The series is young.</b> The model-free comparison was calibrated on a single day, 11 September 2026. The series behind H3 began on 14 September and holds about four weeks; H3 is tested on that series, not on the calibration.</li>
       <li><b>The feed is indicative.</b> Alpaca's free options data is not consolidated OPRA. Levels are approximate, and changes over time are more trustworthy than any single reading.</li>
-      <li><b>The daily panel is short.</b> It carries roughly two independent episodes so far, so it reports collection, not a premium.</li>
+      <li><b>The daily panel is short.</b> Its 30-day windows overlap, so a month of rows is about one independent observation. It reports collection, not a premium.</li>
+      <li><b>One snapshot a day, before the close.</b> The free feed is read at about 2:30 p.m. New York and Cboe's indices close at 4:00, so every gap to an index includes whatever moved in between. The snapshot settled at that time on 1 October; September's ran later and less evenly.</li>
       <li><b>H4 is close to a replication.</b> Its predictions come from published work. What is new is the data: collected first-hand, at zero budget, with volume and open interest per contract.</li>
       <li><b>No licensed data is redistributed.</b> The Bloomberg section shows derived aggregates only (medians, counts and fitted lines), each marked <i>Source: Bloomberg Finance L.P.</i>; no Bloomberg quote, price or volatility is reproduced. The OPRA section likewise shows medians and counts only, each marked <i>Data provided by Databento</i>, and no OPRA quote or price. No Cboe or FRED series is mirrored. Index levels are quoted only where a result depends on them.</li>
     </ul>
@@ -798,7 +810,7 @@
     const rows = [
       ["H1", "The volatility risk premium is positive on the Cboe index family, 2016 to 2026.", "6 Sep 2026", ["tested", "Tested, holds"], ["9 of 11 pairs survive FDR control (8 under the stricter Benjamini-Yekutieli)", "VIX/SPY t = 5.14, weakest survivor adj p = 0.019 (0.059 under BY)"], "2026-09-06-h1-vrp-long-sample.md"],
       ["H2", "The premium is better measured in variance than in volatility, following Carr and Wu (2009).", "9 Sep 2026", ["tested", "Tested, not adopted"], ["log variance t = 16.26", "volatility 9.28, raw variance 2.14"], "2026-09-09-h2-variance-formulation.md"],
-      ["H3", "A model-free estimate built from free data reproduces the published Cboe index.", "12 Sep 2026", ["calibrated", "Series running"], ["0.40 mean gap over 80 readings, against a 1.0 limit", "first wide-band reading fell outside its bracket: quote contamination, as registered"], "2026-09-12-h3-free-data-model-free.md"],
+      ["H3", "A model-free estimate built from free data reproduces the published Cboe index.", "12 Sep 2026", ["calibrated", "Series running"], ["0.41 mean gap over 90 readings to 9 Oct, against a 1.0 limit", "first wide-band reading fell outside its bracket: quote contamination, as registered"], "2026-09-12-h3-free-data-model-free.md"],
       ["H4", "Delta-hedged gains are negative, vary across the strike surface, and relate to where volume sits.", "13 Sep 2026", [h4[0], h4[1]], ["strike 2 of 3 (8 Oct): calendar-day carry, dividend-adjusted price", h4[2]], "2026-09-13-h4-hedged-gains-across-the-surface.md"],
       ["H5", "What free option data costs sits in the far wings, and it is the estimator's handling of missing bids rather than the quotes.", "19 Sep 2026", ["tested", "Partly tested"], ["H5e FAILS at its ten-day minimum: 0.90 against a 0.5 bar, closer on 2 of 10 days", "H5b holds (36 of 36); H5a holds weakly (0.40 of a spread); H5f holds, H5f-a exactly on the bar"], "2026-09-19-h5-wing-quote-quality.md"],
       ["H6", "Implied volatility forecasts tomorrow's trading range better than a technical-levels rule (14-day ATR).", "8 Oct 2026", ["tested", "Tested, fails"], ["ATR has the lower error on all 9 pairs, 2016 to 2026", "implied volatility overshoots the range 1.6 to 2.3 times; its edge after volatility spikes holds"], "2026-10-08-h6-implied-vol-vs-technical-levels.md"],
