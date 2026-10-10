@@ -1094,7 +1094,8 @@ ok("*.pdf" in _gi and not [f for f in subprocess.run(["git", "ls-files"], cwd=R,
 
 # 10 Oct 2026, the terms audit. LSEG exports stay in ~/Documents/volrec-lseg (library terms:
 # summary statistics only), and FRED's API terms require their notice on the product.
-ok("volrec-lseg/" in _gi, ".gitignore blocks the LSEG export folder by name")
+ok("volrec-lseg/" in {_l.strip() for _l in _gi.splitlines()},   # a live line, not a comment
+   ".gitignore blocks the LSEG export folder by name")
 _LSEG_FIELDS = ("TRDPRC_1", "OPEN_PRC", "HIGH_1", "LOW_1", "HST_CLOSE")
 _lseg_like = []
 for _f in subprocess.run(["git", "ls-files", "*.csv"], cwd=R, capture_output=True, text=True).stdout.split():
