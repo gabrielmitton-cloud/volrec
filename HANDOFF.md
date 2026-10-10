@@ -2502,6 +2502,14 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   the bound as a stated multiple of the measured floor and of something practical (half a typical
   spread in vol points), and the n_eff/MDE check; (4) write the registration with Gabriel after the
   12-19 Nov verdicts, freeze it on OSF.
+- **H8 scope CHANGED to A+TSLA, 10 Oct - the first price was wrong by about 2x.** Pricing the actual
+  calibration requests (Databento get_cost, free; snapshot-minute windows from the recorded rows) gave
+  **$1.39** for 15 days of SPY/QQQ/IWM/NVDA/AAPL, not $0.83 (SPY ~$0.037 a day, not $0.019). At those prices
+  scope B is about $1.4 + $6.5 = ~$8, over Gabriel's $5 limit, so per his rule ("if not under $5, go to A")
+  H8 covers **USO, GLD and TSLA**: all three already bought daily by the cloud, ~15 calibration days each
+  already owned, Dec-Jan about $2 (~$0.048 a day). TSLA added to A because it is already in the pipeline and
+  gives a single stock beside the two commodity funds. **Nothing was bought**; lifetime spend $0.70. Lesson:
+  price the real requests, never a single sample minute.
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
