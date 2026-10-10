@@ -68,7 +68,9 @@ def mde(sd, neff):
 def tost(d, bound, lag):
     """Equivalence by two one-sided tests: is the mean of d inside (-bound, +bound)?
     Newey-West (Bartlett) standard error; one-sided p from t(T-1). Equivalent at 5% when BOTH
-    one-sided p are below 0.05. Returns (mean, se, p_lower, p_upper, equivalent)."""
+    one-sided p are below 0.05. Returns (mean, se, p_lower, p_upper, equivalent).
+    Open for the registration: the lag (Lazarus et al. 2018 suggest 1.3*sqrt(T), ~5-8 here) and
+    fixed-b critical values (analyze.fixed_b_pvalue) in place of t(T-1)."""
     mu, se, _t, _p = newey_west(d, lag)
     # newey_west floors the variance at 1e-18, so a constant series gets se ~1e-9 and any bound
     # would pass. Real gaps always vary; a series that does not means the instrument is broken.
@@ -83,16 +85,17 @@ def tost(d, bound, lag):
 
 
 # ---------------- one fund, one day ----------------
-def priced(rows, opra, shift=timedelta(0)):
-    """The same contracts with OPRA's quote at (free quote time + shift), or None for a contract
+def priced(rows, opra, shift=timedelta(0), at=None):
+    """The same contracts with OPRA's quote at (free quote time + shift) - or, with `at`, at that one
+    moment for every contract (the snapshot minute) - or None for a contract
     OPRA has no record of within ore.MATCH_TOLERANCE_S. A blank OPRA bid is a zero bid (the
     free feed writes 0; Cboe and the registered rule treat both alike); no ask = no quote."""
     out = {}
     for r in rows:
         recs = opra.get(ore.compact(r["option_symbol"]))
-        if not recs or not r.get("quote_time"):
+        if not recs or not (at or r.get("quote_time")):
             continue
-        hit = ore.nearest(recs, ore.parse_ts(r["quote_time"]) + shift)
+        hit = ore.nearest(recs, (at or ore.parse_ts(r["quote_time"])) + shift)
         if hit and hit[2] is not None:
             b = hit[1] or 0.0
             out[r["option_symbol"]] = dict(r, bid=str(b), ask=str(hit[2]), mid=str((b + hit[2]) / 2.0))
@@ -107,16 +110,24 @@ def day_pair(band, opra, r):
     at_t1 = priced(band, opra, NEXT_MINUTE)
     a = [x for x in band if x["option_symbol"] in at_t]
     b = [x for x in a if x["option_symbol"] in at_t1]
+    # The user's view: the free snapshot as recorded (stale quotes and all) against OPRA at the
+    # snapshot minute, on every contract OPRA quotes then. This adds the cost of staleness to the
+    # cost of price; the quote-time match above isolates price alone.
+    when = ore.snapshot_minute(band)
+    at_s = priced(band, opra, at=when) if when else {}
+    s = [x for x in band if x["option_symbol"] in at_s]
     v = lambda rows: (lambda g: g[0] if g else None)(modelfree.model_free_30d(rows, r) if rows else None)
-    out = {"n_band": len(band), "n_match": len(a), "n_floor": len(b),
+    out = {"n_band": len(band), "n_match": len(a), "n_floor": len(b), "n_snap": len(s),
            "S0": v(band), "S0m": v(a), "S1": v([at_t[x["option_symbol"]] for x in a]),
-           "S1b": v([at_t[x["option_symbol"]] for x in b]), "S1n": v([at_t1[x["option_symbol"]] for x in b])}
+           "S1b": v([at_t[x["option_symbol"]] for x in b]), "S1n": v([at_t1[x["option_symbol"]] for x in b]),
+           "S0s": v(s), "S1s": v([at_s[x["option_symbol"]] for x in s])}
     return out
 
 
 # ---------------- the report ----------------
 def summarise(sym, days, lag):
     gaps = [x["S0m"] - x["S1"] for x in days if x["S0m"] is not None and x["S1"] is not None]
+    snap = [x["S0s"] - x["S1s"] for x in days if x.get("S0s") is not None and x.get("S1s") is not None]
     floor = [x["S1n"] - x["S1b"] for x in days if x["S1n"] is not None and x["S1b"] is not None]
     if len(gaps) < 3:
         print(f"  {sym:5s} {len(gaps):3d} days - too few to summarise")
@@ -130,6 +141,9 @@ def summarise(sym, days, lag):
     print(f"  {sym:5s} {len(gaps):3d} days  matched {match:4.0%}  gap mean {mu:+.3f} (NW se {se:.3f})  "
           f"mean|gap| {st.mean(abs(g) for g in gaps):.3f}  sd {sd:.3f}  rho {rho:+.2f}  n_eff {ne:4.1f}  "
           f"MDE {mde(sd, ne):.3f}  floor mean|OPRA t+1 - t| {fl:.3f}")
+    if len(snap) >= 3:
+        print(f"  {'':5s} at the snapshot minute (stale quotes included): mean {st.mean(snap):+.3f}  "
+              f"mean|gap| {st.mean(abs(g) for g in snap):.3f}  sd {st.stdev(snap):.3f}  ({len(snap)} days)")
 
 
 def main():

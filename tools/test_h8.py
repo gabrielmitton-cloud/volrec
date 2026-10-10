@@ -99,6 +99,10 @@ check(f"a free quote hours older than every OPRA record is excluded, not matched
       z["n_match"] == len(rows) - len(rows[::4]))
 check("excluded contracts leave the free-only estimate S0 on the full band", z["S0"] == x["S0"])
 check("an empty band gives no reading", h8.day_pair([], opra, 0.0) is None)
+check("at the snapshot minute, identical quotes also give a gap of exactly 0",
+      x["S0s"] is not None and abs(x["S0s"] - x["S1s"]) < 1e-12 and x["n_snap"] == x["n_band"])
+check("a stale free quote is KEPT at the snapshot minute (the user's view) though dropped by the quote-time match",
+      z["n_snap"] == len(rows) and z["n_match"] < len(rows))
 
 print("\n=== the purchase trim keeps exactly what H8 reads ===")
 ore = h8.ore

@@ -421,7 +421,7 @@ ok(_t7.returncode == 0 and _n7f == 0 and _n7p >= 17, f"H7's reader tests pass ({
 _t8 = _sp.run([sys.executable, str(R / "tools/test_h8.py")], capture_output=True, text=True)
 _n8f = sum(1 for _ln in _t8.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _n8p = sum(1 for _ln in _t8.stdout.splitlines() if _ln.strip().startswith("PASS"))
-ok(_t8.returncode == 0 and _n8f == 0 and _n8p >= 24, f"H8's instrument tests pass ({_n8p} cases, {_n8f} failures)")
+ok(_t8.returncode == 0 and _n8f == 0 and _n8p >= 26, f"H8's instrument tests pass ({_n8p} cases, {_n8f} failures)")
 _rv7 = _iu.module_from_spec(_iu.spec_from_file_location("rv7", R / "tools/record_verdict.py"))
 _iu.spec_from_file_location("rv7", R / "tools/record_verdict.py").loader.exec_module(_rv7)
 _o7 = ("H7a USO: n=12 mean |free - OPRA| 0.180 (bar 0.25)\nH7a GLD: n=12 mean |free - OPRA| 0.090 (bar 0.25)\n"
