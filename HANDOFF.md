@@ -2397,10 +2397,14 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 - **Mon 12 Oct 16:30 UTC:** the auditor routine (58 safeguards now). **Wed 14 Oct:** the watchdog.
 - **Every weekday:** recorders 14:30 / 14:40 New York; the cloud buys OPRA for each day about two days later,
   H7's monthly legs inside their own $1.10 cap.
-- **LSEG:** student Workspace access requested by Gabriel 9 Oct; email to Marc Vinyard drafted (may derived
-  figures be published, with what credit line, how much intraday history). When access arrives: `.OVX`
-  1-minute history back to 23 Sep. Its use: the timing part of the replica's 0.29 residual. Nothing
-  LSEG-derived is published before Marc answers.
+- **LSEG - Marc Vinyard answered 9 Oct:** "Summary statistics are fine as long as you don't share raw
+  data." Credit line: **"Data source: LSEG Workspace."** History limits on his account: 1-minute
+  intraday only 3 days back; 30-minute bars about 30 days back (Bloomberg's academic account has no
+  1-minute history). So the 30-minute .OVX/.GVZ bars covering H5e's window (from 23 Sep) must be pulled
+  **before about 20 Oct**, when 23 Sep leaves the 30-day window. Raw bars stay in ~/Documents/volrec-lseg,
+  never in this repository. Its use is exploratory: how much of the replica's 0.29 residual is the move
+  between snapshot and close. 30-minute bars bracket the 14:30-14:41 snapshot rather than hitting it,
+  and that limit is stated with any figure. A timing hypothesis, if any, goes through PROTOCOL.md first.
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
