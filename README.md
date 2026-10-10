@@ -114,14 +114,15 @@ vol, and jumps, and sweeps rebalance frequency to find where net profit peaks.
   low single-digit share of volume, so its close is not the official closing
   print, and its free history is both shallower and ragged.
 - **Snapshot timing**: one reading per day, so intraday volatility is
-  invisible. The cron fires at 14:47 UTC but GitHub delays scheduled runs three
-  to four hours, so the snapshot actually lands around 18:00-19:20 UTC. The cron
-  is fixed in UTC and the US session is not: it runs 13:30-20:00 UTC under
-  daylight saving and 14:30-21:00 once that ends on 1 November 2026, so
-  snapshots from November onward sit an hour earlier in the session than those
-  before them. Worth controlling for, since implied vol is not flat across the
-  trading day. `tools/panel_health.py` fails if a snapshot ever lands outside
-  the session on the day it was taken.
+  invisible. Since 9 Oct 2026 an outside trigger (cron-job.org, set in New York
+  time) starts the recorder at 14:30 New York (11:30 on NYSE early-close days),
+  so the snapshot lands about 14:30-14:41 New York all year and the 1 November
+  clock change does not move it within the session. Before that, GitHub's cron
+  fired at 14:47 UTC and ran three to seven hours late, so September's snapshots
+  sit later and more scattered in the session; `pressure_test.py` warns while
+  the last ten days span more than an hour. GitHub's cron stays as a backup and
+  exits without recording if it fires before the trigger's slot.
+  `tools/panel_health.py` fails if a snapshot ever lands outside the session.
 - **Expiry drift**: MDY and FXE lack weekly options and fall back to ~42-day
   expiries. The `dte` column records this so it can be controlled for.
 - **Wide quotes on FXE and XLU**: on day one FXE quoted 0.63/1.27 and XLU
@@ -138,6 +139,24 @@ vol, and jumps, and sweeps rebalance frequency to find where net profit peaks.
   IV also approximates the *volatility* swap rate rather than the model-free
   variance swap rate that VIX-style measures use — which understates the
   premium, and understates it more for index ETFs than for single names.
+
+## Data availability and terms of use
+
+Checked against each provider's own terms on 10 Oct 2026 (HANDOFF 18 has the
+clauses). Code and derived results are published; licensed raw data is not.
+
+| Source | What this project uses | What is in this repository | Terms, and status |
+|---|---|---|---|
+| Alpaca Markets (free Basic plan) | indicative option quotes, IEX/SIP stock bars | the daily snapshots in `data/` | Alpaca's Terms and Conditions require written consent to republish Content; consent requested 9 Oct 2026, answer pending |
+| Cboe Global Markets | daily index closes, read at run time from Cboe's public files; methodology documents | none (cached locally, git-ignored) | website terms require consent to use Materials "to verify or correct other data"; request to permissions@cboe.com drafted 10 Oct 2026 |
+| FRED, Federal Reserve Bank of St. Louis | DGS1MO; Cboe series reprinted with permission (EVZCLS, VXXLECLS, VIXCLS) | none (cached locally, git-ignored) | non-commercial educational use permitted with citation; copyrighted series keep Cboe's notice |
+| Databento (OPRA consolidated quotes) | one-minute NBBO, historical, for checks | none; derived aggregates only | OPRA's terms pass through; credited "Data provided by Databento" |
+| Bloomberg (Pepperdine terminal) | four days of option quotes for checks | none; derived aggregates only | library terms: derived figures with "Source: Bloomberg Finance L.P.", raw data never in an open repository |
+| LSEG Workspace (Pepperdine) | intraday index bars, if pulled | none; summary statistics only | library terms: summary statistics with "Data source: LSEG Workspace.", raw data never shared |
+
+This product uses the FRED® API but is not endorsed or certified by the Federal
+Reserve Bank of St. Louis. Use of FRED data is subject to the
+[FRED® API Terms of Use](https://fred.stlouisfed.org/docs/api/terms_of_use.html).
 
 ## Two samples, one codebase
 

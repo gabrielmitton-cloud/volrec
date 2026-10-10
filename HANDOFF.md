@@ -2430,6 +2430,41 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
     register by 23 Oct for $90); the consent email sent to Alpaca (record its reply verbatim here). Next:
     ask Professor Connie James to be faculty sponsor (email drafted 10 Oct, DESIGN-MEMO.md attached);
     an OSF account (Gabriel creates it) to freeze H5e/H7 registrations before 11 Nov.
+- **Terms audit, 10 Oct** (every source, read at the provider's own page; README "Data availability
+  and terms of use" is the public summary):
+  - *Alpaca* (TermsAndConditions.pdf): personal, non-commercial use; no republishing without written
+    consent; a "User Application" serving Content to others needs 30 days' written notice. The public
+    `data/` snapshots are the exposure. Consent asked 9 Oct; **if Alpaca says no**: stop committing raw
+    quotes to the public repo (recorders write them to the private volrec-licensed instead; the site and
+    hypotheses keep derived figures), and history is Gabriel's call - never rewritten without him.
+    Public Actions logs print no quotes (checked). Worst realistic case of doing nothing: Alpaca ends
+    API access, which would stop the recorder - the reason to ask rather than wait.
+  - *Cboe* (cboe.com/terms, updated 16 Nov 2022): Materials may be downloaded "for your personal
+    non-commercial use"; using them "to verify or correct other data or information" needs prior
+    written consent, "except to the extent that such use constitutes fair use". Our design is that use.
+    Request drafted for permissions@cboe.com (cboe.com/use-of-content; approval means signing a licence
+    agreement). Fallback if refused: FRED's reprints of the same series (below), which Cboe licensed to
+    FRED; values agree with Cboe's files (EVZ: 2,166 days). Switching a registered verdict's source would
+    be a logged before-output change.
+  - *FRED* (legal page and API terms): non-commercial educational use of Cboe-copyrighted series is
+    allowed without pre-approval, with citation and Cboe's notice kept. The API terms REQUIRE the notice
+    "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of
+    St. Louis." - it was missing; now on the README and the site, guarded by the pressure test and an
+    auditor mutant. FRED also prohibits using its content "in connection with the development or training
+    of" AI systems. The TimesFM benchmark only evaluated a pretrained model zero-shot (no training, no
+    development) on VIXCLS - outside the clause's plain words, but close to it: any re-run or extension of
+    `analysis/` on FRED data is a discussion with Gabriel first.
+  - *Databento/OPRA*: Databento passes through each publisher's licence; OPRA requires a vendor agreement
+    to redistribute raw quotes, so aggregates only, credited "Data provided by Databento" (unchanged,
+    already guarded). Raw files in the private volrec-licensed repo are internal use.
+  - *Bloomberg* (library, 17 Sep) and *LSEG* (Marc Vinyard, 9 Oct): derived figures only, with their
+    credit lines. `volrec-lseg/` is now git-ignored and a tracked CSV with LSEG field names fails the
+    pressure test (auditor mutants for both).
+  - *GitHub, cron-job.org, Google Fonts*: nothing in their terms touches a scheduled public research
+    recorder at this volume. No IRB question: no human subjects.
+  - *Not done, and why*: no code licence file (a LICENSE is Gabriel's choice; without one the code is
+    readable but not reusable - suggested MIT for code only, data excluded); no Zenodo archive (it would
+    mirror Alpaca's data before consent).
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.

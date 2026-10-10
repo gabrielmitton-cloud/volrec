@@ -38,6 +38,7 @@ pandas, numpy and torch. The pipeline itself stays stdlib + `requests`, and
 - Pre-registered pass bar: TimesFM must cut log-RMSE by at least 5% vs HAR AND beat HAR on at least 55% of origins. Never change the bar, horizon, start date, or metrics after seeing results. A FAIL is reported as a negative result in the Feb 2027 write-up.
 - Never fit or evaluate any forecaster on data/iv_history.csv alone. The live panel has too few independent episodes. Follow the guardrails in volrec-data-layer-brief.md.
 - Never change the recorder's ticker universe. It's frozen.
+- FRED's terms (read 10 Oct 2026) prohibit using FRED content "in connection with the development or training of" AI systems. The finished zero-shot benchmark sits outside the plain words; do not re-run or extend it on FRED data without asking Gabriel first.
 
 ### Vibe-Trading MCP
 - Research tools only: get_market_data, get_options_chain, analyze_options, analyze_options_payoff, backtest, quantlib_call, technical_indicators, get_macro_series.

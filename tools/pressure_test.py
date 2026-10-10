@@ -1092,6 +1092,24 @@ ok("*.pdf" in _gi and not [f for f in subprocess.run(["git", "ls-files"], cwd=R,
                                                      text=True).stdout.split() if f.lower().endswith(".pdf")],
    ".gitignore blocks PDFs and none is tracked (licensed papers stay outside the repo)")
 
+# 10 Oct 2026, the terms audit. LSEG exports stay in ~/Documents/volrec-lseg (library terms:
+# summary statistics only), and FRED's API terms require their notice on the product.
+ok("volrec-lseg/" in _gi, ".gitignore blocks the LSEG export folder by name")
+_LSEG_FIELDS = ("TRDPRC_1", "OPEN_PRC", "HIGH_1", "LOW_1", "HST_CLOSE")
+_lseg_like = []
+for _f in subprocess.run(["git", "ls-files", "*.csv"], cwd=R, capture_output=True, text=True).stdout.split():
+    try:
+        _head = (R / _f).open(encoding="utf-8", errors="ignore").readline()
+    except OSError:
+        continue
+    if any(fld in _head for fld in _LSEG_FIELDS):
+        _lseg_like.append(_f)
+ok(not _lseg_like, "no tracked CSV carries LSEG's field names (raw LSEG data stays outside the repo)"
+   + (f" (found {', '.join(_lseg_like[:4])})" if _lseg_like else ""))
+_FRED_NOTICE = "This product uses the FRED® API but is not endorsed or certified by the Federal"
+ok(_FRED_NOTICE in (R / "README.md").read_text() and _FRED_NOTICE in (R / "index.html").read_text(),
+   "README and the site carry the notice FRED's API terms require")
+
 print("\n=== M. REGISTERED CONSTANTS, ZERO-BID SEMANTICS, OPERATIONS TOOLS ===")
 # A pre-registered bar that can be edited without anything noticing is not a bar.
 ok(_mfm.PREDICTED_LIFT == {"USO": (1.4, 3.2)} and _mfm.NULL_LIFT_MAX == 0.3

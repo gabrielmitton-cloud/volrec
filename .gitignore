@@ -44,3 +44,8 @@ volrec-databento/
 # this repository. On 23 Sep 2026 one landed in the repo root, uncommitted.
 *.pdf
 volrec-papers/
+
+# LSEG Workspace exports (Pepperdine library terms, 9 Oct 2026: summary statistics may be
+# published with "Data source: LSEG Workspace."; raw data may not be shared). They live in
+# ~/Documents/volrec-lseg, OUTSIDE this repository.
+volrec-lseg/

@@ -80,7 +80,9 @@ Data already seen is a pilot (added 10 Oct). A new bar applies only to days not 
 when it is committed; list in the file every series and date range already looked at. A git
 commit's date is set by the committer's own machine, so for anything in the paper also freeze
 the registration somewhere independent: an OSF registration (the "Preregistration Template for
-Secondary Data Analysis", van den Akker et al. 2021) or a Zenodo DOI of a tagged release.
+Secondary Data Analysis", van den Akker et al. 2021) of the hypothesis files only. Not a
+Zenodo archive of the whole repository while Alpaca's consent is pending: Zenodo would mirror
+the free feed's raw snapshots in `data/`, which Alpaca's terms forbid republishing without it.
 Deviations follow Lakens (2024); the three-strikes rule is ours, stricter than any published
 norm, and the paper says so.
 
