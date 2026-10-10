@@ -2473,6 +2473,11 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   says about five business days); if nothing by **Mon 19 Oct**, one polite follow-up. **MIT licence
   added 10 Oct** (Gabriel's choice): code and documentation only; README's "Licence" paragraph excludes
   every third-party dataset.
+- **OSF, 10 Oct:** Gabriel's account works. `OSF-REGISTRATION.md` holds every field for the "Secondary
+  Data Analysis" template, freezing H5e and H7 as committed (ac237a6, 1d1bef7; repository at 8d3a555),
+  disclosing what was seen first. When Gabriel sends the registration link: add it to both hypothesis
+  files, here, and PAPER-OUTLINE appendix A. **LSEG:** Gabriel requested Pepperdine's student Workspace
+  access 10 Oct - the right route; his credentials stay his.
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
