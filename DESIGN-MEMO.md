@@ -56,6 +56,7 @@ checked against the authoritative number, day by day.
    Finance (late May) and the IAES undergraduate award (June). Would you be willing to act as
    faculty sponsor, which most of them require?
 5. What would you check first if you were refereeing it?
-6. Alpaca's terms forbid republishing its data without written consent, and Cboe's index
-   disclaimers restrict using index values "to verify or correct other data". I am asking both
-   in writing. Is that the right way to handle it for a public replication package?
+6. Alpaca's terms forbid republishing its data without written consent, and Cboe's terms restrict
+   using index values "to verify or correct other data". I asked both in writing: Alpaca agreed
+   (10 Oct) provided the use stays personal and non-commercial; Cboe's reply is pending. Is that
+   the right way to handle it for a public replication package?

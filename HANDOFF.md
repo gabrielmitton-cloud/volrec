@@ -2465,6 +2465,14 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   - *Not done, and why*: no code licence file (a LICENSE is Gabriel's choice; without one the code is
     readable but not reusable - suggested MIT for code only, data excluded); no Zenodo archive (it would
     mirror Alpaca's data before consent).
+- **Alpaca answered 10 Oct** (Ben, AlpacaDB, Inc., 11:44 EDT), verbatim: "Provided that your market
+  data usage remains solely for your own personal/retail use, you are free to use the package as you
+  please." Read as consent to keep the snapshots public for this non-commercial research, on that
+  condition: nothing in this project may be sold, licensed for a fee, or built into a commercial
+  service. The site and README now say so. **Cboe request sent 10 Oct** to permissions@cboe.com (Cboe
+  says about five business days); if nothing by **Mon 19 Oct**, one polite follow-up. **MIT licence
+  added 10 Oct** (Gabriel's choice): code and documentation only; README's "Licence" paragraph excludes
+  every third-party dataset.
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
