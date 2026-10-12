@@ -148,5 +148,24 @@ P45 = black76("P", 100.0, 100.0, 45 / 365.0, 0.05, 0.20)
 check(f"Santa-Clara & Saretto: ATM 45-day put, S=100, 20% vol, 5% rate -> $17.80 ({mg.short_put(P45, 100.0, 100.0, 0.15, 0.10):.2f})",
       abs(mg.short_put(P45, 100.0, 100.0, 0.15, 0.10) - 17.80) < 0.03)
 
+fl = load("fetch_lab")
+print("\n=== fetch_lab (no network) ===")
+check("registered cap, tag and dates", (fl.LAB_BUDGET_USD, fl.LAB_TAG, fl.LAB_START, fl.LAB_END)
+      == (75.00, "-lab", "2015-08-01", "2026-08-31"))
+check("31 Aug 2026 is allowed, 1 Sep 2026 is not", fl.date_ok("2026-08-31") and not fl.date_ok("2026-09-01"))
+check("1 Aug 2015 is allowed, 31 Jul 2015 is not", fl.date_ok("2015-08-01") and not fl.date_ok("2015-07-31"))
+check("H7's window (9 Oct 2026) is refused", not fl.date_ok("2026-10-09"))
+check("14:30 New York in winter is 19:30 UTC (5 Feb 2018)",
+      fl.ny_minute("2018-02-05").isoformat() == "2018-02-05T19:30:00+00:00")
+check("14:30 New York in summer is 18:30 UTC (5 Aug 2024)",
+      fl.ny_minute("2024-08-05").isoformat() == "2024-08-05T18:30:00+00:00")
+check("file stem", fl.lab_stem("SPY", "2018-02-05", "14:30") == "OPRA_LAB_SPY_2018-02-05_1430")
+rows = [{"symbol": "SPY", "usd": "0.50"}, {"symbol": "SPY-h8", "usd": "0.25"}, {"symbol": "USO-lab", "usd": "1.25"}]
+check("lifetime spend counts every row", abs(fl.spent_all(rows) - 2.00) < 1e-12)
+check("lab spend counts only -lab rows", abs(fl.spent_lab(rows) - 1.25) < 1e-12)
+check("within the lab cap", fl.lab_budget_ok(0.20, 74.70)[0])
+check("over the lab cap is refused", not fl.lab_budget_ok(0.20, 74.90)[0])
+check("the lab's data folder is outside the public repo", not ore.inside_repo(fl.LAB_DIR))
+
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)
