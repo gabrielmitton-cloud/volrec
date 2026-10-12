@@ -62,3 +62,6 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
 
 ## Log (dated; marked before or after any lab data)
 - 2026-10-12, before any data: registered.
+- 2026-10-12, before any data: the +/-10% and +/-5% band edges made inclusive (a 1e-9 allowance);
+  float rounding had put strike 110 outside +/-10% of a forward of exactly 100. Caught by the
+  known-answer tests; no threshold changed.
