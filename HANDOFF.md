@@ -2561,6 +2561,18 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   underlying at expiry) every month 2016-2026 for about $6-10, crash months measured rather than modelled;
   verify one old day's completeness first (~$0.04). The synthetic variance swap on Cboe indices stays as a
   cross-check. Nothing goes on the public site until Cboe's permission reply.
+  **12 Oct, later:** Santa-Clara & Saretto read in full; spec written and revised
+  (`docs/superpowers/specs/2026-10-12-retail-vrp-audit-design.md`, rev 2: the Leak Map, the Break-Even
+  VIX, $75 own cap, lab dates end 31 Aug 2026). Next: the build plan, then build. **Flags raised for the
+  main project, awaiting Gabriel:** (1) H8-DRAFT's spread yardstick used the FREE feed's ATM half-spreads;
+  OPRA's are narrower (pilot medians, vol points, free / OPRA: SPY 0.070 / 0.034, QQQ 0.086 / 0.066,
+  IWM 0.130 / 0.102, GLD 0.309 / 0.315, USO 1.366 / 1.331, TSLA 0.371 / 0.305, NVDA 0.288 / 0.280,
+  AAPL 0.416 / 0.420), so "0.10 is about one SPY half-spread" should read about three; the noise-floor
+  reason still holds. (2) Pilot mechanism for H8's lean: at the quote-time match the free bid sits on
+  OPRA's bid while the free ask sits higher on SPY/QQQ/IWM (+0.09 to +0.14 points ATM). (3) README and
+  H3's text say "same underlying" for SPY/VIX, QQQ/VXN, IWM/RVX; those indices are built on SPX/NDX/RUT
+  options (H1 says so; H3 and the README do not). (4) The Cboe follow-up (19 Oct) should also cover the
+  lab's published aggregates.
 - **Alpaca's own description of the free feed, checked at source 12 Oct:** docs: "a free derivative of the
   original OPRA feed", "the quotes are not actual OPRA quotes"; staff on the forum (Dan_Whitnable_Alpaca,
   t/17795): "randomized a bit" (12 Sep 2025), "can vary from the actual `opra` data" (1 Feb 2026). Added
