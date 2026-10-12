@@ -126,5 +126,27 @@ thin = {k: v for k, v in ch.items() if 97 <= k <= 103}
 check("fewer than 10 strikes in the band fails completeness", not integ.check_chain(thin)[1]["complete"][0])
 check("an empty chain fails", integ.check_chain({})[0] is False)
 
+mg = load("margin")
+print("\n=== margin (Cboe Margin Manual, 30 Nov 2021, worked examples) ===")
+check("registered rates", mg.RATES == {"SPY": (0.15, 0.10), "QQQ": (0.15, 0.10), "IWM": (0.15, 0.10),
+                                       "GLD": (0.20, 0.10), "USO": (0.20, 0.10)} and mg.BROKER == (0.40, 0.35))
+check("short Sep 80 put at 2, underlying 95, 20%/10%: $1,000.00",
+      abs(mg.short_put(2.00, 95.0, 80.0, 0.20, 0.10) * 100 - 1000.00) < 0.005)
+check("short Jan 20 put at 1.50, underlying 19.50: $540.00",
+      abs(mg.short_put(1.50, 19.50, 20.0, 0.20, 0.10) * 100 - 540.00) < 0.005)
+check("short Oct 410 put at .10, broad index 445.35, 15%/10%: $4,110.00",
+      abs(mg.short_put(0.10, 445.35, 410.0, 0.15, 0.10) * 100 - 4110.00) < 0.005)
+check("short Nov 120 call at 8.40, underlying 128.50: $3,410.00",
+      abs(mg.short_call(8.40, 128.50, 120.0, 0.20, 0.10) * 100 - 3410.00) < 0.005)
+check("short Feb 30 call at .05, underlying 26.38: $268.80",
+      abs(mg.short_call(0.05, 26.38, 30.0, 0.20, 0.10) * 100 - 268.80) < 0.005)
+check("short Dec 90 call at 7 + put at 3.70, underlying 92.63: $2,922.60",
+      abs(mg.short_straddle(7.00, 3.70, 92.63, 90.0, 90.0, 0.20, 0.10) * 100 - 2922.60) < 0.005)
+check("short Nov 435 put at 7.20 + call at 5.50, broad index 433.35: $7,770.25",
+      abs(mg.short_straddle(5.50, 7.20, 433.35, 435.0, 435.0, 0.15, 0.10) * 100 - 7770.25) < 0.005)
+P45 = black76("P", 100.0, 100.0, 45 / 365.0, 0.05, 0.20)
+check(f"Santa-Clara & Saretto: ATM 45-day put, S=100, 20% vol, 5% rate -> $17.80 ({mg.short_put(P45, 100.0, 100.0, 0.15, 0.10):.2f})",
+      abs(mg.short_put(P45, 100.0, 100.0, 0.15, 0.10) - 17.80) < 0.03)
+
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)
