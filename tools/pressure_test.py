@@ -422,6 +422,21 @@ _t8 = _sp.run([sys.executable, str(R / "tools/test_h8.py")], capture_output=True
 _n8f = sum(1 for _ln in _t8.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _n8p = sum(1 for _ln in _t8.stdout.splitlines() if _ln.strip().startswith("PASS"))
 ok(_t8.returncode == 0 and _n8f == 0 and _n8p >= 26, f"H8's instrument tests pass ({_n8p} cases, {_n8f} failures)")
+# lab/ (EXPLORATORY side project, 12 Oct 2026): known answers for costs, integrity and margin; its
+# own purchase cap; its dates (never inside a registered window); its data folder outside this repo.
+_tl = _sp.run([sys.executable, str(R / "lab/test_lab.py")], capture_output=True, text=True)
+_nlf = sum(1 for _ln in _tl.stdout.splitlines() if _ln.strip().startswith("FAIL"))
+_nlp = sum(1 for _ln in _tl.stdout.splitlines() if _ln.strip().startswith("PASS"))
+ok(_tl.returncode == 0 and _nlf == 0 and _nlp >= 49, f"lab/ tests pass ({_nlp} cases, {_nlf} failures)")
+_fls = _iu.spec_from_file_location("fetch_lab", R / "lab/fetch_lab.py")
+_flm = _iu.module_from_spec(_fls)
+_fls.loader.exec_module(_flm)
+ok(_flm.lab_budget_ok(0.20, 74.70)[0] and not _flm.lab_budget_ok(0.20, 74.90)[0] and _flm.LAB_BUDGET_USD == 75.00,
+   "lab/ OPRA purchases stop at their own $75 cap")
+ok(_flm.date_ok("2026-08-31") and not _flm.date_ok("2026-09-01") and not _flm.date_ok("2015-07-31")
+   and (_flm.LAB_START, _flm.LAB_END) == ("2015-08-01", "2026-08-31"),
+   "lab/ purchases refused outside 1 Aug 2015 - 31 Aug 2026 (clear of every registered window)")
+ok(not _flm.ore.inside_repo(_flm.LAB_DIR), "lab/ OPRA files live outside this repository")
 _rv7 = _iu.module_from_spec(_iu.spec_from_file_location("rv7", R / "tools/record_verdict.py"))
 _iu.spec_from_file_location("rv7", R / "tools/record_verdict.py").loader.exec_module(_rv7)
 _o7 = ("H7a USO: n=12 mean |free - OPRA| 0.180 (bar 0.25)\nH7a GLD: n=12 mean |free - OPRA| 0.090 (bar 0.25)\n"
