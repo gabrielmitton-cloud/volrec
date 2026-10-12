@@ -213,7 +213,13 @@ those strikes and discarding all but one.
 authoritative model-free volatility index for five of those underlyings
 (SPY/VIX, QQQ/VXN, IWM/RVX, GLD/GVZ, USO/OVX). So a model-free estimate built
 from a *free, indicative, non-OPRA* feed can be checked against the
-authoritative number, same underlying, same day. Nobody with a research budget
+authoritative number on the same day. For GLD/GVZ and USO/OVX it is the same
+underlying: Cboe builds those indices from GLD's and USO's own options. VIX,
+VXN and RVX are built from *index* options (SPX, NDX, RUT), while the free feed
+records the tracking funds' options (SPY, QQQ, IWM), so on those three pairs
+the gap also carries the small difference between an index and the fund that
+tracks it (dividends, settlement style, a different set of listed options).
+Nobody with a research budget
 measures what free data costs, because they buy OptionMetrics instead.
 
 Calibrated 11 September 2026, implementing Cboe's own methodology:

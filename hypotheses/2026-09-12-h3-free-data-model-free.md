@@ -1008,3 +1008,12 @@ that data, not as a discovery. H3c stays registered exactly as written.
   1.4-3.2 either way). Dropping it flatters H3a very slightly, the opposite of its effect
   on H5e; the rule, not the direction, decided it. The rows stay in the CSVs
   (`panel_health.AFTER_CLOSE_DAYS`). No bar, band, window or estimator changed.
+- **2026-10-12 — a wording clarification, not a change.** "Why this hypothesis exists" says the
+  free estimate is checked against Cboe's index "on the same underlying". That holds for GLD/GVZ and
+  USO/OVX, which Cboe builds from GLD's and USO's own options. It does not hold exactly for
+  SPY/VIX, QQQ/VXN and IWM/RVX: Cboe builds those from index options (SPX, NDX, RUT), and this
+  project records the tracking funds' options. So on those three pairs H3's gap also carries the
+  index-versus-fund difference (dividends, settlement style, a different set of listed options).
+  H1 states the same proxy caveat ("Index vs ETF proxy"); the write-up states it for H3 too. No
+  bar, band, window, estimator, number or verdict changes; the registered text above is left as
+  written. Noticed while reading Cboe's methodology for the `lab/` side project.

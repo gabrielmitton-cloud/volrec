@@ -26,9 +26,13 @@ within **±Δ** volatility points, shown by two one-sided tests at 5%. Reported 
 is how many of the eight show equivalence.
 
 **Δ - to decide with Gabriel. Proposed: 0.10 points**, for these reasons, set from outside the gaps:
-- It is about one at-the-money half-spread in the tightest market here (SPY, median 0.07 points,
-  below), so a difference inside it is smaller than the cost of trading the option once.
-- It is at least twice the largest noise floor measured (USO, 0.051; the others 0.004–0.016).
+- **Corrected 12 Oct 2026.** The first draft called 0.10 "about one at-the-money half-spread in the
+  tightest market (SPY, 0.07)". That 0.07 was the FREE feed's half-spread. On OPRA, the real market,
+  SPY's is 0.034 (below), so 0.10 is about three real SPY half-spreads, about one in IWM (0.102),
+  and less than one in GLD, USO, TSLA, NVDA and AAPL. The trading-cost reason therefore supports
+  0.10 for the less liquid funds only; for SPY and QQQ it is a looser bar than first stated.
+- It is at least twice the largest noise floor measured (USO, 0.051; the others 0.004–0.016). This
+  reason is unchanged.
 - The alternative, ±0.25, would pass trivially on the pilot (every fund's mean |gap| is under 0.10)
   and so would test little. **Stated plainly:** the pilot shows a small positive lean (free reads
   high on 7 of 8 funds, +0.01 to +0.09), so at ±0.10 some funds, IWM above all, may genuinely
@@ -53,9 +57,24 @@ is how many of the eight show equivalence.
 OPRA against itself one minute later, same contracts, registered estimator (mean |S1n − S1b|),
 calibration 17 Sep – 8 Oct: SPY 0.010, QQQ 0.009, IWM 0.007, GLD 0.004, USO 0.051, TSLA 0.015,
 NVDA 0.014, AAPL 0.016 points. At Δ = 0.10 the bar is 2× the largest floor and 6–25× the rest.
-Practical yardstick, the free feed's median at-the-money (±2%, 20–45 days) half-spread in volatility
-points (half-spread / vega): SPY 0.07, QQQ 0.09, IWM 0.13, NVDA 0.28, GLD 0.30, TSLA 0.37, AAPL 0.41,
-USO 1.42.
+Practical yardstick: the median at-the-money (±2%, 20–45 days) half-spread in volatility points
+(half-spread / vega, the free feed's vega for both columns so only the quote source differs), at
+the snapshot minute, 17 Sep – 9 Oct. **OPRA (the real market) / the free feed:**
+
+| Fund | OPRA | free | free ÷ OPRA | contracts |
+|---|---|---|---|---|
+| SPY | 0.034 | 0.070 | 2.07 | 916 |
+| QQQ | 0.066 | 0.086 | 1.31 | 894 |
+| IWM | 0.102 | 0.130 | 1.27 | 586 |
+| GLD | 0.315 | 0.309 | 0.98 | 758 |
+| USO | 1.331 | 1.366 | 1.03 | 458 |
+| TSLA | 0.305 | 0.371 | 1.22 | 254 |
+| NVDA | 0.280 | 0.288 | 1.03 | 170 |
+| AAPL | 0.420 | 0.416 | 0.99 | 264 |
+
+The yardstick is OPRA's column. The first draft (10 Oct) quoted the free column on 17 Sep – 8 Oct
+(USO then 1.42); it overstated SPY's real half-spread about twofold. *Data provided by Databento
+(OPRA consolidated NBBO). Aggregates only.*
 
 ## Smallest detectable effect [required]
 Calibration (S0m − S1, 14–16 days): day-to-day sd 0.011–0.052, ρ between −0.34 and +0.23, n_eff 9–16;
@@ -69,8 +88,33 @@ Mean free − OPRA at the snapshot minute / mean |gap|, points: SPY +0.055 / 0.0
 NVDA +0.078 / 0.078; AAPL +0.013 / 0.021. 97–100% of band contracts matched.
 *Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
 
+**Where the lean comes from (pilot, 12 Oct 2026; exploratory, already seen).** At-the-money
+(±2%, 20–45 days), each free quote matched to OPRA at the free quote's own time (within 120 s),
+median free − OPRA in volatility points (difference / vega), bid / ask / mid:
+
+| Fund | bid | ask | mid | contracts |
+|---|---|---|---|---|
+| SPY | +0.000 | +0.094 | +0.044 | 916 |
+| QQQ | +0.012 | +0.136 | +0.060 | 894 |
+| IWM | +0.000 | +0.144 | +0.075 | 586 |
+| GLD | +0.046 | +0.049 | +0.023 | 758 |
+| USO | −0.121 | +0.109 | −0.029 | 458 |
+| TSLA | −0.100 | +0.168 | −0.013 | 254 |
+| NVDA | +0.111 | +0.235 | +0.141 | 170 |
+| AAPL | +0.049 | +0.037 | +0.014 | 264 |
+
+Read plainly: on SPY, QQQ and IWM the free bid sits on OPRA's bid while the free ask sits higher,
+so the free mid, and with it the volatility estimate, reads high. On USO and TSLA the free quote is
+wider on both sides, roughly symmetrically, so the mid barely moves. On NVDA both sides sit higher.
+Medians at the money only, on about three weeks: a mechanism to name in the registration as a
+secondary, descriptive reading, not a result.
+*Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
+
 ## Still to decide with Gabriel (after 19 Nov)
-1. Δ (proposed 0.10).
+1. Δ (proposed 0.10; its trading-cost reason was corrected on 12 Oct and now holds only for the
+   less liquid funds, while the noise-floor reason stands).
 2. The lag and the critical values.
 3. Whether the headline is "all eight" or "how many of eight" (proposed: report each, headline the count).
 4. The minimum days per fund (proposed 30 of about 40).
+5. Whether to name the bid / ask / mid breakdown above as a secondary, descriptive reading of the
+   window (proposed: yes; it explains the lean without changing the test).

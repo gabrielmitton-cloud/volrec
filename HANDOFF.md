@@ -2473,7 +2473,9 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   please." Read as consent to keep the snapshots public for this non-commercial research, on that
   condition: nothing in this project may be sold, licensed for a fee, or built into a commercial
   service. The site and README now say so. **Cboe request sent 10 Oct** to permissions@cboe.com (Cboe
-  says about five business days); if nothing by **Mon 19 Oct**, one polite follow-up. **MIT licence
+  says about five business days); if nothing by **Mon 19 Oct**, one polite follow-up, which also asks
+  to cover the `lab/` side project's published aggregates (backtest statistics built from index closes;
+  no index data republished) so one permission covers both (Gabriel 12 Oct). **MIT licence
   added 10 Oct** (Gabriel's choice): code and documentation only; README's "Licence" paragraph excludes
   every third-party dataset.
 - **OSF, 10 Oct:** Gabriel's account works. `OSF-REGISTRATION.md` holds every field for the "Secondary
@@ -2573,6 +2575,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   H3's text say "same underlying" for SPY/VIX, QQQ/VXN, IWM/RVX; those indices are built on SPX/NDX/RUT
   options (H1 says so; H3 and the README do not). (4) The Cboe follow-up (19 Oct) should also cover the
   lab's published aggregates.
+  **Done 12 Oct (Gabriel's yes):** (1)+(2) in H8-DRAFT (OPRA yardstick table, the corrected Δ reason,
+  the bid/ask/mid pilot table, open choice 5); (3) README's measurement paragraph, a dated clarification
+  at the end of H3's adjustment log (no number or verdict touched), and a PAPER-OUTLINE limitations line;
+  (4) the 19 Oct Cboe follow-up note above.
 - **Alpaca's own description of the free feed, checked at source 12 Oct:** docs: "a free derivative of the
   original OPRA feed", "the quotes are not actual OPRA quotes"; staff on the forum (Dan_Whitnable_Alpaca,
   t/17795): "randomized a bit" (12 Sep 2025), "can vary from the actual `opra` data" (1 Feb 2026). Added

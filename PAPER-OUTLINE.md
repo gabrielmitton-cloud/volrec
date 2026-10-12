@@ -95,7 +95,12 @@ observations (n_eff reported for every series); the step order of the decomposit
 orderings the data allows, and their range); Cboe's methodology breaks inside the ten-year
 validation sample (PROTOCOL.md lists them); the snapshot's time of day changed inside H5e's and
 H7's windows (GitHub's delayed cron until 30 Sep, the 14:30 New York trigger since), so a
-before/after split is reported beside the pooled figure. These belong in the
+before/after split is reported beside the pooled figure; VIX, VXN and RVX are built from index
+options (SPX, NDX, RUT) while the free feed records the funds' options (SPY, QQQ, IWM), so H3's gaps
+on those three pairs include the index-versus-fund difference (GVZ and OVX are built from GLD's and
+USO's own options, so H5e and H7 are like for like); the free feed's quoted spreads are wider than
+OPRA's on the liquid funds (SPY about twice), so any trading-cost yardstick comes from OPRA, never
+from the free quotes. These belong in the
 paper's main text, not a footnote.
 
 **7. Conclusion (0.5 page).** What a researcher with no budget can trust, and what to fix first.
