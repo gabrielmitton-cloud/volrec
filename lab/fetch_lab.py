@@ -24,9 +24,10 @@ sys.path[:0] = [str(ROOT), str(ROOT / "tools")]
 os.environ.setdefault("FRED_KEY", "use-cache")
 import opra_reference as ore               # noqa: E402
 
-LAB_BUDGET_USD = 75.00
+LAB_BUDGET_USD = 90.00                     # $75 at registration; $90 on 12 Oct to cover OPRA listings
 LAB_START, LAB_END = "2015-08-01", "2026-08-31"
 LAB_TAG = "-lab"
+DEF_TAG = "-def-lab"                       # listings rows; ends in LAB_TAG, so the lab cap counts them
 PRIVATE = Path(os.environ.get("VOLREC_LICENSED_DIR") or Path.home() / "Documents" / "volrec-licensed")
 LAB_DIR = PRIVATE / "opra-lab"
 LEDGER = PRIVATE / "opra" / "spend.csv"
@@ -44,6 +45,10 @@ def ny_minute(day, hhmm="14:30"):
 
 def lab_stem(symbol, day, hhmm):
     return f"OPRA_LAB_{symbol}_{day}_{hhmm.replace(':', '')}"
+
+
+def def_stem(symbol, day):
+    return f"DEF_LAB_{symbol}_{day}"
 
 
 def ledger_rows():
@@ -122,6 +127,49 @@ def fetch(day, symbol, key, max_cost, dry, hhmm="14:30"):
     return cost
 
 
+def _priced_buy(params, out, day, tag, key, max_cost, dry, label):
+    """Price, check all three caps, buy, write the file and the ledger row. Returns dollars charged."""
+    if out.exists():
+        print(f"  {label}: already on disk - skipped, nothing charged")
+        return 0.0
+    cost = float(ore.call("metadata.get_cost", params, key).json())
+    rows = ledger_rows()
+    allowed, why = ore.budget_ok(cost, max_cost, spent_all(rows))
+    if allowed:
+        allowed, why = lab_budget_ok(cost, spent_lab(rows))
+    print(f"  {label}: costs ${cost:.4f}; lab spent ${spent_lab(rows):.2f} of "
+          f"${LAB_BUDGET_USD:.0f}; lifetime ${spent_all(rows):.2f}: {why}")
+    if dry or not allowed:
+        return 0.0
+    body = dict(params, encoding="csv", compression="none", pretty_px="true",
+                pretty_ts="true", map_symbols="true")
+    try:
+        r = ore.call("timeseries.get_range", body, key)
+    except ore.NotYetHistorical as e:
+        print(f"    not yet historical ({e}); nothing charged")
+        return 0.0
+    LAB_DIR.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(r.content)
+    with LEDGER.open("a", newline="") as f:
+        csv.writer(f).writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), day, tag, f"{cost:.6f}"])
+    print(f"    fetched {len(r.content):,} bytes -> {out}")
+    return cost
+
+
+def fetch_listings(day, symbol, key, max_cost, dry):
+    """OPRA's listed instruments for the whole day (Databento's definition schema): the
+    completeness check compares every listed strike in the band against the quotes."""
+    if not date_ok(day):
+        sys.exit(f"{day} is outside the lab's dates ({LAB_START} to {LAB_END}); refused")
+    d0 = datetime.fromisoformat(day).replace(tzinfo=timezone.utc)
+    params = {"dataset": ore.DATASET, "schema": "definition", "symbols": f"{symbol}.OPT",
+              "stype_in": "parent", "stype_out": "instrument_id",
+              "start": d0.strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "end": (d0 + __import__("datetime").timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")}
+    return _priced_buy(params, LAB_DIR / f"{def_stem(symbol, day)}.csv", day, symbol + DEF_TAG,
+                       key, max_cost, dry, f"{symbol} {day} listings")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--day", required=True)
@@ -135,7 +183,10 @@ def main():
         sys.exit("No Databento key (DATABENTO_API_KEY or ~/.config/volrec/databento.key)")
     if not a.dry_run:
         sync_ledger()
-    paid = [fetch(a.day, s.strip(), key, a.max_cost, a.dry_run, a.at) for s in a.symbols.split(",")]
+    paid = []
+    for s in a.symbols.split(","):
+        paid.append(fetch(a.day, s.strip(), key, a.max_cost, a.dry_run, a.at))
+        paid.append(fetch_listings(a.day, s.strip(), key, a.max_cost, a.dry_run))
     n, usd = sum(1 for p in paid if p > 0), sum(paid)
     if n:
         commit_ledger(n, usd)

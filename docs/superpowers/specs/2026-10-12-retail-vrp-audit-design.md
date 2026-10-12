@@ -83,10 +83,11 @@ Read in full from the published versions (Pepperdine library, 12 Oct 2026; PDFs 
   dated after 31 Aug 2026; the one earlier purchase is August 2015's daily marks, for a crash
   replay only. This keeps every lab purchase and reading clear of every registered window: H5e from
   23 Sep, H7 from 9 Oct, H8 from 1 Dec 2026.
-- **Budget: own cap $75** (`LAB_BUDGET_USD`; Gabriel 12 Oct: it can rise further).
+- **Budget: own cap $90** (`LAB_BUDGET_USD`; $75 at first, raised 12 Oct to cover OPRA listings at
+  about $0.024 a day; Gabriel: it can rise further).
   - Every request is priced first with `metadata.get_cost`, and nothing already on disk is bought
     twice.
-  - Expected spend, about $50 in all:
+  - Expected spend, about $70 in all (listings about $20 of it):
     - one test day, about $0.04;
     - about 128 monthly entry days, about $7;
     - about 555 weekly cost samples (Wednesdays), about $33;
@@ -96,7 +97,8 @@ Read in full from the published versions (Pepperdine library, 12 Oct 2026; PDFs 
     $63, inside the $100 lifetime cap. If the lifetime cap ever binds, Gabriel is asked before it is
     raised.
 - **Integrity first: the test day, 5 Feb 2018, for the five funds.** It must pass all three checks:
-  - every listed monthly strike within ±10% of spot quoted;
+  - every strike OPRA lists for the expiry within ±10% of the forward quoted on both sides
+    (OPRA's listings bought with each day; amended 12 Oct after the test day, see the registration);
   - spreads positive and below the option's price;
   - put-call parity on the ATM pair within the two half-spreads plus a dividend allowance.
 

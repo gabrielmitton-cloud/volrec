@@ -2575,6 +2575,11 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   H3's text say "same underlying" for SPY/VIX, QQQ/VXN, IWM/RVX; those indices are built on SPX/NDX/RUT
   options (H1 says so; H3 and the README do not). (4) The Cboe follow-up (19 Oct) should also cover the
   lab's published aggregates.
+  **Plan 1 built 12 Oct** (`docs/superpowers/plans/2026-10-12-lab-plan-1-foundation.md`): registration,
+  costs, integrity, Cboe margin (the manual's seven worked examples as tests), capped purchasing (own $90
+  cap, dates 1 Aug 2015 - 31 Aug 2026), 3 auditor mutants. Test day 5 Feb 2018 bought and verified: all five
+  funds pass after the completeness rule was amended (Gabriel): OPRA's own listings replace a 10-strike
+  minimum USO could never meet at $12.81. Lab spend $0.0669. Next: Plan 2 (trades, Leak Map, stress).
   **Done 12 Oct (Gabriel's yes):** (1)+(2) in H8-DRAFT (OPRA yardstick table, the corrected Δ reason,
   the bid/ask/mid pilot table, open choice 5); (3) README's measurement paragraph, a dated clarification
   at the end of H3's adjustment log (no number or verdict touched), and a PAPER-OUTLINE limitations line;

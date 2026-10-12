@@ -431,8 +431,8 @@ ok(_tl.returncode == 0 and _nlf == 0 and _nlp >= 49, f"lab/ tests pass ({_nlp} c
 _fls = _iu.spec_from_file_location("fetch_lab", R / "lab/fetch_lab.py")
 _flm = _iu.module_from_spec(_fls)
 _fls.loader.exec_module(_flm)
-ok(_flm.lab_budget_ok(0.20, 74.70)[0] and not _flm.lab_budget_ok(0.20, 74.90)[0] and _flm.LAB_BUDGET_USD == 75.00,
-   "lab/ OPRA purchases stop at their own $75 cap")
+ok(_flm.lab_budget_ok(0.20, 89.70)[0] and not _flm.lab_budget_ok(0.20, 89.90)[0] and _flm.LAB_BUDGET_USD == 90.00,
+   "lab/ OPRA purchases stop at their own $90 cap (quotes and listings)")
 ok(_flm.date_ok("2026-08-31") and not _flm.date_ok("2026-09-01") and not _flm.date_ok("2015-07-31")
    and (_flm.LAB_START, _flm.LAB_END) == ("2015-08-01", "2026-08-31"),
    "lab/ purchases refused outside 1 Aug 2015 - 31 Aug 2026 (clear of every registered window)")

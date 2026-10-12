@@ -27,14 +27,17 @@ registered hypothesis of the main project; it changes no registered file, number
   calls met from cash, liquidation at the close when cash runs out, reopen at margin <= 90% of
   wealth.
 - **Integrity, every day bought** (fails the day if any check fails):
-  1. completeness: within +/-10% of the implied forward, at least 10 strikes, and every strike
-     present in the file for that expiry has both a call and a put quoted (ask > 0) within 120 s
-     of the minute;
+  1. completeness: every strike OPRA lists for that expiry (Databento's definition schema, bought
+     with each day) within +/-10% of the implied forward has both a call and a put quoted
+     (ask > 0) within 120 s of the minute, and there are at least 3 such strikes. *(Amended
+     12 Oct 2026 AFTER the test day; was "at least 10 strikes, every strike present in the file".
+     See the log.)*
   2. sane spreads: at least 95% of those quotes have 0 <= bid <= ask and ask - bid <= max(mid,
      $0.10);
   3. put-call parity: within +/-5% of the forward, at least 90% of strikes have
      |(C_mid - P_mid + K) - median| <= (call half-spread + put half-spread) + 0.005 x forward.
-- **Budget:** lab cap $75, inside the $100 lifetime cap; priced first; never bought twice.
+- **Budget:** lab cap $90 (was $75; raised 12 Oct to cover OPRA listings), inside the $100 lifetime
+  cap; priced first; never bought twice.
 - **Leak Map:** R0 ATM straddle, 5% target weight, retail case; leaks in the order spreads,
   margin limits, forced liquidation, commissions; each leak credited its Shapley value over all
   24 orders, with the min and max across orders; cents kept per $1 undefined when the paper mean
@@ -71,3 +74,13 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   10-strike minimum: at $12.81 (before its 2020 1-for-8 reverse split) with $0.50 strikes, +/-10%
   holds 5 strikes, all two-sided, 100% sane, 100% within parity; the file carries 31 strikes,
   $3-$23. The rule is unchanged pending Gabriel's decision.
+- 2026-10-12, AFTER the test day - the completeness rule amended (Gabriel's decision). The
+  10-strike minimum measured strike DENSITY, not completeness: it could never pass a low-priced
+  fund on a $0.50 grid. Replaced by a stricter, price-independent test - every strike OPRA itself
+  lists for the expiry within +/-10% must be quoted on both sides (at least 3). It needs each day's
+  listings (~$0.024 for the five funds), so the lab cap rose from $75 to $90. No return, P&L or
+  premium had been computed, so the change cannot flatter a result. Re-run on 5 Feb 2018 with the
+  listings ($0.0241, 5 files): all five funds pass on both expiries, and every fund's file carries
+  every listed strike in the band (SPY 83/83 and 54/54, QQQ 63/63 and 33/33, IWM 58/58 and 30/30,
+  GLD 41/41 and 25/25, USO 5/5 and 5/5). Decision: the archive is sound for 2018; Plan 2 proceeds on
+  real straddles. Lab spend to date $0.0669.

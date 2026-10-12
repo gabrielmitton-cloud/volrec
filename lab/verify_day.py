@@ -32,11 +32,16 @@ def verify(day, symbols, expiries, hhmm="14:30"):
             print(f"  {sym:4s} no file on disk ({p.name})")
             out[sym] = False
             continue
+        d = fl.LAB_DIR / f"{fl.def_stem(sym, day)}.csv"
+        if not d.exists():
+            print(f"  {sym:4s} no listings file on disk ({d.name})")
+            out[sym] = False
+            continue
         opra = ore.load_opra(p)
         good = True
         for e in expiries:
             ch = integ.chain_at(opra, e, when)
-            passed, det = integ.check_chain(ch)
+            passed, det = integ.check_chain(ch, integ.listed_strikes(d, e))
             good &= passed
             F = integ.forward(ch)
             fs = f"{F:.2f}" if F else "n/a"

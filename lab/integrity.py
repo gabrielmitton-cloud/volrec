@@ -1,14 +1,17 @@
 """lab/ - integrity checks on every OPRA day the lab buys (EXPLORATORY). Thresholds are fixed in
 lab/REGISTRATION.md before any purchase. A day failing any check is not used.
 
-1. completeness: within +/-BAND of the implied forward, at least MIN_STRIKES strikes, and every
-   strike the file carries for that expiry has a call and a put quoted (ask > 0);
+1. completeness: every strike OPRA LISTS for that expiry (Databento's definition schema) within
+   +/-BAND of the implied forward has a call and a put quoted (ask > 0), and there are at least
+   MIN_LISTED of them. (Replaced a 10-strike minimum on 12 Oct 2026, after the test day: at $12.81
+   with $0.50 strikes, USO's complete 2018 chain holds 5 strikes in the band. Gabriel's decision.)
 2. sane spreads: at least SANE_SHARE of those quotes have 0 <= bid <= ask and
    ask - bid <= max(mid, $0.10);
 3. put-call parity: within +/-PARITY_BAND, at least PARITY_SHARE of strikes have
    |(C_mid - P_mid + K) - median| <= the two half-spreads + DIV_ALLOW x forward
    (American fund options: dividends and early exercise loosen parity a little).
 """
+import csv
 import re
 import statistics as st
 import sys
@@ -18,7 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT), str(ROOT / "tools")]
 import opra_reference as ore               # noqa: E402
 
-BAND, PARITY_BAND, MIN_STRIKES = 0.10, 0.05, 10
+BAND, PARITY_BAND, MIN_LISTED = 0.10, 0.05, 3
 SANE_SHARE, PARITY_SHARE, DIV_ALLOW = 0.95, 0.90, 0.005
 EDGE = 1e-9                                   # band edges are inclusive despite float rounding
 OSI = re.compile(r"^(.+?)(\d{6})([CP])(\d{8})$")
@@ -30,6 +33,17 @@ def parse_osi(sym):
         return None
     root, ymd, kind, k = m.groups()
     return root, f"20{ymd[:2]}-{ymd[2:4]}-{ymd[4:]}", kind, int(k) / 1000.0
+
+
+def listed_strikes(def_path, expiry):
+    """Strikes OPRA lists for one expiry, from a Databento definition CSV (column raw_symbol)."""
+    out = set()
+    with open(def_path, newline="") as f:
+        for r in csv.DictReader(f):
+            p = parse_osi(r.get("raw_symbol", ""))
+            if p and p[1] == expiry:
+                out.add(p[3])
+    return out
 
 
 def chain_at(opra, expiry, when, tol=120):
@@ -58,16 +72,17 @@ def forward(chain):
     return k + _mid(q["C"]) - _mid(q["P"])
 
 
-def check_chain(chain):
-    """(passed, {'complete': (ok, detail), 'sane': (ok, detail), 'parity': (ok, detail)})."""
+def check_chain(chain, listed):
+    """(passed, {'complete': (ok, detail), 'sane': (ok, detail), 'parity': (ok, detail)}).
+    listed: the strikes OPRA lists for this expiry (listed_strikes)."""
     F = forward(chain)
     if F is None:
         return False, {"forward": (False, "no strike with both a call and a put")}
-    band = sorted(k for k in chain if abs(k / F - 1) <= BAND + EDGE)
-    full = [k for k in band if all(t in chain[k] and chain[k][t][1] > 0 for t in "CP")]
-    complete = (len(band) >= MIN_STRIKES and len(full) == len(band),
-                f"{len(full)} of {len(band)} strikes two-sided (need all, and >= {MIN_STRIKES})")
-    quotes = [chain[k][t] for k in band for t in "CP" if t in chain[k]]
+    band = sorted(k for k in listed if abs(k / F - 1) <= BAND + EDGE)
+    full = [k for k in band if k in chain and all(t in chain[k] and chain[k][t][1] > 0 for t in "CP")]
+    complete = (len(band) >= MIN_LISTED and len(full) == len(band),
+                f"{len(full)} of {len(band)} listed strikes two-sided (need all, and >= {MIN_LISTED})")
+    quotes = [chain[k][t] for k in band if k in chain for t in "CP" if t in chain[k]]
     good = [q for q in quotes if 0 <= q[0] <= q[1] and q[1] - q[0] <= max(_mid(q), 0.10)]
     share = len(good) / len(quotes) if quotes else 0.0
     sane = (share >= SANE_SHARE, f"{share:.0%} of {len(quotes)} quotes sane (need {SANE_SHARE:.0%})")
