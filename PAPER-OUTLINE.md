@@ -51,8 +51,18 @@ measurement, not a new method. The methods are Cboe's and published work's, and 
 **3. Data (1.5 pages).**
 - The free feed: Alpaca's indicative options data, recorded daily from Sep 2026. Quote Alpaca's
   own definition verbatim ("a free derivative of the original OPRA feed... not actual OPRA
-  quotes"). A staff forum post says it is "randomized a bit" and another that it is sampled at
-  most once a second: unofficial, labelled as reported.
+  quotes", docs page "Historical Option Data", read 12 Oct 2026). Alpaca staff on the community
+  forum (Dan_Whitnable_Alpaca; staff statements, not contractual terms, labelled as such), checked
+  at source 12 Oct 2026:
+  - 12 Sep 2025 (forum t/17795): "based upon real time OPRA data but it's randomized a bit."
+  - 1 Feb 2026 (same thread): it "can vary from the actual `opra` data."
+  - 4 Jul 2024 (forum t/14595), the balancing line: "isn't exactly 'dummy' or random values... rather
+    'close' or 'indicative' of the actual OPRA data."
+  - Another post says it is sampled at most once a second (unofficial, labelled as reported).
+  This frames the paper: the free feed is a documented, deliberately altered derivative of OPRA,
+  and the project measures what that alteration costs once quotes become a volatility number.
+  H8 measures it directly (same contracts, same moment, the registered estimator); the pilot
+  reads a few hundredths of a point, high on 7 of 8 funds.
 - The references: Cboe index closes; OPRA consolidated quotes (Databento); Bloomberg on four days.
 - The recorder's design, and its safeguards: after-close guard, missed-day alarms, pre-registration.
 - Licensing: aggregates only, with the credit lines.

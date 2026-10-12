@@ -10,6 +10,14 @@ made turning quotes into a volatility number. H8 isolates the quotes: does the f
 quote data, put through the registered estimator, give the same 30-day volatility as the consolidated
 market's (OPRA) quotes at the same moment, for all eight funds the project records?
 
+Why this is the right question, from the provider's own words (checked at source 12 Oct 2026): Alpaca
+documents the feed as "a free derivative of the original OPRA feed" whose "quotes are not actual OPRA
+quotes", and an Alpaca staff member says on its forum that it is "based upon real time OPRA data but it's
+randomized a bit" (12 Sep 2025) and "can vary from the actual `opra` data" (1 Feb 2026); staff statements,
+not contractual terms. So the free feed is a deliberately altered copy of exactly the reference H8 buys,
+and H8 measures what the alteration costs once quotes become a volatility number. No published
+measurement of that size turned up in the literature searches of 9 and 12 Oct 2026.
+
 ## Hypothesis (proposed wording)
 **H8.** From 1 Dec 2026 through 29 Jan 2027, for each of SPY, QQQ, IWM, GLD, USO, TSLA, NVDA and AAPL,
 the mean daily difference between the free feed's 30-day model-free estimate and the same estimate

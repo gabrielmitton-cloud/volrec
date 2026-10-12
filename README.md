@@ -109,7 +109,13 @@ vol, and jumps, and sweeps rebalance frequency to find where net profit peaks.
 
 - **Feed**: Alpaca's free `indicative` options feed for quotes, and the `sip`
   consolidated tape for stock closes. Options quotes are indicative, not exact
-  NBBO. Fine for daily snapshots; worth stating in any write-up. Stock closes
+  NBBO: Alpaca's documentation calls the feed "a free derivative of the original
+  OPRA feed" whose "quotes are not actual OPRA quotes", and an Alpaca staff
+  member describes it on the community forum as "based upon real time OPRA data
+  but it's randomized a bit" (12 Sep 2025; a staff statement, not a contractual
+  term; both checked at source 12 Oct 2026). How much that alteration moves a
+  volatility estimate is itself measured here, against OPRA on the same
+  contracts at the same moment (`tools/h8_quotes.py`; not yet registered). Stock closes
   moved from `iex` to `sip` on 7 Sep 2026: `iex` is a single venue carrying a
   low single-digit share of volume, so its close is not the official closing
   print, and its free history is both shallower and ragged.

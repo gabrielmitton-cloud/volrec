@@ -2547,6 +2547,27 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   judge the REASONING (claims vs evidence, the decomposition's order, honesty of the testing) and to
   sponsor; a PDF copy is on Gabriel's Desktop (Mitton-design-memo.pdf). Gabriel replaces his scheduled
   Monday email with the new one, memo attached. **Done 10 Oct: the new email is scheduled for Mon 12 Oct.**
+- **Side project agreed, 11-12 Oct (Gabriel): a retail implementation audit, `lab/`, NOT BUILT YET.**
+  Question: how much of the volatility risk premium can a retail investor using free data actually keep?
+  Exploratory, own folder, imports registered code and never changes it; its rules are committed before
+  the first backtest. On hold until Gabriel has Santa-Clara & Saretto (2009, JFM 12(3) 391-417) from the
+  Pepperdine library; then spec (docs/superpowers/specs/), sign-off, plan, build. Design: costs from OPRA
+  (free feed as the tested alternative), strip cost = the registered estimator on bids vs mids, four cost
+  cases from Muravyev & Pearson (2020, RFS 33(11), published figures: conventional effective ~80% of the
+  quoted half-spread, execution timers ~30%); a stationary-bootstrap stress lab; margin as its own stress.
+  **Key finding, priced only (nothing bought):** Databento's OPRA cbbo-1m history starts 1 Apr 2013 and one
+  entry-day window for SPY/QQQ/IWM/GLD/USO costs $0.04-0.09 (24 Aug 2015 $0.039, 5 Feb 2018 $0.043,
+  16 Mar 2020 $0.077), so the backtest can use the REAL trade (short straddles: OPRA entry bid, free
+  underlying at expiry) every month 2016-2026 for about $6-10, crash months measured rather than modelled;
+  verify one old day's completeness first (~$0.04). The synthetic variance swap on Cboe indices stays as a
+  cross-check. Nothing goes on the public site until Cboe's permission reply.
+- **Alpaca's own description of the free feed, checked at source 12 Oct:** docs: "a free derivative of the
+  original OPRA feed", "the quotes are not actual OPRA quotes"; staff on the forum (Dan_Whitnable_Alpaca,
+  t/17795): "randomized a bit" (12 Sep 2025), "can vary from the actual `opra` data" (1 Feb 2026). Added
+  (Gabriel's OK) to PAPER-OUTLINE section 3, the README feed note and H8-DRAFT's rationale - text only, no
+  registered number touched. **For after the verdicts:** the 2013+ OPRA archive could run the Cboe-replica
+  decomposition over years, and confirm the unconfirmed 11 May 2022 OVX/GVZ switch to NBBO - never inside
+  H7's window; a discussion with Gabriel first.
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
@@ -2567,4 +2588,6 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 > ("Fri 9 Oct - the dated plan from here") and the newest dated entries above it. Report numbers before
 > recommending; never adjust a registered threshold; keep licensed data out of the repo; push only when
 > `tools/audit.py` reads N of N. Open work: H8 is being built under `PROTOCOL.md` (`H8-DRAFT.md`, not
-> registered; the cloud buys its OPRA daily), and `DESIGN-MEMO.md` is being revised with Gabriel.
+> registered; the cloud buys its OPRA daily), and `DESIGN-MEMO.md` is being revised with Gabriel. The
+> `lab/` side project (retail implementation audit) is designed but waits for the Santa-Clara & Saretto
+> paper; read its 11-12 Oct entry above before touching it.
