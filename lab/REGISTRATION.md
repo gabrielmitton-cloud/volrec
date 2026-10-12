@@ -65,3 +65,9 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
 - 2026-10-12, before any data: the +/-10% and +/-5% band edges made inclusive (a 1e-9 allowance);
   float rounding had put strike 110 outside +/-10% of a forward of exactly 100. Caught by the
   known-answer tests; no threshold changed.
+- 2026-10-12, AFTER the test day: 5 Feb 2018 bought ($0.0428, 5 files) and checked at 14:30 New
+  York on the Feb 16 and Mar 16 expiries. SPY, QQQ, IWM, GLD pass all three checks on both expiries
+  (30-83 strikes two-sided in the band, 100% sane, 100% within parity). USO fails ONLY the
+  10-strike minimum: at $12.81 (before its 2020 1-for-8 reverse split) with $0.50 strikes, +/-10%
+  holds 5 strikes, all two-sided, 100% sane, 100% within parity; the file carries 31 strikes,
+  $3-$23. The rule is unchanged pending Gabriel's decision.
