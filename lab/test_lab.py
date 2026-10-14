@@ -215,5 +215,35 @@ check(f"every holding period is 24-32 days ({min(_g)}-{max(_g)})", min(_g) >= 24
 check(f"about 127 trades ({len(_e)})", 125 <= len(_e) <= 128)
 check("pairs never overlap", all(_e[i][1] < _e[i + 1][0] for i in range(len(_e) - 1)))
 
+tr = load("trades")
+print("\n=== trades ===")
+check("index pairs", tr.INDEX == {"SPY": "VIX", "QQQ": "VXN", "IWM": "RVX", "GLD": "GVZ", "USO": "OVX"} and tr.R2_REF == 20.0)
+_bars = {"USO": {"2020-04-28": (2.14, 17.12)}}
+check("settlement uses the RAW close (2.14), never the split-adjusted one", tr.settle(_bars, "USO", "2020-04-28") == 2.14)
+check("call intrinsic", tr.intrinsic("C", 100, 104) == 4 and tr.intrinsic("C", 100, 96) == 0)
+check("put intrinsic", tr.intrinsic("P", 100, 96) == 4 and tr.intrinsic("P", 100, 104) == 0)
+prem, pnl = tr.leg(2.00, 2.20, "C", 100, 103, "mid")
+check(f"short call at mid 2.10, expires 3 in the money: P&L -0.90 ({pnl:.2f})", abs(prem - 2.10) < 1e-12 and abs(pnl + 0.90) < 1e-12)
+_, pnlr = tr.leg(2.00, 2.20, "C", 100, 103, "retail")
+check(f"retail sells 0.08 below mid: P&L -0.98 ({pnlr:.2f})", abs(pnlr + 0.98) < 1e-12)
+_ch = {95.0: {"C": (6.0, 6.2), "P": (1.0, 1.1)}, 100.0: {"C": (3.0, 3.2), "P": (2.9, 3.1)},
+       105.0: {"C": (1.0, 1.1), "P": (5.9, 6.1)}, 101.0: {"C": (2.5, 2.6)}}
+check("ATM picks the nearest TWO-SIDED strike (101 has no put)", tr.nearest_strike(_ch, 100.9) == 100.0)
+st_ = tr.position(_ch, 100.0, 100.0, "mid")
+check(f"straddle at 100 settling at 100: premium 6.10, keeps it all ({st_})",
+      abs(st_["premium"] - 6.10) < 1e-12 and abs(st_["pnl"] - 6.10) < 1e-12 and abs(st_["ret"] - 1.0) < 1e-12)
+sg = tr.position(_ch, 100.0, 90.0, "mid", kind="strangle")
+check(f"strangle 95/105 settling at 90: premium 2.10, loses 5 on the put ({sg})",
+      sg["K_put"] == 95.0 and sg["K_call"] == 105.0 and abs(sg["pnl"] - (2.10 - 5.0)) < 1e-12)
+_F, _K, _T, _v = 100.0, 100.0, 30 / 365, 0.25
+_num = (black76("C", _F, _K, _T, 0.0, _v + 1e-4) - black76("C", _F, _K, _T, 0.0, _v - 1e-4)) / 2e-4 / 100
+check(f"vega per point matches the numerical derivative ({tr.vega76(_F, _K, _T, _v):.5f} vs {_num:.5f})",
+      abs(tr.vega76(_F, _K, _T, _v) - _num) < 1e-6)
+w = tr.rule_weights(25.0, 15.0, 22.0, 24.0)
+check(f"rules, calm contango, index above realised: all trade, R2 = 20/25 ({w})", w == {"R0": 1.0, "R1": 1.0, "R2": 0.8, "R3": 1.0})
+w2 = tr.rule_weights(25.0, 30.0, 30.0, 27.0)
+check(f"index below realised and inverted VIX: R1 and R3 stand aside ({w2})", w2["R1"] == 0.0 and w2["R3"] == 0.0 and w2["R0"] == 1.0)
+check("no realised volatility yet: R1 does not trade", tr.rule_weights(25.0, None, 22.0, 24.0)["R1"] == 0.0)
+
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)
