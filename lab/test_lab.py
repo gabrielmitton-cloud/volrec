@@ -186,5 +186,17 @@ check("within the lab cap", fl.lab_budget_ok(0.20, 89.70)[0])
 check("over the lab cap is refused", not fl.lab_budget_ok(0.20, 89.90)[0])
 check("the lab's data folder is outside the public repo", not ore.inside_repo(fl.LAB_DIR))
 
+bars = load("bars")
+print("\n=== bars ===")
+check("the five funds", bars.FUNDS == ("SPY", "QQQ", "IWM", "GLD", "USO"))
+_bp = Path(__import__("tempfile").mkdtemp()) / "bars.csv"
+n = bars.write_csv(_bp, {"USO": {"2020-04-28": 2.14, "2020-04-29": 18.01}},
+                         {"USO": {"2020-04-28": 17.12, "2020-04-29": 18.01}})
+check("two rows written", n == 2)
+_b = bars.load(_bp)
+check("raw and adjusted read back separately (USO's 1-for-8 split, 29 Apr 2020)",
+      _b["USO"]["2020-04-28"] == (2.14, 17.12) and _b["USO"]["2020-04-29"] == (18.01, 18.01))
+check("the bars file lives outside the public repo", not ore.inside_repo(bars.BARS_FILE))
+
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)

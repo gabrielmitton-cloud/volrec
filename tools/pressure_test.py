@@ -741,7 +741,7 @@ ok(_fresh[-1] >= _rec_min + WORST_DELAY_MIN + DELAY_MARGIN_MIN,
 # 9 Oct 2026: a manual, read-only ANALYSIS workflow is allowed beside the four (h6.yml: the keys
 # live only in GitHub secrets). It must have no schedule, read-only permissions and no push;
 # anything else extra is still a leftover TEMP workflow.
-_ANALYSIS_WF = {"h6.yml", "sample_a.yml", "opra_probe.yml"}  # sample_a: H1/H2 reproduction; opra_probe: free-OPRA question (both 9 Oct 2026)
+_ANALYSIS_WF = {"h6.yml", "sample_a.yml", "opra_probe.yml", "lab_bars.yml"}  # sample_a: H1/H2 reproduction; opra_probe: free-OPRA question (both 9 Oct 2026); lab_bars: lab/ daily closes (14 Oct)
 def _readonly_manual(p_):
     _y = yaml.safe_load(p_.read_text()); _on = _y.get(True, _y.get("on")) or {}
     return (set(_on) == {"workflow_dispatch"} and _y.get("permissions") == {"contents": "read"}
