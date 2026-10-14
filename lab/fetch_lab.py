@@ -15,6 +15,7 @@ import csv
 import os
 import subprocess
 import sys
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -31,6 +32,7 @@ DEF_TAG = "-def-lab"                       # listings rows; ends in LAB_TAG, so 
 PRIVATE = Path(os.environ.get("VOLREC_LICENSED_DIR") or Path.home() / "Documents" / "volrec-licensed")
 LAB_DIR = PRIVATE / "opra-lab"
 LEDGER = PRIVATE / "opra" / "spend.csv"
+LEDGER_LOCK = threading.Lock()             # buy_days.py buys the five funds in parallel
 
 
 def date_ok(day):
@@ -134,7 +136,7 @@ def fetch(day, symbol, key, max_cost, dry, hhmm="14:30"):
         return 0.0
     LAB_DIR.mkdir(parents=True, exist_ok=True)
     out.write_bytes(r.content)
-    with LEDGER.open("a", newline="") as f:
+    with LEDGER_LOCK, LEDGER.open("a", newline="") as f:
         csv.writer(f).writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), day,
                                 symbol + LAB_TAG, f"{cost:.6f}"])
     print(f"    fetched {len(r.content):,} bytes -> {out}")
@@ -164,7 +166,7 @@ def _priced_buy(params, out, day, tag, key, max_cost, dry, label):
         return 0.0
     LAB_DIR.mkdir(parents=True, exist_ok=True)
     out.write_bytes(r.content)
-    with LEDGER.open("a", newline="") as f:
+    with LEDGER_LOCK, LEDGER.open("a", newline="") as f:
         csv.writer(f).writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), day, tag, f"{cost:.6f}"])
     print(f"    fetched {len(r.content):,} bytes -> {out}")
     return cost

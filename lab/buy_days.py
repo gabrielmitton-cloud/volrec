@@ -35,11 +35,19 @@ def main():
     print(f"{len(pairs)} entry days, {pairs[0][0]} to {pairs[-1][0]}")
     if not a.dry_run:
         fl.sync_ledger()
-    paid = []
-    for entry, _exp in pairs:
-        for sym in bars.FUNDS:
-            paid.append(fl.fetch(entry, sym, key, a.max_cost, a.dry_run))
-            paid.append(fl.fetch_listings(entry, sym, key, a.max_cost, a.dry_run))
+    # The five funds in parallel (14 Oct: one at a time took ~40 s a request, ~13 hours in all).
+    # Ledger writes are serialised by fetch_lab.LEDGER_LOCK; each cap check reads the ledger first,
+    # so in-flight requests can overshoot a cap by at most one per worker (about $0.05).
+    from concurrent.futures import ThreadPoolExecutor
+
+    def one(job):
+        entry, sym = job
+        return [fl.fetch(entry, sym, key, a.max_cost, a.dry_run),
+                fl.fetch_listings(entry, sym, key, a.max_cost, a.dry_run)]
+
+    jobs = [(entry, sym) for entry, _exp in pairs for sym in bars.FUNDS]
+    with ThreadPoolExecutor(max_workers=len(bars.FUNDS)) as pool:
+        paid = [x for pair in pool.map(one, jobs) for x in pair]
     n, usd = sum(1 for p in paid if p > 0), sum(paid)
     if n:
         fl.commit_ledger(n, usd)
