@@ -157,3 +157,26 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
     be built. (Its OPRA marks were bought before this was seen; ~$0.10.)
   - Every table is printed for the registered months and, beside it, with the tradeable excluded
     months added back (Plan 2's sensitivity).
+- 2026-10-14, AFTER data - Plan 3 results (registered months; added-back months beside them in the
+  private report). Check passed: paper returns at w = 5% equal 5% x Plan 2's straddle mid returns.
+  **Leak Map, w = 5%, cents kept per $1 of paper return:** SPY 95.4, QQQ 94.3, IWM 90.0, USO 58.4
+  (paper +0.346%/mo, kept +0.202%/mo; with its excluded months added back USO's paper return is
+  -0.145%/mo, so its ratio is undefined); GLD undefined (paper -0.192%/mo). At 5% margin never binds:
+  the leaks are spreads (SPY 0.008, QQQ 0.011, IWM 0.015, GLD 0.033, USO 0.100 %/mo) and commissions.
+  **At w = 20% margin dominates:** SPY paper +1.277 -> kept +0.966%/mo, forced liquidation the largest
+  leak (+0.523, range +0.049..+1.029 across orders); QQQ liquidation +0.305; IWM's liquidation and
+  limits leaks are NEGATIVE (being forced out cut losses that kept growing). Called months at 20%:
+  SPY 24, QQQ 21, IWM 12, GLD 30, USO 11 of ~125.
+  **Stress, w = 5%, 10,000 ten-year paths** (PPW block 1.0 for every fund - no monthly
+  autocorrelation): median max drawdown SPY 32.9%, QQQ 27.1%, IWM 40.1%, GLD 48.3%, USO 39.9%;
+  P(equity < $0.50 within ten years) SPY 6.5%, QQQ 1.9%, IWM 15.7%, GLD 34.8%, USO 15.4% (conditional
+  on 2016-2026's crashes). Worst month: the COVID trade (24 Feb -> 20 Mar 2020): SPY -26.3%,
+  QQQ -16.2%, IWM -34.8%, USO -29.4%, GLD -10.6% of capital at w = 5%. Volmageddon (Feb 2018) cost
+  SPY only -3.3% - held to expiry, the straddle recovered.
+  A reporting error was fixed before logging: crash replays were keyed by ENTRY month, which hid the
+  COVID trade (entered in February); they are now keyed by holding period.
+  **P1 FAILS:** no fund keeps under 50 cents per $1 (SPY 95, QQQ 94, IWM 90, USO 58; GLD undefined).
+  **P2 HOLDS as written** (spreads are the largest leak on 5 of 5 at w = 5%), but only because margin
+  never binds at 5%; at 20% forced liquidation is the largest leak on SPY and QQQ. Both stated.
+  The finding, plainly: for a retail seller of liquid fund straddles held to expiry, trading costs
+  are small; the risk is the crash month and, at larger sizes, being forced out by margin.
