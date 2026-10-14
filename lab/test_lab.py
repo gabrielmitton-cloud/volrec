@@ -441,5 +441,14 @@ check(f"a file with no ledger row and a ledger row with no file are both caught 
       (("quote", "2018-02-06", "SPY"), 1, 0) in _mm and (("quote", "2018-02-07", "QQQ"), 0, 1) in _mm and len(_mm) == 2)
 check("a matched set reconciles clean", vp.reconcile(_files[:1] + _files[2:], _led[:2]) == [])
 
+vt = load("vault")
+print("\n=== the sealed vault ===")
+_o, _s = vt.split()
+check(f"the vault's split still matches the fingerprint sealed on 14 Oct ({vt.fingerprint()[:12]}...)", vt.fingerprint() == vt.FINGERPRINT)
+check("43 quarters, 2016Q1-2026Q3, each in exactly one half", len(_o) + len(_s) == 43 and not set(_o) & set(_s))
+check("the stress quarters are split evenly (3 and 3)", len(set(vt.STRESS) & set(_s)) == 3 and len(set(vt.STRESS) & set(_o)) == 3)
+check("COVID's quarter is sealed, the 2025 tariff crash is open", vt.is_sealed("2020-03-16") and not vt.is_sealed("2025-04-07"))
+check("the split is the same every time it is drawn", vt.split() == (_o, _s))
+
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)
