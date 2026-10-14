@@ -2606,6 +2606,9 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   summaries, report.html) - nothing on the public site until Cboe replies; then a site page is part of
   the post-November discussion. Re-run: `lab/run_trades.py`, `run_leak.py`, `run_breakeven.py`,
   `report.py`; the trust engine: `lab/engine.py` (latest free-feed day). Auditor 76/76.
+  **14 Oct, evening:** PAPER-DRAFT.md v1 (sections 3, 4, 5b, written before the verdicts); the site's
+  snapshot-timing limitation now gives the measured 0.53 pts. Cboe follow-up drafted in chat for Mon 19 Oct
+  (send only if no reply; it adds the lab's aggregates to the request).
   **Databento reconciled, 14 Oct (Gabriel's portal screenshots):** October charges $44.28 (definition 5.99 GB at
   $5/GB = $29.92; cbbo-1m 7.18 GB at $2/GB = $14.35), all from credit; $80.64 credit remains; monthly limit
   $120. Our ledger shows $81.28 for October - it OVER-counts real charges by about 1.8x, the safe direction,
