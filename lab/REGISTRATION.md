@@ -180,3 +180,21 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   never binds at 5%; at 20% forced liquidation is the largest leak on SPY and QQQ. Both stated.
   The finding, plainly: for a retail seller of liquid fund straddles held to expiry, trading costs
   are small; the risk is the crash month and, at larger sizes, being forced out by margin.
+- 2026-10-14, before any weekly sample is read - Plan 4 definitions:
+  - Weekly sample: each Wednesday 14:30 New York (11:30 on a half-day), per fund, the standard
+    monthly expiry with 20-45 days left that is nearest 30 days; ATM = the sellable strike nearest
+    the implied forward; the day must pass the registered integrity checks for that expiry.
+  - Cost (volatility points) = 0.80 x (call + put quoted half-spreads) / (call + put Black-76 vega,
+    r = 0, at each leg's own implied volatility). Cost fraction = 0.80 x (half-spreads) / straddle mid.
+  - Premium (volatility points), from Plan 2's monthly trades = straddle P&L at mid per share /
+    entry straddle vega. Net = premium - cost (both per trade, in volatility points).
+  - x-axis: the fund's own index at the previous trading day's close (VIX, VXN, RVX, GVZ, OVX); VIX
+    for all five shown beside it.
+  - Break-even: OLS of net on x; the crossing x* = -a / b, reported only if inside the observed
+    range of x, else "none in range" with the direction of the sign. 90% interval from 2,000
+    stationary-bootstrap resamples of the months (block length by PPW), seed 20261014; resamples
+    whose crossing is out of range are counted and reported, not dropped silently. Quintile bins of x
+    (mean x, mean net, count) printed for every fund.
+  - P4 ("the retail cost as a fraction of the premium rises with the index level on at least 4 of 5
+    funds"): premium = the straddle's mid price at entry; "rises" = OLS slope of the weekly cost
+    fraction on x positive with its 95% Newey-West interval (lag 4 weeks) above zero.
