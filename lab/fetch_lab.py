@@ -73,6 +73,20 @@ def lab_budget_ok(cost, spent):
     return True, "within the lab's cap"
 
 
+def _call(endpoint, data, key, tries=4):
+    """ore.call, plus retries when Databento is slow to answer (a read timeout, 14 Oct 2026: the
+    gateway retried 504s itself, but a timeout ended a 1,270-request batch). Then stop loudly."""
+    import requests
+    for i in range(tries):
+        try:
+            return ore.call(endpoint, data, key)
+        except requests.exceptions.Timeout:
+            if i == tries - 1:
+                sys.exit(f"Databento {endpoint}: timed out {tries} times; stopping (nothing half-written)")
+            print(f"    Databento {endpoint}: timed out, retrying in {20 * (i + 1)}s")
+            ore._sleep(20 * (i + 1))
+
+
 def git(*args):
     return subprocess.run(["git", "-C", str(PRIVATE), *args], capture_output=True, text=True)
 
@@ -102,7 +116,7 @@ def fetch(day, symbol, key, max_cost, dry, hhmm="14:30"):
         print(f"  {symbol} {day} {hhmm}: already on disk - skipped, nothing charged")
         return 0.0
     params = ore.request_params(symbol, ny_minute(day, hhmm))
-    cost = float(ore.call("metadata.get_cost", params, key).json())
+    cost = float(_call("metadata.get_cost", params, key).json())
     rows = ledger_rows()
     allowed, why = ore.budget_ok(cost, max_cost, spent_all(rows))
     if allowed:
@@ -114,7 +128,7 @@ def fetch(day, symbol, key, max_cost, dry, hhmm="14:30"):
     body = dict(params, encoding="csv", compression="none", pretty_px="true",
                 pretty_ts="true", map_symbols="true")
     try:
-        r = ore.call("timeseries.get_range", body, key)
+        r = _call("timeseries.get_range", body, key)
     except ore.NotYetHistorical as e:
         print(f"    not yet historical ({e}); nothing charged")
         return 0.0
@@ -132,7 +146,7 @@ def _priced_buy(params, out, day, tag, key, max_cost, dry, label):
     if out.exists():
         print(f"  {label}: already on disk - skipped, nothing charged")
         return 0.0
-    cost = float(ore.call("metadata.get_cost", params, key).json())
+    cost = float(_call("metadata.get_cost", params, key).json())
     rows = ledger_rows()
     allowed, why = ore.budget_ok(cost, max_cost, spent_all(rows))
     if allowed:
@@ -144,7 +158,7 @@ def _priced_buy(params, out, day, tag, key, max_cost, dry, label):
     body = dict(params, encoding="csv", compression="none", pretty_px="true",
                 pretty_ts="true", map_symbols="true")
     try:
-        r = ore.call("timeseries.get_range", body, key)
+        r = _call("timeseries.get_range", body, key)
     except ore.NotYetHistorical as e:
         print(f"    not yet historical ({e}); nothing charged")
         return 0.0
