@@ -50,8 +50,9 @@ measurement, not a new method. The methods are Cboe's and published work's, and 
   position), which is why the lab trades one-month claims; dealer variance-swap bid-asks of 1-2% up to
   one year give an institutional benchmark for the retail costs measured (units differ; compare with
   care). Still to read: Goyal & Saretto (2009, JFE 94) for rule R1; Bondarenko (2014, J. Econometrics
-  180) for the premium's size; Bogousslavsky & Muravyev (working paper, SSRN 4682388) for retail
-  effective spreads.
+  180) for the premium's size; Bogousslavsky & Muravyev (working paper, SSRN 4682388, 9 Feb 2025) - READ 14 Oct:
+  no fund-option effective/quoted ratio, but retail trades lose 0.9% against a 3.7% quoted spread
+  (limit orders), so the lab's 80% retail case is likely pessimistic; $0.65 commission confirmed.
 - The gap: "to our knowledge, no study benchmarks a free retail options feed against OPRA or
   Cboe's indices." Backed by the dated search log in the appendix (searches of 9 Oct 2026).
   Free-vs-authoritative comparisons exist only for equities (Clayton & Schmidt 2017, Yahoo vs

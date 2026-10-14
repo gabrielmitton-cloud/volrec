@@ -255,3 +255,12 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
      USO 0.74; one broken USO day in April 2020 excluded from interpretation) - the snapshot-timing
      effect, measured without LSEG. OPRA's ATM half-spread over 2016-2026: SPY 0.028, QQQ 0.051, IWM
      0.080, GLD 0.121, USO 0.737 volatility points (2026 alone: 0.026, 0.058, 0.093, 0.341, 2.067).
+- 2026-10-14, reading (no number changed): Bogousslavsky & Muravyev, "An Anatomy of Retail Option
+  Trading" (working paper, SSRN 4682388, version of 9 Feb 2025; unpublished). It gives no effective /
+  quoted ratio for fund options, so the registered cost cases stand. Indirect evidence: typical quoted
+  bid-ask spread 3.7% of the option price, yet the average retail option trade lost only 0.9% including
+  fees (~0.4%) - "retail traders likely use limit orders to avoid paying the spread" - so the 80%
+  "retail" case is probably pessimistic. Even at the full quoted spread the lab keeps 92-97% on SPY,
+  QQQ, IWM, so the conclusion does not depend on it. It also confirms the $0.65 commission (TD
+  Ameritrade) and reports naked option sales earning +20% on average (13% of trades). Sample
+  2020-2022, relatively sophisticated traders.
