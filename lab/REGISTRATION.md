@@ -264,3 +264,13 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   QQQ, IWM, so the conclusion does not depend on it. It also confirms the $0.65 commission (TD
   Ameritrade) and reports naked option sales earning +20% on average (13% of trades). Sample
   2020-2022, relatively sophisticated traders.
+- 2026-10-14, research checked at source (no number changed): **GLD's margin class verified** - Cboe
+  Regulatory Circular RG08-068 (2 Jun 2008): "For margin and net capital purposes, options on GLD are
+  treated like equity options" (20% / 10%), as the lab assumed. USO: no regulator text names it; the
+  20% equity/ETF default stands (OCC's ETF-options page gives 20% as the default) - stated as an
+  assumption. Muravyev & Pearson's published figures imply all traders pay about 58-59% of the quoted
+  half-spread (conventional 6.8% of 8.6%, then "one-quarter smaller"); the research's 58.4% agrees.
+  With Bogousslavsky & Muravyev and (reported, not verified - SSRN refused access) Barardehi,
+  Bogousslavsky & Muravyev's retail figures, the 80% "retail" case is conservative; results barely
+  move across cases. GVZ/OVX's NBBO effective date remains unconfirmed (11 May 2022 likely); only
+  needed for a future H9 - ask IndexSupport@cboe.com then.
