@@ -2588,6 +2588,16 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   is lost - OPRA stays buyable historically and `--all`/H8 catch up skipped days - but H7's verdict needs
   its OPRA through 11 Nov, so funds must be restored before ~13 Nov (the writer waits to 19 Nov).
   Lab state: Plan 2 Tasks 1-5 done and pushed; entry days bought 2016-01-19 to part of 2016-11-21.
+  **14 Oct, later:** the 402 was Databento's *usage-based access monthly limit* ($1.00), not the credit
+  ($123.93 left); Gabriel raised it and buying resumed. Even without the lab, H8's ~$3.50 a month would
+  have hit $1 - check that limit first if a 402 ever returns. The lab now buys everything in one
+  resumable queue (`lab/buy_days.py --kind all --workers 30`: entry days, stress-month 15:55 marks,
+  weekly Wednesdays; ~8,200 files, ~$53).
+  **Sponsor, 14 Oct: Professor James cannot sponsor.** Still needed: a faculty mentor for SCCUR (check
+  whether the 9 Oct submission named one; decisions 20 Oct, registration 23 Oct), Seaver and JURF.
+  Suggested: Levon Goukasian (met 11 Sep) - his advice was years of raw option prices, impossible on
+  Bloomberg (90 days) but now done on OPRA back to 2016 in lab/; DESIGN-MEMO.md would be re-addressed.
+  LSEG: Gabriel emailed them, still waiting. Cboe: still waiting (follow-up due Mon 19 Oct).
   **Done 12 Oct (Gabriel's yes):** (1)+(2) in H8-DRAFT (OPRA yardstick table, the corrected Δ reason,
   the bid/ask/mid pilot table, open choice 5); (3) README's measurement paragraph, a dated clarification
   at the end of H3's adjustment log (no number or verdict touched), and a PAPER-OUTLINE limitations line;
