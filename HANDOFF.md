@@ -2580,6 +2580,14 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   cap, dates 1 Aug 2015 - 31 Aug 2026), 3 auditor mutants. Test day 5 Feb 2018 bought and verified: all five
   funds pass after the completeness rule was amended (Gabriel): OPRA's own listings replace a 10-strike
   minimum USO could never meet at $12.81. Lab spend $0.0669. Next: Plan 2 (trades, Leak Map, stress).
+  **14 Oct, 09:17 UTC - DATABENTO REFUSED A PURCHASE: HTTP 402 `account_insufficient_funds` ("You don't
+  have sufficient budget").** Our ledger shows only $3.15 lifetime, so the account's real balance or
+  budget differs from the ledger - Gabriel must check the Databento portal (billing / budget / credit
+  expiry). All lab buying stopped; ledger committed (104 lab files, $0.63; lab $0.70). **Risk to the
+  main project:** the cloud's nightly H7/H8 OPRA buys will fail the same way until funds return. Nothing
+  is lost - OPRA stays buyable historically and `--all`/H8 catch up skipped days - but H7's verdict needs
+  its OPRA through 11 Nov, so funds must be restored before ~13 Nov (the writer waits to 19 Nov).
+  Lab state: Plan 2 Tasks 1-5 done and pushed; entry days bought 2016-01-19 to part of 2016-11-21.
   **Done 12 Oct (Gabriel's yes):** (1)+(2) in H8-DRAFT (OPRA yardstick table, the corrected Δ reason,
   the bid/ask/mid pilot table, open choice 5); (3) README's measurement paragraph, a dated clarification
   at the end of H3's adjustment log (no number or verdict touched), and a PAPER-OUTLINE limitations line;
