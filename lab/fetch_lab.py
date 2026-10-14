@@ -87,6 +87,11 @@ def _post_patiently(url, **kw):
     return requests.post(url, **kw)
 
 
+class Unresolvable(Exception):
+    """Databento 422 symbology_invalid_request: nothing listed under that symbol on that date.
+    Permanent, so the request is skipped and reported, never retried (14 Oct: one ended a batch)."""
+
+
 def _call(endpoint, data, key, tries=4):
     """ore.call, plus retries when Databento is slow to answer (a read timeout, 14 Oct 2026: the
     gateway retried 504s itself, but a timeout ended a 1,270-request batch). Then stop loudly."""
@@ -97,6 +102,8 @@ def _call(endpoint, data, key, tries=4):
         except SystemExit as e:
             # ore.call stops after three quick retries of a gateway error (502/503/504); a long
             # batch outlives a busy hour, so wait minutes, not seconds (14 Oct: a 504 ended the run).
+            if " returned 422" in str(e) and "symbology" in str(e):
+                raise Unresolvable(str(e)[:160])
             if " returned 50" not in str(e) or i == tries - 1:
                 raise
             print(f"    Databento {endpoint}: gateway error, retrying in {120 * (i + 1)}s")
@@ -137,7 +144,11 @@ def fetch(day, symbol, key, max_cost, dry, hhmm="14:30"):
         print(f"  {symbol} {day} {hhmm}: already on disk - skipped, nothing charged")
         return 0.0
     params = ore.request_params(symbol, ny_minute(day, hhmm))
-    cost = float(_call("metadata.get_cost", params, key).json())
+    try:
+        cost = float(_call("metadata.get_cost", params, key).json())
+    except Unresolvable:
+        print(f"  {symbol} {day} {hhmm}: SKIPPED - Databento lists nothing under {symbol}.OPT then; nothing charged")
+        return 0.0
     rows = ledger_rows()
     allowed, why = ore.budget_ok(cost, max_cost, spent_all(rows))
     if allowed:
@@ -167,7 +178,11 @@ def _priced_buy(params, out, day, tag, key, max_cost, dry, label):
     if out.exists():
         print(f"  {label}: already on disk - skipped, nothing charged")
         return 0.0
-    cost = float(_call("metadata.get_cost", params, key).json())
+    try:
+        cost = float(_call("metadata.get_cost", params, key).json())
+    except Unresolvable:
+        print(f"  {label}: SKIPPED - Databento cannot resolve the symbol for that date; nothing charged")
+        return 0.0
     rows = ledger_rows()
     allowed, why = ore.budget_ok(cost, max_cost, spent_all(rows))
     if allowed:

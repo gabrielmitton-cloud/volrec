@@ -200,6 +200,14 @@ try:
     except SystemExit:
         _stopped = True
     check("a 402 (money) still stops at once", _stopped)
+    ore.call = lambda *a, **k: (_ for _ in ()).throw(SystemExit('Databento x returned 422: {"detail":{"case":"symbology_invalid_request"}}'))
+    try:
+        fl._call("x", {}, "k"); _kind = "none"
+    except fl.Unresolvable:
+        _kind = "skip"
+    except SystemExit:
+        _kind = "stop"
+    check("a 422 'cannot resolve the symbol' is a skip, not a stop", _kind == "skip")
 finally:
     ore.call, ore._sleep = _real_call, _real_sleep
 
