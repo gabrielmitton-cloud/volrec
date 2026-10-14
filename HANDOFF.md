@@ -2598,6 +2598,12 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   Suggested: Levon Goukasian (met 11 Sep) - his advice was years of raw option prices, impossible on
   Bloomberg (90 days) but now done on OPRA back to 2016 in lab/; DESIGN-MEMO.md would be re-addressed.
   LSEG: Gabriel emailed them, still waiting. Cboe: still waiting (follow-up due Mon 19 Oct).
+  **LSEG, 14 Oct:** Workspace for Students live with CGIF added. .VIX intraday works (1-min from 1 Sep 2026;
+  saved to ~/Documents/volrec-lseg/). .OVX/.GVZ/.VXN/.RVX denied for daily AND intraday
+  (UserNotPermission.92000; the quote page says no permission): an entitlement gap. Gabriel emails Marc
+  Vinyard once (LSEG + mentor question), then stops. **Fallback for the timing question, no LSEG needed:**
+  run the Cboe-method replica on OPRA at 14:30 AND just before the close for USO/GLD (~$0.02 a day); the
+  difference is the move between snapshot and close. Inside H7's window, so after the verdicts, exploratory.
   **Done 12 Oct (Gabriel's yes):** (1)+(2) in H8-DRAFT (OPRA yardstick table, the corrected Δ reason,
   the bid/ask/mid pilot table, open choice 5); (3) README's measurement paragraph, a dated clarification
   at the end of H3's adjustment log (no number or verdict touched), and a PAPER-OUTLINE limitations line;
