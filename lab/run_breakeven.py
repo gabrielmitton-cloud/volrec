@@ -109,7 +109,7 @@ def main():
     vol = json.load(open(ROOT / "data" / "market_vol.json"))
     trading = set(bars["SPY"])
     print("lab/ Break-Even VIX (EXPLORATORY). Net = straddle P&L at mid / vega - retail cost, volatility points.\n")
-    p4 = 0
+    p4, summary = 0, {}
     for sym in FUNDS:
         w, m = weekly(sym, bars, vol, trading), monthly(sym, bars, vol, trading)
         xs, ys = [r["x"] for r in m], [r["net"] for r in m]
@@ -132,10 +132,14 @@ def main():
         s_, l_, h_ = be.slope_ci(wx, wf, 4)
         rises = l_ > 0
         p4 += rises
+        summary[sym] = {"index": idx, "net_bins": be.bins(xs, ys), "cost_bins": be.bins(wx, [r["cost_pts"] for r in w]),
+                        "crossing": cx, "ci": [boots[int(0.05 * len(boots))], boots[int(0.95 * len(boots)) - 1]] if len(boots) > 20 else None,
+                        "out": out_, "range": [lo, hi], "p4_slope": [s_, l_, h_], "n_month": len(m), "n_week": len(w)}
         print(f"   weekly n={len(w)}: retail cost / premium vs {idx}: slope {s_:+.5f} (95% {l_:+.5f}..{h_:+.5f}) -> "
               f"{'RISES' if rises else 'does not rise'}; cost in vol points by quintile: "
               + "  ".join(f"{bx:.1f}: {by:.3f}" for bx, by, _n in be.bins(wx, [r['cost_pts'] for r in w])))
         print()
+    json.dump(summary, open(fl.PRIVATE / "lab-out" / "breakeven_summary.json", "w"), indent=1)
     print(f"P4 (cost / premium rises with the index on >= 4 of 5): {p4} of 5 -> {'HOLDS' if p4 >= 4 else 'FAILS'}")
     print(f"\n{ore.ATTRIBUTION} Cboe index levels: Cboe Global Markets.")
 

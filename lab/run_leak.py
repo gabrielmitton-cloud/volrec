@@ -112,7 +112,7 @@ def main():
     vol = json.load(open(ROOT / "data" / "market_vol.json"))
     stress = set(cal.stress_days(sorted(bars["SPY"])))
     print("lab/ margin, Leak Map, stress (EXPLORATORY). Short ATM straddle (R0), held to expiry.\n")
-    rows, kept_series = [], {}
+    rows, kept_series, summary = [], {}, {}
     for sym in FUNDS:
         allm = months_for(sym, bars, vol, stress)
         a, b = mg.RATES[sym]
@@ -134,6 +134,12 @@ def main():
             print("      margin: " + "  ".join(f"w {int(1000 * w) / 10:g}%: eff {100 * eff[w]:.2f}%, called in {liq[w]}"
                                                 for w in WEIGHTS))
             if label == "registered":
+                summary[sym] = {"weights": {}}
+                for w in WEIGHTS:
+                    shw = lm.shapley(lambda s, w=w: st.mean(res[(w, s)]))
+                    summary[sym]["weights"][str(w)] = {"paper": st.mean(res[(w, frozenset())]),
+                        "kept": st.mean(res[(w, frozenset(mp.FRICTIONS))]), "leaks": {p: list(v) for p, v in shw.items()},
+                        "called": liq[w]}
                 kept_series[sym] = res[(0.05, frozenset(mp.FRICTIONS))]
                 bres, _e, bliq = table(ms, *mg.BROKER)
                 print(f"      broker 40%/35%: kept {100 * st.mean(bres[(0.05, frozenset(mp.FRICTIONS))]):+.3f}%/mo, "
@@ -154,6 +160,8 @@ def main():
         print(f"  {sym} block {b:.1f}  maxDD median {100 * q(0.5):.1f}% p95 {100 * q(0.95):.1f}% p99 {100 * q(0.99):.1f}%"
               f"  ES95 {100 * sx.expected_shortfall(x, 0.95):+.2f}%  ES99 {100 * sx.expected_shortfall(x, 0.99):+.2f}%"
               f"  ruin(<$0.50) {100 * sx.ruin_prob(paths):.1f}%  worst month {100 * worst:+.2f}% (x1.5: {150 * worst:+.2f}%)")
+        summary[sym]["stress"] = {"block": b, "dd50": q(0.5), "dd95": q(0.95), "dd99": q(0.99),
+                                   "es95": sx.expected_shortfall(x, 0.95), "ruin": sx.ruin_prob(paths), "worst": worst}
         print(f"       block sensitivity: {sens}")
     print("\n== crash replays: kept return at w = 5% of every trade HELD during a stress month ==")
     # 14 Oct: keyed by holding period, not entry month - the COVID trade entered 24 Feb 2020 and
@@ -163,6 +171,7 @@ def main():
         cells = [f"{r['symbol']} {r['entry'][5:]}->{r['expiry'][5:]} {100 * r['kept_5']:+.2f}%" for r in held]
         print(f"  {mth}: " + "  ".join(cells))
     OUT.parent.mkdir(parents=True, exist_ok=True)
+    json.dump(summary, open(OUT.parent / "leak_summary.json", "w"), indent=1)
     with OUT.open("w", newline="") as f:
         wr = csv.DictWriter(f, fieldnames=list(rows[0]))
         wr.writeheader()
