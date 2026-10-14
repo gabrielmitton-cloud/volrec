@@ -128,3 +128,32 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   USO 2.49. **Early read on P1/P2 (judged in Plan 3, with margin):** for ATM fund straddles held to
   expiry, spreads take only 3-6% of the premium on SPY/QQQ/IWM (29% on USO) - far less than the
   single-stock costs in Muravyev & Pearson. The losses that matter here are crash months, not costs.
+- 2026-10-14, before any margin, Leak Map or stress number is computed - Plan 3 choices:
+  - One month = one R0 ATM straddle, held to expiry. Capital $1 at entry, r = 0. Premium written at mid
+    = target weight w (2.5/5/10/20%), so n = w / mid straddle per share.
+  - Frictions (each on or off; 16 combinations): **spreads** - sold at mid minus 80% of the quoted
+    half-spread (retail), and every later trade pays the same per-share cost; **margin limits** - at
+    entry n is cut so the margin due n x (requirement - proceeds) <= 0.9 of capital; **forced
+    liquidation** - each trading day, if cash < n x requirement (Cboe: 100% of market value + a x S -
+    OTM, minimum b), the position is bought back at mark (+ cost), then reopened on the same strike
+    with n' = min(n, 0.9 x wealth / (requirement - proceeds)); **commissions** - $0.65 per contract per
+    leg per trade on a $100,000 account (0.0065 x n per $1 per leg).
+  - Daily marks: in the registered stress months, real OPRA quotes at 15:55 New York (12:55 on a
+    half-day), mid of the trade's strike and expiry, with the chain's implied forward as S; on every
+    other day, Black-76 (r = 0) at that day's raw close with volatility = the fund's own Cboe index
+    close / 100. The model marks miss the smile and are stated as an approximation; the stress
+    months, where margin calls cluster, use real quotes.
+  - Margin rates as registered (SPY/QQQ/IWM 15%/10%; GLD/USO 20%/10%); the broker variant 40%/35%
+    reported beside it.
+  - Leak Map at w = 5%: paper = all off; kept = all on; each friction's leak is its Shapley value
+    over the 24 orders, with min and max across orders; cents kept = mean(kept) / mean(paper),
+    undefined when mean(paper) <= 0.
+  - Stress: monthly kept returns (all on, w = 5%) per fund; stationary bootstrap, 10,000 paths of
+    120 months, block length by Patton-Politis-White (sensitivity 1/3/6/12); max drawdown median /
+    95th / 99th percentile, expected shortfall 95% / 99% of a month, probability equity falls below
+    $0.50 within ten years. Replays: each stress month's kept return, and the worst month x 1.5.
+    Seed 20261014.
+  - August 2015 is dropped from the replays: the fund closes begin 4 Jan 2016, so its trade cannot
+    be built. (Its OPRA marks were bought before this was seen; ~$0.10.)
+  - Every table is printed for the registered months and, beside it, with the tradeable excluded
+    months added back (Plan 2's sensitivity).
