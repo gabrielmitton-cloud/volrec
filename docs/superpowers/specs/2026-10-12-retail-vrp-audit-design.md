@@ -113,7 +113,7 @@ Read in full from the published versions (Pepperdine library, 12 Oct 2026; PDFs 
 - **Calendar:**
   - Entry: the first trading day after each standard monthly expiry, at 14:30 New York (the
     project's snapshot minute).
-  - Expiry used: the next standard monthly one, 28-35 days out.
+  - Expiry used: the next standard monthly one, 24-32 days out (corrected 14 Oct from "28-35").
   - Exit: held to expiry, settled at intrinsic value on the fund's raw closing price.
 - **Primary trade:** short one ATM straddle (call and put at the strike nearest spot).
 - **Secondary trade:** short the 5% OTM strangle. The wings are where the variance strip carries its
