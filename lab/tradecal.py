@@ -35,3 +35,26 @@ def entries(trading_days):
             if nxt and nxt[0] >= FIRST_ENTRY and e1 <= LAST_EXPIRY:
                 out.append((nxt[0], e1))
         y, m = y2, m2
+
+
+# Registered stress months (crash replays and real daily marks for the margin path). August 2015
+# predates the daily closes (Alpaca sip starts 4 Jan 2016), so its days are its weekdays - there
+# were no market holidays that August.
+STRESS_MONTHS = ("2015-08", "2018-02", "2018-12", "2020-03", "2022-06", "2024-08", "2025-04")
+
+
+def stress_days(trading_days):
+    trading = sorted(trading_days)
+    out = [d for d in trading if d[:7] in STRESS_MONTHS]
+    d = date(2015, 8, 1)
+    while d.month == 8:
+        if d.weekday() < 5:
+            out.append(d.isoformat())
+        d += timedelta(1)
+    return sorted(out)
+
+
+def weekly_days(trading_days):
+    """Every trading Wednesday from the first trade to the last expiry (Break-Even VIX samples)."""
+    return [d for d in sorted(trading_days)
+            if "2016-01-06" <= d <= LAST_EXPIRY and date.fromisoformat(d).weekday() == 2]

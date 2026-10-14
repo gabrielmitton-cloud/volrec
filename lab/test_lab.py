@@ -214,6 +214,15 @@ _g = [(_d.fromisoformat(b) - _d.fromisoformat(a)).days for a, b in _e]
 check(f"every holding period is 24-32 days ({min(_g)}-{max(_g)})", min(_g) >= 24 and max(_g) <= 32)
 check(f"about 127 trades ({len(_e)})", 125 <= len(_e) <= 128)
 check("pairs never overlap", all(_e[i][1] < _e[i + 1][0] for i in range(len(_e) - 1)))
+check("registered stress months", cal.STRESS_MONTHS == ("2015-08", "2018-02", "2018-12", "2020-03", "2022-06", "2024-08", "2025-04"))
+_sd = cal.stress_days(_trd)
+check(f"stress days: every trading day of those months, Aug 2015 from weekdays ({len(_sd)})",
+      "2015-08-24" in _sd and "2020-03-16" in _sd and "2018-02-05" in _sd
+      and all(x[:7] in cal.STRESS_MONTHS for x in _sd) and 140 <= len(_sd) <= 150)
+_wd = cal.weekly_days(_trd)
+check(f"weekly samples: trading Wednesdays, 2016-01-06 to 2026-08-26 ({len(_wd)})",
+      _wd[0] == "2016-01-06" and _wd[-1] == "2026-08-26" and all(_d.fromisoformat(x).weekday() == 2 for x in _wd)
+      and 545 <= len(_wd) <= 560)
 
 tr = load("trades")
 print("\n=== trades ===")

@@ -28,11 +28,20 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--max-cost", type=float, default=ore.DEFAULT_MAX_COST)
+    ap.add_argument("--kind", default="all", choices=("entries", "stress", "weekly", "all"),
+                    help="entries (14:30 NY), stress-month daily marks (15:55 NY), weekly Wednesdays (14:30 NY)")
+    ap.add_argument("--workers", type=int, default=15)
     a = ap.parse_args()
     key = ore.api_key()
     days = sorted(bars.load()["SPY"])
-    pairs = cal.entries(days)
-    print(f"{len(pairs)} entry days, {pairs[0][0]} to {pairs[-1][0]}")
+    plan = []                               # (day, time NY), in priority order: entries first
+    if a.kind in ("entries", "all"):
+        plan += [(e, "14:30") for e, _x in cal.entries(days)]
+    if a.kind in ("stress", "all"):
+        plan += [(d, "15:55") for d in cal.stress_days(days)]
+    if a.kind in ("weekly", "all"):
+        plan += [(d, "14:30") for d in cal.weekly_days(days)]
+    print(f"{len(plan)} day-times ({a.kind}), {a.workers} requests at a time")
     if not a.dry_run:
         fl.sync_ledger()
     # The five funds in parallel (14 Oct: one at a time took ~40 s a request, ~13 hours in all).
@@ -41,12 +50,12 @@ def main():
     from concurrent.futures import ThreadPoolExecutor
 
     def one(job):
-        entry, sym = job
-        return [fl.fetch(entry, sym, key, a.max_cost, a.dry_run),
-                fl.fetch_listings(entry, sym, key, a.max_cost, a.dry_run)]
+        day, hhmm, sym = job
+        return [fl.fetch(day, sym, key, a.max_cost, a.dry_run, hhmm),
+                fl.fetch_listings(day, sym, key, a.max_cost, a.dry_run)]
 
-    jobs = [(entry, sym) for entry, _exp in pairs for sym in bars.FUNDS]
-    with ThreadPoolExecutor(max_workers=len(bars.FUNDS)) as pool:
+    jobs = [(day, hhmm, sym) for day, hhmm in plan for sym in bars.FUNDS]
+    with ThreadPoolExecutor(max_workers=a.workers) as pool:
         paid = [x for pair in pool.map(one, jobs) for x in pair]
     n, usd = sum(1 for p in paid if p > 0), sum(paid)
     if n:

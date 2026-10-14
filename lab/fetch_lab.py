@@ -75,13 +75,25 @@ def lab_budget_ok(cost, spent):
     return True, "within the lab's cap"
 
 
+def _post_patiently(url, **kw):
+    """requests.post, waiting out Databento's rate limit (HTTP 429) instead of stopping."""
+    import requests
+    for wait in (5, 15, 30, 60, 120, 240):
+        r = requests.post(url, **kw)
+        if r.status_code != 429:
+            return r
+        print(f"    Databento rate limit (429), waiting {wait}s")
+        ore._sleep(wait)
+    return requests.post(url, **kw)
+
+
 def _call(endpoint, data, key, tries=4):
     """ore.call, plus retries when Databento is slow to answer (a read timeout, 14 Oct 2026: the
     gateway retried 504s itself, but a timeout ended a 1,270-request batch). Then stop loudly."""
     import requests
     for i in range(tries):
         try:
-            return ore.call(endpoint, data, key)
+            return ore.call(endpoint, data, key, _fn=_post_patiently)
         except requests.exceptions.Timeout:
             if i == tries - 1:
                 sys.exit(f"Databento {endpoint}: timed out {tries} times; stopping (nothing half-written)")
