@@ -2606,6 +2606,14 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   summaries, report.html) - nothing on the public site until Cboe replies; then a site page is part of
   the post-November discussion. Re-run: `lab/run_trades.py`, `run_leak.py`, `run_breakeven.py`,
   `report.py`; the trust engine: `lab/engine.py` (latest free-feed day). Auditor 76/76.
+  **lab/ audit, 14 Oct (Gabriel asked for one):** purchase verifier attached (found 15 charged-but-empty
+  files, none used); independent recomputation matches; three missing spec items built; auditor 79/79.
+  For the main project: the snapshot-timing effect measured at a median 0.53 pts in stress months (now in
+  PAPER-OUTLINE's limitations), and a ten-year OPRA spread yardstick in H8-DRAFT. **Proposed for after the
+  verdicts (Gabriel decides):** register H9 BEFORE looking - the Cboe-method replica on the lab's OPRA
+  entry days vs GVZ/OVX across 2016-2026, which also dates the unconfirmed 11 May 2022 NBBO switch; the
+  data is already bought, so the registration is the only cost. The lab report becomes a site tab only
+  after Cboe's reply.
   **LSEG, 14 Oct:** Workspace for Students live with CGIF added. .VIX intraday works (1-min from 1 Sep 2026;
   saved to ~/Documents/volrec-lseg/). .OVX/.GVZ/.VXN/.RVX denied for daily AND intraday
   (UserNotPermission.92000; the quote page says no permission): an entitlement gap. Gabriel emails Marc

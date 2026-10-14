@@ -116,7 +116,9 @@ observations (n_eff reported for every series); the step order of the decomposit
 orderings the data allows, and their range); Cboe's methodology breaks inside the ten-year
 validation sample (PROTOCOL.md lists them); the snapshot's time of day changed inside H5e's and
 H7's windows (GitHub's delayed cron until 30 Sep, the 14:30 New York trigger since), so a
-before/after split is reported beside the pooled figure; VIX, VXN and RVX are built from index
+before/after split is reported beside the pooled figure; the snapshot's distance from the close is
+measured, not assumed: on 25 stress-month days per fund (lab/ OPRA, 2016-2026) the estimator moved a
+median 0.53 volatility points between 14:30 and 15:55 (GLD 0.14) - large beside H7's 0.25-0.30 bars; VIX, VXN and RVX are built from index
 options (SPX, NDX, RUT) while the free feed records the funds' options (SPY, QQQ, IWM), so H3's gaps
 on those three pairs include the index-versus-fund difference (GVZ and OVX are built from GLD's and
 USO's own options, so H5e and H7 are like for like); the free feed's quoted spreads are wider than
