@@ -9,7 +9,7 @@ paper returns, retention under the four cost cases, rules R0-R3, and strip cost 
 **Architecture:** Five small modules in `lab/`:
 - `bars.py`: daily closes, fetched by a manual GitHub workflow so the Alpaca keys stay in
   GitHub's secrets;
-- `calendar.py`: monthly expiries and entry days;
+- `tradecal.py` (not calendar.py: that name would shadow Python's own calendar module, which requests imports): monthly expiries and entry days;
 - `trades.py`: strike choice, settlement, P&L, rules, vega;
 - `buy_days.py`: the batch purchase;
 - `run_trades.py`: the run and the aggregate report.
@@ -47,7 +47,7 @@ part, Q3). **Registration:** `lab/REGISTRATION.md`.
 |---|---|
 | `lab/bars.py` | fetch raw + adjusted daily closes (in CI), write and load `bars.csv` |
 | `.github/workflows/lab_bars.yml` | manual workflow: run `bars.py` with the secrets, 1-day artifact |
-| `lab/calendar.py` | third Fridays, monthly expiries on the trading calendar, entry/expiry pairs |
+| `lab/tradecal.py` | third Fridays, monthly expiries on the trading calendar, entry/expiry pairs |
 | `lab/trades.py` | strike choice, raw-close settlement, per-leg P&L by cost case, rules R0-R3, Black-76 vega |
 | `lab/buy_days.py` | buy every entry day's quotes and listings in one batch, one ledger commit |
 | `lab/run_trades.py` | integrity per day, trades, per-trade rows (private), aggregate report |
@@ -282,7 +282,7 @@ shows each fund starting 2016-01-04.
 ### Task 3: The calendar
 
 **Files:**
-- Create: `lab/calendar.py`
+- Create: `lab/tradecal.py`
 - Modify: `lab/test_lab.py`
 
 **Interfaces:**
@@ -295,7 +295,7 @@ shows each fund starting 2016-01-04.
 - [ ] **Step 1: Append the failing tests**
 
 ```python
-cal = load("calendar")
+cal = load("tradecal")
 print("\n=== calendar ===")
 from datetime import date as _d, timedelta as _td   # noqa: E402
 _days = [(_d(2016, 1, 4) + _td(i)).isoformat() for i in range(0, 3900)
@@ -313,9 +313,9 @@ check(f"about 127 trades ({len(_e)})", 125 <= len(_e) <= 128)
 check("pairs never overlap", all(_e[i][1] < _e[i + 1][0] for i in range(len(_e) - 1)))
 ```
 
-- [ ] **Step 2: Run and confirm failure** (`FileNotFoundError` for `lab/calendar.py`)
+- [ ] **Step 2: Run and confirm failure** (`FileNotFoundError` for `lab/tradecal.py`)
 
-- [ ] **Step 3: Write `lab/calendar.py`**
+- [ ] **Step 3: Write `lab/tradecal.py`**
 
 ```python
 """lab/ - the trade calendar (EXPLORATORY). Standard monthly options expire on the third Friday,
@@ -364,7 +364,7 @@ def entries(trading_days):
 - [ ] **Step 5: Commit**
 
 ```bash
-git add lab/calendar.py lab/test_lab.py
+git add lab/tradecal.py lab/test_lab.py
 git commit -m "lab/: the trade calendar - monthly expiries on the trading calendar, entry after each, 2016-01-19 to 2026-07-20
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
@@ -546,7 +546,7 @@ Expected: five `KILLED lab-...` lines and `RESULT: 73 of 73 safeguards proven to
 - Create: `lab/buy_days.py`
 
 **Interfaces:**
-- Consumes: `bars.load`, `calendar.entries`, `fetch_lab.fetch`, `fetch_lab.fetch_listings`,
+- Consumes: `bars.load`, `tradecal.entries`, `fetch_lab.fetch`, `fetch_lab.fetch_listings`,
   `fetch_lab.sync_ledger`, `fetch_lab.commit_ledger`, `opra_reference.api_key`.
 - Produces: CLI `--dry-run` / real; prints the total and makes one ledger commit.
 
@@ -576,7 +576,7 @@ def _load(name):
     return m
 
 
-bars, cal, fl = _load("bars"), _load("calendar"), _load("fetch_lab")
+bars, cal, fl = _load("bars"), _load("tradecal"), _load("fetch_lab")
 
 
 def main():
@@ -675,7 +675,7 @@ def _load(name):
     return m
 
 
-bars_m, cal, fl, integ, tr, costs = (_load(n) for n in ("bars", "calendar", "fetch_lab", "integrity", "trades", "costs"))
+bars_m, cal, fl, integ, tr, costs = (_load(n) for n in ("bars", "tradecal", "fetch_lab", "integrity", "trades", "costs"))
 OUT = fl.PRIVATE / "lab-out" / "trades.csv"
 CASES = ("mid", "timed", "retail", "quoted")
 

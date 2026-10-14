@@ -198,5 +198,22 @@ check("raw and adjusted read back separately (USO's 1-for-8 split, 29 Apr 2020)"
       _b["USO"]["2020-04-28"] == (2.14, 17.12) and _b["USO"]["2020-04-29"] == (18.01, 18.01))
 check("the bars file lives outside the public repo", not ore.inside_repo(bars.BARS_FILE))
 
+cal = load("tradecal")
+print("\n=== calendar ===")
+from datetime import date as _d, timedelta as _td   # noqa: E402
+_days = [(_d(2016, 1, 4) + _td(i)).isoformat() for i in range(0, 3900)
+         if (_d(2016, 1, 4) + _td(i)).weekday() < 5]
+_hol = {"2016-01-18", "2016-02-15", "2019-04-19", "2026-07-03"}  # MLK, Presidents' Day, Good Friday, July 4th observed
+_trd = [x for x in _days if x not in _hol and x <= "2026-08-31"]
+check("third Friday of Jan 2016 is the 15th", cal.third_friday(2016, 1) == _d(2016, 1, 15))
+check("April 2019 expiry moves to Thursday the 18th (Good Friday)", cal.monthly_expiry(2019, 4, set(_trd)) == "2019-04-18")
+_e = cal.entries(_trd)
+check(f"first pair: enter 19 Jan 2016 (after MLK Day), expire 19 Feb ({_e[0]})", _e[0] == ("2016-01-19", "2016-02-19"))
+check(f"last pair ends by 31 Aug 2026: enter 20 Jul, expire 21 Aug ({_e[-1]})", _e[-1] == ("2026-07-20", "2026-08-21"))
+_g = [(_d.fromisoformat(b) - _d.fromisoformat(a)).days for a, b in _e]
+check(f"every holding period is 24-32 days ({min(_g)}-{max(_g)})", min(_g) >= 24 and max(_g) <= 32)
+check(f"about 127 trades ({len(_e)})", 125 <= len(_e) <= 128)
+check("pairs never overlap", all(_e[i][1] < _e[i + 1][0] for i in range(len(_e) - 1)))
+
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)
