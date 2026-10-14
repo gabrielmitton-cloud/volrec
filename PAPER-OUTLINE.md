@@ -43,6 +43,15 @@ measurement, not a new method. The methods are Cboe's and published work's, and 
   larger interpolation error of monthly-only indices such as OVX and GVZ.
 - Carr & Wu (2009): variance swaps and the variance risk premium, which H1 and H2 follow.
 - Bakshi & Kapadia (2003): delta-hedged gains (H4, appendix).
+- For section 5b (lab/): Santa-Clara & Saretto (2009, JFM 12(3)) - spreads and margin calls on S&P 500
+  option writing; Muravyev & Pearson (2020, RFS 33(11)) - effective vs quoted spreads; Dew-Becker,
+  Giglio, Le & Rodriguez (2017, JFE 123(2); read in the NBER w21182 version - confirm figures against
+  the published text) - only one-month realised-variance risk is priced (Sharpe about -1.7 for a long
+  position), which is why the lab trades one-month claims; dealer variance-swap bid-asks of 1-2% up to
+  one year give an institutional benchmark for the retail costs measured (units differ; compare with
+  care). Still to read: Goyal & Saretto (2009, JFE 94) for rule R1; Bondarenko (2014, J. Econometrics
+  180) for the premium's size; Bogousslavsky & Muravyev (working paper, SSRN 4682388) for retail
+  effective spreads.
 - The gap: "to our knowledge, no study benchmarks a free retail options feed against OPRA or
   Cboe's indices." Backed by the dated search log in the appendix (searches of 9 Oct 2026).
   Free-vs-authoritative comparisons exist only for equities (Clayton & Schmidt 2017, Yahoo vs
