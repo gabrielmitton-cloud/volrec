@@ -422,5 +422,24 @@ check("a thin chain is flagged", "thin chain" in eng.read(_chain(step=15), hist)
 check("spreads wider than this fund's 90th percentile are flagged", "wide spreads" in eng.read(_chain(frac=0.10), hist)["flags"])
 check("an empty chain reads nothing", eng.read([], hist)["vol"] is None)
 
+vp = load("verify_purchases")
+print("\n=== purchase verification ===")
+_vd = Path(__import__("tempfile").mkdtemp())
+_qh = "ts_recv,ts_event,rtype,publisher_id,instrument_id,side,price,size,flags,bid_px_00,ask_px_00,bid_sz_00,ask_sz_00,bid_pb_00,ask_pb_00,symbol\n"
+(_vd / "OPRA_LAB_SPY_2018-02-05_1430.csv").write_text(_qh + "2018-02-05T19:30:00Z,,193,30,1,N,,0,0,1.0,1.1,1,1,1,1,SPY   180316C00265000\n")
+(_vd / "OPRA_LAB_QQQ_2018-12-24_1430.csv").write_text(_qh)
+(_vd / "OPRA_LAB_IWM_2018-02-05_1430.csv").write_text(_qh + "2018-02-05T19:30:00Z,,193,30,1,N,,0,0,1.0,1.1,1,1,1,1,IWM   180316C00150")
+(_vd / "DEF_LAB_GLD_2018-02-05.csv").write_text("ts_recv,raw_symbol\n2018-02-05T10:30:00Z,SPY   180316C00265000\n")
+check("a good quote file passes", vp.file_problem(_vd / "OPRA_LAB_SPY_2018-02-05_1430.csv") is None)
+check("a header-only file is caught (the 14 Oct false positive)", vp.file_problem(_vd / "OPRA_LAB_QQQ_2018-12-24_1430.csv") == "header only - no data rows")
+check("a truncated file is caught", "truncated" in vp.file_problem(_vd / "OPRA_LAB_IWM_2018-02-05_1430.csv"))
+check("another fund's data under this fund's name is caught", "is not GLD" in vp.file_problem(_vd / "DEF_LAB_GLD_2018-02-05.csv"))
+_files = ["OPRA_LAB_SPY_2018-02-05_1430.csv", "OPRA_LAB_SPY_2018-02-06_1555.csv", "DEF_LAB_SPY_2018-02-05.csv"]
+_led = [{"date": "2018-02-05", "symbol": "SPY-lab"}, {"date": "2018-02-05", "symbol": "SPY-def-lab"}, {"date": "2018-02-07", "symbol": "QQQ-lab"}]
+_mm = vp.reconcile(_files, _led)
+check(f"a file with no ledger row and a ledger row with no file are both caught ({_mm})",
+      (("quote", "2018-02-06", "SPY"), 1, 0) in _mm and (("quote", "2018-02-07", "QQQ"), 0, 1) in _mm and len(_mm) == 2)
+check("a matched set reconciles clean", vp.reconcile(_files[:1] + _files[2:], _led[:2]) == [])
+
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)

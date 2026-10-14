@@ -437,6 +437,19 @@ ok(_flm.date_ok("2026-08-31") and not _flm.date_ok("2026-09-01") and not _flm.da
    and (_flm.LAB_START, _flm.LAB_END) == ("2015-08-01", "2026-08-31"),
    "lab/ purchases refused outside 1 Aug 2015 - 31 Aug 2026 (clear of every registered window)")
 ok(not _flm.ore.inside_repo(_flm.LAB_DIR), "lab/ OPRA files live outside this repository")
+# 14 Oct audit: 15 lab files had been charged and logged as bought yet held only a header. The
+# verifier re-checks every purchase against the ledger and the plan - on the Mac, where the data is.
+if _flm.LAB_DIR.exists():
+    _vr = _sp.run([sys.executable, str(R / "lab/verify_purchases.py")], capture_output=True, text=True)
+    ok(_vr.returncode == 0 and "RESULT: VERIFIED" in _vr.stdout,
+       "lab/ purchases verified: every used file has data, files and ledger match one to one, dates in range")
+else:
+    print("  SKIP  lab/ purchase verification (the licensed lab data is not on this machine)")
+_regs = ["modelfree.py", "analyze.py", "hedged.py", "record.py", "surface.py", "tools/h7_reader.py",
+         "tools/h8_quotes.py", "tools/record_verdict.py", "tools/opra_reference.py", "tools/ovx_replicate.py"]
+_code = lambda f: "\n".join(ln.split("#", 1)[0] for ln in (R / f).read_text().splitlines())   # comments may mention lab/
+ok(not any(("lab/" in _code(f) or "import lab" in _code(f) or '"lab"' in _code(f)) for f in _regs if (R / f).exists()),
+   "no registered reader imports or reads lab/ (the side project cannot move a registered number)")
 _rv7 = _iu.module_from_spec(_iu.spec_from_file_location("rv7", R / "tools/record_verdict.py"))
 _iu.spec_from_file_location("rv7", R / "tools/record_verdict.py").loader.exec_module(_rv7)
 _o7 = ("H7a USO: n=12 mean |free - OPRA| 0.180 (bar 0.25)\nH7a GLD: n=12 mean |free - OPRA| 0.090 (bar 0.25)\n"
