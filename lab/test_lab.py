@@ -347,5 +347,28 @@ check("expected shortfall at 90% of 1..10 is the worst one, 1", sx.expected_shor
 check("ruin: a path that halves counts, one that does not, does not",
       sx.ruin_prob([[-0.6], [0.1, -0.2]], 0.5) == 0.5)
 
+be = load("breakeven")
+print("\n=== Break-Even VIX statistics ===")
+_x = [float(v) for v in range(10, 41)]
+_y = [0.2 * v - 4.0 for v in _x]                       # crosses zero at 20
+a_, b_ = be.ols(_x, _y)
+check(f"OLS recovers an exact line: intercept -4, slope 0.2 ({a_:.6f}, {b_:.6f})", abs(a_ + 4) < 1e-9 and abs(b_ - 0.2) < 1e-9)
+check("the crossing of that line is at 20", abs(be.crossing(a_, b_, 10, 40) - 20.0) < 1e-9)
+check("a crossing outside the observed range is not reported", be.crossing(a_, b_, 25, 40) is None)
+check("a flat line has no crossing", be.crossing(1.0, 0.0, 10, 40) is None)
+bb = be.bins(list(range(10)), [2 * v for v in range(10)], 5)
+check(f"quintile bins of 10 points: 5 bins of 2, means right ({bb})", len(bb) == 5 and all(c == 2 for *_, c in bb) and bb[0][:2] == (0.5, 1.0))
+_g2 = _r.Random(5)
+_yn = [0.2 * v - 4.0 + _g2.gauss(0, 0.5) for v in _x * 4]
+s_, lo_, hi_ = be.slope_ci(_x * 4, _yn, 4)
+check(f"a real positive slope has an interval above zero ({lo_:.3f}..{hi_:.3f})", lo_ > 0 and lo_ < s_ < hi_)
+_flat = [_g2.gauss(0, 1) for _ in _x * 4]
+s2, lo2, hi2 = be.slope_ci(_x * 4, _flat, 4)
+check(f"pure noise: the interval covers zero ({lo2:.3f}..{hi2:.3f})", lo2 < 0 < hi2)
+cr, out_ = be.boot_crossing(_x * 4, _yn, 1.0, 300, 11, 10, 40)
+cr.sort()
+check(f"bootstrapped crossings cluster at 20 (median {cr[len(cr) // 2]:.2f}, {out_} out of range)",
+      abs(cr[len(cr) // 2] - 20.0) < 1.0 and out_ == 0)
+
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)
