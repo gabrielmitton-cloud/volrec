@@ -107,3 +107,24 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   cannot be sold); a crossed leg yields no trade rather than a crash; a day with no index level
   lets only R0 and R3 trade. R2 stays 20/index uncapped, so it sizes above 1 when the index is
   below 20 - stated, and pinned by a test.
+- 2026-10-14, AFTER data - Plan 2's first run (628 fund-months pass every check, 7 excluded).
+  Two changes made after seeing the first run, both logged here because they move numbers:
+  1. NYSE half-days: 24 Dec 2018 (1 p.m. close) had no quotes at 14:30, which silently dropped
+     December 2018 - a crash month - for all five funds. Half-day entries now use 11:30 (the
+     recorder's early-close time) and daily marks 12:55 (`tradecal.EARLY_CLOSES`, `slot`).
+  2. A sensitivity is now always printed beside the registered numbers: every excluded month that
+     can still be traded, added back. It matters: USO's straddle is +0.069 per $1 of premium at mid
+     as registered (n=123) but -0.029 with its 4 excluded months added back (n=127; Mar/Apr 2020,
+     when USO traded near $2 and only 2 strikes fit the band, Jul 2025, Jan 2026). GLD: -0.038 ->
+     -0.093. Exclusions cluster in stress months, so the registered numbers flatter selling volatility
+     on those two funds. Both are reported, always.
+  Results, short ATM straddle, mean return per $1 of mid premium, registered; retail case (80% of the
+  quoted half-spread) and share kept vs mid: SPY +0.064 -> +0.062 (0.97); QQQ +0.063 -> +0.061 (0.97);
+  IWM +0.049 -> +0.046 (0.94); GLD -0.038 -> -0.045; USO +0.069 -> +0.049 (0.71). Worst single month
+  (mid): SPY -5.25, QQQ -3.23, IWM -6.95, GLD -3.49, USO -5.85 premiums. 5% strangle, retail kept:
+  SPY 0.99, QQQ 0.98, IWM 0.94; GLD and USO turn negative at any cost. Rules (retail): R1 helps SPY,
+  QQQ, GLD and hurts IWM, USO; R3 helps SPY, QQQ, IWM, GLD.
+  **P3 holds on 5 of 5:** strip cost / ATM cost, median: SPY 3.35, QQQ 2.86, IWM 2.71, GLD 2.06,
+  USO 2.49. **Early read on P1/P2 (judged in Plan 3, with margin):** for ATM fund straddles held to
+  expiry, spreads take only 3-6% of the premium on SPY/QQQ/IWM (29% on USO) - far less than the
+  single-stock costs in Muravyev & Pearson. The losses that matter here are crash months, not costs.

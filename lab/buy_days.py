@@ -36,11 +36,11 @@ def main():
     days = sorted(bars.load()["SPY"])
     plan = []                               # (day, time NY), in priority order: entries first
     if a.kind in ("entries", "all"):
-        plan += [(e, "14:30") for e, _x in cal.entries(days)]
+        plan += [(e, cal.slot(e, "14:30")) for e, _x in cal.entries(days)]
     if a.kind in ("stress", "all"):
-        plan += [(d, "15:55") for d in cal.stress_days(days)]
+        plan += [(d, cal.slot(d, "15:55")) for d in cal.stress_days(days)]
     if a.kind in ("weekly", "all"):
-        plan += [(d, "14:30") for d in cal.weekly_days(days)]
+        plan += [(d, cal.slot(d, "14:30")) for d in cal.weekly_days(days)]
     print(f"{len(plan)} day-times ({a.kind}), {a.workers} requests at a time")
     if not a.dry_run:
         fl.sync_ledger()

@@ -58,3 +58,21 @@ def weekly_days(trading_days):
     """Every trading Wednesday from the first trade to the last expiry (Break-Even VIX samples)."""
     return [d for d in sorted(trading_days)
             if "2016-01-06" <= d <= LAST_EXPIRY and date.fromisoformat(d).weekday() == 2]
+
+
+# NYSE 1 p.m. early closes, 2015-2026 (the day after Thanksgiving; Christmas Eve and July 3rd when
+# they fall on a trading weekday). Added 14 Oct 2026 AFTER the first run: 24 Dec 2018's 14:30 entry
+# found no quotes, which dropped December 2018 - a crash month - for all five funds.
+EARLY_CLOSES = {
+    "2015-11-27", "2015-12-24", "2016-11-25", "2017-07-03", "2017-11-24", "2018-07-03", "2018-11-23",
+    "2018-12-24", "2019-07-03", "2019-11-29", "2019-12-24", "2020-11-27", "2020-12-24", "2021-11-26",
+    "2022-11-25", "2023-07-03", "2023-11-24", "2024-07-03", "2024-11-29", "2024-12-24", "2025-07-03",
+    "2025-11-28", "2025-12-24", "2026-11-27", "2026-12-24"}
+
+
+def slot(day, hhmm):
+    """The New York time actually used: on a half-day, entries and weekly samples at 11:30 (as the
+    recorder does) and daily marks at 12:55 (five minutes before the 1 p.m. close)."""
+    if day not in EARLY_CLOSES:
+        return hhmm
+    return "12:55" if hhmm == "15:55" else "11:30"

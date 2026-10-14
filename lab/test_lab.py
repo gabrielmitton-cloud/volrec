@@ -236,6 +236,11 @@ _sd = cal.stress_days(_trd)
 check(f"stress days: every trading day of those months, Aug 2015 from weekdays ({len(_sd)})",
       "2015-08-24" in _sd and "2020-03-16" in _sd and "2018-02-05" in _sd
       and all(x[:7] in cal.STRESS_MONTHS for x in _sd) and 140 <= len(_sd) <= 150)
+check("NYSE 1 p.m. closes 2015-2026: Christmas Eve 2018, July 3rd 2019, day after Thanksgiving 2020",
+      {"2018-12-24", "2019-07-03", "2020-11-27", "2025-12-24"} <= cal.EARLY_CLOSES and "2021-12-24" not in cal.EARLY_CLOSES)
+check("an entry on a half-day moves to 11:30 (the recorder's early-close time)", cal.slot("2018-12-24", "14:30") == "11:30")
+check("a daily mark on a half-day moves to 12:55", cal.slot("2018-12-24", "15:55") == "12:55")
+check("a normal day keeps its time", cal.slot("2018-12-21", "14:30") == "14:30" and cal.slot("2018-12-21", "15:55") == "15:55")
 _wd = cal.weekly_days(_trd)
 check(f"weekly samples: trading Wednesdays, 2016-01-06 to 2026-08-26 ({len(_wd)})",
       _wd[0] == "2016-01-06" and _wd[-1] == "2026-08-26" and all(_d.fromisoformat(x).weekday() == 2 for x in _wd)
