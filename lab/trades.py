@@ -17,8 +17,13 @@ INDEX = {"SPY": "VIX", "QQQ": "VXN", "IWM": "RVX", "GLD": "GVZ", "USO": "OVX"}
 R2_REF = 20.0
 
 
+def _sellable(q):
+    """A leg a seller can actually hit: a positive bid, and not crossed."""
+    return q[0] is not None and q[0] > 0 and q[1] >= q[0]
+
+
 def nearest_strike(chain, target):
-    two = [k for k, q in chain.items() if "C" in q and "P" in q and q["C"][1] > 0 and q["P"][1] > 0]
+    two = [k for k, q in chain.items() if "C" in q and "P" in q and _sellable(q["C"]) and _sellable(q["P"])]
     return min(two, key=lambda k: (abs(k - target), k)) if two else None
 
 
@@ -31,9 +36,12 @@ def intrinsic(kind, K, S):
 
 
 def leg(bid, ask, kind, K, S, case):
+    """(mid premium, P&L per share), or None for a quote half_spread rejects (no ask, crossed)."""
+    h = costs.half_spread(bid, ask)
+    if h is None:
+        return None
     mid = ((bid or 0.0) + ask) / 2.0
-    sold = mid - costs.charged(costs.half_spread(bid, ask), case)
-    return mid, sold - intrinsic(kind, K, S)
+    return mid, mid - costs.charged(h, case) - intrinsic(kind, K, S)
 
 
 def position(chain, F, S_exp, case, kind="straddle"):
@@ -43,8 +51,10 @@ def position(chain, F, S_exp, case, kind="straddle"):
         kp, kc = nearest_strike(chain, 0.95 * F), nearest_strike(chain, 1.05 * F)
     if kp is None or kc is None:
         return None
-    pm, pp = leg(*chain[kp]["P"], "P", kp, S_exp, case)
-    cm, cp = leg(*chain[kc]["C"], "C", kc, S_exp, case)
+    lp, lc = leg(*chain[kp]["P"], "P", kp, S_exp, case), leg(*chain[kc]["C"], "C", kc, S_exp, case)
+    if lp is None or lc is None:
+        return None
+    (pm, pp), (cm, cp) = lp, lc
     prem = pm + cm
     return {"K_put": kp, "K_call": kc, "premium": prem, "pnl": pp + cp, "ret": (pp + cp) / prem if prem > 0 else None}
 
@@ -57,6 +67,11 @@ def vega76(F, K, T, vol):
 
 
 def rule_weights(index_prev, rv_prev, vix_prev, vix3m_prev):
+    """R2 is 20/index uncapped (registered: below an index of 20 it sizes above 1). No index level
+    that day -> only R0 and R3 can trade, and R2 stands aside."""
+    if index_prev is None or index_prev <= 0:
+        return {"R0": 1.0, "R1": 0.0, "R2": 0.0,
+                "R3": 0.0 if (vix3m_prev is not None and vix_prev is not None and vix3m_prev < vix_prev) else 1.0}
     return {"R0": 1.0,
             "R1": 1.0 if (rv_prev is not None and index_prev > rv_prev) else 0.0,
             "R2": R2_REF / index_prev,

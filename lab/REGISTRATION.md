@@ -102,3 +102,8 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   - Correction to the registration's "28-35 days out": entering on the trading day AFTER an
     expiry, the hold to the next monthly is 24-32 calendar days (the 28- or 35-day cycle less the
     days to the next session). The calendar rule itself is unchanged.
+- 2026-10-14, before any trade is computed - three edge cases closed (from an automated review):
+  only strikes with a positive, uncrossed bid on both legs are eligible (an option with no bid
+  cannot be sold); a crossed leg yields no trade rather than a crash; a day with no index level
+  lets only R0 and R3 trade. R2 stays 20/index uncapped, so it sizes above 1 when the index is
+  below 20 - stated, and pinned by a test.

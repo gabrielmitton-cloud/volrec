@@ -244,6 +244,15 @@ check(f"rules, calm contango, index above realised: all trade, R2 = 20/25 ({w})"
 w2 = tr.rule_weights(25.0, 30.0, 30.0, 27.0)
 check(f"index below realised and inverted VIX: R1 and R3 stand aside ({w2})", w2["R1"] == 0.0 and w2["R3"] == 0.0 and w2["R0"] == 1.0)
 check("no realised volatility yet: R1 does not trade", tr.rule_weights(25.0, None, 22.0, 24.0)["R1"] == 0.0)
+check("R2 sizes above 1 when the index is below 20 (registered, uncapped): 20/12.5 = 1.6",
+      tr.rule_weights(12.5, 10.0, 12.0, 14.0)["R2"] == 1.6)
+check("no index level that day: R1 and R2 stand aside, nothing crashes",
+      tr.rule_weights(None, 15.0, 22.0, 24.0) == {"R0": 1.0, "R1": 0.0, "R2": 0.0, "R3": 1.0})
+_ch2 = {100.0: {"C": (0.0, 3.2), "P": (2.9, 3.1)}, 101.0: {"C": (2.5, 2.6), "P": (3.4, 3.6)}}
+check("a strike with no call bid cannot be sold, so it is not chosen", tr.nearest_strike(_ch2, 100.0) == 101.0)
+_ch3 = {100.0: {"C": (3.3, 3.2), "P": (2.9, 3.1)}, 101.0: {"C": (2.5, 2.6), "P": (3.4, 3.6)}}
+check("a crossed quote is not chosen either", tr.nearest_strike(_ch3, 100.0) == 101.0)
+check("a crossed leg gives no P&L rather than a crash", tr.leg(3.3, 3.2, "C", 100, 100, "retail") is None)
 
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)
