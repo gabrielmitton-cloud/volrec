@@ -18,7 +18,7 @@ it never searches.
 MONEY - read this. New Databento accounts carry a free credit ($125 when this was
 written). Every request is priced FIRST with Databento's own get_cost call. The
 tool refuses a request over --max-cost (default $0.50) and refuses anything that
-would take the running total in the local ledger past LIFETIME_CAP_USD ($100),
+would take the running total in the local ledger past LIFETIME_CAP_USD ($120 since 14 Oct 2026),
 leaving the rest of the credit as margin. --dry-run spends nothing at all.
 
 KEY: environment variable DATABENTO_API_KEY, or the file ~/.config/volrec/databento.key
@@ -54,7 +54,7 @@ SCHEMA = "cbbo-1m"                     # consolidated BBO, one-minute; checked l
 DATA_DIR = Path(os.environ.get("VOLREC_DATABENTO_DIR") or Path.home() / "Documents" / "volrec-databento")
 KEY_FILE = Path.home() / ".config" / "volrec" / "databento.key"
 LEDGER = DATA_DIR / "spend.csv"
-LIFETIME_CAP_USD = 100.0
+LIFETIME_CAP_USD = 120.0              # $100 until 14 Oct 2026; Gabriel raised it to $120 (lab/ bought ~$79)
 DEFAULT_MAX_COST = 0.50
 WINDOW_BEFORE, WINDOW_AFTER = 2, 3     # minutes around the snapshot's median quote time
 MATCH_TOLERANCE_S = 120                # a contract with no OPRA record this close is excluded

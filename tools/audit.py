@@ -75,7 +75,7 @@ MUTANTS = [
                     'Path.home() / "Documents" / "volrec-databento")', 'ROOT / "opra-data")'),
      "OPRA data and the Databento key live outside the repository"),
     ("opra-cap-raised", "the Databento lifetime cap is raised tenfold",
-     lambda w: _sub(w / "tools/opra_reference.py", "LIFETIME_CAP_USD = 100.0", "LIFETIME_CAP_USD = 1000.0"),
+     lambda w: _sub(w / "tools/opra_reference.py", "LIFETIME_CAP_USD = 120.0", "LIFETIME_CAP_USD = 1200.0"),
      "the caps leave margin inside the free credit"),
     ("docs-lose-databento-credit", "OPRA figures in H5 lose the Databento credit",
      lambda w: _sub(w / "hypotheses/2026-09-19-h5-wing-quote-quality.md",

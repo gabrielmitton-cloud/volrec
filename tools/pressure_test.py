@@ -1218,7 +1218,7 @@ _opsrc = (R / "tools/opra_reference.py").read_text()
 ok('stem = f"OPRA_M_{symbol}_{date}" if monthly else f"OPRA_{symbol}_{date}"' in _opsrc
    and "rows = monthly_recorded(date, symbol) if monthly else recorded(date, symbol)" in _opsrc,
    "monthly-leg OPRA files are separate (OPRA_M_*) and timed to the monthly rows; H5f's files are untouched")
-ok(_opm.LIFETIME_CAP_USD <= 110 and _opm.DEFAULT_MAX_COST <= 1.0,
+ok(_opm.LIFETIME_CAP_USD <= 120 and _opm.DEFAULT_MAX_COST <= 1.0,   # $120 (Gabriel, 14 Oct), inside the $125 credit
    "the caps leave margin inside the free credit")
 _fsrc = (R / "tools/opra_reference.py").read_text()
 _fetch = _fsrc[_fsrc.index("def fetch("):_fsrc.index("def compare(") if "def compare(" in _fsrc else None]
