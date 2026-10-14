@@ -79,7 +79,10 @@ def weekly(sym, bars, vol, trading):
         got = atm(ch, F, (date.fromisoformat(e) - date.fromisoformat(day)).days / 365.0) if F else None
         x = prev(vol[tr.INDEX[sym]], day)
         if got and x:
-            rows.append({"day": day, "x": x, "vix": prev(vol["VIX"], day), "cost_pts": got[0], "cost_frac": got[1]})
+            row = {"day": day, "x": x, "vix": prev(vol["VIX"], day), "cost_pts": got[0], "cost_frac": got[1]}
+            if e in bars[sym]:                  # weekly entries held to their expiry: the robustness check
+                row["net"] = (got[3] - abs(tr.settle(bars, sym, e) - got[4])) / got[2] - got[0]
+            rows.append(row)
     return rows
 
 
@@ -138,6 +141,21 @@ def main():
         print(f"   weekly n={len(w)}: retail cost / premium vs {idx}: slope {s_:+.5f} (95% {l_:+.5f}..{h_:+.5f}) -> "
               f"{'RISES' if rises else 'does not rise'}; cost in vol points by quintile: "
               + "  ".join(f"{bx:.1f}: {by:.3f}" for bx, by, _n in be.bins(wx, [r['cost_pts'] for r in w])))
+        # Spec section 7 robustness (added 14 Oct, AFTER the first results, found missing by the audit):
+        # the same fit on overlapping weekly entries with a Newey-West slope interval, and on VIX for every fund.
+        wn = [r for r in w if "net" in r]
+        if len(wn) > 20:
+            ws_, wl_, wh_ = be.slope_ci([r["x"] for r in wn], [r["net"] for r in wn], 4)
+            wa, wb = be.ols([r["x"] for r in wn], [r["net"] for r in wn])
+            wc = be.crossing(wa, wb, min(r["x"] for r in wn), max(r["x"] for r in wn))
+            print(f"   robustness, weekly entries n={len(wn)}: slope {ws_:+.4f} (95% NW {wl_:+.4f}..{wh_:+.4f}); "
+                  f"crossing {'%.1f' % wc if wc is not None else 'none in range'}")
+            summary[sym]["weekly_robust"] = {"n": len(wn), "slope": [ws_, wl_, wh_], "crossing": wc}
+        vx = [r["vix"] for r in m]
+        va, vb = be.ols(vx, ys)
+        vcx = be.crossing(va, vb, min(vx), max(vx))
+        print(f"   on VIX for comparison: net = {va:+.3f} {vb:+.4f} x VIX; crossing {'%.1f' % vcx if vcx is not None else 'none in range'}")
+        summary[sym]["vix_axis"] = {"slope": vb, "crossing": vcx}
         print()
     json.dump(summary, open(fl.PRIVATE / "lab-out" / "breakeven_summary.json", "w"), indent=1)
     print(f"P4 (cost / premium rises with the index on >= 4 of 5): {p4} of 5 -> {'HOLDS' if p4 >= 4 else 'FAILS'}")

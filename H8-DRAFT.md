@@ -72,7 +72,9 @@ the snapshot minute, 17 Sep – 9 Oct. **OPRA (the real market) / the free feed:
 | NVDA | 0.280 | 0.288 | 1.03 | 170 |
 | AAPL | 0.420 | 0.416 | 0.99 | 264 |
 
-The yardstick is OPRA's column. The first draft (10 Oct) quoted the free column on 17 Sep – 8 Oct
+The yardstick is OPRA's column. Over ten years (lab/ weekly samples, 2016-2026, nearest-30-day ATM;
+lab/main_links.py) OPRA's median is SPY 0.028, QQQ 0.051, IWM 0.080, GLD 0.121, USO 0.737 - SPY's
+pilot is typical, while GLD's and USO's 2026 spreads run about 2.8x their decade medians. The first draft (10 Oct) quoted the free column on 17 Sep – 8 Oct
 (USO then 1.42); it overstated SPY's real half-spread about twofold. *Data provided by Databento
 (OPRA consolidated NBBO). Aggregates only.*
 

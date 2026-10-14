@@ -81,6 +81,22 @@ def be_chart(sym, d):
     return "".join(o)
 
 
+def free_data_rows(leak):
+    """Spec Q6: what a free-data user would think the spreads cost, using H8's pilot free/OPRA ratio."""
+    import importlib.util as _u
+    s = _u.spec_from_file_location("engine", Path(__file__).resolve().parent / "engine.py")
+    eng = _u.module_from_spec(s)
+    s.loader.exec_module(eng)
+    out = []
+    for f in FUNDS:
+        w = leak[f]["weights"]["0.05"]
+        if w["paper"] > 0:
+            true_c = 100 * w["leaks"]["spreads"][0] / w["paper"]
+            est = true_c * eng.PILOT[f][2]
+            out.append(f"<tr><td>{f}</td><td>{true_c:.1f}¢</td><td>{est:.1f}¢</td><td>{est - true_c:+.1f}¢</td></tr>")
+    return "".join(out)
+
+
 def page(leak, be):
     stress_rows = "".join(
         f"<tr><td>{s}</td><td>{100 * leak[s]['stress']['dd50']:.0f}%</td><td>{100 * leak[s]['stress']['dd95']:.0f}%</td>"
@@ -121,6 +137,9 @@ td:first-child,th:first-child{{text-align:left}}.key{{display:inline-flex;align-
 <p class="sub">Premium written = 5% or 20% of the account. Leaks are Shapley shares over all 24 orders of the frictions. {('Not drawn (no paper profit to keep): ' + undrawn + '.') if undrawn else ''} A negative leak (forced liquidation sometimes cut losses) is left out of the bar and reported in the registration.</p>
 <div>{legend}<span class="key"><i style="background:var(--kept)"></i>kept</span></div>
 {leak_chart(leak)}
+<h2>What free data gets wrong about the cost</h2>
+<p class="sub">Spreads' share of each paper dollar on real (OPRA) quotes, against what a user pricing from the free feed would estimate (its quotes run wider; ratio measured 17 Sep - 9 Oct 2026 and assumed constant). Estimate error only - never subtracted as cash.</p>
+<div class="tw"><table><tr><th>Fund</th><th>True (OPRA)</th><th>Free-data estimate</th><th>Misjudged by</th></tr>{free_data_rows(leak)}</table></div>
 <h2>The Break-Even VIX: no reliable crossing</h2>
 <p class="sub">Solid: the straddle's net result (P&amp;L / vega, minus retail cost) in volatility points, by quintile of the fund's own index. Dashed: the retail cost alone. Costs stay near zero beside swings of several points.</p>
 <div class="grid2">{be_cards}</div>

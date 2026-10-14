@@ -230,3 +230,28 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   P5 holds among funds with a paper profit. For a retail seller of liquid fund options held to
   expiry, trading costs are small; the crash month and, at larger sizes, margin decide the result;
   no fear level emerges at which costs eat the premium. Data: 8,073 OPRA files, $79.00.
+- 2026-10-14, AUDIT (Gabriel: "have high confidence but don't fully trust everything"). Findings:
+  1. **Purchases:** a new verifier (`lab/verify_purchases.py`, in the pressure test and the auditor)
+     found 15 files Databento charged for and the tool logged as bought that hold only a header
+     (half-day requests timed after the 1 p.m. close, before the 11:30 fix). None is used. Otherwise
+     verified: 8,073 files, each with exactly one ledger row and the reverse; no truncated file; no
+     ledger row outside the dates; every planned day-time present except the explained USO split day.
+  2. **Independent recomputation:** settlement closes match OPRA's implied forward at 15:55 on 30
+     expiry days (median 0.098%, worst 0.42% on 20 Mar 2020); the COVID trade rebuilt from the raw CSV
+     with the csv module alone reproduces Plan 2's -5.2546 exactly; the Leak Map's leaks sum to paper
+     minus kept to 1e-18.
+  3. **Spec items found missing, now done:** (i) model vs real marks in the stress months: no bias
+     (median error SPY +0.1%, QQQ +0.3%, IWM 0.0%, GLD +3.4%, USO +1.7% of the straddle's value),
+     median absolute error 3-7%; (ii) the free-data bar: pricing costs from the free feed overstates the
+     spreads leak by +2.7 / +1.0 / +1.7 / +0.9 cents per $1 on SPY / QQQ / IWM / USO (the 2026 pilot
+     ratio applied to the decade - stated); (iii) Break-Even robustness: weekly entries (Newey-West)
+     and VIX for every fund. They confirm "no reliable break-even": SPY's weekly slope is +0.023 (95%
+     -0.199..+0.245) against the monthly -0.46; only GLD's weekly slope is significant (+0.378,
+     +0.067..+0.690).
+  4. **Checks added:** no registered reader may import lab/ (pressure test + mutant); the purchase
+     verifier's two rules each proved by a mutant. Auditor 79 of 79.
+  5. **For the main project (exploratory, `lab/main_links.py`):** on stress-month Wednesdays the
+     registered estimator moves a median 0.53 volatility points between 14:30 and 15:55 (GLD 0.14,
+     USO 0.74; one broken USO day in April 2020 excluded from interpretation) - the snapshot-timing
+     effect, measured without LSEG. OPRA's ATM half-spread over 2016-2026: SPY 0.028, QQQ 0.051, IWM
+     0.080, GLD 0.121, USO 0.737 volatility points (2026 alone: 0.026, 0.058, 0.093, 0.341, 2.067).
