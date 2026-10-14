@@ -2606,6 +2606,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   summaries, report.html) - nothing on the public site until Cboe replies; then a site page is part of
   the post-November discussion. Re-run: `lab/run_trades.py`, `run_leak.py`, `run_breakeven.py`,
   `report.py`; the trust engine: `lab/engine.py` (latest free-feed day). Auditor 76/76.
+  **Databento reconciled, 14 Oct (Gabriel's portal screenshots):** October charges $44.28 (definition 5.99 GB at
+  $5/GB = $29.92; cbbo-1m 7.18 GB at $2/GB = $14.35), all from credit; $80.64 credit remains; monthly limit
+  $120. Our ledger shows $81.28 for October - it OVER-counts real charges by about 1.8x, the safe direction,
+  so every cap in the code is conservative. No card charge; H8's remaining ~$12 (ledger terms) is covered.
   **lab/ audit, 14 Oct (Gabriel asked for one):** purchase verifier attached (found 15 charged-but-empty
   files, none used); independent recomputation matches; three missing spec items built; auditor 79/79.
   For the main project: the snapshot-timing effect measured at a median 0.53 pts in stress months (now in
