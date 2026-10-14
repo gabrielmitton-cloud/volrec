@@ -208,6 +208,15 @@ try:
     except SystemExit:
         _kind = "stop"
     check("a 422 'cannot resolve the symbol' is a skip, not a stop", _kind == "skip")
+    import requests as _rq
+    _calls.clear()
+    def _broken(*a, **k):
+        _calls.append(1)
+        if len(_calls) < 2:
+            raise _rq.exceptions.ChunkedEncodingError("Connection broken: IncompleteRead")
+        return "ok"
+    ore.call = _broken
+    check("a connection broken mid-download is retried", fl._call("x", {}, "k") == "ok" and len(_calls) == 2)
 finally:
     ore.call, ore._sleep = _real_call, _real_sleep
 

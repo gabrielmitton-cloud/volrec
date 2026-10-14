@@ -108,10 +108,13 @@ def _call(endpoint, data, key, tries=4):
                 raise
             print(f"    Databento {endpoint}: gateway error, retrying in {120 * (i + 1)}s")
             ore._sleep(120 * (i + 1))
-        except requests.exceptions.Timeout:
+        except (requests.exceptions.Timeout, requests.exceptions.ChunkedEncodingError,
+                requests.exceptions.ConnectionError) as e:
+            # 14 Oct: a connection broken mid-body (ChunkedEncodingError) ended a batch; nothing had
+            # been written, so a retry is safe.
             if i == tries - 1:
-                sys.exit(f"Databento {endpoint}: timed out {tries} times; stopping (nothing half-written)")
-            print(f"    Databento {endpoint}: timed out, retrying in {20 * (i + 1)}s")
+                sys.exit(f"Databento {endpoint}: {type(e).__name__} {tries} times; stopping (nothing half-written)")
+            print(f"    Databento {endpoint}: {type(e).__name__}, retrying in {20 * (i + 1)}s")
             ore._sleep(20 * (i + 1))
 
 
