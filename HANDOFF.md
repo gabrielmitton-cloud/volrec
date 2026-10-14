@@ -2606,6 +2606,15 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   summaries, report.html) - nothing on the public site until Cboe replies; then a site page is part of
   the post-November discussion. Re-run: `lab/run_trades.py`, `run_leak.py`, `run_breakeven.py`,
   `report.py`; the trust engine: `lab/engine.py` (latest free-feed day). Auditor 76/76.
+  **Roadmap agreed with Gabriel, 14 Oct (Vega picks the timing; each needs its own plan first):**
+  1. H9 - register BEFORE looking, right after the 12-19 Nov verdicts (Cboe-method replica on the lab's
+  OPRA entry days vs GVZ/OVX, 2016-2026; dates the 2022 NBBO switch; confirm it with IndexSupport@cboe.com).
+  2. A second free feed (the paper's biggest limitation is one free feed) - terms check first; spring or a
+  second paper. 3. LSEG intraday timing, if Marc unlocks .OVX/.GVZ. 4. lab/: a delta-hedged version.
+  Then, at write-up time (Jan-Feb 2027): a red-team review by role-based agents (methods skeptic,
+  statistician, cold replicator, novelty checker, licensing auditor, professor-reader) as CRITICS, not
+  pattern-hunters; a second company's model may review text and aggregates only, never licensed raw data.
+  Anything noticed is exploratory until pre-registered on new data. Finish the paper first.
   **14 Oct, evening:** PAPER-DRAFT.md v1 (sections 3, 4, 5b, written before the verdicts); the site's
   snapshot-timing limitation now gives the measured 0.53 pts. Cboe follow-up drafted in chat for Mon 19 Oct
   (send only if no reply; it adds the lab's aggregates to the request).
