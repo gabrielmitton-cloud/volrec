@@ -1202,7 +1202,7 @@ _hdr = ["ts_recv", "ts_event", "rtype", "bid_px_00", "ask_px_00", "bid_sz_00", "
 ok(_opm.columns(_hdr) == {"symbol": 6, "ts": 0, "bid": 3, "ask": 4},
    "OPRA CSV columns are found by name, not position")
 ok(_opm.budget_ok(0.10, 0.50, 0.0)[0] and not _opm.budget_ok(0.60, 0.50, 0.0)[0]
-   and not _opm.budget_ok(0.40, 0.50, 99.80)[0],
+   and not _opm.budget_ok(0.40, 0.50, _opm.LIFETIME_CAP_USD - 0.20)[0] and _opm.budget_ok(0.10, 0.50, _opm.LIFETIME_CAP_USD - 0.20)[0],
    f"the money guard refuses a request over the per-request cap and past the "
    f"${_opm.LIFETIME_CAP_USD:.0f} lifetime cap")
 # H7 (8 Oct 2026): the monthly-leg purchases have their own cap Gabriel approved (~$1), and
