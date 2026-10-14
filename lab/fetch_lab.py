@@ -94,6 +94,13 @@ def _call(endpoint, data, key, tries=4):
     for i in range(tries):
         try:
             return ore.call(endpoint, data, key, _fn=_post_patiently)
+        except SystemExit as e:
+            # ore.call stops after three quick retries of a gateway error (502/503/504); a long
+            # batch outlives a busy hour, so wait minutes, not seconds (14 Oct: a 504 ended the run).
+            if " returned 50" not in str(e) or i == tries - 1:
+                raise
+            print(f"    Databento {endpoint}: gateway error, retrying in {120 * (i + 1)}s")
+            ore._sleep(120 * (i + 1))
         except requests.exceptions.Timeout:
             if i == tries - 1:
                 sys.exit(f"Databento {endpoint}: timed out {tries} times; stopping (nothing half-written)")

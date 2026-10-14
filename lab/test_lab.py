@@ -185,6 +185,23 @@ check("lab spend counts quotes and listings (-lab rows) only", abs(fl.spent_lab(
 check("within the lab cap", fl.lab_budget_ok(0.20, 89.70)[0])
 check("over the lab cap is refused", not fl.lab_budget_ok(0.20, 89.90)[0])
 check("the lab's data folder is outside the public repo", not ore.inside_repo(fl.LAB_DIR))
+_calls, _real_call, _real_sleep = [], ore.call, ore._sleep
+def _flaky(endpoint, data, key, method="post", _fn=None):
+    _calls.append(1)
+    if len(_calls) < 3:
+        raise SystemExit(f"Databento {endpoint} returned 504: <html>Gateway Time-out</html>")
+    return "ok"
+ore.call, ore._sleep = _flaky, (lambda s: None)
+try:
+    check("a gateway 504 that outlasts ore.call's retries is waited out, not fatal", fl._call("x", {}, "k") == "ok" and len(_calls) == 3)
+    ore.call = lambda *a, **k: (_ for _ in ()).throw(SystemExit("Databento x returned 402: insufficient funds"))
+    try:
+        fl._call("x", {}, "k"); _stopped = False
+    except SystemExit:
+        _stopped = True
+    check("a 402 (money) still stops at once", _stopped)
+finally:
+    ore.call, ore._sleep = _real_call, _real_sleep
 
 bars = load("bars")
 print("\n=== bars ===")
