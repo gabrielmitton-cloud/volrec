@@ -84,3 +84,21 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   every listed strike in the band (SPY 83/83 and 54/54, QQQ 63/63 and 33/33, IWM 58/58 and 30/30,
   GLD 41/41 and 25/25, USO 5/5 and 5/5). Decision: the archive is sound for 2018; Plan 2 proceeds on
   real straddles. Lab spend to date $0.0669.
+- 2026-10-14, before any trade is computed - implementation choices for Plan 2:
+  - Daily closes from Alpaca `sip` (raw for settlement, adjusted for realised volatility), which
+    starts 4 Jan 2016. So the first entry is 19 Jan 2016, and the Aug 2015 replay (Plan 3) needs
+    another price source or is dropped, stated then.
+  - The last trade must expire by 31 Aug 2026, so the last entry is 20 Jul 2026 (expiry 21 Aug).
+  - Rules read the previous trading day's closes (index, VIX, VIX3M, realised volatility); the
+    entry at 14:30 precedes that day's close. R1 needs 21 prior returns; before they exist R1 does
+    not trade.
+  - R2's weight is 20 / index (the index in points; 20 is a fixed reference, not fitted).
+  - ATM = the listed strike nearest the implied forward at 14:30; the strangle = the listed strikes
+    nearest 0.95 and 1.05 x forward. Only two-sided strikes are eligible.
+  - Returns are per dollar of mid premium; P&L = (mid - charged half-spread) - intrinsic at expiry.
+  - The risk-free rate is 0 in the strip comparison (it enters mid and bid alike) and in vega;
+    no FRED data is used in lab/.
+  - A day failing the integrity checks is excluded for that fund and listed in the report.
+  - Correction to the registration's "28-35 days out": entering on the trading day AFTER an
+    expiry, the hold to the next monthly is 24-32 calendar days (the 28- or 35-day cycle less the
+    days to the next session). The calendar rule itself is unchanged.
