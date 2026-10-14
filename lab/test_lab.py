@@ -285,5 +285,67 @@ _ch3 = {100.0: {"C": (3.3, 3.2), "P": (2.9, 3.1)}, 101.0: {"C": (2.5, 2.6), "P":
 check("a crossed quote is not chosen either", tr.nearest_strike(_ch3, 100.0) == 101.0)
 check("a crossed leg gives no P&L rather than a crash", tr.leg(3.3, 3.2, "C", 100, 100, "retail") is None)
 
+mp = load("margin_path")
+print("\n=== margin path ===")
+_m = {"K": 100.0, "C0": 3.0, "P0": 3.0, "half0": 0.10, "S0": 100.0, "days": [(100.0, 3.0, 3.0)] * 3, "settle": 0.0}
+r0 = mp.simulate(_m, 0.05, set(), 0.15, 0.10)
+check(f"no frictions, expires worthless: keeps the whole 5% premium ({r0})", abs(r0["ret"] - 0.05) < 1e-12 and r0["liquidations"] == 0)
+r1 = mp.simulate(dict(_m, settle=12.0), 0.05, set(), 0.15, 0.10)
+check(f"no frictions, settles 12 on 6 of premium: loses 5% x (6-12)/6 = -5% ({r1['ret']:+.4f})", abs(r1["ret"] + 0.05) < 1e-12)
+rs = mp.simulate(_m, 0.05, {"spreads"}, 0.15, 0.10)
+check(f"spreads: sells 0.08 under mid on n = 0.05/6, so 5% - 0.08 x n ({rs['ret']:.6f})",
+      abs(rs["ret"] - (0.05 - 0.08 * 0.05 / 6)) < 1e-12)
+rc = mp.simulate(_m, 0.05, {"commissions"}, 0.15, 0.10)
+check(f"commissions: 2 legs x 0.0065 x n ({rc['ret']:.6f})", abs(rc["ret"] - (0.05 - 2 * 0.0065 * 0.05 / 6)) < 1e-12)
+big = mp.simulate(_m, 2.0, {"limits"}, 0.15, 0.10)
+req = mg.short_straddle(3.0, 3.0, 100.0, 100.0, 100.0, 0.15, 0.10)
+check(f"limits cut a 200% target to margin due <= 90% of capital (w_eff {big['w_eff']:.3f})",
+      abs(big["w_eff"] - 6.0 * 0.9 / (req - 6.0)) < 1e-9)
+crash = dict(_m, days=[(100.0, 3.0, 3.0), (60.0, 0.0, 40.0), (60.0, 0.0, 40.0)], settle=40.0)
+nl = mp.simulate(crash, 0.20, {"limits"}, 0.15, 0.10)
+lq = mp.simulate(crash, 0.20, {"limits", "liquidation"}, 0.15, 0.10)
+check(f"a 40% crash triggers a margin call and a forced liquidation ({lq['liquidations']})", lq["liquidations"] >= 1 and nl["liquidations"] == 0)
+check("with no call, the month's loss is the settlement loss", abs(nl["ret"] - nl["w_eff"] * (6.0 - 40.0) / 6.0) < 1e-9)
+calm = mp.simulate(_m, 0.05, {"limits", "liquidation"}, 0.15, 0.10)
+check("a quiet month at 5% never calls", calm["liquidations"] == 0 and abs(calm["ret"] - 0.05) < 1e-12)
+
+lm = load("leakmap")
+print("\n=== Leak Map attribution ===")
+_add = {"spreads": 1.0, "limits": 2.0, "liquidation": 3.0, "commissions": 0.5}
+v_add = lambda s: 10.0 - sum(_add[p] for p in s)
+sh = lm.shapley(v_add)
+check(f"additive frictions: each leak is its own effect, the same in every order ({sh})",
+      all(abs(sh[p][0] - _add[p]) < 1e-12 and abs(sh[p][1] - sh[p][2]) < 1e-12 for p in _add))
+v_int = lambda s: 10.0 - (4.0 if {"spreads", "liquidation"} <= s else 0.0)
+si = lm.shapley(v_int)
+check(f"an interaction is split evenly between the two, 2 and 2 ({si['spreads'][0]}, {si['liquidation'][0]})",
+      abs(si["spreads"][0] - 2.0) < 1e-12 and abs(si["liquidation"][0] - 2.0) < 1e-12)
+check("...and its range across orders is 0 to 4", si["spreads"][1] == 0.0 and si["spreads"][2] == 4.0)
+check("a friction that changes nothing gets zero", si["commissions"][0] == 0.0 and si["limits"][0] == 0.0)
+check("the leaks sum to paper minus kept", abs(sum(v[0] for v in sh.values()) - (v_add(frozenset()) - v_add(frozenset(_add)))) < 1e-12)
+
+sx = load("stress")
+print("\n=== stress lab ===")
+import random as _r        # noqa: E402
+_g = _r.Random(1)
+_wn = [_g.gauss(0, 1) for _ in range(600)]
+_ar, _p = [], 0.0
+for _ in range(600):
+    _p = 0.5 * _p + _g.gauss(0, 1); _ar.append(_p)
+bw, ba = sx.ppw_block(_wn), sx.ppw_block(_ar)
+check(f"PPW block length: white noise near 1 ({bw:.2f}), AR(1) rho=0.5 clearly longer ({ba:.2f})", bw < 2.0 and ba > 3.0)
+_paths = sx.stationary_paths(_wn, 3.0, 4000, 120, 7)
+_m = sum(sum(p) / len(p) for p in _paths) / len(_paths)
+check(f"the bootstrap preserves the sample mean ({_m:+.4f} vs {sum(_wn) / len(_wn):+.4f})", abs(_m - sum(_wn) / len(_wn)) < 0.02)
+check("paths have the requested length and are reproducible from the seed",
+      all(len(p) == 120 for p in _paths[:5]) and sx.stationary_paths(_wn, 3.0, 3, 10, 7) == sx.stationary_paths(_wn, 3.0, 3, 10, 7))
+_bl = sx.stationary_paths(list(range(100)), 50.0, 200, 20, 3)
+_runs = sum(1 for p in _bl for i in range(1, len(p)) if p[i] == (p[i - 1] + 1) % 100) / sum(len(p) - 1 for p in _bl)
+check(f"blocks keep neighbours together: with mean block 50, ~98% of steps continue a block ({_runs:.2f})", _runs > 0.9)
+check("max drawdown of +10%, -50%, +20% is 50%", abs(sx.max_drawdown([0.10, -0.50, 0.20]) - 0.50) < 1e-12)
+check("expected shortfall at 90% of 1..10 is the worst one, 1", sx.expected_shortfall(list(range(1, 11)), 0.90) == 1)
+check("ruin: a path that halves counts, one that does not, does not",
+      sx.ruin_prob([[-0.6], [0.1, -0.2]], 0.5) == 0.5)
+
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)
