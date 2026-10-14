@@ -387,5 +387,40 @@ cr.sort()
 check(f"bootstrapped crossings cluster at 20 (median {cr[len(cr) // 2]:.2f}, {out_} out of range)",
       abs(cr[len(cr) // 2] - 20.0) < 1.0 and out_ == 0)
 
+eng = load("engine")
+print("\n=== trust engine ===")
+check("pilot calibration carried from H8-DRAFT (SPY gap 0.055, floor 0.010, ratio 2.07)", eng.PILOT["SPY"] == (0.055, 0.010, 2.07))
+
+
+def _chain(day="2026-10-13", S=100.0, sig=0.25, frac=0.02, zero_wings=False, stale=False, step=2):
+    rows = []
+    for e, dte in (("2026-11-06", 24), ("2026-11-20", 38)):
+        for K in range(70, 131, step):
+            for k in "CP":
+                p = black76(k, S, float(K), dte / 365.0, 0.0, sig)
+                b, a = max(p * (1 - frac), 0.01), p * (1 + frac) + 0.02
+                if zero_wings and abs(K - S) >= 20:
+                    b = 0.0
+                qt = "2026-10-13T15:02:00Z" if (stale and K % 10 == 0) else "2026-10-13T18:40:00Z"
+                rows.append({"date": day, "symbol": "SPY", "spot": str(S), "quote_time": qt, "expiration": e,
+                             "dte": str(dte), "type": k, "strike": str(float(K)), "moneyness": str(K / S),
+                             "option_symbol": f"SPY{e[2:4]}{e[5:7]}{e[8:]}{k}{K * 1000:08d}",
+                             "bid": f"{b:.4f}", "ask": f"{a:.4f}", "mid": f"{(a + b) / 2:.4f}", "vega": ""})
+    return rows
+
+
+hist = [r for d in ("2026-10-08", "2026-10-09") for r in _chain(day=d)]
+g = eng.read(_chain(), hist)
+check(f"a clean chain reads near its 25% and raises no flags ({g['vol']:.2f}, {g['flags']})", abs(g["vol"] - 25.0) < 1.5 and g["flags"] == [])
+check(f"the error bar is SPY's pilot gap plus floor, 0.065 ({g['err']})", abs(g["err"] - 0.065) < 1e-12)
+check("the corrected cost is the raw cost over SPY's free/OPRA ratio", abs(g["cost_corrected"] - g["cost_raw"] / 2.07) < 1e-12)
+check("the straddle cost in vol points is 0.8 x the median leg half-spread / vega - no factor of 2",
+      abs(g["cost_raw"] - 0.8 * eng.atm_halfspread_pts(_chain())) < 1e-12)
+check("zero-bid wings are flagged", "zero-bid wings" in eng.read(_chain(zero_wings=True), hist)["flags"])
+check("stale quotes are flagged", "stale quotes" in eng.read(_chain(stale=True), hist)["flags"])
+check("a thin chain is flagged", "thin chain" in eng.read(_chain(step=15), hist)["flags"])
+check("spreads wider than this fund's 90th percentile are flagged", "wide spreads" in eng.read(_chain(frac=0.10), hist)["flags"])
+check("an empty chain reads nothing", eng.read([], hist)["vol"] is None)
+
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)
