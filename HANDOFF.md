@@ -2598,6 +2598,14 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   Suggested: Levon Goukasian (met 11 Sep) - his advice was years of raw option prices, impossible on
   Bloomberg (90 days) but now done on OPRA back to 2016 in lab/; DESIGN-MEMO.md would be re-addressed.
   LSEG: Gabriel emailed them, still waiting. Cboe: still waiting (follow-up due Mon 19 Oct).
+  **lab/ COMPLETE, 14 Oct (Plans 1-5; plans in docs/superpowers/plans/).** Every rule, prediction and
+  result is in `lab/REGISTRATION.md`; the paper section is PAPER-OUTLINE 5b. P1 fails, P2 holds as
+  written, P3 holds 5/5, P4 fails 1/5, P5 holds among funds with a paper profit. Data: 8,073 OPRA files in
+  ~/Documents/volrec-licensed/opra-lab ($79.00; lab cap $90; lifetime cap raised to $120 by Gabriel).
+  Private outputs in ~/Documents/volrec-licensed/lab-out (trades.csv, leak_months.csv, the JSON
+  summaries, report.html) - nothing on the public site until Cboe replies; then a site page is part of
+  the post-November discussion. Re-run: `lab/run_trades.py`, `run_leak.py`, `run_breakeven.py`,
+  `report.py`; the trust engine: `lab/engine.py` (latest free-feed day). Auditor 76/76.
   **LSEG, 14 Oct:** Workspace for Students live with CGIF added. .VIX intraday works (1-min from 1 Sep 2026;
   saved to ~/Documents/volrec-lseg/). .OVX/.GVZ/.VXN/.RVX denied for daily AND intraday
   (UserNotPermission.92000; the quote page says no permission): an entitlement gap. Gabriel emails Marc

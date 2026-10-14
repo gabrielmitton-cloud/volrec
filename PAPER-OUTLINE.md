@@ -88,6 +88,27 @@ with an interval.
 - 5.5 *A reconciliation, not a finding.* Implied volatilities differ by a day-count convention
   (252 vs 365 days), which is textbook.
 
+**5b. What the data gap costs a retail investor (exploratory side study, 1-1.5 pages).** From
+`lab/` (design: docs/superpowers/specs/2026-10-12-retail-vrp-audit-design.md; rules and predictions
+committed before any data: lab/REGISTRATION.md). Short one-month ATM straddles on SPY, QQQ, IWM, GLD,
+USO, every month Jan 2016 - Aug 2026, priced on OPRA (Databento), settled on raw closes, under Cboe
+customer margin with daily marking (Santa-Clara & Saretto 2009's mechanic) and four cost levels
+(Muravyev & Pearson 2020's published fractions). Report, in order:
+- The Leak Map: at a modest size a retail seller keeps 95 / 94 / 90 cents per paper dollar on SPY /
+  QQQ / IWM and 58 on USO; GLD loses before costs. At a 20% size forced liquidation becomes the
+  largest leak (SPY 1.28 -> 0.97 %/month). Every friction credited by Shapley value over all orders,
+  range beside it - the same answer as section 5's decomposition.
+- The tail: the COVID trade cost 26-35% of the account in one month at the modest size; ten-year
+  ruin odds 2-35% (stationary bootstrap, conditional on the sample's crashes).
+- The Break-Even VIX: none reliable - costs roughly double in stress but stay hundredths of a point
+  on the equity funds, while the premium swings by several points.
+- The strip-versus-ATM cost ratio (2.1-3.4x, P3 holds on 5 of 5) - directly relevant to section 5,
+  since the registered estimator is a strip.
+- Predictions as recorded: P1 fails, P2 holds as written, P3 holds, P4 fails, P5 holds among funds
+  with a paper profit. Exclusions cluster in crash months; with them added back USO and GLD turn
+  worse - always shown beside the registered numbers.
+Framing: an implementation audit, not a strategy. Nothing here is investment advice.
+
 **6. Limitations (1 page).** One free feed; about two months; eight underlyings; a snapshot about 80
 minutes before the index's close; American options treated with European formulas; the bars set
 before the protocol (PROTOCOL.md) existed (H5e's sat near its noise floor); few independent

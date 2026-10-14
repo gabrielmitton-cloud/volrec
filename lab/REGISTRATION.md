@@ -217,3 +217,16 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   The finding, plainly: on liquid funds there is no fear level at which trading costs eat the
   premium; what decides the trade is the premium itself, and it is too noisy over ten years to name a
   break-even level with confidence.
+- 2026-10-14, AFTER data - Plan 5 and close-out. **P5 ("retention highest on SPY, lowest on USO")
+  HOLDS among the funds with a positive paper return** (SPY 95.4 cents per $1 highest; USO 58.4
+  lowest; GLD has no paper profit, so no retention to rank - stated, not hidden). The trust engine
+  (`lab/engine.py`) reads a free chain with the registered estimator (r = 0), an error bar from H8's
+  pilot (mean |free - OPRA| + OPRA's one-minute floor), four flags (zero-bid wings, stale quotes,
+  thin chain, spreads above the fund's own 90th percentile) and the retail straddle cost, raw and
+  corrected by the measured free/OPRA spread ratio. A factor-of-2 error in its cost was caught by
+  cross-checking against Plan 4's OPRA costs and fixed before use (SPY 0.041 vs 0.024-0.054 on OPRA).
+  The report (`lab/report.py` -> the private lab-out/report.html) carries both charts.
+  **Summary of the whole study:** P1 fails, P2 holds as written, P3 holds (5/5), P4 fails (1/5),
+  P5 holds among funds with a paper profit. For a retail seller of liquid fund options held to
+  expiry, trading costs are small; the crash month and, at larger sizes, margin decide the result;
+  no fear level emerges at which costs eat the premium. Data: 8,073 OPRA files, $79.00.
