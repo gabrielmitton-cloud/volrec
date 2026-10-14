@@ -198,3 +198,22 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   - P4 ("the retail cost as a fraction of the premium rises with the index level on at least 4 of 5
     funds"): premium = the straddle's mid price at entry; "rises" = OLS slope of the weekly cost
     fraction on x positive with its 95% Newey-West interval (lag 4 weeks) above zero.
+- 2026-10-14, AFTER data - Plan 4 results (weekly samples complete: 492-504 per fund; one skip,
+  USO 29 Apr 2020, its 1-for-8 split day, when OPRA listed nothing under USO.OPT). Lab purchasing is
+  complete: 8,073 files, $79.00 of the $90 cap (lifetime ledger $81.45 of $100).
+  **Break-Even, monthly net (straddle P&L at mid / vega - retail cost, volatility points) on the
+  fund's own index:** SPY crossing VIX 18.9 (90% 12.1..27.6; 167 of 2,000 resamples out of range);
+  QQQ VXN 23.8 (14.8..35.8; 225 out); IWM RVX 15.2 (13.9..45.5; 432 out); GLD GVZ 9.7 (interval
+  10.6..29.0 excludes it; 555 out); USO OVX 28.6 (23.6..62.8; 479 out). Read plainly: NO RELIABLE
+  BREAK-EVEN. Monthly net P&L swings by several volatility points from quintile to quintile (SPY
+  +2.15, -1.05, +1.68), the intervals span most of the observed range, and 8-28% of resamples cross
+  outside it. Direction: SPY and QQQ net falls as their index rises; IWM and USO net rises.
+  **Costs are not what moves it:** the retail cost of the ATM straddle in volatility points roughly
+  doubles from calm to stressed quintiles (SPY 0.024 -> 0.054, QQQ 0.037 -> 0.091, IWM 0.051 ->
+  0.135, GLD 0.068 -> 0.226, USO 0.42 -> 1.24) but stays a few hundredths of a point on the equity
+  funds, against monthly swings of several points. **P4 FAILS (1 of 5):** cost as a fraction of the
+  premium rises with the index only on GLD (slope +0.00021, 95% +0.00013..+0.00030); on SPY, QQQ,
+  IWM and USO spreads widen in proportion to the premium, so the fraction is flat.
+  The finding, plainly: on liquid funds there is no fear level at which trading costs eat the
+  premium; what decides the trade is the premium itself, and it is too noisy over ten years to name a
+  break-even level with confidence.
