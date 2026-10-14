@@ -49,3 +49,4 @@ volrec-papers/
 # published with "Data source: LSEG Workspace."; raw data may not be shared). They live in
 # ~/Documents/volrec-lseg, OUTSIDE this repository.
 volrec-lseg/
+volrec_lseg_*
