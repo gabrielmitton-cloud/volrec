@@ -2655,7 +2655,8 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   set by Gabriel); tools/guard.py + guard.yml (confirms from data/ on main, re-runs a recorder once and waits
   for it, alerts once; never commits); health.yml sends the quiet daily GREEN (or YELLOW), freshness's
   23:00 slot a lost day as YELLOW; volrec-licensed: verdict = NOTICE, failure = YELLOW, repo public = RED.
-  42 unit tests, pressure checks, 6 auditor mutants (87/87). Phase 2 (Gabriel: after Pushover is proven): a
+  42 unit tests, pressure checks, 6 auditor mutants (87/87). **Proven live 15 Oct ~23:10 UTC:** keys set by Gabriel in both repos;
+  guard.yml test_alerts sent all four levels and all four arrived on his phone. Phase 2 (Gabriel: after Pushover is proven): a
   read-only first-responder Claude routine on failures. The Mac iMessage (launchd com.volrec.daily) is
   untouched - retire it once Pushover has run a week (Gabriel's call).
   **Recorder push failure, 15 Oct 18:30 UTC (GitHub emailed Gabriel).** A HANDOFF commit pushed by Vega at
