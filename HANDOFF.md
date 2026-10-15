@@ -2642,6 +2642,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   mutant. Nothing running reads it; it only limits where December's explorers may look, and opens in January.
   Agents get built when the time comes (Gabriel: Ultracode may do the build from the spec; Vega checks it
   against the auditor before anything runs).
+  **SCCUR, 14 Oct: revise-and-resubmit** (not yet accepted). Reviewers: spaces after punctuation, define
+  acronyms, say why it matters. Revised abstract in SCCUR-ABSTRACT.md (248 words, ASCII punctuation). Gabriel
+  resubmits via Whova ("Edit submission", then "Save changes") by **Mon 19 Oct**, then replies to the email.
+  One chance only. Registration ($90 by 23 Oct) only after acceptance.
   **Goyal & Saretto (2009) read, 14 Oct:** logged in lab/REGISTRATION.md; R1 is a cousin of their signal, not
   their rule (spec note + PAPER-OUTLINE/PAPER-DRAFT wording). Their exact signal on the five funds is queued
   for December's open half instead of tested now (Vega's call, under Gabriel's "push it back if it costs"
