@@ -1,0 +1,66 @@
+name: guard
+# The recorders' guard (15 Oct 2026; tools/guard.py has the whole policy). It confirms a
+# missing day from the DATA on main, re-runs the recorder once while the market is open, and
+# pages Gabriel through Pushover only if that re-run also fails.
+#
+# It NEVER commits (contents: read): two recorders already push to main every weekday, and a
+# third committer would only add push races against the irreplaceable data. actions: write is
+# only for `gh workflow run`, the one re-run - record.py and surface.py skip what is already
+# recorded and refuse after the close, so a re-run cannot duplicate or mis-time a row.
+on:
+  workflow_run:
+    workflows: [record, surface]
+    types: [completed]
+  schedule:
+    # The "never ran at all" case. Fixed UTC, so two pairs: 15:05 and 15:25 New York under
+    # summer time (19:05, 19:25 UTC) and under winter time (20:05, 20:25 UTC). The guard reads
+    # the New York clock itself; a slot before the trigger waits, a slot after the close skips.
+    - cron: "5 19 * * 1-5"
+    - cron: "25 19 * * 1-5"
+    - cron: "5 20 * * 1-5"
+    - cron: "25 20 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      test_alerts:
+        description: "send one TEST alert at each level (green, notice, yellow, red) instead of guarding"
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  # One queue per recorder, so a guard waiting on a re-run cannot push the other recorder's
+  # check out of the queue (GitHub keeps one pending run per group).
+  group: guard-${{ github.event.workflow_run.path || github.event_name }}
+  cancel-in-progress: false
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20   # the guard waits up to 12 min for its own re-run
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # No pip step: guard.py and alert.py are standard library only, like panel_health.py.
+      - name: Send one TEST alert at each level
+        if: github.event_name == 'workflow_dispatch' && inputs.test_alerts
+        env:
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+        run: python tools/alert.py --test --url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - name: Guard the day's recordings
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.test_alerts) }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+          GUARD_EVENT: ${{ github.event_name == 'workflow_dispatch' && 'manual' || github.event_name }}
+          GUARD_RUN_ID: ${{ github.event.workflow_run.id }}
+          GUARD_RUN_ACTOR: ${{ github.event.workflow_run.triggering_actor.login }}
+          GUARD_RUN_EVENT: ${{ github.event.workflow_run.event }}
+          GUARD_RUN_WORKFLOW: ${{ github.event.workflow_run.path }}
+          GUARD_RUN_URL: ${{ github.event.workflow_run.html_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}
+        run: python tools/guard.py

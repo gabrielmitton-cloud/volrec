@@ -2646,6 +2646,15 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   acronyms, say why it matters. Revised abstract in SCCUR-ABSTRACT.md (248 words, ASCII punctuation). Gabriel
   resubmitted it via Whova and replied to the email on **14 Oct** (done; the one revision is used). Trimmed to
   1,460 characters (limit 1,500). Next: SCCUR's decision; register ($90 by 23 Oct) only after acceptance.
+  **Phone alerts + the recorders' guard, built 15 Oct (Gabriel: Pushover; "many times we have skipped over
+  issues because of false positives").** tools/alert.py (stdlib; four levels, red = emergency priority every
+  2 min for 1 h; keys only in GitHub secrets PUSHOVER_TOKEN/PUSHOVER_USER, in volrec AND volrec-licensed,
+  set by Gabriel); tools/guard.py + guard.yml (confirms from data/ on main, re-runs a recorder once and waits
+  for it, alerts once; never commits); health.yml sends the quiet daily GREEN (or YELLOW), freshness's
+  23:00 slot a lost day as YELLOW; volrec-licensed: verdict = NOTICE, failure = YELLOW, repo public = RED.
+  42 unit tests, pressure checks, 6 auditor mutants (87/87). Phase 2 (Gabriel: after Pushover is proven): a
+  read-only first-responder Claude routine on failures. The Mac iMessage (launchd com.volrec.daily) is
+  untouched - retire it once Pushover has run a week (Gabriel's call).
   **Recorder push failure, 15 Oct 18:30 UTC (GitHub emailed Gabriel).** A HANDOFF commit pushed by Vega at
   18:30:11 landed while record.yml was running; its plain `git push` was rejected, so the day's panel
   snapshot was lost. Recovered: record.yml re-dispatched at 14:33 New York, before the close, and the 109

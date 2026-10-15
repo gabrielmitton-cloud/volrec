@@ -428,6 +428,12 @@ _tl = _sp.run([sys.executable, str(R / "lab/test_lab.py")], capture_output=True,
 _nlf = sum(1 for _ln in _tl.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _nlp = sum(1 for _ln in _tl.stdout.splitlines() if _ln.strip().startswith("PASS"))
 ok(_tl.returncode == 0 and _nlf == 0 and _nlp >= 49, f"lab/ tests pass ({_nlp} cases, {_nlf} failures)")
+# Phone alerts and the recorders' guard (15 Oct 2026, Gabriel: Pushover; "many times we have skipped
+# over issues because of false positives"). The policy is in tools/guard.py; its tests are the proof.
+_tg = _sp.run([sys.executable, str(R / "tools/test_guard.py")], capture_output=True, text=True)
+_ngf = sum(1 for _ln in _tg.stdout.splitlines() if _ln.strip().startswith("FAIL"))
+_ngp = sum(1 for _ln in _tg.stdout.splitlines() if _ln.strip().startswith("PASS"))
+ok(_tg.returncode == 0 and _ngf == 0 and _ngp >= 40, f"the guard and alert tests pass ({_ngp} cases, {_ngf} failures)")
 _fls = _iu.spec_from_file_location("fetch_lab", R / "lab/fetch_lab.py")
 _flm = _iu.module_from_spec(_fls)
 _fls.loader.exec_module(_flm)
@@ -772,9 +778,25 @@ def _readonly_manual(p_):
             # 9 Oct: `| tee` without pipefail reported a crashed H6 run as a success
             and ("| tee" not in p_.read_text() or "set -o pipefail" in p_.read_text()))
 _wfs = {p.name: p for p in (R / ".github/workflows").glob("*.yml")}
-ok(set(_wfs) - _ANALYSIS_WF == {"record.yml", "freshness.yml", "surface.yml", "health.yml"}
+ok(set(_wfs) - _ANALYSIS_WF == {"record.yml", "freshness.yml", "surface.yml", "health.yml", "guard.yml"}
    and all(_readonly_manual(_wfs[n]) for n in set(_wfs) & _ANALYSIS_WF),
    "no leftover TEMP workflows (analysis workflows are manual-only and read-only)")
+# The recorders' guard (guard.yml, 15 Oct 2026) and who may send which alert level.
+_gy_txt = (R / ".github/workflows/guard.yml").read_text()
+_gy = yaml.safe_load(_gy_txt)
+ok(_gy.get("permissions") == {"contents": "read", "actions": "write"}
+   and "git push" not in _gy_txt and "git commit" not in _gy_txt and "pip install" not in _gy_txt,
+   "the guard never commits, installs nothing, and may only start a re-run")
+ok(set(_gy[True]["workflow_run"]["workflows"]) == {"record", "surface"}
+   and _gy[True]["workflow_run"]["types"] == ["completed"]
+   and all(cron_minutes(c["cron"])[1] == "1-5" for c in _gy[True]["schedule"])
+   and "python tools/guard.py" in _gy_txt,
+   "the guard runs after every recorder run and on weekday slots, and actually runs guard.py")
+_hl_txt = (R / ".github/workflows/health.yml").read_text()
+_fr_txt = (R / ".github/workflows/freshness.yml").read_text()
+ok("--level red" not in _hl_txt and "--level red" not in _fr_txt
+   and "--level green" in _hl_txt and "--level yellow" in _fr_txt,
+   "only the guard can send RED; health sends the daily GREEN, freshness a lost day as YELLOW")
 # health.yml (23 Sep 2026): the daily check in CI. It must stay read-only - two
 # recorders already push to main - must actually run the check, and must never
 # keep the temporary push trigger it was tested with on a branch.

@@ -41,6 +41,25 @@ jobs:
           HC: ${{ secrets.HC_HEALTH }}
         run: |
           if [ -n "$HC" ]; then curl -fsS -m 10 --retry 3 -o /dev/null "$HC" && echo "pinged" || echo "ping failed (ignored)"; else echo "no ping URL set"; fi
+      # Pushover (15 Oct 2026, Gabriel): one quiet GREEN line on a clean day - its ARRIVAL proves the
+      # alert pipe works, so a weekday with no green means look. LOOK AT is YELLOW; a FAIL or crash
+      # is YELLOW with the failing lines. Never RED: nothing here can still be saved today.
+      - name: Tell Gabriel's phone
+        if: always()
+        env:
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+          RUN_URL: ${{ format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}
+          OUTCOME: ${{ job.status }}
+        run: |
+          if [ "$OUTCOME" = success ] && grep -q "ALL CLEAR" report.txt 2>/dev/null; then
+            MSG=$(grep -E "landed|RESULT|mean \|gap\|" report.txt | sed 's/^ *//; s/^INFO  //' | head -5)
+            python tools/alert.py --level green --title "all clear" --message "$MSG" --url "$RUN_URL" || true
+          else
+            MSG=$(grep -E "FAIL|LOOK AT|Traceback|Error" report.txt 2>/dev/null | head -6)
+            python tools/alert.py --level yellow --title "the daily check needs a look" \
+              --message "${MSG:-the daily check crashed before writing a report}" --url "$RUN_URL" || true
+          fi
       - name: Publish the report on the run page
         if: always()
         run: |
