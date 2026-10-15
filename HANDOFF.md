@@ -2657,6 +2657,13 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   23:00 slot a lost day as YELLOW; volrec-licensed: verdict = NOTICE, failure = YELLOW, repo public = RED.
   42 unit tests, pressure checks, 6 auditor mutants (87/87). **Proven live 15 Oct ~23:10 UTC:** keys set by Gabriel in both repos;
   guard.yml test_alerts sent all four levels and all four arrived on his phone.
+  **Watchdog routine updated 15 Oct:** knows guard.yml (five workflows), judges recorders by the data, and
+  treats a guard-recovered day as recorded (no false alarm). The daily GREEN rides health.yml's 23:37 UTC cron,
+  which GitHub runs 0-3 h late (01:43 UTC on 15 Oct), so it lands roughly 4:40-7:30 pm Pacific.
+  **Bloomberg intraday pull - depth unverified:** forum sources put Bloomberg's intraday bar history at ~140
+  days (one older post: ~50 business days); Marc saw finer bars reach less far back. 50 business days from
+  23 Sep (H5e's first day) is ~2 Dec, so the post-verdict pull must happen by ~25 Nov at the latest; ask Marc
+  how far back the 1-minute OVX/GVZ data went to confirm.
   **Thu 22 Oct 10:00 Pacific:** a one-off routine (trig_015V2zQEWbx7T7GL8wt1JXpG, no connectors) pushes Gabriel
   a reminder: did a GREEN arrive every weekday 16-21 Oct? If yes, build phase 2 (first responder), with a
   fake-failure test before it goes live. Gabriel: "we can build it whenever u think is best". Phase 2 (Gabriel: after Pushover is proven): a
