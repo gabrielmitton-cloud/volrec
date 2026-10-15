@@ -2646,6 +2646,17 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   acronyms, say why it matters. Revised abstract in SCCUR-ABSTRACT.md (248 words, ASCII punctuation). Gabriel
   resubmitted it via Whova and replied to the email on **14 Oct** (done; the one revision is used). Trimmed to
   1,460 characters (limit 1,500). Next: SCCUR's decision; register ($90 by 23 Oct) only after acceptance.
+  **Marc Vinyard replied, 15 Oct.** (1) LSEG: Pepperdine's academic account gets the same UserNotPermission -
+  the entitlement gap is institution-wide, so LSEG is CLOSED for OVX/GVZ/VXN/RVX (no more asks). (2) He found
+  historical INTRADAY OVX, GVZ, VXN and RVX on the Bloomberg terminals (finer bars = shorter history). This
+  answers the snapshot-timing question directly (index level at 14:30 vs the close). Vega's call: pull it ONCE
+  at the first terminal visit AFTER the 19 Nov verdicts (whole H5e/H7 window in one pull; 1-minute history
+  reaches months back, so nothing is lost by waiting), analyse after the verdicts as a dated, exploratory
+  limitation measurement beside the registered numbers; raw files in ~/Documents/volrec-bloomberg/, never the
+  repo; "Source: Bloomberg Finance L.P." (3) Mentor: he recommends Dr. Levon Goukasian and offers himself if
+  Goukasian is unavailable. Plan: Gabriel asks Goukasian once (email drafted 15 Oct; attach
+  ~/Desktop/Mitton-design-memo-Goukasian.pdf, source DESIGN-MEMO-GOUKASIAN.md); no answer by Fri 23 Oct ->
+  accept Marc's offer. Gabriel thanks Marc and says so.
   **Goyal & Saretto (2009) read, 14 Oct:** logged in lab/REGISTRATION.md; R1 is a cousin of their signal, not
   their rule (spec note + PAPER-OUTLINE/PAPER-DRAFT wording). Their exact signal on the five funds is queued
   for December's open half instead of tested now (Vega's call, under Gabriel's "push it back if it costs"
