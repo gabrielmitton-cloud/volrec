@@ -2655,8 +2655,9 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   limitation measurement beside the registered numbers; raw files in ~/Documents/volrec-bloomberg/, never the
   repo; "Source: Bloomberg Finance L.P." (3) Mentor: he recommends Dr. Levon Goukasian and offers himself if
   Goukasian is unavailable. Plan: Gabriel asks Goukasian once (email drafted 15 Oct; attach
-  ~/Desktop/Mitton-design-memo-Goukasian.pdf, source DESIGN-MEMO-GOUKASIAN.md); no answer by Fri 23 Oct ->
-  accept Marc's offer. Gabriel thanks Marc and says so.
+  ~/Desktop/Mitton-design-memo-Goukasian.pdf, source DESIGN-MEMO-GOUKASIAN.md). Marc thanked 15 Oct (sent);
+  the Goukasian email is SCHEDULED for Tue 20 Oct 9:30 a.m. (after fall break). No answer by Fri 30 Oct ->
+  accept Marc's offer.
   **Goyal & Saretto (2009) read, 14 Oct:** logged in lab/REGISTRATION.md; R1 is a cousin of their signal, not
   their rule (spec note + PAPER-OUTLINE/PAPER-DRAFT wording). Their exact signal on the five funds is queued
   for December's open half instead of tested now (Vega's call, under Gabriel's "push it back if it costs"
