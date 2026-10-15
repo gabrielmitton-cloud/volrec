@@ -2646,6 +2646,9 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   acronyms, say why it matters. Revised abstract in SCCUR-ABSTRACT.md (248 words, ASCII punctuation). Gabriel
   resubmitted it via Whova and replied to the email on **14 Oct** (done; the one revision is used). Trimmed to
   1,460 characters (limit 1,500). Next: SCCUR's decision; register ($90 by 23 Oct) only after acceptance.
+  **Bondarenko (2014) read, 15 Oct:** the last ILL paper; logged in lab/REGISTRATION.md and PAPER-OUTLINE's
+  related work (premium size: long variance -26.30%/month, selling Sharpe 0.42). No number changed. All
+  requested papers are now read; PDFs in ~/Documents/volrec-papers.
   **Phone alerts + the recorders' guard, built 15 Oct (Gabriel: Pushover; "many times we have skipped over
   issues because of false positives").** tools/alert.py (stdlib; four levels, red = emergency priority every
   2 min for 1 h; keys only in GitHub secrets PUSHOVER_TOKEN/PUSHOVER_USER, in volrec AND volrec-licensed,

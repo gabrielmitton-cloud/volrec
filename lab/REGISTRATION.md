@@ -286,3 +286,10 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   tested now, so the vault stays unspent. Approximate comparison for the paper (premium estimated from each
   fund's index, Brenner-Subrahmanyam; not a lab measurement): Cboe customer margin's initial requirement
   beyond the premium, median per $1 written - SPY 4.02, QQQ 3.32, IWM 3.11, GLD 5.79, USO 2.58.
+- 2026-10-15, reading (no number or rule changed): Bondarenko, "Variance trading and market price of
+  variance risk", J. Econometrics 180(1), 2014, 81-97 (Pepperdine ILL). S&P 500 variance contract
+  synthesised from futures options, 1990-2009: long variance -26.30%/month; selling it Sharpe 0.42
+  (monthly), 4-5x the market and 1.6-1.8x selling ATM puts. Supports the lab's premise that the premium is
+  large before frictions. His replication targets discretely sampled realised variance from daily returns -
+  what the lab's synthetic variance-swap cross-check measures - so no change. Not compared numerically with
+  the lab (different instrument, sample and units).

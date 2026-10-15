@@ -55,8 +55,13 @@ measurement, not a new method. The methods are Cboe's and published work's, and 
   convention); effective/quoted 50/75/100% (literature: below 0.5, up to 0.8-1 for large stocks); SPAN
   margin needs about $1.42 per $1 written. Rule R1 is only a cousin of their signal (a time-series 21-day
   gate on five funds, not a 12-month cross-sectional sort) - cite it as "in the spirit of", never as
-  their rule. Still to read: Bondarenko (2014, J. Econometrics
-  180) for the premium's size; Bogousslavsky & Muravyev (working paper, SSRN 4682388, 9 Feb 2025) - READ 14 Oct:
+  their rule. Bondarenko (2014, J. Econometrics 180(1), 81-97) - READ 15 Oct: a model-free variance
+  contract on S&P 500 futures options, 1990-2009; the long side earns -26.30% a month (only -2.72 of it
+  explained by market beta); selling it has a monthly Sharpe ratio of 0.42, about 5x the market's and
+  1.6-1.8x selling ATM puts. The size anchor for H1's recovered premium. He also shows the traded
+  contract is DISCRETELY sampled realised variance (daily returns), not integrated variance - the
+  lab's variance-swap cross-check uses daily returns, the right target - and that hedging errors are
+  very sensitive to rebalancing timing. Bogousslavsky & Muravyev (working paper, SSRN 4682388, 9 Feb 2025) - READ 14 Oct:
   no fund-option effective/quoted ratio, but retail trades lose 0.9% against a 3.7% quoted spread
   (limit orders), so the lab's 80% retail case is likely pessimistic; $0.65 commission confirmed.
 - The gap: "to our knowledge, no study benchmarks a free retail options feed against OPRA or
