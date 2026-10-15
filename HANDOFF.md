@@ -2659,7 +2659,7 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   guard.yml test_alerts sent all four levels and all four arrived on his phone.
   **Watchdog routine updated 15 Oct:** knows guard.yml (five workflows), judges recorders by the data, and
   treats a guard-recovered day as recorded (no false alarm). The daily GREEN rides health.yml's 23:37 UTC cron,
-  which GitHub runs 0-3 h late (01:43 UTC on 15 Oct), so it lands roughly 4:40-7:30 pm Pacific.
+  which GitHub has run 2-4 h late every night (01:43-03:46 UTC, 8-15 Oct), so it lands roughly 6:30-9:00 pm Pacific.
   **Bloomberg intraday pull - depth unverified:** forum sources put Bloomberg's intraday bar history at ~140
   days (one older post: ~50 business days); Marc saw finer bars reach less far back. 50 business days from
   23 Sep (H5e's first day) is ~2 Dec, so the post-verdict pull must happen by ~25 Nov at the latest; ask Marc
