@@ -2646,6 +2646,12 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   acronyms, say why it matters. Revised abstract in SCCUR-ABSTRACT.md (248 words, ASCII punctuation). Gabriel
   resubmitted it via Whova and replied to the email on **14 Oct** (done; the one revision is used). Trimmed to
   1,460 characters (limit 1,500). Next: SCCUR's decision; register ($90 by 23 Oct) only after acceptance.
+  **Recorder push failure, 15 Oct 18:30 UTC (GitHub emailed Gabriel).** A HANDOFF commit pushed by Vega at
+  18:30:11 landed while record.yml was running; its plain `git push` was rejected, so the day's panel
+  snapshot was lost. Recovered: record.yml re-dispatched at 14:33 New York, before the close, and the 109
+  rows landed at 18:35 UTC (surface.yml ran normally at 18:40). Fix: record.yml now rebases and retries like
+  surface.yml; a pressure check covers both writers and auditor mutant record-push-no-retry proves it
+  (81/81). Lesson: no hand pushes to the public repo between about 18:15 and 19:15 UTC on weekdays.
   **Marc Vinyard replied, 15 Oct.** (1) LSEG: Pepperdine's academic account gets the same UserNotPermission -
   the entitlement gap is institution-wide, so LSEG is CLOSED for OVX/GVZ/VXN/RVX (no more asks). (2) He found
   historical INTRADAY OVX, GVZ, VXN and RVX on the Bloomberg terminals (finer bars = shorter history). This

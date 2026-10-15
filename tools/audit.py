@@ -225,6 +225,11 @@ MUTANTS = [
     ("lab-imported-by-registered", "a registered reader starts reading the side project",
      lambda w: _sub(w / "modelfree.py", "import ", "import lab  # noqa\nimport ", 1),
      "no registered reader imports or reads lab/"),
+    ("record-push-no-retry", "the recorder pushes once, without rebasing",
+     lambda w: _sub(w / ".github/workflows/record.yml",
+                    "            git pull --rebase origin main && git" + " push origin main && exit 0\n",
+                    "            git" + " push && exit 0\n"),   # split so this file never contains a push command
+     "record.yml rebases and retries its push, so a concurrent commit cannot drop a day"),
     ("vault-resealed", "the discovery vault's split is redrawn after sealing",
      lambda w: _sub(w / "lab/vault.py", "SEED = 20261014", "SEED = 20261015"),
      "lab/ tests pass"),

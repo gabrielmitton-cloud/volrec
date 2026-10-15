@@ -671,6 +671,16 @@ def cron_minutes(expr):
 recy = yaml.safe_load((R / ".github/workflows/record.yml").read_text())
 _rec_min, _rec_days = cron_minutes(recy[True]["schedule"][0]["cron"])
 ok(_rec_days == "1-5", "record runs weekdays only")
+# 15 Oct 2026: a hand push in the same minute rejected the recorder's plain `git push` and the
+# day's first snapshot was lost (re-run by hand before the close). Both writers must rebase and retry.
+def _push_retries(_wfn):
+    _wft = (R / ".github/workflows" / _wfn).read_text()
+    return ("git pull --rebase origin main && git push origin main" in _wft
+            and "\n          git push\n" not in _wft)
+ok(_push_retries("record.yml"),
+   "record.yml rebases and retries its push, so a concurrent commit cannot drop a day")
+ok(_push_retries("surface.yml"),
+   "surface.yml rebases and retries its push, so a concurrent commit cannot drop a day")
 ok(_rec_min >= US_OPEN_UTC_MIN,
    f"record starts after the LATER of the two US opens, so it survives the "
    f"November DST shift ({_rec_min//60:02d}:{_rec_min%60:02d} UTC)")

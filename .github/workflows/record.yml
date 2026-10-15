@@ -41,5 +41,14 @@ jobs:
           git config user.name "recorder"
           git config user.email "recorder@users.noreply.github.com"
           git add data/
-          git diff --staged --quiet || git commit -m "snapshot $(date +%F)"
-          git push
+          git diff --staged --quiet && exit 0
+          git commit -m "snapshot $(date +%F)"
+          # Any other push to main in the same minute (surface.yml, or a hand
+          # commit - 15 Oct 2026 lost the first snapshot this way) rejects a
+          # plain push. Rebase and retry, as surface.yml does: data/ files are
+          # touched only by the recorders, so the rebase resolves cleanly.
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin main && exit 0
+            sleep 10
+          done
+          exit 1
