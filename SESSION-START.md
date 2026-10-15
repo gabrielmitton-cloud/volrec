@@ -53,6 +53,9 @@ session's job is to read results, answer a question, or do one bounded thing.
   changes to a hypothesis are logged; three of them and it is abandoned.
 - **Never edit record.yml or surface.yml's `schedule:` on a day whose run is
   needed.** The cron is held as-is until Wed 11 Nov 2026 (Gabriel, 23 Sep).
+- **No hand pushes to main between 14:15 and 15:15 New York on weekdays.** The recorders commit then;
+  on 15 Oct 2026 a hand push rejected record.yml's snapshot (re-run before the close; record.yml now
+  rebases and retries). If a recorder fails before 16:00 New York, `gh workflow run record.yml` recovers it.
 - **Licensed data never enters the repo.** Bloomberg exports live in
   `~/Documents/volrec-bloomberg`, Databento data in `~/Documents/volrec-databento`,
   interlibrary-loan papers in `~/Documents/volrec-papers`, keys outside the repo.
