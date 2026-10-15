@@ -2644,8 +2644,8 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   against the auditor before anything runs).
   **SCCUR, 14 Oct: revise-and-resubmit** (not yet accepted). Reviewers: spaces after punctuation, define
   acronyms, say why it matters. Revised abstract in SCCUR-ABSTRACT.md (248 words, ASCII punctuation). Gabriel
-  resubmits via Whova ("Edit submission", then "Save changes") by **Mon 19 Oct**, then replies to the email.
-  One chance only. Registration ($90 by 23 Oct) only after acceptance.
+  resubmitted it via Whova and replied to the email on **14 Oct** (done; the one revision is used). Trimmed to
+  1,460 characters (limit 1,500). Next: SCCUR's decision; register ($90 by 23 Oct) only after acceptance.
   **Goyal & Saretto (2009) read, 14 Oct:** logged in lab/REGISTRATION.md; R1 is a cousin of their signal, not
   their rule (spec note + PAPER-OUTLINE/PAPER-DRAFT wording). Their exact signal on the five funds is queued
   for December's open half instead of tested now (Vega's call, under Gabriel's "push it back if it costs"
