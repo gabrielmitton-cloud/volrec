@@ -2610,7 +2610,8 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   1. H9 - register BEFORE looking, right after the 12-19 Nov verdicts (Cboe-method replica on the lab's
   OPRA entry days vs GVZ/OVX, 2016-2026; dates the 2022 NBBO switch; confirm it with IndexSupport@cboe.com).
   2. A second free feed (the paper's biggest limitation is one free feed) - terms check first; spring or a
-  second paper. 3. LSEG intraday timing, if Marc unlocks .OVX/.GVZ. 4. lab/: a delta-hedged version.
+  second paper. 3. LSEG intraday timing, if Marc unlocks .OVX/.GVZ. 4. lab/: a delta-hedged version. (Bondarenko 2014: hedging
+  errors are very sensitive to rebalancing timing - fix the hedge schedule in the registration, before data.)
   Then, at write-up time (Jan-Feb 2027): a red-team review by role-based agents (methods skeptic,
   statistician, cold replicator, novelty checker, licensing auditor, professor-reader) as CRITICS, not
   pattern-hunters; a second company's model may review text and aggregates only, never licensed raw data.

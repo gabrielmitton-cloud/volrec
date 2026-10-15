@@ -61,7 +61,10 @@ measurement, not a new method. The methods are Cboe's and published work's, and 
   1.6-1.8x selling ATM puts. The size anchor for H1's recovered premium. He also shows the traded
   contract is DISCRETELY sampled realised variance (daily returns), not integrated variance - the
   lab's variance-swap cross-check uses daily returns, the right target - and that hedging errors are
-  very sensitive to rebalancing timing. Bogousslavsky & Muravyev (working paper, SSRN 4682388, 9 Feb 2025) - READ 14 Oct:
+  very sensitive to rebalancing timing. A tension worth one sentence in 5b (different samples and
+  instruments, so not a measured comparison): his variance contract beats selling ATM options on a
+  risk-adjusted basis, yet the lab finds the strike strip that replicates it costs a retail trader
+  2.1-3.4x the ATM straddle to trade. Bogousslavsky & Muravyev (working paper, SSRN 4682388, 9 Feb 2025) - READ 14 Oct:
   no fund-option effective/quoted ratio, but retail trades lose 0.9% against a 3.7% quoted spread
   (limit orders), so the lab's 80% retail case is likely pessimistic; $0.65 commission confirmed.
 - The gap: "to our knowledge, no study benchmarks a free retail options feed against OPRA or
