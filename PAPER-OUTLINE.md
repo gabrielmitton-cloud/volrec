@@ -49,7 +49,13 @@ measurement, not a new method. The methods are Cboe's and published work's, and 
   the published text) - only one-month realised-variance risk is priced (Sharpe about -1.7 for a long
   position), which is why the lab trades one-month claims; dealer variance-swap bid-asks of 1-2% up to
   one year give an institutional benchmark for the retail costs measured (units differ; compare with
-  care). Still to read: Goyal & Saretto (2009, JFE 94) for rule R1; Bondarenko (2014, J. Econometrics
+  care). Goyal & Saretto (2009, JFE 94(2), 310-326) - READ 14 Oct: single-stock options 1996-2006, sorted
+  on 12-month historical minus ATM implied volatility; the long-short decile straddle earns 22.7% a month
+  at mid, 3.9% when paying the full quoted spread; costs taken at entry only, held to expiry (the lab's
+  convention); effective/quoted 50/75/100% (literature: below 0.5, up to 0.8-1 for large stocks); SPAN
+  margin needs about $1.42 per $1 written. Rule R1 is only a cousin of their signal (a time-series 21-day
+  gate on five funds, not a 12-month cross-sectional sort) - cite it as "in the spirit of", never as
+  their rule. Still to read: Bondarenko (2014, J. Econometrics
   180) for the premium's size; Bogousslavsky & Muravyev (working paper, SSRN 4682388, 9 Feb 2025) - READ 14 Oct:
   no fund-option effective/quoted ratio, but retail trades lose 0.9% against a 3.7% quoted spread
   (limit orders), so the lab's 80% retail case is likely pessimistic; $0.65 commission confirmed.

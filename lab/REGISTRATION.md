@@ -274,3 +274,15 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   Bogousslavsky & Muravyev's retail figures, the 80% "retail" case is conservative; results barely
   move across cases. GVZ/OVX's NBBO effective date remains unconfirmed (11 May 2022 likely); only
   needed for a future H9 - ask IndexSupport@cboe.com then.
+- 2026-10-14, reading (no number or rule changed): Goyal & Saretto, "Cross-section of option returns and
+  volatility", JFE 94(2), 2009, 310-326 (Pepperdine ILL). Single-stock options 1996-2006 sorted on 12-month
+  historical minus ATM implied volatility; long-short decile straddle 22.7%/month at mid, 3.9% at the full
+  quoted spread; costs charged at entry only and positions held to expiry - the lab's convention;
+  effective/quoted cases 50/75/100% (they cite below 0.5 typically, 0.8-1 for large stocks), so the 80%
+  retail case sits inside their range. SPAN margin: initial haircut 1.21 per $1 written, plus 0.21 average
+  peak call. **R1 is a cousin, not their rule** (21-day, time-series, five funds); the spec carries a note
+  and the paper cites it "in the spirit of". Their exact signal on the five funds is a NEW question: queued
+  for the discovery system's open half (docs/superpowers/specs/2026-10-14-discovery-system-design.md), not
+  tested now, so the vault stays unspent. Approximate comparison for the paper (premium estimated from each
+  fund's index, Brenner-Subrahmanyam; not a lab measurement): Cboe customer margin's initial requirement
+  beyond the premium, median per $1 written - SPY 4.02, QQQ 3.32, IWM 3.11, GLD 5.79, USO 2.58.

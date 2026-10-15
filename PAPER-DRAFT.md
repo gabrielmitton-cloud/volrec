@@ -101,7 +101,8 @@ changes no registered result.
 completeness, sensible spreads and put-call parity against OPRA's own listings); settlement uses the
 funds' raw closing prices, which an independent check matched to OPRA's implied forward within a median
 0.1%. Costs follow Muravyev and Pearson (2020): the investor pays a fraction of the quoted half-spread
-(0%, 30%, 80% or 100%; 80% is the headline and, on recent retail evidence, conservative). Margin follows
+(0%, 30%, 80% or 100%; 80% is the headline and, on recent retail evidence, conservative), charged at
+entry only because positions are held to expiry, as in Goyal and Saretto (2009). Margin follows
 Santa-Clara and Saretto (2009): Cboe's customer rule (15% of the underlying for the index funds, 20% for
 GLD and USO, verified against Cboe's 2008 circular for GLD), daily marking, and forced liquidation when
 cash cannot meet a call. Each friction's share of the loss is its Shapley value over all 24 orders in
@@ -113,6 +114,12 @@ which the frictions can be added - the same answer the main decomposition gives 
   money before any cost. The prediction that retail would keep under half failed.
 - *Size changes the answer.* At 20% of capital, forced liquidation becomes the largest leak (SPY falls
   from 1.28% to 0.97% a month) - though on IWM being forced out cut losses that would have grown.
+- *Retail margin is heavy on calm funds.* Goyal and Saretto (2009) find that exchange-style (SPAN)
+  margin on single-stock straddles asks an initial $1.21 beyond the premium per dollar written ($1.42
+  with later calls). Cboe's customer rule on these funds asks an initial $2.6-5.8 beyond the premium
+  (median by fund; GLD highest, USO lowest), because a flat 15-20% of the underlying is large against a low-volatility fund's premium.
+  This is an approximation (the premium is estimated from each fund's volatility index), not a lab
+  measurement.
 - *The risk is one month.* The trade entered 24 February 2020 cost 26% of capital on SPY and 35% on IWM
   at the modest size. Across 10,000 simulated decades the median worst drawdown is 27-48% and the
   chance of losing half the account 2-35%, conditional on the crashes in the sample.

@@ -2636,6 +2636,16 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   Vinyard once (LSEG + mentor question), then stops. **Fallback for the timing question, no LSEG needed:**
   run the Cboe-method replica on OPRA at 14:30 AND just before the close for USO/GLD (~$0.02 a day); the
   difference is the move between snapshot and close. Inside H7's window, so after the verdicts, exploratory.
+  **Discovery system, 14 Oct (option C, Gabriel's choice):** design in
+  docs/superpowers/specs/2026-10-14-discovery-system-design.md; the holdout ("vault", `lab/vault.py`) sealed the
+  same day - half the 2016-2026 quarters, crash quarters split 3/3, fingerprint pinned by a test and an auditor
+  mutant. Nothing running reads it; it only limits where December's explorers may look, and opens in January.
+  Agents get built when the time comes (Gabriel: Ultracode may do the build from the spec; Vega checks it
+  against the auditor before anything runs).
+  **Goyal & Saretto (2009) read, 14 Oct:** logged in lab/REGISTRATION.md; R1 is a cousin of their signal, not
+  their rule (spec note + PAPER-OUTLINE/PAPER-DRAFT wording). Their exact signal on the five funds is queued
+  for December's open half instead of tested now (Vega's call, under Gabriel's "push it back if it costs"
+  instruction: testing now would spend the holdout). Bondarenko (2014) still to come.
   **Done 12 Oct (Gabriel's yes):** (1)+(2) in H8-DRAFT (OPRA yardstick table, the corrected Δ reason,
   the bid/ask/mid pilot table, open choice 5); (3) README's measurement paragraph, a dated clarification
   at the end of H3's adjustment log (no number or verdict touched), and a PAPER-OUTLINE limitations line;

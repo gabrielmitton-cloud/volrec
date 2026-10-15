@@ -125,6 +125,10 @@ Read in full from the published versions (Pepperdine library, 12 Oct 2026; PDFs 
   - **R0, always sell.** The premium itself; the benchmark, and the trade the Leak Map is drawn on.
   - **R1, sell only when the fund's index exceeds its trailing 21-day realised volatility.** The
     Goyal-Saretto / Muravyev-Pearson filter.
+    *(Note added 14 Oct 2026 after reading Goyal & Saretto (2009); the rule is unchanged: their signal is
+    12-month historical minus ATM implied volatility, sorted across single stocks. R1 is a time-series
+    cousin with a 21-day window, close to the short side of their sign-sort. Cite it as "in the spirit
+    of", not as their rule.)*
   - **R2, size inversely to the index level.** H6's lesson, used for sizing.
   - **R3, skip months when VIX3M is below VIX (an inverted term structure), for all five funds.**
     H1c's link, used as a market-wide gate.

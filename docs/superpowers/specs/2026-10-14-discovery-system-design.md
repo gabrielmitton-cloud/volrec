@@ -40,6 +40,12 @@ nobody has examined, and it is either confirmed or not.
    Bloomberg, LSEG).
 5. Nothing here changes a registered verdict.
 
+## Candidate queue (ideas noticed before December; none tested, all wait for the open half)
+1. **Goyal & Saretto's own signal on the five funds** (added 14 Oct 2026, after reading the paper): 12-month
+   historical minus ATM implied volatility, as they define it, instead of R1's 21-day gate. Deferred on
+   purpose: testing it now on all ten years would spend the sealed half on a new question. Free (data owned).
+   Their mechanism (implied volatility overreacts to the past month's return) is the hypothesis to test.
+
 ## Timing
 After the 12-19 Nov verdicts and H9's registration: explorers and derivers on the open half
 (December); register survivors; open the sealed half (January); confirm on H8's window and the live
