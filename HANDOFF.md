@@ -2673,11 +2673,15 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   Re-run path now unit-tested end to end with fakes; mutant guard-skips-refetch added.
   **First live guard day, 16 Oct:** GitHub's backups started 14:21 / 14:27 New York and stood aside; the guard
   waited (too early); the 14:30 / 14:40 triggers recorded 109 / 8; the guard judged both "ok" and stayed silent.
-  Fixes pushed after the close (auditor 90/90). **Open:** after the first
+  Fixes pushed after the close (auditor 90/90).
+  **cron-job.org guard jobs, 16 Oct (Gabriel):** "volrec guard 15:00" and "volrec guard 15:20" (Mon-Fri, New
+  York) enabled; test run returned 204 and reached GitHub (guard run 38962170586, judged "skip - after the
+  close", correct). **Still to make:** one-off copies at 12:00 New York on Fri 27 Nov and Thu 24 Dec (early
+  closes). Both jobs use the volrec-trigger token: renew them with the others by 22 Dec. **Open:** after the first
   real re-run, confirm its triggering_actor is exactly "github-actions[bot]" (guard.BOT). Unscheduled market
   closures (e.g. a day of mourning) are not in US_MARKET_HOLIDAYS: add the date by hand when announced, or the
-  guard re-runs and pages falsely. Optional, Gabriel: cron-job.org jobs starting guard.yml at 15:00 and 15:20
-  New York would cover a day when cron-job.org started neither recorder but is otherwise up.
+  guard re-runs and pages falsely. cron-job.org jobs starting guard.yml at 15:00 and 15:20 New York: DONE 16 Oct
+  (see below).
   **Built 16 Oct (decision 2): tools/describe.py** - intervals (Newey-West, fixed-b, lag 1.3 sqrt T), n_eff,
   one-sided p against each bar, Holm; 28 known-answer tests (tools/test_describe.py), pressure check, 2 auditor
   mutants. Real series NOT read: only --count-only was run (H5e: 16 counted days to 15 Oct). **After the
