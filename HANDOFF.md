@@ -2652,6 +2652,15 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   **Bondarenko (2014) read, 15 Oct:** the last ILL paper; logged in lab/REGISTRATION.md and PAPER-OUTLINE's
   related work (premium size: long variance -26.30%/month, selling Sharpe 0.42). No number changed. All
   requested papers are now read; PDFs in ~/Documents/volrec-papers.
+  **Decisions, 16 Oct (Gabriel delegated them to Vega after a cold-review subagent; findings verified first):**
+  (1) Mentor: Gabriel also asks Marc on Tue 20 Oct, AFTER the scheduled Goukasian email goes out, to be his
+  SCCUR mentor in the meantime (Goukasian went silent once before; SCCUR decides ~20 Oct). (2) Descriptive
+  intervals + n_eff beside every verdict, and a whole-project test count with Holm column: script built before
+  the verdicts, run once after (PAPER-OUTLINE). (3) If SCCUR accepts: a poster ready ~6 Nov with script-filled
+  result boxes. (4) Discovery system PARKED until the JURF submission (spec header). (5) No new monitors before
+  21 Nov; phase 2 (first responder) deferred to after SCCUR, re-decided in December. (6) Section 5b cut to half
+  a page, rest to an appendix (PAPER-OUTLINE). (7) Cboe fallback = FRED reprints (series verified live).
+  Already fixed: the draft's pre-registration overclaim, three tracked duplicate files, stale lines.
   **Phone alerts + the recorders' guard, built 15 Oct (Gabriel: Pushover; "many times we have skipped over
   issues because of false positives").** tools/alert.py (stdlib; four levels, red = emergency priority every
   2 min for 1 h; keys only in GitHub secrets PUSHOVER_TOKEN/PUSHOVER_USER, in volrec AND volrec-licensed,
@@ -2668,7 +2677,7 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   23 Sep (H5e's first day) is ~2 Dec, so the post-verdict pull must happen by ~25 Nov at the latest; ask Marc
   how far back the 1-minute OVX/GVZ data went to confirm.
   **Thu 22 Oct 10:00 Pacific:** a one-off routine (trig_015V2zQEWbx7T7GL8wt1JXpG, no connectors) pushes Gabriel
-  a reminder: did a GREEN arrive every weekday 16-21 Oct? If yes, build phase 2 (first responder), with a
+  a reminder: did a GREEN arrive every weekday 16-21 Oct? If yes, retire the Mac iMessage. Phase 2 (first responder) was DEFERRED 16 Oct to after SCCUR (see Decisions, 16 Oct); it would need a
   fake-failure test before it goes live. Gabriel: "we can build it whenever u think is best". Phase 2 (Gabriel: after Pushover is proven): a
   read-only first-responder Claude routine on failures. The Mac iMessage (launchd com.volrec.daily) is
   untouched - retire it once Pushover has run a week (Gabriel's call).

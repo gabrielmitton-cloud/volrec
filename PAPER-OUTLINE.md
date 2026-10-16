@@ -112,7 +112,12 @@ with an interval.
 - 5.5 *A reconciliation, not a finding.* Implied volatilities differ by a day-count convention
   (252 vs 365 days), which is textbook.
 
-**5b. What the data gap costs a retail investor (exploratory side study, 1-1.5 pages).** From
+**5b. What the data gap costs a retail investor (exploratory side study).** *Decided 16 Oct (Vega, delegated):
+HALF A PAGE in the main text - the headline (a retail seller keeps 90-95 cents per paper dollar on the liquid
+funds; the risk is crash months, not costs) and the two lessons that serve the main question (the strike strip
+costs 2.1-3.4x the ATM straddle; data filters flattered results). Everything below moves to an appendix. Why:
+the 12-15 page budget, one question per paper, and less room for anything to read as investment advice.*
+From
 `lab/` (design: docs/superpowers/specs/2026-10-12-retail-vrp-audit-design.md; rules and predictions
 committed before any data: lab/REGISTRATION.md). Short one-month ATM straddles on SPY, QQQ, IWM, GLD,
 USO, every month Jan 2016 - Aug 2026, priced on OPRA (Databento), settled on raw closes, under Cboe
@@ -151,6 +156,17 @@ from the free quotes. These belong in the
 paper's main text, not a footnote.
 
 **7. Conclusion (0.5 page).** What a researcher with no budget can trust, and what to fix first.
+
+**Statistics added 16 Oct (cold review; descriptive, beside - never instead of - the frozen verdicts):**
+for every registered verdict, an interval (block bootstrap or HAC) and the effective sample size n_eff,
+labelled "added after registration, descriptive"; and the section 5 table counts EVERY test the project ran
+(confirmatory H3/H5/H7 separated from side studies H1, H2, H4, H6 and lab P1-P5) with a Holm-adjusted column
+as disclosure. The script is built before the verdicts and run once after them.
+**Methods line:** "No human subjects; IRB review not required."
+**If Cboe does not grant permission:** the index closes are re-sourced from FRED's reprints, published with
+Cboe's permission (VIXCLS, VXNCLS, RVXCLS, GVZCLS, OVXCLS, VXVCLS - all checked live on FRED, 16 Oct 2026;
+FRED's values agreed with Cboe's files where compared, EVZ over 2,166 days). Switching a registered verdict's
+source is a logged change, reported beside the original reading.
 
 **Appendix.**
 - A. The pre-registration record (OSF: https://osf.io/z5gfu for H5e and H7): every hypothesis, its bar, its verdict and its adjustment log,

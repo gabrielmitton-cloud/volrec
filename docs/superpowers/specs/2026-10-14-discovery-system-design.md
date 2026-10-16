@@ -1,5 +1,11 @@
 # The discovery system: design (agreed 14 Oct 2026; vault sealed the same day; agents not yet built)
 
+> **PARKED 16 Oct 2026 until the JURF submission (late May 2027)** - Vega's decision, delegated by Gabriel,
+> after a cold review. Why: its December-February phases collide with writing the paper (sections 1, 2, 5-7
+> are not drafted), its February confirmation step lands in the write-up month, and a finished first paper
+> is worth more than an unfinished extra. The vault stays sealed (it costs nothing and keeps the option
+> open); the candidate queue below keeps its ideas. Restart = a new dated plan, after submission.
+
 **Gabriel's aim:** agents that look for something special and derive something important, not only
 critics, with "the best possible outcomes/system." **Chosen design: option C** - explore on half the
 history, confirm on the sealed half, then confirm again on data that does not exist yet.
