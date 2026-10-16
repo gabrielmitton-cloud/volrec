@@ -2646,7 +2646,9 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   **SCCUR, 14 Oct: revise-and-resubmit** (not yet accepted). Reviewers: spaces after punctuation, define
   acronyms, say why it matters. Revised abstract in SCCUR-ABSTRACT.md (248 words, ASCII punctuation). Gabriel
   resubmitted it via Whova and replied to the email on **14 Oct** (done; the one revision is used). Trimmed to
-  1,460 characters (limit 1,500). Next: SCCUR's decision; register ($90 by 23 Oct) only after acceptance.
+  1,460 characters (limit 1,500). Next: SCCUR's decision; register only after acceptance - early rate $90
+  to 23 Oct, $100 to Sat 8 Nov, the hard deadline for presenters (research.sdsu.edu/sccur-2026, read 16 Oct;
+  fees non-refundable; no mentor requirement stated there).
   **Bondarenko (2014) read, 15 Oct:** the last ILL paper; logged in lab/REGISTRATION.md and PAPER-OUTLINE's
   related work (premium size: long variance -26.30%/month, selling Sharpe 0.42). No number changed. All
   requested papers are now read; PDFs in ~/Documents/volrec-papers.
@@ -2724,5 +2726,5 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 > recommending; never adjust a registered threshold; keep licensed data out of the repo; push only when
 > `tools/audit.py` reads N of N. Open work: H8 is being built under `PROTOCOL.md` (`H8-DRAFT.md`, not
 > registered; the cloud buys its OPRA daily), and `DESIGN-MEMO.md` is being revised with Gabriel. The
-> `lab/` side project (retail implementation audit) is designed but waits for the Santa-Clara & Saretto
-> paper; read its 11-12 Oct entry above before touching it.
+> `lab/` side project (retail implementation audit) is COMPLETE (14 Oct; lab/REGISTRATION.md) - read its
+> 14 Oct entries above before touching it.

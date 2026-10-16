@@ -43,8 +43,10 @@ separately):
 passed when it should not have. The recorder therefore refuses to write after the 16:00 close; separate
 workflows raise an alarm on a missed day; a pressure test of more than 240 checks runs before any
 change is published; and an auditor breaks every safeguard on purpose, one at a time, and requires its
-check to fail (79 of 79 at the time of writing). Every hypothesis was committed to the public repository
-before the data it is tested on existed; the two still open (H5e and H7) were also frozen on the Open
+check to fail. Every hypothesis was committed to the public repository, with its pass/fail bar, before
+its test was run. For the forward-looking tests (H3, H5, H7) that was also before their data existed; the
+validation (H1) and the H6 side study ran on history that already existed, and H5 was registered after one
+day of wing data, which its file states. The two still open (H5e and H7) were also frozen on the Open
 Science Framework (osf.io/z5gfu) for an independent timestamp.
 
 **Licensing.** Recorded free-feed data is published with Alpaca's agreement for personal, non-commercial
