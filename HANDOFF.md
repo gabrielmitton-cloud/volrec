@@ -2670,7 +2670,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   YELLOW "could not confirm" instead. (4) two panels could exceed the job timeout - FIXED: one 16-min budget,
   timeout 30 min. (5) start-failure RED now obeys the RED rule; YELLOW text no longer claims a re-run; private
   daily.yml's 03:05 text fixed; freshness's duplicate phone alert removed (health sends one per lost day).
-  Re-run path now unit-tested end to end with fakes; mutant guard-skips-refetch added. **Open:** after the first
+  Re-run path now unit-tested end to end with fakes; mutant guard-skips-refetch added.
+  **First live guard day, 16 Oct:** GitHub's backups started 14:21 / 14:27 New York and stood aside; the guard
+  waited (too early); the 14:30 / 14:40 triggers recorded 109 / 8; the guard judged both "ok" and stayed silent.
+  Fixes pushed after the close (auditor 90/90). **Open:** after the first
   real re-run, confirm its triggering_actor is exactly "github-actions[bot]" (guard.BOT). Unscheduled market
   closures (e.g. a day of mourning) are not in US_MARKET_HOLIDAYS: add the date by hand when announced, or the
   guard re-runs and pages falsely. Optional, Gabriel: cron-job.org jobs starting guard.yml at 15:00 and 15:20
