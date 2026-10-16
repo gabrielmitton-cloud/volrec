@@ -434,6 +434,13 @@ _tg = _sp.run([sys.executable, str(R / "tools/test_guard.py")], capture_output=T
 _ngf = sum(1 for _ln in _tg.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _ngp = sum(1 for _ln in _tg.stdout.splitlines() if _ln.strip().startswith("PASS"))
 ok(_tg.returncode == 0 and _ngf == 0 and _ngp >= 40, f"the guard and alert tests pass ({_ngp} cases, {_ngf} failures)")
+# Descriptive statistics beside the verdicts (16 Oct 2026, cold review): intervals, n_eff, one-sided p
+# against each bar, Holm across the project. Synthetic known answers only; run on the real series once,
+# after the verdicts.
+_tdesc = _sp.run([sys.executable, str(R / "tools/test_describe.py")], capture_output=True, text=True)
+_ndf = sum(1 for _ln in _tdesc.stdout.splitlines() if _ln.strip().startswith("FAIL"))
+_ndp = sum(1 for _ln in _tdesc.stdout.splitlines() if _ln.strip().startswith("PASS"))
+ok(_tdesc.returncode == 0 and _ndf == 0 and _ndp >= 28, f"the descriptive-statistics tests pass ({_ndp} cases, {_ndf} failures)")
 _fls = _iu.spec_from_file_location("fetch_lab", R / "lab/fetch_lab.py")
 _flm = _iu.module_from_spec(_fls)
 _fls.loader.exec_module(_flm)

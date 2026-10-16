@@ -2661,6 +2661,11 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   21 Nov; phase 2 (first responder) deferred to after SCCUR, re-decided in December. (6) Section 5b cut to half
   a page, rest to an appendix (PAPER-OUTLINE). (7) Cboe fallback = FRED reprints (series verified live).
   Already fixed: the draft's pre-registration overclaim, three tracked duplicate files, stale lines.
+  **Built 16 Oct (decision 2): tools/describe.py** - intervals (Newey-West, fixed-b, lag 1.3 sqrt T), n_eff,
+  one-sided p against each bar, Holm; 28 known-answer tests (tools/test_describe.py), pressure check, 2 auditor
+  mutants. Real series NOT read: only --count-only was run (H5e: 16 counted days to 15 Oct). **After the
+  verdicts, run once:** `modelfree.py --wide > f; tools/describe.py --h5e f`, and in volrec-licensed the same
+  with h7_reader's output (`--h7`); paste the lines beside the verdicts, labelled as the tool labels them.
   **Phone alerts + the recorders' guard, built 15 Oct (Gabriel: Pushover; "many times we have skipped over
   issues because of false positives").** tools/alert.py (stdlib; four levels, red = emergency priority every
   2 min for 1 h; keys only in GitHub secrets PUSHOVER_TOKEN/PUSHOVER_USER, in volrec AND volrec-licensed,
