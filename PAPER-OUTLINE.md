@@ -109,7 +109,7 @@ with an interval.
   [H5e FINAL reading goes here, as recorded.]
 - 5.4 *Cboe's own rules.* The step-by-step rebuild: data, quote rules, coverage, expiry, and what
   is left over (USO 0.29, GLD 0.10 from the close). [H7's reading goes here, as recorded.]
-- 5.5 *A reconciliation, not a finding.* Implied volatilities differ by a day-count convention
+- 5.5 *A reconciliation, not a finding* (16 Oct: a FOOTNOTE, not a section). Implied volatilities differ by a day-count convention
   (252 vs 365 days), which is textbook.
 
 **5b. What the data gap costs a retail investor (exploratory side study).** *Decided 16 Oct (Vega, delegated):
@@ -163,6 +163,9 @@ labelled "added after registration, descriptive"; and the section 5 table counts
 (confirmatory H3/H5/H7 separated from side studies H1, H2, H4, H6 and lab P1-P5) with a Holm-adjusted column
 as disclosure. The script is built before the verdicts and run once after them.
 **Methods line:** "No human subjects; IRB review not required."
+**Presentation (16 Oct, cold review):** the headline stays "on the evidence so far" until the verdicts, and the
+poster shows the thin margins (H5a holds weakly; H5f-a sits exactly on its bar; H8's pilot reads high on 7
+of 8); at SCCUR, H8 appears only as a labelled pilot. The whole-project count lives in TEST-INVENTORY.md.
 **If Cboe does not grant permission:** the index closes are re-sourced from FRED's reprints, published with
 Cboe's permission (VIXCLS, VXNCLS, RVXCLS, GVZCLS, OVXCLS, VXVCLS - all checked live on FRED, 16 Oct 2026;
 FRED's values agreed with Cboe's files where compared, EVZ over 2,166 days). Switching a registered verdict's

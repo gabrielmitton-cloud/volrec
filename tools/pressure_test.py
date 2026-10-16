@@ -804,6 +804,9 @@ _fr_txt = (R / ".github/workflows/freshness.yml").read_text()
 ok("--level red" not in _hl_txt and "alert.py" not in _fr_txt
    and "--level green" in _hl_txt and "--level yellow" in _hl_txt,
    "only the guard can send RED; health sends the daily GREEN or a YELLOW, freshness pages no one (one lost day, one message)")
+_hl_phone = [st for st in yaml.safe_load(_hl_txt)["jobs"]["health"]["steps"] if "alert.py" in str(st.get("run", ""))]
+ok(len(_hl_phone) == 1 and _hl_phone[0].get("if") == "always()",
+   "health's phone step runs even when the daily check fails (if: always()), so a FAIL still reaches the phone")
 # health.yml (23 Sep 2026): the daily check in CI. It must stay read-only - two
 # recorders already push to main - must actually run the check, and must never
 # keep the temporary push trigger it was tested with on a branch.

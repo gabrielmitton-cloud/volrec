@@ -139,3 +139,29 @@ Every result in the side study is therefore reported both ways.
 
 *Data provided by Databento (OPRA consolidated NBBO). Cboe index levels: Cboe Global Markets. Aggregates
 only. Nothing here is investment advice.*
+
+---
+
+## Appendix C (draft, 16 Oct 2026): data availability, per source
+
+*Following the Social Science Data Editors' template. Re-check every line against each provider's terms
+before submission.*
+
+- **Free feed (Alpaca Markets).** The daily snapshots are in the public repository (`data/`), with Alpaca's
+  written agreement (10 Oct 2026) for personal, non-commercial use. Anyone may re-record the same feed with a
+  free Alpaca account; the recorders are in the repository.
+- **Cboe index closes.** Read at run time from Cboe's public files; not redistributed. Permission for this use
+  was requested from Cboe on 10 Oct 2026. If Cboe does not grant it, the same series are available from FRED,
+  which republishes them with Cboe's permission (VIXCLS, VXNCLS, RVXCLS, GVZCLS, OVXCLS, VXVCLS), and the
+  results would be re-sourced there, as a logged change.
+- **Consolidated OPRA quotes (Databento).** Licensed; not redistributed. Replicators can buy the same files
+  (OPRA.PILLAR, cbbo-1m); the repository records every request and its cost. Only aggregates appear here,
+  credited "Data provided by Databento".
+- **Bloomberg (Pepperdine University's terminal).** Licensed; not redistributed. Derived figures only,
+  credited "Source: Bloomberg Finance L.P."
+- **FRED (Federal Reserve Bank of St. Louis).** The one-month Treasury rate (DGS1MO), cached; FRED's notice is
+  carried in the repository.
+- **Code.** MIT licence, covering the code and documentation only, not third-party data. A fresh clone
+  reproduces the registered readings byte for byte after `tools/seed_frozen_rate.py` (checked 10 Oct 2026).
+- **Human subjects.** None; IRB review not required.
+

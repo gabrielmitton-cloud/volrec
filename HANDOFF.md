@@ -1880,7 +1880,7 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 
 ---
 
-## 18. Current state — 23 September 2026, the reading every session starts from
+## 18. Current state — opened 23 September 2026, updated to 16 October 2026; the reading every session starts from
 
 **Section 17 is now history:** dated notes from 16-23 Sep, with the reasoning behind
 every decision. This section is the only one guaranteed current. Read it, run
@@ -1926,7 +1926,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 |---|---|---|
 | H1 | tested, holds | 9 of 11 Cboe pairs survive FDR control |
 | H2 | tested, not adopted | log variance strongest (t=16.26) |
-| H3 | series running | H3a mean abs gap **0.53** over 30 readings (bar 1.0). First registered wide reading **OUTSIDE** 1.4-3.2 (+9.41; +10.71 with 23 Sep): quote contamination, as the grid anticipated. **IWM reads positive on all six days**, against H3b's sign - watch. **Day count: Bloomberg stated ACT/252 in writing (23 Sep); at 21 months ~1 point remains, not the forward or rate, unidentified and closed (24 Sep).** H3c's mechanism is Jiang & Tian (2007)'s, credited |
+| H3 | series running | H3a mean abs gap **0.40 over 80 readings (8 Oct; hypotheses/README.md is current)**; 23 Sep: 0.53 over 30 (bar 1.0). First registered wide reading **OUTSIDE** 1.4-3.2 (+9.41; +10.71 with 23 Sep): quote contamination, as the grid anticipated. **IWM reads positive on all six days**, against H3b's sign - watch. **Day count: Bloomberg stated ACT/252 in writing (23 Sep); at 21 months ~1 point remains, not the forward or rate, unidentified and closed (24 Sep).** H3c's mechanism is Jiang & Tian (2007)'s, credited |
 | H4 | descriptive, **strike 2 of 3** (8 Oct) | strike 2: calendar-day carry + Bakshi-Kapadia dividend-adjusted price (strike 1, 23 Sep: runs break on a missed trading day). Data to 7 Oct: date level -5.23bp (t -2.50) vs -5.22bp under strike 1; no conclusion moved. One strike left |
 | H5a | **tested 23 Sep, holds weakly** | pooled median 0.40 of a spread over 169 wing contracts on 3 days (bar 0.5); **0.67 on the 132 both feeds bid** - the two readings of "quoted" are logged, nothing adjusted |
 | H5b | **tested 23 Sep, holds** | 36 of 36 free-feed missing bids are missing on Bloomberg (bar 80%) |
