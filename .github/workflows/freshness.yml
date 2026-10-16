@@ -26,9 +26,7 @@ jobs:
       # No pip step on purpose. panel_health.py uses only the standard library,
       # so this job cannot break because of a dependency it never needed.
       - name: Fail loudly if either panel has gone stale or empty
-        run: |
-          set -o pipefail
-          python tools/panel_health.py | tee health.txt
+        run: python tools/panel_health.py
       # No phone alert here (16 Oct 2026, engineer review): a lost day already reaches Gabriel's phone
       # once, as health.yml's YELLOW about an hour later, and same-day problems belong to guard.yml.
       # This job stays the install-nothing alarm whose red X emails.

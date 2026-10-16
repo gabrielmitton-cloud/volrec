@@ -21,14 +21,13 @@ series once, after them (12-19 Nov). --count-only is for checking the plumbing w
 """
 import argparse
 import math
-import random
 import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT), str(ROOT / "tools")]
-from analyze import newey_west                      # noqa: E402
+from analyze import newey_west, fixed_b_null as _fixed_b_null   # noqa: E402
 from h8_quotes import ar1, n_eff                     # noqa: E402
 import record_verdict as rv                          # noqa: E402  (registered constants, read-only)
 
@@ -42,21 +41,10 @@ def lag_rule(T):
 
 
 def fixed_b_null(T, lag, reps=REPS, seed=SEED):
-    """Sorted simulated Newey-West t-statistics under the null (iid Gaussian; the fixed-b limit does
-    not depend on the serial correlation), at this T and lag. Same construction as
-    analyze.fixed_b_pvalue, kept as the whole distribution so intervals and one-sided p come from it."""
-    rng = random.Random(seed)
-    out = []
-    for _ in range(reps):
-        x = [rng.gauss(0.0, 1.0) for _ in range(T)]
-        mu = sum(x) / T
-        d = [v - mu for v in x]
-        var = sum(v * v for v in d) / T
-        for j in range(1, lag + 1):
-            var += 2.0 * (1.0 - j / (lag + 1.0)) * sum(d[i] * d[i - j] for i in range(j, T)) / T
-        out.append(mu / math.sqrt(max(var, 1e-18) / T))
-    out.sort()
-    return out
+    """Sorted simulated Newey-West t-statistics under the null at this T and lag - analyze.fixed_b_null
+    (the one copy the registered readers' fixed-b p also uses), kept whole so intervals and one-sided
+    p come from it."""
+    return sorted(_fixed_b_null(T, lag, reps, seed))
 
 
 def quantile(sorted_x, q):
@@ -87,8 +75,9 @@ def describe(x, bar=None, side="below", reps=REPS):
 
 
 def holm(pvals):
-    """Holm-Bonferroni adjusted p-values, same order as given (None passes through as None)."""
-    idx = [i for i, p in enumerate(pvals) if p is not None]
+    """Holm-Bonferroni adjusted p-values, same order as given. None, NaN or infinite entries are not
+    tests and pass through as None (a NaN would make the sort order undefined)."""
+    idx = [i for i, p in enumerate(pvals) if p is not None and math.isfinite(p)]
     m = len(idx)
     adj = [None] * len(pvals)
     running = 0.0

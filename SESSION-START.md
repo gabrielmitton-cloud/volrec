@@ -41,7 +41,7 @@ session's job is to read results, answer a question, or do one bounded thing.
 |---|---|---|
 | `record.yml` (ATM panel) | 14:30 New York (18:30 UTC in summer time, 19:30 from 2 Nov; 11:30 on an early close), started by cron-job.org (`workflow_dispatch`); GitHub's 14:47 UTC cron is the backup, and stands aside if it starts before 14:45 New York | `freshness` FAILS on a missed day, and emails |
 | `surface.yml` (strike surface, wide band, from 9 Oct the monthly USO/GLD legs) | 14:40 New York the same way; 14:57 UTC cron backup | same |
-| `guard.yml` (15 Oct 2026) | after every record/surface run - each recorder's completion is the other's timer, and a GitHub backup that stood aside counts too; its own crons (15:05/15:25 New York) almost always land after the close | confirms a missing day from the DATA, re-runs the recorder once, then pages Gabriel (Pushover): RED only if the day can still be saved |
+| `guard.yml` (15 Oct 2026) | after every record/surface run (each recorder's completion is the other's timer; a stood-aside GitHub backup counts too), and at 15:00 + 15:20 New York via cron-job.org (12:00 on early closes); one queue; never before a recorder's own trigger slot | confirms a missing day from the DATA, re-runs the recorder once, then pages Gabriel (Pushover): RED only if the day can still be saved |
 | healthchecks.io (outside GitHub, 25 Sep; Pushover since 15 Oct) | expects pings from freshness, health and volrec-licensed | pages Gabriel if one of those jobs never runs at all |
 | `freshness.yml` | 20:00 and 23:00 daily (GitHub runs both 2-5 h late) | installs nothing, on purpose; emails on a red X; no phone alert (health sends it) |
 | `health.yml` | 23:37 | the full daily check; emails on any FAIL or crash |

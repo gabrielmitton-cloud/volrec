@@ -77,9 +77,13 @@ def coverage(panel, path, day):
     if panel == "surface":
         base = len(ph.EXPECTED)
     else:
-        prior = [d for d in by_day if d < day.isoformat()]
-        base = len(by_day[max(prior)]) if prior else 1
-    return today, max(1, int(base * COMPLETE_SHARE + 0.999))
+        prior = sorted(d for d in by_day if d < day.isoformat())[-5:]
+        # The best of the last 5 recorded days (security review, 16 Oct): with yesterday alone, a partial
+        # day would lower today's bar and the check would ratchet down with the failure it exists to catch.
+        base = max(len(by_day[d]) for d in prior) if prior else 1
+    # Floor, not ceiling (16 Oct review): 90% of the surface's 8 is 7, so one underlying the feed
+    # legitimately lacks is not an "incomplete" day; ATM: 90% of yesterday's 109 is 98.
+    return today, max(1, int(base * COMPLETE_SHARE))
 
 
 def decide(panel, now_ny, have, need, runs, event):
@@ -95,13 +99,23 @@ def decide(panel, now_ny, have, need, runs, event):
     trig = PANELS[panel][3] if day in ph.EARLY_CLOSES else PANELS[panel][2]
     if mins >= close:
         return "skip", "after the close - freshness.yml reports a lost day"
-    if event.get("kind") == "workflow_run" and event.get("actor") == BOT:
+    if (event.get("kind") == "workflow_run" and event.get("actor") == BOT
+            and event.get("workflow") in ("", None, PANELS[panel][0])):
+        # Only the panel whose recorder the guard re-ran (ultrareview, 16 Oct): with one queue, this event
+        # may have replaced a pending guard for the OTHER recorder, so that panel is still judged here.
         return "skip", "the guard's own re-run; the guard that started it reports the outcome"
     # 16 Oct (engineer review): ANY recorder run finishing after this panel's trigger + 5 minutes is a
     # judging event - the trigger, the other recorder, or a GitHub backup that stood aside. GitHub's own
     # crons run 2-7 h late here, so the guard's schedule slots alone would land after the close.
+    # (A dispatched trigger run is judged from its own slot - the hard floor below guarantees mins >= trig;
+    # any other recorder run from 5 minutes after the slot, so an early backup cannot trigger a re-run.)
     finished_trigger = event.get("kind") == "workflow_run" and (
-        (event.get("run_event") == "workflow_dispatch" and mins >= trig - 5) or mins >= trig + 5)
+        event.get("run_event") == "workflow_dispatch" or mins >= trig + 5)
+    if mins < trig:
+        # 16 Oct review: NOTHING may start a recorder before its own trigger slot - a manual or
+        # mis-timed run (e.g. a cron-job.org job saved in UTC) would record the day at the wrong time,
+        # and the real trigger would then skip it as already recorded.
+        return "wait", f"before the {trig // 60}:{trig % 60:02d} New York trigger slot - never re-run early"
     if mins < trig + JUDGE_AFTER_MIN and not finished_trigger and event.get("kind") != "manual":
         j = trig + JUDGE_AFTER_MIN
         return "wait", f"too early to judge (before {j // 60}:{j % 60:02d} New York)"
@@ -116,16 +130,33 @@ def decide(panel, now_ny, have, need, runs, event):
     if any(r.get("status") != "completed" and r.get("id") != event.get("run_id") for r in runs):
         return "wait", "a run of this recorder is still in progress"
     if any(r.get("actor") == BOT for r in runs):
-        return "wait", "already re-run once today; that guard reported the outcome"
+        return "wait", "already re-run once today; that run's guard reported the outcome"
+    dispatches = [r for r in runs if r.get("event") == "workflow_dispatch"]
+    if len(dispatches) >= 2:
+        # A cap that needs no login (16 Oct reviews): a normal day has one workflow_dispatch (the trigger);
+        # two mean it was already re-run (by a human, or by a guard whose login GitHub reports differently).
+        # Never re-run a third time, never go silent - and alert ONCE: on the completion of the newest
+        # dispatch run itself; every other event waits (ultrareview, 16 Oct: no repeated REDs).
+        newest = max(r["id"] for r in dispatches)
+        if event.get("kind") == "workflow_run" and event.get("run_id") == newest:
+            return final(panel, now_ny, have, need, retried=True)
+        return "wait", "already re-run today; the alert goes out once, when that re-run finishes"
     if mins < close - LAST_RETRY_BEFORE_CLOSE_MIN:
         return "retry", f"only {have} of {need} symbols; re-running once"
     return final(panel, now_ny, have, need, retried=False)
 
 
-def final(panel, now_ny, have, need, retried=True):
-    """The one alert, after the re-run (or with no time left for one). Pure."""
+def final(panel, now_ny, have, need, retried=True, rerun_clean=False, other_empty=False):
+    """The one alert, after the re-run (or with no time left for one). Pure. rerun_clean: the re-run
+    finished with success yet the day is still empty; other_empty: the OTHER recorder also has nothing
+    today. Both together are independent evidence of a closed market or an empty feed."""
     if have >= need:
         return "recovered", f"the automatic re-run recorded the day ({have} symbols)"
+    if retried and rerun_clean and other_empty and have == 0:
+        # 16 Oct review: a recorder that runs cleanly and records nothing is what an unscheduled market
+        # closure (or an empty feed) looks like - re-running by hand would not help, so it must not page RED.
+        return "yellow", ("the re-run finished cleanly but recorded nothing - most likely an unscheduled "
+                          "market closure or an empty feed; check whether the market is open")
     mins = now_ny.hour * 60 + now_ny.minute
     _, close = clock(now_ny.date())
     late = mins >= close - RED_BEFORE_CLOSE_MIN
@@ -143,7 +174,7 @@ def _gh(args):
 def todays_runs(workflow, day, repo):
     """Today's (New York) runs of a workflow, from the GitHub API."""
     p = _gh(["api", f"repos/{repo}/actions/workflows/{workflow}/runs?per_page=50&created=>={day - timedelta(days=1)}",
-             "--jq", "[.workflow_runs[] | {id, status, created_at, actor: .triggering_actor.login, event}]"])
+             "--jq", "[.workflow_runs[] | {id, status, conclusion, created_at, actor: .triggering_actor.login, event}]"])
     if p.returncode != 0:
         raise RuntimeError(f"cannot list {workflow} runs: {p.stderr.strip()[:200]}")
     out = []
@@ -166,18 +197,23 @@ def _start_failed(panel, now_ny, have, need, err):
 
 
 def rerun_and_recheck(panel, wf, path, repo, poll_s=20, max_wait_s=12 * 60, gh=None, git=None,
-                      sleep=None, now=None, runs_fn=None):
+                      sleep=None, now=None, runs_fn=None, cov_fn=None):
     """Start one re-run, wait for it in this job (nothing relies on workflow_run chaining), pull
     main's data/, and judge once more. Returns (verdict, why, have, need). Every dependency is
     injectable so tools/test_guard.py can drive each path."""
     import time
-    gh, git = gh or _gh, git or _git
+    gh, git, cov_fn = gh or _gh, git or _git, cov_fn or coverage
     sleep, now, runs_fn = sleep or time.sleep, now or (lambda: datetime.now(timezone.utc)), runs_fn or todays_runs
     started = now()
+    try:                                               # runs that exist before we dispatch are not ours
+        before = {r["id"] for r in runs_fn(wf, started.astimezone(NY).date(), repo)}
+    except (RuntimeError, OSError, subprocess.TimeoutExpired, ValueError):
+        before = None                                  # unknown: fail closed below (security review, 16 Oct)
+    since = started.strftime("%Y-%m-%dT%H:%M:%S")
     p = gh(["workflow", "run", wf, "-R", repo, "--ref", "main"])
     if p.returncode != 0:
         now_ny = started.astimezone(NY)
-        have, need = coverage(panel, path, now_ny.date())
+        have, need = cov_fn(panel, path, now_ny.date())
         v, why = _start_failed(panel, now_ny, have, need, p.stderr.strip())
         return v, why, have, need
     print(f"re-run of {wf} requested; waiting for it (up to {max_wait_s // 60} min)")
@@ -186,11 +222,14 @@ def rerun_and_recheck(panel, wf, path, repo, poll_s=20, max_wait_s=12 * 60, gh=N
         sleep(poll_s)
         waited += poll_s
         try:
+            # Ours = a workflow_dispatch run that did not exist before we dispatched (16 Oct review: no
+            # reliance on the bot login, and no minute-truncated time match against another guard's run).
             mine = [r for r in runs_fn(wf, started.astimezone(NY).date(), repo)
-                    if r.get("actor") == BOT and r["created_at"] >= started.strftime("%Y-%m-%dT%H:%M")]
+                    if r.get("event") == "workflow_dispatch" and r.get("created_at", "") >= since
+                    and (before is None or r["id"] not in before)]
         except (RuntimeError, OSError, subprocess.TimeoutExpired, ValueError):
             continue
-        run = mine[0] if mine else None
+        run = min(mine, key=lambda r: r["id"]) if mine else None     # the oldest new one is ours
         if run and run.get("status") == "completed":
             break
     # Read main again. If that fails, never page RED on stale data (16 Oct, engineer review).
@@ -202,12 +241,24 @@ def rerun_and_recheck(panel, wf, path, repo, poll_s=20, max_wait_s=12 * 60, gh=N
             break
         sleep(10)
     now_ny = now().astimezone(NY)
-    have, need = coverage(panel, path, now_ny.date())
+    have, need = cov_fn(panel, path, now_ny.date())
     if not fetched:
         return ("yellow", "the re-run was started but the guard could not read main afterwards to confirm it - "
                 "check the data by hand before the close", have, need)
-    verdict, why = final(panel, now_ny, have, need)
-    if verdict != "recovered" and not (run and run.get("status") == "completed"):
+    done = bool(run and run.get("status") == "completed")
+    if run:
+        print(f"re-run {run['id']}: status {run.get('status')}, conclusion {run.get('conclusion')}, "
+              f"triggering actor {run.get('actor')!r} (guard.BOT expects {BOT!r})")
+    other = "surface" if panel == "atm" else "atm"
+    other_have, _ = cov_fn(other, PANELS[other][1], now_ny.date())
+    o_trig = PANELS[other][3] if now_ny.date() in ph.EARLY_CLOSES else PANELS[other][2]
+    # The other recorder's emptiness is evidence only once its own run has had time to land (ultrareview,
+    # 16 Oct): at 14:36 the surface's 14:40 trigger has simply not run yet, which proves nothing.
+    other_due = now_ny.hour * 60 + now_ny.minute >= o_trig + 10
+    # Fail closed: without a trustworthy baseline the run we found may not be ours, so no downgrade.
+    clean = done and before is not None and run.get("conclusion") == "success"
+    verdict, why = final(panel, now_ny, have, need, rerun_clean=clean, other_empty=other_due and other_have == 0)
+    if verdict != "recovered" and not done:
         why += f" (the re-run had not finished after {max_wait_s // 60} minutes; it may still land)"
     return verdict, why, have, need
 
@@ -225,53 +276,64 @@ def message(panel, verdict, why, have, need, now_ny):
     return (f"{name} needs a look", f"{why} (need {need}). Tell Claude; any data that did land is kept.")
 
 
+def run_panels(panels, now_ny, event, repo, url, dry_run=False, runs_fn=None, rerun_fn=None,
+               send_fn=None, sleep=None, monotonic=None, cov_fn=None, now_fn=None):
+    """Judge each panel once and act. Returns 1 when a RED could not be delivered (the red X on the
+    guard run then emails, as a last resort), else 0. Every dependency is injectable for the tests."""
+    import time
+    runs_fn, rerun_fn = runs_fn or todays_runs, rerun_fn or rerun_and_recheck
+    send_fn, sleep = send_fn or alert.send, sleep or time.sleep
+    monotonic, cov_fn = monotonic or time.monotonic, cov_fn or coverage
+    now_fn = now_fn or (lambda: datetime.now(timezone.utc).astimezone(NY))
+    bad = 0
+    deadline = monotonic() + 16 * 60                     # both panels share one budget (guard.yml: 30 min)
+    for panel in panels:
+        wf, path, _, _ = PANELS[panel]
+        have, need = cov_fn(panel, path, now_ny.date())
+        runs = [] if not trading_day(now_ny.date()) else None
+        for attempt in range(3 if runs is None else 0):
+            try:
+                runs = runs_fn(wf, now_ny.date(), repo)
+                break
+            except (RuntimeError, OSError, subprocess.TimeoutExpired, ValueError) as e:
+                print(f"::warning::{e}")                 # never re-run blind; decide() pages instead
+                if attempt < 2:
+                    sleep(10)
+        verdict, why = decide(panel, now_ny, have, need, runs, event)
+        print(f"{panel}: {verdict} - {why} [{have}/{need} symbols, {now_ny:%H:%M} New York, event {event['kind']}]")
+        if dry_run or verdict in ("skip", "wait", "ok"):
+            continue
+        if verdict == "retry":
+            left = int(deadline - monotonic())
+            verdict, why, have, need = rerun_fn(panel, wf, path, repo, max_wait_s=max(60, min(12 * 60, left)))
+            now_ny = now_fn()
+            print(f"{panel}: {verdict} - {why}")
+        title, body = message(panel, verdict, why, have, need, now_ny)
+        level = "notice" if verdict == "recovered" else verdict
+        sent = send_fn(level, title, body, url)
+        if verdict == "red" and not sent:
+            bad = 1
+    return bad
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="the recorders' guard")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--panel", choices=sorted(PANELS), action="append")
     a = ap.parse_args(argv)
     repo = os.environ.get("GITHUB_REPOSITORY", "gabrielmitton-cloud/volrec")
-    now_ny = datetime.now(timezone.utc).astimezone(NY)
-    if os.environ.get("GUARD_NOW"):                       # tests and drills only
-        now_ny = datetime.fromisoformat(os.environ["GUARD_NOW"]).astimezone(NY)
+    now_fn = lambda: datetime.now(timezone.utc).astimezone(NY)   # noqa: E731
+    if os.environ.get("GUARD_NOW"):                       # tests and drills only: a fixed clock throughout
+        now_fn = lambda: datetime.fromisoformat(os.environ["GUARD_NOW"]).astimezone(NY)   # noqa: E731
+    now_ny = now_fn()
     event = {"kind": os.environ.get("GUARD_EVENT", "manual"),
              "run_id": int(os.environ.get("GUARD_RUN_ID") or 0) or None,
              "actor": os.environ.get("GUARD_RUN_ACTOR", ""),
              "run_event": os.environ.get("GUARD_RUN_EVENT", ""),
              "workflow": Path(os.environ.get("GUARD_RUN_WORKFLOW", "")).name}
-    url = os.environ.get("GUARD_RUN_URL")
-    panels = a.panel or sorted(PANELS)                   # both panels on every event: one recorder's
-    bad = 0                                               # completion is the other's timer (16 Oct)
-    import time
-    deadline = time.monotonic() + 16 * 60                 # both panels share one budget (guard.yml: 30 min)
-    for panel in panels:
-        wf, path, _, _ = PANELS[panel]
-        have, need = coverage(panel, path, now_ny.date())
-        runs = [] if not trading_day(now_ny.date()) else None
-        for attempt in range(3 if runs is None else 0):
-            try:
-                runs = todays_runs(wf, now_ny.date(), repo)
-                break
-            except (RuntimeError, OSError, subprocess.TimeoutExpired, ValueError) as e:
-                print(f"::warning::{e}")              # never re-run blind; decide() pages instead
-                if attempt < 2:
-                    time.sleep(10)
-        verdict, why = decide(panel, now_ny, have, need, runs, event)
-        print(f"{panel}: {verdict} - {why} [{have}/{need} symbols, {now_ny:%H:%M} New York, event {event['kind']}]")
-        if a.dry_run or verdict in ("skip", "wait", "ok"):
-            continue
-        if verdict == "retry":
-            left = int(deadline - time.monotonic())
-            verdict, why, have, need = rerun_and_recheck(panel, wf, path, repo,
-                                                         max_wait_s=max(60, min(12 * 60, left)))
-            now_ny = datetime.now(timezone.utc).astimezone(NY)
-            print(f"{panel}: {verdict} - {why}")
-        title, body = message(panel, verdict, why, have, need, now_ny)
-        level = "notice" if verdict == "recovered" else verdict
-        sent = alert.send(level, title, body, url)
-        if verdict == "red" and not sent:
-            bad = 1                                     # a red X on the guard emails, as a last resort
-    return bad
+    # Both panels on every event: one recorder's completion is the other's timer (16 Oct).
+    return run_panels(a.panel or sorted(PANELS), now_ny, event, repo, os.environ.get("GUARD_RUN_URL"), a.dry_run,
+                      now_fn=now_fn)
 
 
 if __name__ == "__main__":

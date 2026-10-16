@@ -30,6 +30,11 @@ check("Holm by hand: p = 0.01, 0.04, 0.03 -> 0.03, 0.06, 0.06 (step-down, kept m
 check("Holm caps at 1 and passes None through",
       D.holm([0.6, None, 0.9]) == [1.0, None, 1.0])
 check("Holm with one test leaves p unchanged", D.holm([0.2]) == [0.2])
+check("Holm: a NaN p is not a test - it passes through as None and does not disturb the others",
+      D.holm([0.01, float("nan"), 0.04]) == [0.02, None, 0.04])
+import analyze as _A  # noqa: E402
+check("the descriptive null is the registered readers' own (analyze.fixed_b_null), sorted",
+      D.fixed_b_null(15, 3, reps=300) == sorted(_A.fixed_b_null(15, 3, 300, D.SEED)))
 
 print("\n=== the fixed-b critical value is the house method's ===")
 null0 = D.fixed_b_null(250, 0, reps=4000)

@@ -2674,6 +2674,27 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   **First live guard day, 16 Oct:** GitHub's backups started 14:21 / 14:27 New York and stood aside; the guard
   waited (too early); the 14:30 / 14:40 triggers recorded 109 / 8; the guard judged both "ok" and stayed silent.
   Fixes pushed after the close (auditor 90/90).
+  **Code review of today's code (xhigh, 16 Oct evening): 11 findings, all fixed the same evening.** Guard: never
+  starts a recorder before its own trigger slot (a mis-timed manual/cron run would have recorded an off-time
+  snapshot); the re-run cap no longer depends on the bot login (2 workflow_dispatch runs = already re-run); its
+  own re-run is identified as the NEW dispatch run, not by login or a minute-truncated time; ONE concurrency
+  queue (guards judge both panels); completeness rounds DOWN (surface 7 of 8 is complete); a re-run that
+  succeeds yet records nothing is YELLOW "unscheduled closure?", not RED; the per-panel loop is run_panels(),
+  unit-tested; its GitHub crons removed (they always landed after the close; cron-job.org wakes it). describe:
+  Holm skips NaN; the fixed-b null is now ONE copy, analyze.fixed_b_null (fixed_b_pvalue's outputs checked
+  identical to the digit). freshness: dead tee removed. 3 new auditor mutants. **Then an automated security
+  review of those fixes (same evening), 4 acted on:** a failed pre-dispatch run listing fails CLOSED (no
+  downgrade); a clean-but-empty re-run is YELLOW only if the OTHER recorder is also empty today (independent
+  evidence of a closure), else RED; reaching the 2-dispatch cap ALERTS instead of waiting silently; the ATM
+  bar is the best of the last 5 days, so a partial day cannot lower tomorrow's bar. Not changed, by design:
+  cron-job.org as the before-the-close trigger (its token is fine-grained, Actions on volrec only; the native
+  workflow_run trigger remains), and the single queue (the running guard is handling the problem; the newest
+  pending one covers both panels). **Then /ultrareview (cloud, Gabriel) on the same fixes: 7 findings, all
+  fixed:** the other recorder's emptiness counts as closure evidence only after its own slot + 10 min (at 14:36
+  the surface simply has not run); two auditor mutants had stale targets after the refactor (fixed-b-ignores-lag,
+  guard-dispatch-cap-gone) - retargeted; the 2-dispatch cap alerts ONCE (on the second dispatch's completion);
+  a BOT-actor event skips only the re-run panel, so the single queue cannot lose the other panel's judgement;
+  dead trig-5 allowance removed; re-run path's coverage injectable (hermetic tests). 77 guard tests.
   **cron-job.org guard jobs, 16 Oct (Gabriel):** "volrec guard 15:00" and "volrec guard 15:20" (Mon-Fri, New
   York) enabled; test run returned 204 and reached GitHub (guard run 38962170586, judged "skip - after the
   close", correct). **Still to make:** one-off copies at 12:00 New York on Fri 27 Nov and Thu 24 Dec (early

@@ -152,6 +152,25 @@ def newey_west(x, lag):
 
 
 
+def fixed_b_null(T, lag, reps=4000, seed=20261008):
+    """The simulated null of the Newey-West (Bartlett) t at this T and lag, in draw order: iid
+    Gaussian series, seeded so it reproduces. One copy, shared by fixed_b_pvalue and
+    tools/describe.py (16 Oct 2026; fixed_b_pvalue's numbers are unchanged, checked to the digit)."""
+    import random
+    rng = random.Random(seed)
+    lag = max(0, min(lag, T - 1))
+    out = []
+    for _ in range(reps):
+        x = [rng.gauss(0.0, 1.0) for _ in range(T)]
+        mu = sum(x) / T
+        d = [v - mu for v in x]
+        var = sum(v * v for v in d) / T
+        for j in range(1, lag + 1):
+            var += 2.0 * (1.0 - j / (lag + 1.0)) * sum(d[i] * d[i - j] for i in range(j, T)) / T
+        out.append(mu / sqrt(max(var, 1e-18) / T))
+    return out
+
+
 def fixed_b_pvalue(t, T, lag, reps=4000, seed=20261008):
     """Two-sided p-value for a Newey-West (Bartlett) t-statistic under FIXED-b asymptotics
     (Kiefer & Vogelsang 2005, Econometric Theory 21): the null distribution of the HAC t depends
@@ -161,22 +180,9 @@ def fixed_b_pvalue(t, T, lag, reps=4000, seed=20261008):
     simulation at the panel's own T and lag (iid Gaussian null; the fixed-b limit is a functional
     of Brownian motion and does not depend on the serial correlation), seeded, so it reproduces.
     Checked when written: T=250 lag 42 -> 2.48; lag 0 -> 1.97 = t(249)."""
-    import random
     if not isfinite(t) or T < 3:
         return float("nan")
-    rng = random.Random(seed)
-    lag = max(0, min(lag, T - 1))
-    hits = 0
-    for _ in range(reps):
-        x = [rng.gauss(0.0, 1.0) for _ in range(T)]
-        mu = sum(x) / T
-        d = [v - mu for v in x]
-        var = sum(v * v for v in d) / T
-        for j in range(1, lag + 1):
-            var += 2.0 * (1.0 - j / (lag + 1.0)) * sum(d[i] * d[i - j] for i in range(j, T)) / T
-        ts = mu / sqrt(max(var, 1e-18) / T)
-        hits += abs(ts) >= abs(t)
-    return hits / reps
+    return sum(abs(ts) >= abs(t) for ts in fixed_b_null(T, lag, reps, seed)) / reps
 
 def plain_t(x):
     T = len(x)

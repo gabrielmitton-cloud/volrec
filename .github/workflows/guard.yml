@@ -11,14 +11,10 @@ on:
   workflow_run:
     workflows: [record, surface]
     types: [completed]
-  schedule:
-    # The "never ran at all" case. Fixed UTC, so two pairs: 15:05 and 15:25 New York under
-    # summer time (19:05, 19:25 UTC) and under winter time (20:05, 20:25 UTC). The guard reads
-    # the New York clock itself; a slot before the trigger waits, a slot after the close skips.
-    - cron: "5 19 * * 1-5"
-    - cron: "25 19 * * 1-5"
-    - cron: "5 20 * * 1-5"
-    - cron: "25 20 * * 1-5"
+  # No GitHub cron (16 Oct review): this repository's crons start 2-7 h late, so slots at 15:05/15:25
+  # New York landed after the close and could only skip. The before-the-close wake-ups come from
+  # cron-job.org instead: jobs "volrec guard 15:00" and "volrec guard 15:20" (New York, Mon-Fri) dispatch
+  # this workflow, plus one-off 12:00 copies on the early closes (27 Nov, 24 Dec).
   workflow_dispatch:
     inputs:
       test_alerts:
@@ -29,9 +25,10 @@ permissions:
   contents: read
   actions: write
 concurrency:
-  # One queue per recorder, so a guard waiting on a re-run cannot push the other recorder's
-  # check out of the queue (GitHub keeps one pending run per group).
-  group: guard-${{ github.event.workflow_run.path || github.event_name }}
+  # ONE queue for every guard run (16 Oct review): each run judges BOTH panels, so two guards in separate
+  # queues could each re-run the same recorder at once. GitHub keeps one pending run per group and drops
+  # older pending ones - harmless here, because the newest pending run judges everything the dropped one would.
+  group: guard
   cancel-in-progress: false
 jobs:
   guard:

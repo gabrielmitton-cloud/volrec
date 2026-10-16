@@ -796,9 +796,10 @@ ok(_gy.get("permissions") == {"contents": "read", "actions": "write"}
    "the guard never commits, installs nothing, and may only start a re-run")
 ok(set(_gy[True]["workflow_run"]["workflows"]) == {"record", "surface"}
    and _gy[True]["workflow_run"]["types"] == ["completed"]
-   and all(cron_minutes(c["cron"])[1] == "1-5" for c in _gy[True]["schedule"])
+   and set(_gy[True]) == {"workflow_run", "workflow_dispatch"}
+   and _gy["concurrency"]["group"] == "guard" and _gy["concurrency"]["cancel-in-progress"] is False
    and "python tools/guard.py" in _gy_txt,
-   "the guard runs after every recorder run and on weekday slots, and actually runs guard.py")
+   "the guard runs after every recorder run and when dispatched (cron-job.org), in ONE queue, and actually runs guard.py")
 _hl_txt = (R / ".github/workflows/health.yml").read_text()
 _fr_txt = (R / ".github/workflows/freshness.yml").read_text()
 ok("--level red" not in _hl_txt and "alert.py" not in _fr_txt
