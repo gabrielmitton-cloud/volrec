@@ -2661,6 +2661,20 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   21 Nov; phase 2 (first responder) deferred to after SCCUR, re-decided in December. (6) Section 5b cut to half
   a page, rest to an appendix (PAPER-OUTLINE). (7) Cboe fallback = FRED reprints (series verified live).
   Already fixed: the draft's pre-registration overclaim, three tracked duplicate files, stale lines.
+  **Engineer review, 16 Oct (read-only subagent; each finding checked against the code before acting):** (1) the
+  guard's own crons always land after the close (GitHub runs this repo's crons 2-7 h late), so a day the
+  trigger never started was caught by nothing before the close - FIXED: every recorder completion now judges
+  both panels (surface's 14:40 run is the ATM panel's timer; a GitHub backup that stood aside counts too).
+  (2) an unreadable run list sent a misleading YELLOW - FIXED: retried 3x, then RED if nothing is recorded and
+  a human can act. (3) a failed git fetch after a re-run could send a false RED - FIXED: checked and retried,
+  YELLOW "could not confirm" instead. (4) two panels could exceed the job timeout - FIXED: one 16-min budget,
+  timeout 30 min. (5) start-failure RED now obeys the RED rule; YELLOW text no longer claims a re-run; private
+  daily.yml's 03:05 text fixed; freshness's duplicate phone alert removed (health sends one per lost day).
+  Re-run path now unit-tested end to end with fakes; mutant guard-skips-refetch added. **Open:** after the first
+  real re-run, confirm its triggering_actor is exactly "github-actions[bot]" (guard.BOT). Unscheduled market
+  closures (e.g. a day of mourning) are not in US_MARKET_HOLIDAYS: add the date by hand when announced, or the
+  guard re-runs and pages falsely. Optional, Gabriel: cron-job.org jobs starting guard.yml at 15:00 and 15:20
+  New York would cover a day when cron-job.org started neither recorder but is otherwise up.
   **Built 16 Oct (decision 2): tools/describe.py** - intervals (Newey-West, fixed-b, lag 1.3 sqrt T), n_eff,
   one-sided p against each bar, Holm; 28 known-answer tests (tools/test_describe.py), pressure check, 2 auditor
   mutants. Real series NOT read: only --count-only was run (H5e: 16 counted days to 15 Oct). **After the

@@ -48,6 +48,13 @@ check("a scheduled check before 14:55 waits (the recorder may simply not have ru
       d(f"{THU}T14:40", 0, [], SCHED) == "wait")
 check("the GitHub-cron backup finishing early (it stands aside before 14:45) is NOT judged",
       d(f"{THU}T11:05", 0, [DONE], BACKUP_DONE) == "wait")
+SURF_DONE = {"kind": "workflow_run", "run_id": 12, "actor": "gabrielmitton-cloud", "run_event": "workflow_dispatch"}
+check("16 Oct fix: the surface run finishing at 14:42 is the ATM panel's timer -> ATM missing is re-run",
+      d(f"{THU}T14:42", 0, [], SURF_DONE) == "retry")
+check("16 Oct fix: the ATM run finishing at 14:33 does not judge the surface yet (its trigger is 14:40)",
+      d(f"{THU}T14:33", 0, [], TRIGGER_DONE, "surface", need=8) == "wait")
+check("16 Oct fix: a GitHub backup that stood aside, finishing at 14:39, judges the ATM panel",
+      d(f"{THU}T14:39", 0, [], BACKUP_DONE) == "retry")
 check("never ran at all, 15:05 scheduled check -> retry", d(f"{THU}T15:05", 0, [], SCHED) == "retry")
 check("a run still in progress -> wait, no double re-run", d(f"{THU}T15:05", 0, [RUNNING], SCHED) == "wait")
 check("already re-run once today -> wait (that guard reported; no second alert)",
@@ -66,8 +73,10 @@ check("an early close (24 Dec): 12:47 is past the 13:00 close minus 15 -> no re-
       d("2026-12-24T12:47", 0, [DONE], SCHED) == "red")
 check("an early close: 12:52 is inside the last 10 minutes -> yellow", d("2026-12-24T12:52", 0, [DONE], SCHED) == "yellow")
 check("an early close: judged from 11:55, so 11:40 waits", d("2026-12-24T11:40", 0, [], SCHED) == "wait")
-check("GitHub's run list unreadable, day incomplete -> yellow, never a blind re-run",
-      d(f"{THU}T15:10", 0, None, SCHED) == "yellow")
+check("GitHub's run list unreadable after retries, nothing recorded, market open -> red (a human can act), never a blind re-run",
+      d(f"{THU}T15:10", 0, None, SCHED) == "red")
+check("GitHub's run list unreadable, part of the day recorded -> yellow", d(f"{THU}T15:10", 60, None, SCHED) == "yellow")
+check("GitHub's run list unreadable inside the last 10 minutes -> yellow", d(f"{THU}T15:52", 0, None, SCHED) == "yellow")
 check("GitHub's run list unreadable, day complete -> ok", d(f"{THU}T15:10", 109, None, SCHED) == "ok")
 check("surface: complete only with the expected underlyings",
       d(f"{THU}T15:10", len(guard.ph.EXPECTED), [DONE], SCHED, "surface", need=len(guard.ph.EXPECTED)) == "ok"
@@ -80,6 +89,46 @@ check("the re-run left nothing, market open -> red", f(f"{THU}T14:40", 0) == "re
 check("the re-run left part of the day -> yellow", f(f"{THU}T14:40", 50) == "yellow")
 check("nothing, but within 10 minutes of the close -> yellow (no one can act in time)",
       f(f"{THU}T15:52", 0) == "yellow")
+
+print("\n=== the re-run path, driven end to end with fake GitHub and git ===")
+import tempfile as _tf  # noqa: E402
+from datetime import timezone as _tz  # noqa: E402
+from types import SimpleNamespace as _NS  # noqa: E402
+
+
+def _drive(start_ok=True, run_done=True, fetch_ok=True, lands=True, when="2026-10-15T14:40:00", prior=4, today=0):
+    with _tf.TemporaryDirectory() as td:
+        p = Path(td) / "iv.csv"
+        rows = "date,symbol,x\n" + "".join(f"2026-10-14,S{i},1\n" for i in range(prior)) \
+            + "".join(f"2026-10-15,S{i},1\n" for i in range(today))
+        p.write_text(rows)
+        t0 = datetime.fromisoformat(when).replace(tzinfo=NY).astimezone(_tz.utc)
+        gh = lambda args: _NS(returncode=0 if start_ok else 1, stdout="", stderr="" if start_ok else "HTTP 403")
+        runs = lambda wf, day, repo: [{"id": 99, "status": "completed" if run_done else "queued", "actor": guard.BOT,
+                                       "created_at": t0.strftime("%Y-%m-%dT%H:%M:30Z")}]
+
+        def git(args):
+            if args[0] == "checkout" and fetch_ok and lands:
+                p.write_text(rows + "".join(f"2026-10-15,S{i},1\n" for i in range(prior)))
+            return _NS(returncode=0 if fetch_ok else 1, stdout="", stderr="")
+        return guard.rerun_and_recheck("atm", "record.yml", p, "r/r", poll_s=1, max_wait_s=3, gh=gh, git=git,
+                                       sleep=lambda s: None, now=lambda: t0, runs_fn=runs)
+
+
+check("re-run lands the day -> recovered (a NOTICE)", _drive()[0] == "recovered")
+check("re-run finished but the day is still empty, market open -> red", _drive(lands=False)[0] == "red")
+v = _drive(fetch_ok=False)
+check("main cannot be read after the re-run -> yellow 'could not confirm', never a RED on stale data",
+      v[0] == "yellow" and "could not read main" in v[1])
+check("re-run cannot be started, nothing recorded, market open -> red", _drive(start_ok=False)[0] == "red")
+check("re-run cannot be started, part of the day recorded -> yellow (RED only for nothing at all)",
+      _drive(start_ok=False, today=2)[0] == "yellow")
+check("re-run cannot be started within 10 min of the close -> yellow",
+      _drive(start_ok=False, when="2026-10-15T15:55:00")[0] == "yellow")
+v = _drive(run_done=False, lands=False)
+check("re-run still queued after the wait and the day empty -> red that says it may still land",
+      v[0] == "red" and "may still land" in v[1])
+check("the guard recognises its own re-runs by GitHub's bot login", guard.BOT == "github-actions[bot]")
 
 print("\n=== coverage reads the data, not the run's colour ===")
 import tempfile  # noqa: E402

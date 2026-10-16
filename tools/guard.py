@@ -97,15 +97,22 @@ def decide(panel, now_ny, have, need, runs, event):
         return "skip", "after the close - freshness.yml reports a lost day"
     if event.get("kind") == "workflow_run" and event.get("actor") == BOT:
         return "skip", "the guard's own re-run; the guard that started it reports the outcome"
-    finished_trigger = (event.get("kind") == "workflow_run" and event.get("run_event") == "workflow_dispatch"
-                        and mins >= trig - 5)
+    # 16 Oct (engineer review): ANY recorder run finishing after this panel's trigger + 5 minutes is a
+    # judging event - the trigger, the other recorder, or a GitHub backup that stood aside. GitHub's own
+    # crons run 2-7 h late here, so the guard's schedule slots alone would land after the close.
+    finished_trigger = event.get("kind") == "workflow_run" and (
+        (event.get("run_event") == "workflow_dispatch" and mins >= trig - 5) or mins >= trig + 5)
     if mins < trig + JUDGE_AFTER_MIN and not finished_trigger and event.get("kind") != "manual":
         j = trig + JUDGE_AFTER_MIN
         return "wait", f"too early to judge (before {j // 60}:{j % 60:02d} New York)"
     if have >= need:
         return "ok", f"{have} symbols recorded"
-    if runs is None:
-        return "yellow", f"only {have} of {need} symbols, and the guard cannot see GitHub's runs to re-run safely"
+    if runs is None:                              # unreadable even after retries (main() tries 3 times)
+        late = mins >= close - RED_BEFORE_CLOSE_MIN
+        why = "the guard cannot read GitHub's run list, so it did not re-run automatically"
+        if have == 0 and not late:
+            return "red", f"nothing recorded today, and {why}"
+        return "yellow", f"only {have} of {need} symbols recorded; {why}"
     if any(r.get("status") != "completed" and r.get("id") != event.get("run_id") for r in runs):
         return "wait", "a run of this recorder is still in progress"
     if any(r.get("actor") == BOT for r in runs):
@@ -147,36 +154,61 @@ def todays_runs(workflow, day, repo):
     return out
 
 
-def rerun_and_recheck(panel, wf, path, repo, poll_s=20, max_wait_s=12 * 60):
-    """Start one re-run, wait for it in this job (nothing relies on workflow_run chaining),
-    pull main's data/, and judge once more. Returns (verdict, why, have, need)."""
+def _git(args):
+    return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True, timeout=120)
+
+
+def _start_failed(panel, now_ny, have, need, err):
+    """The re-run could not be started: RED only while nothing is recorded and a human can act."""
+    v, _ = final(panel, now_ny, have, need)
+    why = f"the automatic re-run could not be started ({err[:120]})"
+    return ("red" if v == "red" else "yellow" if v != "recovered" else "recovered"), why
+
+
+def rerun_and_recheck(panel, wf, path, repo, poll_s=20, max_wait_s=12 * 60, gh=None, git=None,
+                      sleep=None, now=None, runs_fn=None):
+    """Start one re-run, wait for it in this job (nothing relies on workflow_run chaining), pull
+    main's data/, and judge once more. Returns (verdict, why, have, need). Every dependency is
+    injectable so tools/test_guard.py can drive each path."""
     import time
-    started = datetime.now(timezone.utc)
-    p = _gh(["workflow", "run", wf, "-R", repo, "--ref", "main"])
+    gh, git = gh or _gh, git or _git
+    sleep, now, runs_fn = sleep or time.sleep, now or (lambda: datetime.now(timezone.utc)), runs_fn or todays_runs
+    started = now()
+    p = gh(["workflow", "run", wf, "-R", repo, "--ref", "main"])
     if p.returncode != 0:
         now_ny = started.astimezone(NY)
         have, need = coverage(panel, path, now_ny.date())
-        return "red", f"the automatic re-run could not be started ({p.stderr.strip()[:120]})", have, need
-    print(f"re-run of {wf} requested; waiting for it")
+        v, why = _start_failed(panel, now_ny, have, need, p.stderr.strip())
+        return v, why, have, need
+    print(f"re-run of {wf} requested; waiting for it (up to {max_wait_s // 60} min)")
     waited, run = 0, None
     while waited < max_wait_s:
-        time.sleep(poll_s)
+        sleep(poll_s)
         waited += poll_s
         try:
-            mine = [r for r in todays_runs(wf, started.astimezone(NY).date(), repo)
+            mine = [r for r in runs_fn(wf, started.astimezone(NY).date(), repo)
                     if r.get("actor") == BOT and r["created_at"] >= started.strftime("%Y-%m-%dT%H:%M")]
         except (RuntimeError, OSError, subprocess.TimeoutExpired, ValueError):
             continue
         run = mine[0] if mine else None
         if run and run.get("status") == "completed":
             break
-    subprocess.run(["git", "-C", str(ROOT), "fetch", "-q", "--depth", "1", "origin", "main"], timeout=120)
-    subprocess.run(["git", "-C", str(ROOT), "checkout", "-q", "FETCH_HEAD", "--", "data"], timeout=60)
-    now_ny = datetime.now(timezone.utc).astimezone(NY)
+    # Read main again. If that fails, never page RED on stale data (16 Oct, engineer review).
+    fetched = False
+    for _ in range(2):
+        f = git(["fetch", "-q", "--depth", "1", "origin", "main"])
+        if f.returncode == 0 and git(["checkout", "-q", "FETCH_HEAD", "--", "data"]).returncode == 0:
+            fetched = True
+            break
+        sleep(10)
+    now_ny = now().astimezone(NY)
     have, need = coverage(panel, path, now_ny.date())
+    if not fetched:
+        return ("yellow", "the re-run was started but the guard could not read main afterwards to confirm it - "
+                "check the data by hand before the close", have, need)
     verdict, why = final(panel, now_ny, have, need)
     if verdict != "recovered" and not (run and run.get("status") == "completed"):
-        why += f" (the re-run had not finished after {max_wait_s // 60} minutes)"
+        why += f" (the re-run had not finished after {max_wait_s // 60} minutes; it may still land)"
     return verdict, why, have, need
 
 
@@ -190,8 +222,7 @@ def message(panel, verdict, why, have, need, now_ny):
     if verdict == "recovered":
         return (f"{name} recovered", f"The first run left the day incomplete; the guard re-ran it and {have} "
                 f"symbols are now recorded. Nothing to do.")
-    return (f"{name} incomplete today", f"{why} (need {need}). The guard already re-ran it once. "
-            f"Tell Claude; the data that did land is kept.")
+    return (f"{name} needs a look", f"{why} (need {need}). Tell Claude; any data that did land is kept.")
 
 
 def main(argv=None):
@@ -209,25 +240,30 @@ def main(argv=None):
              "run_event": os.environ.get("GUARD_RUN_EVENT", ""),
              "workflow": Path(os.environ.get("GUARD_RUN_WORKFLOW", "")).name}
     url = os.environ.get("GUARD_RUN_URL")
-    panels = a.panel or sorted(PANELS)
-    if event["kind"] == "workflow_run":                   # judge only the recorder that just finished
-        panels = [p for p in panels if PANELS[p][0] == event["workflow"]] or panels
-    bad = 0
+    panels = a.panel or sorted(PANELS)                   # both panels on every event: one recorder's
+    bad = 0                                               # completion is the other's timer (16 Oct)
+    import time
+    deadline = time.monotonic() + 16 * 60                 # both panels share one budget (guard.yml: 30 min)
     for panel in panels:
         wf, path, _, _ = PANELS[panel]
         have, need = coverage(panel, path, now_ny.date())
-        try:
-            runs = todays_runs(wf, now_ny.date(), repo) if trading_day(now_ny.date()) else []
-        except (RuntimeError, OSError, subprocess.TimeoutExpired, ValueError) as e:
-            # Cannot see the runs: judge from the data alone, and never re-run blind.
-            print(f"::warning::{e}")
-            runs = None
+        runs = [] if not trading_day(now_ny.date()) else None
+        for attempt in range(3 if runs is None else 0):
+            try:
+                runs = todays_runs(wf, now_ny.date(), repo)
+                break
+            except (RuntimeError, OSError, subprocess.TimeoutExpired, ValueError) as e:
+                print(f"::warning::{e}")              # never re-run blind; decide() pages instead
+                if attempt < 2:
+                    time.sleep(10)
         verdict, why = decide(panel, now_ny, have, need, runs, event)
         print(f"{panel}: {verdict} - {why} [{have}/{need} symbols, {now_ny:%H:%M} New York, event {event['kind']}]")
         if a.dry_run or verdict in ("skip", "wait", "ok"):
             continue
         if verdict == "retry":
-            verdict, why, have, need = rerun_and_recheck(panel, wf, path, repo)
+            left = int(deadline - time.monotonic())
+            verdict, why, have, need = rerun_and_recheck(panel, wf, path, repo,
+                                                         max_wait_s=max(60, min(12 * 60, left)))
             now_ny = datetime.now(timezone.utc).astimezone(NY)
             print(f"{panel}: {verdict} - {why}")
         title, body = message(panel, verdict, why, have, need, now_ny)

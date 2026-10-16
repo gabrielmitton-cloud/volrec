@@ -801,9 +801,9 @@ ok(set(_gy[True]["workflow_run"]["workflows"]) == {"record", "surface"}
    "the guard runs after every recorder run and on weekday slots, and actually runs guard.py")
 _hl_txt = (R / ".github/workflows/health.yml").read_text()
 _fr_txt = (R / ".github/workflows/freshness.yml").read_text()
-ok("--level red" not in _hl_txt and "--level red" not in _fr_txt
-   and "--level green" in _hl_txt and "--level yellow" in _fr_txt,
-   "only the guard can send RED; health sends the daily GREEN, freshness a lost day as YELLOW")
+ok("--level red" not in _hl_txt and "alert.py" not in _fr_txt
+   and "--level green" in _hl_txt and "--level yellow" in _hl_txt,
+   "only the guard can send RED; health sends the daily GREEN or a YELLOW, freshness pages no one (one lost day, one message)")
 # health.yml (23 Sep 2026): the daily check in CI. It must stay read-only - two
 # recorders already push to main - must actually run the check, and must never
 # keep the temporary push trigger it was tested with on a branch.
