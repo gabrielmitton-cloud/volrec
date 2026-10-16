@@ -48,7 +48,10 @@ def handle():
 def send(text, dry=False):
     """(sent, why). Never raises: a failed notification must not fail the check it reports."""
     text = " ".join(str(text).split())[:MAX_LEN]
-    h = handle()
+    try:
+        h = handle()
+    except (SystemExit, OSError) as e:     # 16 Oct: "never raises" must hold here too
+        return False, f"handle unusable: {e}"
     if dry:
         return False, f"dry run, would send to {'the saved handle' if h else 'NO HANDLE SAVED'}: {text}"
     if not h:

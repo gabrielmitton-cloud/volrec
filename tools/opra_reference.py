@@ -54,6 +54,11 @@ SCHEMA = "cbbo-1m"                     # consolidated BBO, one-minute; checked l
 DATA_DIR = Path(os.environ.get("VOLREC_DATABENTO_DIR") or Path.home() / "Documents" / "volrec-databento")
 KEY_FILE = Path.home() / ".config" / "volrec" / "databento.key"
 LEDGER = DATA_DIR / "spend.csv"
+# The ONE real ledger (lab/ and the cloud run write it). 16 Oct 2026 bug hunt: the Mac's default folder kept
+# its own ledger (17 rows, last 25 Sep), so a local purchase saw none of the cloud's or lab's spend and the
+# $120 cap would have allowed ~$118 more. Purchases from the Mac now refuse unless pointed at the real one.
+PRIVATE_LEDGER = Path.home() / "Documents" / "volrec-licensed" / "opra" / "spend.csv"
+LEDGER_HEADER = ["utc", "date", "symbol", "usd"]
 LIFETIME_CAP_USD = 120.0              # $100 until 14 Oct 2026; Gabriel raised it to $120 (lab/ bought ~$79)
 DEFAULT_MAX_COST = 0.50
 WINDOW_BEFORE, WINDOW_AFTER = 2, 3     # minutes around the snapshot's median quote time
@@ -139,11 +144,56 @@ def nearest(records, when, tol=MATCH_TOLERANCE_S):
     return best
 
 
+def ledger_rows(path=None):
+    """Every ledger row. Refuses (SystemExit) a ledger whose header is not the real one: on 16 Oct a
+    headerless ledger was shown to make DictReader take the first purchase as the header, so every cap
+    read $0 spent (bug hunt). A missing ledger is empty."""
+    path = path or LEDGER
+    if not path.exists():
+        return []
+    with path.open(newline="") as f:
+        rd = csv.DictReader(f)
+        if rd.fieldnames != LEDGER_HEADER:
+            sys.exit(f"Refusing to trust {path}: its header is {rd.fieldnames}, not {LEDGER_HEADER}. "
+                     f"Every spending cap would read wrong. Fix the file by hand before buying anything.")
+        return list(rd)
+
+
+def record_spend(date, label, cost, path=None):
+    """Append one purchase - the ONLY writer of the ledger (fetch and definitions both use it). Writes the
+    header on a new file and forces the row to disk before anything else can fail."""
+    path = path or LEDGER
+    path.parent.mkdir(parents=True, exist_ok=True)
+    new = not path.exists() or path.stat().st_size == 0
+    with path.open("a", newline="") as f:
+        w = csv.writer(f)
+        if new:
+            w.writerow(LEDGER_HEADER)
+        w.writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), date, label, f"{cost:.6f}"])
+        f.flush()
+        os.fsync(f.fileno())
+
+
+def stale_ledger(env=None):
+    """True when this run would buy against a ledger other than the real one: the variable is unset
+    (the Mac's default folder) while the private repository's ledger exists. Pure, for the tests."""
+    env = os.environ if env is None else env
+    return not env.get("VOLREC_DATABENTO_DIR") and PRIVATE_LEDGER.exists() and LEDGER != PRIVATE_LEDGER
+
+
+def write_atomic(path, data):
+    """Write the whole file or nothing (16 Oct bug hunt: a kill mid-write left a truncated OPRA file
+    that 'already on disk' then kept forever)."""
+    tmp = path.with_name(path.name + ".part")
+    if isinstance(data, str):
+        tmp.write_text(data)
+    else:
+        tmp.write_bytes(data)
+    os.replace(tmp, path)
+
+
 def ledger_total():
-    if not LEDGER.exists():
-        return 0.0
-    with LEDGER.open(newline="") as f:
-        return sum(float(r["usd"]) for r in csv.DictReader(f) if r.get("usd"))
+    return sum(float(r["usd"]) for r in ledger_rows() if r.get("usd"))
 
 
 def budget_ok(cost, max_cost, spent):
@@ -204,11 +254,8 @@ def monthly_days():
 
 
 def monthly_spent():
-    if not LEDGER.exists():
-        return 0.0
-    with LEDGER.open(newline="") as f:
-        return sum(float(r["usd"]) for r in csv.DictReader(f)
-                   if r.get("usd") and r.get("symbol", "").endswith(MONTHLY_TAG))
+    return sum(float(r["usd"]) for r in ledger_rows()
+               if r.get("usd") and r.get("symbol", "").endswith(MONTHLY_TAG))
 
 
 def h7_budget_ok(cost, spent_monthly):
@@ -319,19 +366,15 @@ def fetch(date, symbol, key, max_cost, dry, monthly=False, h8=False):
         print(f"    not yet available historically (data after {e} needs a live licence); "
               f"nothing charged - run again tomorrow")
         return
+    # The charge happened when the response came back: record it FIRST, so a failure in trimming,
+    # decoding or writing below can never leave an unrecorded purchase (16 Oct bug hunt).
+    record_spend(date, symbol + (MONTHLY_TAG if monthly else H8_TAG if h8 else ""), cost)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     if h8 and h8_trims(date, symbol):
         keep = {compact(x["option_symbol"]) for x in rows}
-        out.write_text(h8_trim(r.content.decode(), keep))
+        write_atomic(out, h8_trim(r.content.decode(), keep))
     else:
-        out.write_bytes(r.content)
-    new = not LEDGER.exists()
-    with LEDGER.open("a", newline="") as f:
-        w = csv.writer(f)
-        if new:
-            w.writerow(["utc", "date", "symbol", "usd"])
-        w.writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), date,
-                    symbol + (MONTHLY_TAG if monthly else H8_TAG if h8 else ""), f"{cost:.6f}"])
+        write_atomic(out, r.content)
     print(f"    fetched {len(r.content):,} bytes -> {out}")
 
 
@@ -362,11 +405,9 @@ def definitions(date, symbol, key, max_cost, dry):
                                               pretty_px="true", pretty_ts="true", map_symbols="true"), key)
     except NotYetHistorical as e:
         print(f"    not yet available historically (after {e}); nothing charged"); return
+    record_spend(date, f"{symbol}-definition", cost)          # header-safe (16 Oct bug hunt)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    out.write_bytes(r.content)
-    with LEDGER.open("a", newline="") as f:
-        csv.writer(f).writerow([datetime.now(timezone.utc).isoformat(timespec="seconds"), date,
-                                f"{symbol}-definition", f"{cost:.6f}"])
+    write_atomic(out, r.content)
     print(f"    fetched {len(r.content):,} bytes -> {out.name}")
 
 
@@ -491,11 +532,8 @@ def h8_days():
 
 
 def h8_spent():
-    if not LEDGER.exists():
-        return 0.0
-    with LEDGER.open(newline="") as f:
-        return sum(float(r["usd"]) for r in csv.DictReader(f)
-                   if r.get("usd") and r.get("symbol", "").endswith(H8_TAG))
+    return sum(float(r["usd"]) for r in ledger_rows()
+               if r.get("usd") and r.get("symbol", "").endswith(H8_TAG))
 
 
 H8_FULL_CHAIN = ("USO", "GLD", "TSLA")      # H5f, H7 and the exploratory replica read whole chains to 11 Nov
@@ -552,6 +590,10 @@ def main():
              else h8_days() if a.h8
              else [(a.date, s) for s in a.symbols])
     print(f"OPRA reference ({DATASET}, {SCHEMA}) - {'compare' if a.compare else 'dry run' if a.dry_run else 'fetch'}\n")
+    if not a.compare and not a.dry_run and stale_ledger():
+        sys.exit(f"Refusing to buy: this run's ledger is {LEDGER}, but the real one is {PRIVATE_LEDGER} "
+                 f"(every cloud and side-project purchase is there). Pull that repository, then run with "
+                 f"VOLREC_DATABENTO_DIR={PRIVATE_LEDGER.parent}. Pricing (--dry-run) still works.")
     if a.definitions:
         key = api_key()
         for d, s in pairs:

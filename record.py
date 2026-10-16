@@ -431,6 +431,23 @@ def backup_too_early(now_utc=None, event=None, offset_min=0):
     return ny.hour * 60 + ny.minute < h * 60 + m + offset_min + BACKUP_GRACE_MIN
 
 
+def before_slot(now_utc=None, offset_min=0, lead_min=15):
+    """True more than `lead_min` minutes before this recorder's slot (14:30 New York + offset; 11:30 on
+    an early close), whatever started the run. Added 16 Oct 2026 (bug hunt): backup_too_early only
+    covers GitHub's cron, so a hand dispatch or a cron-job.org job saved in the wrong time zone could
+    record the day hours early - and the real trigger would then skip it as already recorded.
+    Without a zone database it never blocks."""
+    from datetime import timezone
+    now_utc = now_utc or datetime.now(timezone.utc)
+    try:
+        from zoneinfo import ZoneInfo
+        ny = now_utc.astimezone(ZoneInfo("America/New_York"))
+    except Exception:
+        return False
+    h, m = EARLY_TRIGGER_NY if ny.date() in EARLY_CLOSES else TRIGGER_NY
+    return ny.hour * 60 + ny.minute < h * 60 + m + offset_min - lead_min
+
+
 def after_close(now_utc=None):
     """True once the US equity session has closed for the day (16:00 New York; 13:00 on the
     EARLY_CLOSES days, added 9 Oct 2026 - without them 27 Nov and 24 Dec would have been recorded
@@ -497,6 +514,11 @@ def main():
               "an early close): leaving the day to the trigger, so every day is recorded at the same "
               "point in the session. If the trigger fails, panel_health reports the missed day.")
         return
+    if before_slot():
+        print("Too early: more than 15 minutes before the 14:30 New York slot (11:30 on an early close). "
+              "Refusing, so the day is never recorded at the wrong point in the session.")
+        return
+
     refuse_after_close("the ATM panel")
 
     s = session()
@@ -511,6 +533,10 @@ def main():
 
     rows, failed = [], []
     for sym in todo:
+        if after_close():                # 16 Oct: a run that starts just before 16:00 stops at the bell
+            print(f"The session closed mid-run; keeping the {len(rows)} symbols taken before it, "
+                  f"not recording {sym} or later with closing quotes.")
+            break
         try:
             if sym not in spots:
                 raise RuntimeError("no price returned")

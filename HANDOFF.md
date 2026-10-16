@@ -2695,6 +2695,35 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   guard-dispatch-cap-gone) - retargeted; the 2-dispatch cap alerts ONCE (on the second dispatch's completion);
   a BOT-actor event skips only the re-run panel, so the single queue cannot lose the other panel's judgement;
   dead trig-5 allowance removed; re-run path's coverage injectable (hermetic tests). 77 guard tests.
+  **Deep review of the core code, 16 Oct night (two read-only reviewers; Gabriel asked).** (A) Recording + money,
+  FIXED: the Mac's Databento ledger was a stale separate file (17 rows to 25 Sep vs 8,242 in the private repo) -
+  purchases from the Mac now REFUSE unless pointed at the real ledger (VOLREC_DATABENTO_DIR=~/Documents/volrec-
+  licensed/opra, pull first); a headerless ledger is refused (it made every cap read $0) and one writer,
+  record_spend, always writes the header; a purchase is recorded the moment it is charged, before trimming or
+  writing; OPRA files are written whole or not at all; both recorders refuse to start more than 15 min before
+  their slot (a mis-timed manual/cron run) and stop at the bell mid-run (no closing quotes; surface skips its
+  wide/monthly passes after 16:00); panel_health reports missed days INSIDE the panel (15-day lookback);
+  daily.py treats a non-zero modelfree exit as a crash; notify.send no longer raises. DEFERRED with reasons:
+  spot fetched once per run and the write-at-end design (changing what is recorded mid-window - after 11 Nov);
+  concurrency groups on record/surface (rare overlap, harmless red X; new interactions with the guard's
+  re-run); Alpaca 5xx retries (the guard re-runs a failed run); the holiday-before-close ordering (it would
+  break the established "close check before any fetch" rule for a cosmetic email). (B) Verdict math: see the
+  next entry - reported to Gabriel BEFORE any change (registered numbers).
+  **Verdict-code review (B), Gabriel approved all five on 16 Oct ("1-5 yes"); no registered bar or verdict
+  changes:** (1) the writer refuses when its verdict disagrees with the reader's own full-precision verdict
+  (H5e: modelfree's "(under|OVER)" / "(majority|NOT a majority)"; H7: h7_reader's own HOLDS/FAILS line) - a
+  true mean in [0.495, 0.5) could otherwise be written FAILS; (2) the writer refuses unless the risk-free rate is
+  the frozen one (a missing FRED cache silently gives r=0); (3) the writer refuses when an expected trading day
+  is absent from the reader's rows; (4) H7a gets a dated COMPANION reading on matched strikes (free file is cut at
+  +/-60% of spot, OPRA has every strike - coverage leaks into a data-quality test, up to ~0.19 pts vs a 0.25 bar),
+  reported beside the registered verdict after 12 Nov; (5) a frozen H3 scorer before 11 Nov, logged as a
+  pre-verdict addition. **Status 16 Oct night:** 1-3 drafted and checked on the REAL reader output (no false
+  refusals: H5e agrees, rate 3.910, no missing days; H7 agrees) but NOT live - the pressure test drives the
+  writer with canned outputs that lack full day lists, rate and verdict lines, so the fixtures must be rebuilt in
+  the real form first (and the H7 checks moved after the waiting/minimum branches). The draft is in
+  docs/drafts/record_verdict.safeguards-draft.py.txt. **Next session: finish 1-3 (fixtures), then 4-5; all
+  before 11 Nov.** Also found: tools/h5f_pooled.py divides by zero on a zero free-inflation day (only reached in
+  --preview; H5f is already recorded, so no registered number is affected) - guard it next session.
   **cron-job.org guard jobs, 16 Oct (Gabriel):** "volrec guard 15:00" and "volrec guard 15:20" (Mon-Fri, New
   York) enabled; test run returned 204 and reached GitHub (guard run 38962170586, judged "skip - after the
   close", correct). **Still to make:** one-off copies at 12:00 New York on Fri 27 Nov and Thu 24 Dec (early

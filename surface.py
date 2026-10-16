@@ -701,6 +701,11 @@ def main():
         print("GitHub's backup cron started before the outside trigger's slot (14:40 New York for this "
               "recorder; 11:40 on an early close): leaving the day to the trigger.")
         return
+    if R.before_slot(offset_min=10):
+        print("Too early: more than 15 minutes before the 14:40 New York slot (11:40 on an early close). "
+              "Refusing, so the day is never recorded at the wrong point in the session.")
+        return
+
     R.refuse_after_close("the strike surface")   # after the "already recorded" exit (5 Oct 2026)
 
     s = R.session()
@@ -715,6 +720,9 @@ def main():
 
     rows, failed = [], []
     for sym in todo:
+        if R.after_close():              # 16 Oct: a run that starts just before 16:00 stops at the bell
+            print(f"The session closed mid-run; keeping what was taken, not recording {sym} or later.")
+            break
         try:
             if sym not in spots:
                 raise RuntimeError("no price returned")
@@ -736,9 +744,12 @@ def main():
     if rows:
         append(rows)
         print(f"\nWrote {len(rows)} row(s) to {OUT}")
-        # Only after the registered file is safely on disk.
-        record_wide(s, spots, rows, today)
-        record_monthly(s, spots, today)
+        # Only after the registered file is safely on disk - and never with closing quotes (16 Oct).
+        if R.after_close():
+            print("The session has closed: skipping the wide and monthly passes rather than record closing quotes.")
+        else:
+            record_wide(s, spots, rows, today)
+            record_monthly(s, spots, today)
     if failed:
         print(f"Failed: {', '.join(failed)} - a gap is not fatal.")
 

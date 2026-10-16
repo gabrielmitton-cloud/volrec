@@ -1280,6 +1280,34 @@ _fsrc = (R / "tools/opra_reference.py").read_text()
 _fetch = _fsrc[_fsrc.index("def fetch("):_fsrc.index("def compare(") if "def compare(" in _fsrc else None]
 ok("already on disk" in _fetch and _fetch.index("already on disk") < _fetch.index("metadata.get_cost"),
    "a day already on disk is skipped BEFORE anything is priced or bought (23 Sep: --all re-bought two days)")
+# 16 Oct 2026 bug hunt: the ledger the caps read must be trustworthy and the only one.
+import tempfile as _tfl
+with _tfl.TemporaryDirectory() as _tdir:
+    _lp = Path(_tdir) / "spend.csv"
+    _opm.record_spend("2026-10-01", "SPY-h8", 0.25, path=_lp)
+    _opm.record_spend("2026-10-02", "SPY-h8", 0.25, path=_lp)
+    _hdr_ok = _lp.read_text().splitlines()[0] == "utc,date,symbol,usd" and len(_opm.ledger_rows(_lp)) == 2
+    _bad = Path(_tdir) / "bad.csv"
+    _bad.write_text("2026-10-01T00:00:00+00:00,2026-10-01,SPY-definition,50.500000\n")
+    try:
+        _opm.ledger_rows(_bad)
+        _bad_refused = False
+    except SystemExit:
+        _bad_refused = True
+ok(_hdr_ok and _bad_refused,
+   "the ledger writer always writes its header, and a headerless ledger is refused (it made every cap read $0)")
+_save_priv = _opm.PRIVATE_LEDGER
+with _tfl.TemporaryDirectory() as _tdir:
+    _opm.PRIVATE_LEDGER = Path(_tdir) / "spend.csv"
+    _opm.PRIVATE_LEDGER.write_text("utc,date,symbol,usd\n")
+    _stale = _opm.stale_ledger(env={}) and not _opm.stale_ledger(env={"VOLREC_DATABENTO_DIR": _tdir})
+_opm.PRIVATE_LEDGER = _save_priv
+_fsrc2 = (R / "tools/opra_reference.py").read_text()
+ok(_stale and "if not a.compare and not a.dry_run and stale_ledger():" in _fsrc2,
+   "a purchase from the Mac's default folder is refused while the real (private) ledger exists")
+_fetch2 = _fsrc2[_fsrc2.index("def fetch("):_fsrc2.index("def definitions(")]
+ok(_fetch2.index("record_spend(") < _fetch2.index("write_atomic(") and "LEDGER.open(\"a\"" not in _fsrc2,
+   "a purchase is recorded the moment it is charged (before trimming or writing), only through record_spend")
 ok(not _opm.inside_repo(_opm.DATA_DIR) and not _opm.inside_repo(_opm.KEY_FILE),
    "OPRA data and the Databento key live outside the repository")
 ok(all(x in _gi_live for x in ("volrec-databento/", "*.key")),
@@ -1422,6 +1450,31 @@ ok(not _ac("2026-11-05T20:30:00") and _ac("2026-11-05T21:05:00"),
 ok(_ac("2026-11-27T18:30:00") and not _ac("2026-11-27T16:40:00") and _ac("2026-12-24T18:01:00")
    and _ac("2028-07-03T17:05:00") and not _ac("2028-07-03T16:55:00") and not _ac("2026-11-30T18:30:00"),
    "the guard knows NYSE's 1 p.m. early closes (27 Nov, 24 Dec 2026), in either clock")
+# 16 Oct 2026 (bug hunt): any run more than 15 min before its slot refuses - hand dispatch or a mis-timed job.
+_bs = lambda s_, off=0: _rcm.before_slot(_DT.fromisoformat(s_).replace(tzinfo=_TZ.utc), offset_min=off)   # noqa: E731
+ok(_bs("2026-10-19T18:14:00") and not _bs("2026-10-19T18:15:00") and not _bs("2026-10-19T18:30:00")
+   and _bs("2026-11-05T19:14:00") and not _bs("2026-11-05T19:15:00")
+   and _bs("2026-11-27T16:14:00") and not _bs("2026-11-27T16:15:00")
+   and _bs("2026-10-19T18:24:00", 10) and not _bs("2026-10-19T18:25:00", 10),
+   "a recorder refuses to start more than 15 min before its slot (14:15 / 14:25 New York; 11:15 on an early close)")
+_rsrc, _ssrc = (R / "record.py").read_text(), (R / "surface.py").read_text()
+ok("    if before_slot():" in _rsrc and "    if R.before_slot(offset_min=10):" in _ssrc
+   and "        if after_close():" in _rsrc and "        if R.after_close():" in _ssrc
+   and "        if R.after_close():\n            print(\"The session has closed: skipping the wide" in _ssrc,
+   "both recorders refuse an early start and stop at the bell mid-run (no closing quotes, no extra passes after 16:00)")
+_ig = _phm.interior_gaps([date(2026, 10, 12), date(2026, 10, 13), date(2026, 10, 15), date(2026, 10, 16)])
+ok(_ig == [date(2026, 10, 14)] and _phm.interior_gaps([date(2026, 11, 25), date(2026, 11, 27)]) == []
+   and "report_interior(\"ATM\", interior_gaps(days))" in (R / "tools/panel_health.py").read_text(),
+   "a missed day INSIDE the panel is reported (a missed Monday no longer vanishes once Tuesday lands; holidays excused)")
+_dsrc = (R / "tools/daily.py").read_text()
+ok("if code != 0 or crashed(out):" in _dsrc,
+   "daily.py reports modelfree as crashed on a non-zero exit, not only on a traceback")
+_ptsrc_self = (R / "tools/pressure_test.py").read_text()
+_td_rebinds = [ln for ln in _ptsrc_self.splitlines()
+               if re.search(r"\b_td\s*=[^=]|\bas\s+_td\b", ln) and "timedelta as _td" not in ln
+               and "_td_rebinds" not in ln]
+ok(not _td_rebinds,
+   f"nothing in this file rebinds _td, the timedelta alias (it crashed the pressure test twice on 16 Oct) {_td_rebinds[:2]}")
 ok(_rcm.EARLY_CLOSES == _phm.EARLY_CLOSES == {date(2026, 11, 27), date(2026, 12, 24), date(2027, 11, 26),
                                                date(2028, 7, 3), date(2028, 11, 24)}
    and not (_rcm.EARLY_CLOSES & _phm.US_MARKET_HOLIDAYS)

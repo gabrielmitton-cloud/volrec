@@ -209,6 +209,34 @@ def report_missed(kind, missed):
              f"lost, record it in ACCEPTED_GAPS with the reason.")
 
 
+INTERIOR_LOOKBACK = 15          # calendar days behind the newest day that are re-checked for holes
+
+
+def interior_gaps(days, floor=None, lookback=INTERIOR_LOOKBACK):
+    """Trading days INSIDE the recorded span (within `lookback` days of the newest) with no rows.
+    Added 16 Oct 2026 (bug hunt): missed_trading_days only looks after the newest day, so a missed
+    Monday vanished from every check once Tuesday landed. Pure, for the tests."""
+    if not days:
+        return []
+    have, newest = set(days), days[-1]
+    out, d = [], max(newest - timedelta(days=lookback), days[0])
+    while d < newest:
+        if (d.weekday() < 5 and d not in US_MARKET_HOLIDAYS and d not in have
+                and (floor is None or d >= floor)):
+            out.append(d)
+        d += timedelta(days=1)
+    return out
+
+
+def report_interior(kind, gaps):
+    for d in gaps:
+        if d in ACCEPTED_GAPS:
+            print(f"  INFO  {d.isoformat()} has no {kind} data. Accepted: {ACCEPTED_GAPS[d]}")
+        else:
+            warn(f"{d.isoformat()} has no {kind} data and is not in ACCEPTED_GAPS - a missed day inside the "
+                 f"panel. It cannot be re-recorded; record it in ACCEPTED_GAPS with the reason.")
+
+
 def missed_trading_days(newest, floor=None):
     """Trading days after `newest` that have had their chance to land and did not.
 
@@ -358,6 +386,7 @@ def check_atm():
     print(f"  {len(rows)} rows, {len(days)} days, newest {days[-1]} ({age}d old)")
     check_landing(rows, days)
     report_missed("ATM", missed_trading_days(days[-1], floor=None))
+    report_interior("ATM", interior_gaps(days))
     check_ticker_coverage(rows, days[-1])
     if age > STALE_DAYS:
         return fail(f"STALE: no ATM snapshot in {age} days. The recorder has "
@@ -400,6 +429,7 @@ def check_surface():
           f"newest {days[-1]} ({age}d old)")
     check_landing(rows, days)
     report_missed("surface", missed_trading_days(days[-1], floor=SURFACE_START))
+    report_interior("surface", interior_gaps(days, floor=SURFACE_START))
 
     if age > STALE_DAYS:
         fail(f"STALE: no surface rows in {age} days.")

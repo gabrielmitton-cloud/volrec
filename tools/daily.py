@@ -7,8 +7,8 @@ Runs, in order, and prints only what needs a human:
   3. tools/pressure_test.py      0 fail / n warn, and every FAIL or WARN line
   4. modelfree.py --wide         the registered H3 reading, the controls, the H5e tally
 
-It changes nothing: every step is read-only except the pull, and the pull only
-fast-forwards. A step that crashes is reported as a crash, never as a pass - on
+It changes nothing: every step is read-only except the pull (git pull --rebase, which replays any
+unpushed local commits on top of main). A step that crashes is reported as a crash, never as a pass - on
 23 Sep 2026 the pressure test had been crashing silently for two days.
 
 USAGE
@@ -83,7 +83,7 @@ def main():
 
     section("H3 reading, controls, H5e")
     code, out = run([PY, "modelfree.py", "--wide"], {"FRED_KEY": "use-cache"})
-    if crashed(out):
+    if code != 0 or crashed(out):        # 16 Oct: a sys.exit("...") has no traceback but is still a crash
         print("\n".join(out.splitlines()[-6:]))
         bad.append("modelfree")
     else:
