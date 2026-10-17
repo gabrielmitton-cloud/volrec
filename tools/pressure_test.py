@@ -484,6 +484,24 @@ ok(not any(("lab/" in _code(f) or "import lab" in _code(f) or '"lab"' in _code(f
    "no registered reader imports or reads lab/ (the side project cannot move a registered number)")
 _rv7 = _iu.module_from_spec(_iu.spec_from_file_location("rv7", R / "tools/record_verdict.py"))
 _iu.spec_from_file_location("rv7", R / "tools/record_verdict.py").loader.exec_module(_rv7)
+# 17 Oct 2026 (final check, simulated verdict night): the writer tests below ran main() against the REAL hypothesis
+# files. The night the cloud writes H5e FINAL and H7, those files carry the marks, every dry run reads "already
+# recorded", five checks fail - and daily.yml, which runs this test before pushing a verdict, would refuse to push
+# it (then fail nightly). The tests read COPIES in which the two not-yet-written verdicts' marks are hidden: the
+# pre-verdict state they test, whatever the date. Dry runs and previews only; nothing is written to the copies.
+import tempfile as _tf7
+def _hide_marks(t):
+    return t.replace(_rv7.MARK_H5E_FINAL, "**H5e (FINAL mark hidden for the writer tests)").replace(
+        _rv7.MARK_H7, "**H7 (mark hidden for the writer tests)")
+_tdir7 = Path(_tf7.mkdtemp(prefix="rv7-"))
+for _attr7 in ("H5", "H7", "HANDOFF"):
+    _src7 = getattr(_rv7, _attr7)
+    _dst7 = _tdir7 / _src7.name
+    _dst7.write_text(_hide_marks(_src7.read_text()) if _src7.exists() else "")
+    setattr(_rv7, _attr7, _dst7)
+ok(_rv7.H5.parent == _rv7.H7.parent == _rv7.HANDOFF.parent == _tdir7
+   and _rv7.MARK_H5E_FINAL not in _hide_marks("x " + _rv7.MARK_H5E_FINAL + " y") and _rv7.MARK_H7 not in _hide_marks(_rv7.MARK_H7),
+   "the writer tests read copies with the not-yet-written verdicts hidden, so recording H5e FINAL and H7 cannot fail them")
 _o7 = ("H7a USO: n=12 mean |free - OPRA| 0.180 (bar 0.25)\nH7a GLD: n=12 mean |free - OPRA| 0.090 (bar 0.25)\n"
        "H7b GLD: n=12 mean |free - GVZ| 0.310 (bar 0.3)\nH7c USO: n=12 mean free - OVX +0.440 (descriptive)\n")
 _v7 = _rv7.parse_h7(_o7)

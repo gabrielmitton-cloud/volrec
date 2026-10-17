@@ -2769,6 +2769,13 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   frozen script fails, the preview says so and goes on (the script itself stays frozen). A pressure check plus a
   mutant; the preview now renders H5e first, H5e FINAL and H7 on today's data with every safeguard passing. The
   rebuild scripts are kept in `docs/recheck-2026-10-17/` (README there), each re-run from that folder.
+  **A third gap, found by simulating verdict night (17 Oct, Gabriel: "be on ur toes"):** the pressure test's
+  writer checks ran `record_verdict.main()` against the REAL hypothesis files. With the H5e FINAL and H7 blocks
+  written (simulated in a throwaway worktree), five checks failed - and daily.yml runs the pressure test before
+  pushing a verdict, so it would have refused to push H5e FINAL and H7 (the private copy would have survived; the
+  nightly health check and the push hook would then have failed every day). Fixed: those checks read copies with
+  the two not-yet-written marks hidden; a check + mutant; the simulated verdict night now reads 0 fail. Also
+  corrected here: the site paragraph's 18 and 23 Sep Bloomberg lifts (0.85 -> 0.96, 14.82 -> 14.78).
   **cron-job.org guard jobs, 16 Oct (Gabriel):** "volrec guard 15:00" and "volrec guard 15:20" (Mon-Fri, New
   York) enabled; test run returned 204 and reached GitHub (guard run 38962170586, judged "skip - after the
   close", correct). **Made by Gabriel 16 Oct** ("all the jobs are enabled"): one-off copies at 12:00 New York
@@ -2847,8 +2854,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   OPRA arrives about 13 Nov) and by 19 Nov regardless. **Fri 13 Nov 16:30 UTC:** the phone alert
   (`trig_01MG53JubGrUPhph4bd9yimY`); "NOT recorded yet" then means waiting for data, not a failure.
 - **After the verdicts:** the site and any next step are a discussion with Gabriel first (his 4 Oct rule).
-- **December:** add the December ex-dates for SPY, QQQ, IWM, NVDA and AAPL to `data/dividends.csv` when
-  declared (a WARN fires from about 27 Dec). **By Tue 22 Dec:** renew the cron-job.org GitHub token
+- **AAPL first (corrected 17 Oct):** its last listed ex-date is 10 Aug, so the stale-dividend WARN fires from
+  **19 Nov**, and Apple usually goes ex around 10 Nov - add it to `data/dividends.csv` when declared (late Oct;
+  H4's dividend adjustment uses it). **December:** the December ex-dates for SPY, QQQ, IWM and NVDA (WARNs from
+  about 19-30 Dec). **By Tue 22 Dec:** renew the cron-job.org GitHub token
   `volrec-trigger` (expires 29 Dec), paste it into every job, then update `TRIGGER_TOKEN_EXPIRES` in
   `pressure_test.py` (WARN from 1 Dec, FAIL - an email - from 22 Dec).
 - **February 2027:** the write-up, TimesFM's FAIL included.
