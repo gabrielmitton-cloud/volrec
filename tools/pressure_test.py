@@ -449,6 +449,17 @@ _h3src = (R / "tools/h3_scorer.py").read_text()
 ok(_th3.returncode == 0 and _nh3f == 0 and _nh3p >= 16 and "H3A_BAR, ALPHA, BH_Q = 1.0, 0.05, 0.05" in _h3src
    and 'THROUGH = "2026-11-11"' in _h3src,
    f"the frozen H3 scorer passes its known-answer tests, with the registered bar 1.0, q 0.05 and window to 11 Nov ({_nh3p} cases)")
+# The independent re-implementation (17 Oct 2026, Gabriel asked for it kept): tools/independent_replica.py, written
+# from the method text, checked here on its OWN known answers (Black-Scholes chains of known vol, the quote rules,
+# H7's clock) and held to the standard library so it can never share a mistake with the readers it checks. Its
+# agreement with modelfree/h7_reader on the real data (tools/independent_check.py, 661 of 661 on 17 Oct) runs on
+# demand and once at verdict time beside the companions - not nightly: an exact strike tie can move the two by
+# a hair, and a nightly check that can trip on that would be a false alarm (no new monitors before 21 Nov).
+_tind = _sp.run([sys.executable, str(R / "tools/test_independent.py")], capture_output=True, text=True)
+_nif = sum(1 for _ln in _tind.stdout.splitlines() if _ln.strip().startswith("FAIL"))
+_nip = sum(1 for _ln in _tind.stdout.splitlines() if _ln.strip().startswith("PASS"))
+ok(_tind.returncode == 0 and _nif == 0 and _nip >= 30,
+   f"the independent re-implementation passes its own known-answer tests and imports nothing from the project ({_nip} cases, {_nif} failures)")
 _fls = _iu.spec_from_file_location("fetch_lab", R / "lab/fetch_lab.py")
 _flm = _iu.module_from_spec(_fls)
 _fls.loader.exec_module(_flm)

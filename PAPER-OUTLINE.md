@@ -177,7 +177,10 @@ source is a logged change, reported beside the original reading.
 - B. Side studies: H2 (variance vs volatility), H4 (hedged gains), H6 (implied volatility against a
   trailing range).
 - C. Reproducing every number: the scripts and commands (a fresh clone reproduces the registered
-  readings byte-for-byte after `tools/seed_frozen_rate.py`, checked 10 Oct 2026), and a Data Availability statement per
+  readings byte-for-byte after `tools/seed_frozen_rate.py`, checked 10 Oct 2026); an INDEPENDENT second
+  implementation written from the method text alone (`tools/independent_replica.py`, standard library only)
+  agrees with the readers on every value - 661 of 661 on 17 Oct 2026, largest gap 0.0009 points, from one exact
+  strike tie (`tools/independent_check.py`; rerun at verdict time) - and a Data Availability statement per
   source (Social Science Data Editors' template README): what each licence allows, and that the
   raw licensed data is not in the package.
 - D. The literature search log: what was searched, when, and what was found (9 Oct 2026 reports).

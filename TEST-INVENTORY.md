@@ -41,6 +41,12 @@ question.
 | TimesFM | side (analysis/) | CLAUDE.md, HANDOFF | FAILS against HAR | | - |
 | P1-P5 | exploratory (lab/) | lab/REGISTRATION.md | P1 fails, P2 holds as written, P3 holds, P4 fails, P5 holds among funds with a paper profit | | - |
 
+Not a test of any hypothesis, and not counted below: **the reproduction check** (17 Oct 2026). Every reading
+above that this project computes - H3's band and wide estimates, H5e's skip rule, H7's two Cboe replicas - was
+computed a second time by an independent implementation written from the method text alone
+(`tools/independent_replica.py`; comparison `tools/independent_check.py`): 661 of 661 values agree within 0.01
+points, largest gap 0.0009 (one exact strike tie, documented). Rerun once at verdict time beside the companions.
+
 **Count, as of 16 Oct 2026 (counted from the rows above):** 24 registered tests with a prediction - 12
 confirmatory (H3 x3, H5 x7, H7 x2), 3 validation, 9 side (H2 x3, H4 x3, H6 x2, TimesFM) - plus 2 descriptive
 rows (H5c, H7c), the 11 pairs inside H1a (already corrected there), and 5 exploratory lab predictions.

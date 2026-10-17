@@ -31,6 +31,7 @@ session's job is to read results, answer a question, or do one bounded thing.
     $PY tools/opra_reference.py --all --compare        # free feed vs OPRA, same minute
     $PY tools/daily.py --notify                        # and text the verdict (tools/notify.py)
     $PY tools/audit.py                                 # break every safeguard, prove each check fails (~1.5 min)
+    $PY tools/independent_check.py                     # a second, independent implementation agrees with every reading
 
 `analysis/` runs in `.venv` instead. Pushes to main run the pressure test through
 `tools/hooks/pre-push` (install per clone: `git config core.hooksPath tools/hooks`).

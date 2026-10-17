@@ -2735,12 +2735,24 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   first night both final readings are recorded, to licensed/reports/companions.txt, and sends a Pushover NOTICE.
   One-off phone reminders (Claude app; no connectors): 19 Oct Cboe follow-up; 20 Oct Marc mentor ask + SCCUR;
   22 Oct green week + early-close guard jobs; 30 Oct Goukasian fallback; 20 Nov verdicts in / companions / site
-  discussion; 23 Nov Bloomberg intraday pull; 1 Dec token renewal + cleanup. Also found: tools/h5f_pooled.py divides by zero on a zero free-inflation day (only reached in
-  --preview; H5f is already recorded, so no registered number is affected) - guard it next session.
+  discussion; 23 Nov Bloomberg intraday pull; 1 Dec token renewal + cleanup. (h5f_pooled.py's zero-division in
+  --preview stays as it is: the script is frozen byte-for-byte and H5f is recorded - see above.)
+  **Independent re-implementation, 17 Oct (Gabriel: "save them into the project"):** after he asked whether every
+  number is right given this week's bugs, Vega wrote a second implementation from the method text alone, without
+  reading the estimator code: `tools/independent_replica.py` (standard library only - a pressure-test lint keeps it
+  that way). `tools/independent_check.py` compares it with modelfree/h7_reader at full precision: **661 of 661
+  values agree** (band 192 + Cboe-rule band 192, wide 85 x 3 incl. every H5e row, H7 free 12 + OPRA 10; tolerance
+  0.01). Largest difference 0.0009: IWM 8 Oct, an EXACT tie on |C - P| at strikes 277/279 broken by float noise -
+  documented in the file, no verdict reads IWM. Also checked: 110 Cboe closes = FRED's copies exactly; the frozen
+  3.910% vs today's 4.17% moves any value by <= 0.008 and H5e not at all (0.72, 8 of 17). Its own known answers
+  (`tools/test_independent.py`, 30 cases: Black-Scholes chains of known vol read back within 0.05, the three quote
+  rules, H7's clock across DST, Databento's blank bid) run in the pressure test with 4 auditor mutants. The real-data
+  comparison is NOT nightly (an exact tie could trip it - a false alarm; no new monitors before 21 Nov): it runs on
+  demand and once at verdict time inside the companions step (volrec-licensed daily.yml). For the paper: Appendix C.
   **cron-job.org guard jobs, 16 Oct (Gabriel):** "volrec guard 15:00" and "volrec guard 15:20" (Mon-Fri, New
   York) enabled; test run returned 204 and reached GitHub (guard run 38962170586, judged "skip - after the
-  close", correct). **Still to make:** one-off copies at 12:00 New York on Fri 27 Nov and Thu 24 Dec (early
-  closes). Both jobs use the volrec-trigger token: renew them with the others by 22 Dec. **Open:** after the first
+  close", correct). **Made by Gabriel 16 Oct** ("all the jobs are enabled"): one-off copies at 12:00 New York
+  on Fri 27 Nov and Thu 24 Dec (early closes); the 22 Oct reminder double-checks them. All use the volrec-trigger token: renew them with the others by 22 Dec. **Open:** after the first
   real re-run, confirm its triggering_actor is exactly "github-actions[bot]" (guard.BOT). Unscheduled market
   closures (e.g. a day of mourning) are not in US_MARKET_HOLIDAYS: add the date by hand when announced, or the
   guard re-runs and pages falsely. cron-job.org jobs starting guard.yml at 15:00 and 15:20 New York: DONE 16 Oct
