@@ -1886,39 +1886,35 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 every decision. This section is the only one guaranteed current. Read it, run
 `tools/daily.py`, and open section 17 only when a task needs the why.
 
-### System status, checked 10 Oct 2026 ~19:30 UTC (rows below "public site" last checked 23 Sep)
+### System status, checked 17 Oct 2026 ~19:00 UTC (Sat, start of the fall break)
 
 | check | result |
 |---|---|
-| diagnostic, 10 Oct (after the weekend's changes) | `daily.py` **ALL CLEAR**; pressure test **247 checks, 0 fail, 3 warn** (the same three known warnings); auditor **68 of 68**; calibrate **9 of 9**; unit tests hedged 30, H6 27, H7 17, H8 26 - all pass; every registered reader (modelfree, `--wide`, hedged, h7_reader, record_verdict dry run, ovx_replicate, calibrate) **byte-identical** to the code before the weekend (24b9a2a), same data; a fresh public clone reproduces them too |
-| Databento, 10 Oct | lifetime **$2.27** of the $100 cap (H8 calibration $1.39; the cloud's first H8 day $0.17); H7 under its own $1.10 cap, H8 under its own $15 |
-| OSF | H5e and H7 registered and live, https://osf.io/z5gfu (10 Oct 17:43 UTC) |
-| `tools/pressure_test.py` | **0 fail, 3 warn** (9 Oct, after the full audit) - all known and true: FXE's one-sided 7 Oct quote (no IV carried), the snapshot time spread over 10 days (88 min, from before the outside trigger), and the GitHub-cron backup can land after the close (the guard refuses it; the trigger prevents it). Auditor **53 of 53** |
-| `tools/calibrate.py` | **9 of 9** instruments calibrated against a known answer (the OPRA comparison added 23 Sep) |
-| `tools/test_hedged.py` | 21 hand-computed cases pass |
-| static scan | no undefined name in 18 files; dead imports removed |
-| `tools/daily.py` | ALL CLEAR |
-| workflows | record, surface, freshness, health all **active**; last runs green |
-| `health.yml` | first manual run green in 32 s; **first scheduled run tonight, 23:37 UTC** |
-| watchdog routine | **updated 23 Sep; first run 23 Sep 16:13 UTC healthy**, 54 s, no notification (Wednesdays 09:13 Pacific). Its sandbox blocks `cdn.cboe.com` and FRED, so its `daily.py` always ends LOOK AT: modelfree - expected, and the prompt says so. It runs on Gabriel's usage |
-| iMessage alerts | test message delivered; launchd job **installed**, weekdays 13:30 Pacific, from the clean clone `~/.volrec-ops` |
-| pre-push hook | installed (`core.hooksPath tools/hooks`); every push to main runs the pressure test |
-| Databento | key saved outside the repo; **$0.0865 over 12 requests** of the $100 cap; days on disk are never bought twice (fixed 23 Sep) |
-| holiday list | `panel_health.US_MARKET_HOLIDAYS` had 2027's Good Friday a week late (2 Apr; it is 26 Mar) - **fixed 23 Sep**; the pressure test now checks every Good Friday against a computed Easter |
-| public site | live at gabrielmitton-cloud.github.io/volrec with the Bloomberg aggregates section, **the OPRA aggregates section (added 23 Sep)** and an up-to-date hypothesis table |
+| diagnostic, 17 Oct | `daily.py` **ALL CLEAR** (Fri 16 Oct landed; H5e 17 counted days, mean gap 0.72, closer on 8); pressure test **0 fail, 3 warn** (the three known warnings); auditor **109 of 109**; unit tests describe, guard, H3 scorer, H6, H7, H8, hedged and independent - **0 failures** |
+| independent re-implementation, 17 Oct | `tools/independent_check.py`: **661 of 661** values agree with modelfree/h7_reader (largest gap 0.0009, one exact strike tie); 110 Cboe closes = FRED's copies exactly |
+| Databento, 17 Oct | lifetime **$82.01** (lab/ $79.00 of its $90, finished 14 Oct; main $2.21; H7 $0.17 of $1.10; H8 $0.62 of $15). At the current ~$0.19 a day it reaches ~$85.5 by 11 Nov: inside the $100 free credit and the $120 cap, and H7's cap holds (~$0.79) |
+| workflows, 16-17 Oct | record, surface, guard, freshness, health all green; volrec-licensed daily green (17 Oct 01:15 and 07:41 UTC; it fetches day D two nights later, so 16 Oct arrives after the weekend) |
+| cron-job.org | record and surface triggers; guard 15:00 and 15:20 New York (tested 204, 16 Oct); one-off 12:00 copies for Fri 27 Nov and Thu 24 Dec (made by Gabriel 16 Oct). Token `volrec-trigger` expires 29 Dec |
+| phone (Pushover) | four levels live; the nightly GREEN arrives (confirmed by Gabriel 16 Oct); RED comes only from the guard |
+| cloud routines | 7 one-off reminders (19, 20, 22, 30 Oct; 20 Nov, 23 Nov, 1 Dec), the 13 Nov verdict check, the Monday auditor and the Wednesday watchdog - all enabled, no connectors attached |
+| OSF | H5e and H7 registered and live, https://osf.io/z5gfu (10 Oct) |
+| pre-push hook | installed (`core.hooksPath tools/hooks`); every push runs the pressure test |
+| iMessage (launchd `com.volrec.daily`) | still installed; retire it after the 22 Oct check of a week of green alerts |
 
-### What runs unattended (UTC)
+### What runs unattended (UTC; weekdays unless noted) - SESSION-START.md carries the same table
 
-| what | when | on failure |
+| what | when | if it goes wrong |
 |---|---|---|
-| `record.yml`, `surface.yml` | weekdays **14:30 / 14:40 New York** via cron-job.org `workflow_dispatch` (11:30 / 11:40 on NYSE's early closes); GitHub's 14:47 / 14:57 UTC cron is the backup and stands aside if it starts before the trigger's slot + 15 min | `freshness` fails and GitHub emails; `panel_health` warns when a landing is off the trigger's slot |
-| `freshness.yml` | 20:00 and 23:00 daily | GitHub emails |
-| `health.yml` | weekdays 23:37 | GitHub emails (the whole daily check) |
-| launchd `com.volrec.daily` | weekdays 13:30 Pacific | the iMessage leads with LOOK AT |
-| watchdog routine | Wednesdays 16:13 | a push notification, only when something is wrong |
-| **auditor routine** (built 30 Sep) | Mondays 16:30 UTC | a push notification when a safeguard does not fail when broken, `volrec-licensed` is public, or HANDOFF contradicts the live state |
-| **healthchecks.io** (outside GitHub, set up 25 Sep) | checks `volrec-recorders` (freshness, daily 20:00 UTC, 8 h grace), `volrec-health` (weekdays 23:37, 6 h), `volrec-licensed` (weekdays 23:05, 9 h) | an email when a ping is MISSING - the job never ran. Pinged on success only; ping URLs are GitHub secrets HC_*; a ping can never fail a job |
-| **`volrec-licensed` daily.yml** (private repo, built 24 Sep) | weekdays 23:05 UTC | an issue in `volrec-licensed` (email + GitHub app): OPRA fetch, compare, and the H5f / H5e verdicts on their dates in fixed wording (`tools/record_verdict.py`). Pushes to THIS repo only on verdict days, never 13-21 UTC |
+| `record.yml` (ATM panel) | 14:30 New York via cron-job.org (`workflow_dispatch`; 11:30 on an early close); GitHub's 14:47 UTC cron is the backup and stands aside before 14:45 New York | `freshness` FAILS on a missed day; the guard re-runs it |
+| `surface.yml` (surface, wide band, monthly USO/GLD legs) | 14:40 New York the same way; 14:57 UTC cron backup | same |
+| `guard.yml` (15 Oct) | after every record/surface run, and 15:00 + 15:20 New York via cron-job.org (12:00 on early closes); one queue; no GitHub cron | confirms a missing day from the DATA, re-runs the recorder once, then Pushover: RED only if the day can still be saved |
+| `freshness.yml` | 20:00 and 23:00 daily | emails on a red X; no phone alert |
+| `health.yml` | 23:37 | the full daily check; Pushover GREEN when clear, YELLOW on a FAIL or crash |
+| healthchecks.io | pings from freshness, health, volrec-licensed | Pushover when a job never runs at all |
+| `volrec-licensed` daily.yml (private) | 23:05 and 03:05 UTC | OPRA fetch, compare, verdicts on their dates (fixed wording), companions + the independent re-check once after both finals; Pushover NOTICE/YELLOW; RED if the repo is ever public |
+| auditor routine | Mondays 16:30 UTC | `tools/audit.py` + doc drift; notifies only on a problem |
+| watchdog routine | Wednesdays 16:13 UTC | notifies only when something is wrong |
+| launchd `com.volrec.daily` (this Mac) | 13:30 Pacific | texts the verdict by iMessage (to be retired) |
 
 ### Where each hypothesis stands
 
@@ -2815,6 +2811,11 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   registered number touched. **For after the verdicts:** the 2013+ OPRA archive could run the Cboe-replica
   decomposition over years, and confirm the unconfirmed 11 May 2022 OVX/GVZ switch to NBBO - never inside
   H7's window; a discussion with Gabriel first.
+**Sat 17 Oct - state at the fall break (everything above is history; the dated plan continues below)**
+- All checks green and re-verified on the day (system-status table): every reading recomputed by an independent
+  implementation (661 of 661), auditor 109 of 109, Databento headroom to 11 Nov confirmed. Nothing is left to
+  build before the verdicts; the reminders and alerts carry every dated task. Gabriel's next action is the
+  Mon 19 Oct Cboe reminder.
 - **Wed 11 Nov:** the 40-day window closes, and with it H5e's and H7's. The live panel's premium analysis
   (`analyze.py`) needs Alpaca keys, so it will run through a manual read-only workflow like `sample_a.yml`;
   register what it will read before running it.
