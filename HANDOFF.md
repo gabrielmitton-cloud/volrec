@@ -2753,8 +2753,8 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   check on a synthetic sheet in the exports' own form + an auditor mutant. Corrected beside the originals, dated:
   H5a 0.33 over 179 (was 0.40 over 169), H5b 44 of 44 (was 36 of 36) - both verdicts unchanged; H5's 'already
   seen' 18 Sep figures and H3's 18 Sep lift table (Bloomberg Cboe-rule lift +0.96, not +0.85). The model_gap /
-  iv_convention conclusions (business days over 252) do not move. **The public site still says "36 of 36" and
-  "0.40" in H5's row** - a site edit is Gabriel's call. Everything else reproduced: H5f exactly (H5f-a is exactly
+  iv_convention conclusions (business days over 252) do not move. The public site's H5 row is corrected too (Gabriel:
+  "yes fix the site too"), worded without the vendor's name, which the site-code check forbids. Everything else reproduced: H5f exactly (H5f-a is exactly
   1/2 in exact arithmetic), H1/H2/H6 on a second price source (counts and conclusions identical; H2a's raw-variance
   significance is vendor-sensitive, noted in H2), H4 exactly, TimesFM re-scored exactly from saved forecasts, the
   lab's 628 trades (one exact strike tie, noted in lab/REGISTRATION.md). Not rebuilt: H8 (pilot), the lab's Leak
