@@ -2757,8 +2757,18 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   "yes fix the site too"), worded without the vendor's name, which the site-code check forbids. Everything else reproduced: H5f exactly (H5f-a is exactly
   1/2 in exact arithmetic), H1/H2/H6 on a second price source (counts and conclusions identical; H2a's raw-variance
   significance is vendor-sensitive, noted in H2), H4 exactly, TimesFM re-scored exactly from saved forecasts, the
-  lab's 628 trades (one exact strike tie, noted in lab/REGISTRATION.md). Not rebuilt: H8 (pilot), the lab's Leak
-  Map / Break-Even / stress layers.
+  lab's 628 trades (one exact strike tie, noted in lab/REGISTRATION.md). Later the same day (Gabriel: "if u feel
+  the H8 pilot the leak map and the other things need a rebuild go ahead") those were rebuilt too: the lab's Leak
+  Map identical at 5% and 20%, Break-Even crossings identical, P4 fails 1 of 5 as recorded, stress replays exact
+  and the bootstrap within Monte Carlo noise; H8's reader identical on all eight funds. H1c's "positive on 87.3%"
+  counts four exactly-flat days (strictly positive 87.1%) - noted in H1. Nothing recorded is left unchecked.
+  **A second gap found in the final check, 17 Oct:** `record_verdict.py --preview` - the one dry run of the November
+  writer on real data - had started ABORTING at H5f: the frozen `h5f_pooled.py` divides by zero on a later
+  zero-inflation day, and the preview died before rendering H5e or H7. The real path was never affected (H5f is
+  recorded, so it is skipped; last night's run passed). Fixed in the preview only: when H5f is recorded and the
+  frozen script fails, the preview says so and goes on (the script itself stays frozen). A pressure check plus a
+  mutant; the preview now renders H5e first, H5e FINAL and H7 on today's data with every safeguard passing. The
+  rebuild scripts are kept in `docs/recheck-2026-10-17/` (README there), each re-run from that folder.
   **cron-job.org guard jobs, 16 Oct (Gabriel):** "volrec guard 15:00" and "volrec guard 15:20" (Mon-Fri, New
   York) enabled; test run returned 204 and reached GitHub (guard run 38962170586, judged "skip - after the
   close", correct). **Made by Gabriel 16 Oct** ("all the jobs are enabled"): one-off copies at 12:00 New York

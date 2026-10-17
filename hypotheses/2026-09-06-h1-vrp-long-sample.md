@@ -220,6 +220,13 @@ curve +3.87 (n=110), inverted +1.22 (n=17). The premium is roughly a third as
 large when the curve is inverted, in the predicted direction. Small n on the
 inverted leg; treat as suggestive, not established.
 
+*Independent re-check, 17 Oct 2026 - added after the verdict; nothing changes.* A second implementation sharing
+no code, run on a second price source (Yahoo adjusted closes), matches this project's code number for number on
+that data and reproduces every count above: 9 of 11, BH 9, BY 8, the same N per pair, H1c's 2,684 days and its
+110/17 split. One wording point: "positive on 87.3%" counts days with a slope of zero or more; four of the 2,684
+days are exactly flat, so the strictly positive share is 87.1%. Either way H1c holds. On the second source the
+inverted-curve mean is +0.83 (normal +3.82): 17 observations move with the data vendor; the direction does not.
+
 ## Multiple testing, added 2026-09-16 — the count is controlled, and holds
 
 **This does not re-cut the test. The specification above stays frozen and the

@@ -298,5 +298,18 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   628 of 628 forwards identical, 627 of 628 returns identical to the trade log at mid and at the retail
   case, P3's medians identical. The one difference is an exact tie the registration leaves open: GLD, 23 Mar
   2026, forward 407.50, strikes 405 and 410 equally near - the lab takes the LOWER strike (stated here as the
-  convention). The other choice moves GLD's mean straddle return from -0.038 to -0.037. Not rebuilt: the
-  Leak Map's margin and Shapley layer, the Break-Even VIX and the stress bootstrap.
+  convention). The other choice moves GLD's mean straddle return from -0.038 to -0.037. Later the same day
+  (Gabriel: "if u feel the H8 pilot the leak map and the other things need a rebuild go ahead") the rest was
+  rebuilt the same way. **Leak Map:** identical at w = 5% and 20% for all five funds - paper, kept, cents
+  kept, every Shapley leak with its min and max over the 24 orders, called months (daily marks rebuilt
+  independently: OPRA 15:55 quotes in the stress months, Black-76 otherwise). One reading the registration
+  leaves implicit, stated here: after a margin call the position reopens under the 90%-of-wealth rule
+  whether or not the 'limits' friction is on (the rule sits in the liquidation mechanic's own sentence).
+  **Break-Even VIX:** all five crossings identical (SPY 18.88, QQQ 23.78, IWM 15.21, GLD 9.72, USO 28.56);
+  the quintile tables differ only in where the bin edges fall. **P4:** rebuilt from the raw weekly chains
+  with the registered integrity checks - rises only on GLD (+0.00022, 95% +0.00014..+0.00031), so P4
+  fails 1 of 5 as recorded. **Stress:** the Patton-Politis-White block is 1.0 for every fund, the crash
+  replays are identical (COVID trade SPY -26.3%, QQQ -16.2%, IWM -34.8%, USO -29.4%, GLD -10.6%; Feb 2018
+  SPY -3.3%), and a bootstrap drawn with a different random stream lands within Monte Carlo noise (median
+  max drawdown SPY 32.9%, QQQ 27.2%, IWM 40.1%, GLD 48.7%, USO 39.9%; P(equity < $0.50) 5.9, 2.0, 15.4,
+  34.4, 14.8%). Every lab result is now reproduced by code that shares nothing with lab/.

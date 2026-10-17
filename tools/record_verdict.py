@@ -378,10 +378,22 @@ def main():
     notes, wrote = [], []
 
     # H5f
+    h5f_out = None
     if MARK_H5F in h5 and not a.preview:
         notes.append("H5f: already recorded - skipped")
     else:
-        v = parse_h5f(run(["tools/h5f_pooled.py"]))
+        try:
+            h5f_out = run(["tools/h5f_pooled.py"])
+        except SystemExit as e:
+            # 17 Oct 2026: the frozen script divides by zero on a later zero-inflation day. H5f is recorded, so the
+            # real path never runs it (above); a PREVIEW must still go on to render H5e and H7 rather than die here.
+            if not (MARK_H5F in h5 and a.preview):
+                raise
+            print("PREVIEW: H5f not re-rendered - already recorded, and the frozen tools/h5f_pooled.py fails on "
+                  f"today's data ({str(e).splitlines()[0]})\n")
+            h5f_out = None
+    if h5f_out is not None:
+        v = parse_h5f(h5f_out)
         if v["days"] < H5F_MIN_DAYS and not a.preview:
             notes.append(f"H5f: {v['days']} of {H5F_MIN_DAYS} OPRA days - not due")
         else:

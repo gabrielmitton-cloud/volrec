@@ -584,6 +584,26 @@ ok(_refuses(_mf_canned, _h7_flip, "differ from h7_reader's own")
    and _refuses(_mf_canned, _h7_gone, "2026-10-21 GLD"),
    "the writer refuses H7 on a mismatch with h7_reader's own verdict, a non-frozen rate, or a silently missing day")
 _rv7.run = _fake_run
+# 17 Oct 2026: the frozen h5f_pooled.py divides by zero on a later zero-inflation day. H5f is recorded, so the real
+# path never runs it; but the PREVIEW - the only dry run of the November writer on real data - must survive it and
+# still render H5e and H7 (it had been aborting before either).
+def _h5f_dies(args):
+    if "h5f_pooled" in args[0]:
+        raise SystemExit("tools/h5f_pooled.py failed (1):\nZeroDivisionError: division by zero")
+    return _fake_run(args)
+_rv7.run = _h5f_dies
+sys.argv = ["record_verdict.py", "--preview", "--today", "2026-11-19"]
+_pvb = _io3.StringIO()
+try:
+    with _ctx3.redirect_stdout(_pvb):
+        _rv7.main()
+    _pv = _pvb.getvalue()
+except SystemExit:
+    _pv = ""
+finally:
+    sys.argv, _rv7.run = _argv0, _fake_run
+ok("H5f not re-rendered" in _pv and "FINAL reading" in _pv and "H7, reading over" in _pv,
+   "the writer's preview survives the frozen H5f script failing (H5f recorded) and still renders H5e and H7")
 
 # 9 Oct 2026 (PROTOCOL.md): every hypothesis registered from 10 Oct carries the three sections the
 # full audit showed were missing in practice - instrument readiness, the measured noise floor, and the
