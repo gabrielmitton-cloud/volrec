@@ -34,6 +34,10 @@ Stated before the predictions so the reader can discount them accordingly.
 - Adding the wing strikes to the 16 Oct estimate lifted it by **+5.28** points on the
   free feed and **+4.91** on Bloomberg's own prices. Under Cboe's zero-bid rule the
   same lifts are **+0.94** and **+0.85**.
+  *(Corrected 17 Oct 2026, beside the original: the comparison tool dropped one far-put row Bloomberg had
+  exported - see the corrected reading under Result. With it read, the far puts are n=19 (13 of 19 empty on
+  both feeds; median still 0.07) and Bloomberg's Cboe-rule lift is **+0.96**; the as-registered +4.91 is
+  unchanged.)*
 - On the same day TSLA, NVDA and AAPL had 0 to 1 zero-bid wing rows and their two
   columns were identical to 0.00-0.02 points. USO had 21.
 - Inside +/-30%, the zero-bid rule moves every benchmarked H3 gap by <= 0.03 points.
@@ -443,6 +447,16 @@ Bloomberg wing days (18, 22 and 23 Sep), seven symbol-expiry blocks, 169 wing co
   difference is a whole spread (TSLA 0.33-1.00 by block; USO 0.01-0.66). Read plainly:
   the free feed's far wings carry the same empty bids as the consolidated market, and
   its two-sided wing quotes are within a tick or two, not within half a spread.
+- **Corrected reading, 17 October 2026 - the verdicts above are unchanged and stand as recorded.** The
+  independent re-check found that `tools/bloomberg_compare.py` dropped the PUT side of any OMON row whose
+  implied-volatility cell Bloomberg left out of the file rather than writing it blank (11 of the 15 exports
+  have such rows; the reader now places every cell by its column; `VOLREC_BBG_POSITIONAL=1` reproduces the
+  figures above exactly). Read with every row, and confirmed by a second reader written from scratch:
+  **179** wing contracts (not 169). **H5a:** pooled median **0.33** of Bloomberg's spread (was 0.40; bar
+  0.5); by date 0.10, 0.50 and 0.37; 56% inside half a spread; on the **134** contracts both feeds bid,
+  **0.67** - unchanged and still over the bar; 45 contracts with no bid on at least one feed. **H5b:** **44
+  of 44** (was 36 of 36); one the other way, as before. Both still hold - H5a by a wider margin - and the
+  plain reading above stands: the pass rests on the contracts with no bid on at least one feed.
 - **H5c, H5d:** descriptive until their 10 underlying-days support the date-clustered
   test the specification requires. **H5e:** counting from 23 Sep. **H5f:** 3 of 5 OPRA days.
 

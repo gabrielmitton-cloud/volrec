@@ -74,8 +74,27 @@ MAX_MID_VS_SPREAD = 0.5
 NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
 
 
-def read_sheet(path):
-    """Rows of an .xlsx, without a third-party library."""
+# 17 Oct 2026 (found by the independent re-check): Bloomberg's exports OMIT an empty cell from the sheet XML
+# rather than writing it blank - on 11 of the 15 exports, some rows lack the call's IVM (column F) or the put's
+# (column M). Reading cells in order shifted such a row left by one, strike_cells' length check then dropped
+# the row's PUT entirely, and with F missing the call's IVM was read from the Volm column. Cells are now placed
+# by their column letter. VOLREC_BBG_POSITIONAL=1 reproduces the old reading, so every figure recorded before
+# 17 Oct can still be re-derived exactly as it was (corrected figures sit beside them, dated).
+POSITIONAL = os.environ.get("VOLREC_BBG_POSITIONAL") == "1"
+
+
+def _col(ref):
+    """'F12' -> 5 (zero-based column index)."""
+    n = 0
+    for ch in re.match(r"[A-Z]+", ref).group(0):
+        n = n * 26 + ord(ch) - 64
+    return n - 1
+
+
+def read_sheet(path, positional=None):
+    """Rows of an .xlsx, without a third-party library. Each cell lands in its own column (by its 'r'
+    reference); a cell the file omits reads as "". positional=True is the pre-17-Oct reading."""
+    positional = POSITIONAL if positional is None else positional
     z = zipfile.ZipFile(path)
     shared = []
     if "xl/sharedStrings.xml" in z.namelist():
@@ -84,13 +103,17 @@ def read_sheet(path):
     rows = []
     for name in sorted(n for n in z.namelist() if re.match(r"xl/worksheets/sheet\d+\.xml", n)):
         for row in ET.fromstring(z.read(name)).iter("{%s}row" % NS["m"]):
-            vals = []
+            vals, cells = [], {}
             for c in row.findall("m:c", NS):
                 v = c.find("m:v", NS)
                 x = v.text if v is not None else ""
                 if c.get("t") == "s" and x:
                     x = shared[int(x)]
                 vals.append(x or "")
+                if c.get("r"):
+                    cells[_col(c.get("r"))] = x or ""
+            if not positional and cells and len(cells) == len(vals):
+                vals = [cells.get(i, "") for i in range(max(cells) + 1)]
             rows.append(vals)
     return rows
 

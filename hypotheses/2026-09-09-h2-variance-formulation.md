@@ -121,6 +121,14 @@ from FRED (Cboe withdrew the files); their rows move slightly, for the reason gi
 
 ## H2a — HOLDS, but with a result that was not anticipated
 
+*Robustness, 17 Oct 2026 - added after the verdict; the verdict is unchanged.* An independent
+re-implementation (written from this file, sharing no code) run on a SECOND price source - Yahoo Finance
+adjusted closes instead of Alpaca's - matches the project's own code number for number on that data, and
+reproduces every count and conclusion of H1 and of H2's log and volatility forms (log variance t 16.11,
+volatility t 8.91). The raw-variance form does not survive the change of vendor: **t 1.79, p 0.074**
+(Alpaca: 2.14, 0.033). A few spike windows carry it, as the paragraph below already says. Quote the
+raw-variance significance as vendor-sensitive, never on its own.
+
 The variance form is significant, so the direction agrees with Carr & Wu. But
 **raw variance is by far the weakest of the three** (t = 2.14 against 9.28 for
 plain volatility), and **log variance is by far the strongest** (t = 16.26).

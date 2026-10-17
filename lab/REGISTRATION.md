@@ -293,3 +293,10 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   large before frictions. His replication targets discretely sampled realised variance from daily returns -
   what the lab's synthetic variance-swap cross-check measures - so no change. Not compared numerically with
   the lab (different instrument, sample and units).
+- 2026-10-17, AFTER the study - independent re-check (no number changed). A second implementation, written
+  from this file without the lab's code, rebuilt every registered straddle trade from the raw OPRA files:
+  628 of 628 forwards identical, 627 of 628 returns identical to the trade log at mid and at the retail
+  case, P3's medians identical. The one difference is an exact tie the registration leaves open: GLD, 23 Mar
+  2026, forward 407.50, strikes 405 and 410 equally near - the lab takes the LOWER strike (stated here as the
+  convention). The other choice moves GLD's mean straddle return from -0.038 to -0.037. Not rebuilt: the
+  Leak Map's margin and Shapley layer, the Break-Even VIX and the stress bootstrap.

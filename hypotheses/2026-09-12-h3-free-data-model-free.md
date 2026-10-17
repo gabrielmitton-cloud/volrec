@@ -743,6 +743,11 @@ gate (it failed at 0.64 on 15 Sep).
 | as registered (zero bid counted at half the ask) | +5.28 | +4.91 | +65.9 |
 | Cboe zero-bid rule | +0.94 | +0.85 | +0.27 |
 
+*Corrected 17 Oct 2026, beside the original: the comparison tool dropped one far-put row of this export
+(Bloomberg omits an empty implied-volatility cell from the file; fixed 17 Oct - H5's Result has the details).
+With it read, the Cboe zero-bid row is +0.94 / **+0.96** / **+0.14**; the as-registered row is unchanged.
+Both vendors still show the contamination. Source: Bloomberg Finance L.P.*
+
 Both vendors show it, so **the contamination is the estimator's, not the feed's.** Far
 puts with no bid carry asks of up to about two dollars on options worth pennies, and
 the registered estimator counts half of that ask as the price, at the low strikes the

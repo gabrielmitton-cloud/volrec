@@ -1183,6 +1183,34 @@ _blk = ["16-Oct-26 (28d); CSize 100; IBrw 1.51; R 4.31; IFwd 154.52", "", "", ""
 ok(_bcm.strike_cells(_old) == _bcm.strike_cells(_new) and len(_bcm.strike_cells(_new)) == 2
    and not _bcm.strike_cells(_hdr) and not _bcm.strike_cells(_blk),
    "OMON exports parse identically whether Strike or Ticker comes first, and headers parse to nothing")
+# 17 Oct 2026 (the independent re-check found it): Bloomberg OMITS an empty cell from the sheet XML - a blank
+# call IVM (column F) or put IVM (column M) - and reading cells in order dropped that row's put and read the
+# call's IVM from Volm. A synthetic sheet in the exports' own form (no licensed data): one full row, one row
+# without F, one without M. Every put must survive, and F's absence must read as a blank IVM, not as volume.
+import zipfile as _zf, tempfile as _tf  # noqa: E401,E402
+_sst = ["USO 10/16/26 C116", "USO 10/16/26 P116"]          # tickers as shared strings, as the exports store them
+def _xrow(n, cells):
+    return f'<row r="{n}" spans="1:14">' + "".join(
+        f'<c r="{c}{n}" t="s"><v>{_sst.index(v)}</v></c>' if v in _sst else f'<c r="{c}{n}"><v>{v}</v></c>'
+        for c, v in cells) + "</row>"
+_cols = "ABCDEFGHIJKLMN"
+_full = list(zip(_cols, _new))
+_NSX = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+_xml = (f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet {_NSX}><sheetData>'
+        + _xrow(1, _full) + _xrow(2, [x for x in _full if x[0] != "F"]) + _xrow(3, [x for x in _full if x[0] != "M"])
+        + "</sheetData></worksheet>")
+_sxml = (f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><sst {_NSX} count="2" uniqueCount="2">'
+         + "".join(f"<si><t>{t}</t></si>" for t in _sst) + "</sst>")
+with _tf.TemporaryDirectory() as _bd:
+    _bp = Path(_bd) / "synthetic.xlsx"
+    with _zf.ZipFile(_bp, "w") as _z:
+        _z.writestr("xl/worksheets/sheet1.xml", _xml)
+        _z.writestr("xl/sharedStrings.xml", _sxml)
+    _brows = _bcm.read_sheet(_bp)
+    _bcells = [_bcm.strike_cells(_r) for _r in _brows]
+ok([len(_c) for _c in _bcells] == [2, 2, 2] and _bcells[1][0][5] is None and _bcells[1][1][2] == 0.31
+   and _bcells[2][1][3] == 0.59 and _bcells[0] == _bcm.strike_cells(_new),
+   "a Bloomberg row with an omitted IVM cell keeps its put, and a missing call IVM reads blank, not as volume")
 for _tool in ("model_gap", "iv_convention"):
     _src = (R / f"tools/{_tool}.py").read_text()
     ok("strike_cells" in _src and 're.match(r"^\\d+(\\.\\d+)?$", first)' not in _src,

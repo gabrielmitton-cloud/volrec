@@ -14,7 +14,8 @@ Agreement = within TOL (0.01 vol points, half the last printed digit's step). In
 the recorded quotes) are shared on purpose; the arithmetic is what is being checked.
 
   FRED_KEY=use-cache python tools/independent_check.py [--through YYYY-MM-DD] [--opra DIR]
-Exit 0 when every value agrees, 1 otherwise. Data provided by Databento (OPRA consolidated NBBO) for H7.
+Exit 0 when every value agrees, 3 on any disagreement (a crash exits 1, Python's own code - so the two
+are never confused). Data provided by Databento (OPRA consolidated NBBO) for H7.
 """
 import argparse
 import os
@@ -119,7 +120,7 @@ def main(argv=None):
     print(f"\nRESULT: {agreed} of {total} values agree")
     if any("H7" in k for k in fams):
         print("Data provided by Databento (OPRA consolidated NBBO). Aggregates only.")
-    return 0 if agreed == total else 1
+    return 0 if agreed == total else 3
 
 
 if __name__ == "__main__":

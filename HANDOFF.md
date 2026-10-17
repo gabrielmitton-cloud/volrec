@@ -1924,8 +1924,8 @@ every decision. This section is the only one guaranteed current. Read it, run
 | H2 | tested, not adopted | log variance strongest (t=16.26) |
 | H3 | series running | H3a mean abs gap **0.40 over 80 readings (8 Oct; hypotheses/README.md is current)**; 23 Sep: 0.53 over 30 (bar 1.0). First registered wide reading **OUTSIDE** 1.4-3.2 (+9.41; +10.71 with 23 Sep): quote contamination, as the grid anticipated. **IWM reads positive on all six days**, against H3b's sign - watch. **Day count: Bloomberg stated ACT/252 in writing (23 Sep); at 21 months ~1 point remains, not the forward or rate, unidentified and closed (24 Sep).** H3c's mechanism is Jiang & Tian (2007)'s, credited |
 | H4 | descriptive, **strike 2 of 3** (8 Oct) | strike 2: calendar-day carry + Bakshi-Kapadia dividend-adjusted price (strike 1, 23 Sep: runs break on a missed trading day). Data to 7 Oct: date level -5.23bp (t -2.50) vs -5.22bp under strike 1; no conclusion moved. One strike left |
-| H5a | **tested 23 Sep, holds weakly** | pooled median 0.40 of a spread over 169 wing contracts on 3 days (bar 0.5); **0.67 on the 132 both feeds bid** - the two readings of "quoted" are logged, nothing adjusted |
-| H5b | **tested 23 Sep, holds** | 36 of 36 free-feed missing bids are missing on Bloomberg (bar 80%) |
+| H5a | **tested 23 Sep, holds weakly** | pooled median 0.40 of a spread over 169 wing contracts on 3 days (bar 0.5); **0.67 on the 132 both feeds bid** - the two readings of "quoted" are logged, nothing adjusted. **Corrected 17 Oct (reader bug, verdict unchanged): 0.33 over 179; 0.67 on 134** |
+| H5b | **tested 23 Sep, holds** | 36 of 36 free-feed missing bids are missing on Bloomberg (bar 80%). **Corrected 17 Oct: 44 of 44** |
 | H5c | descriptive | Bloomberg reproduces USO's inflation within 0.5% and 10.4% on 23 Sep (6.5% and 30% before); needs 10 underlying-days |
 | H5d | descriptive | 12 underlying-days on 3 dates; the date-clustered test needs more dates |
 | H5e | **first verdict: FAILS** (8 Oct) | mean abs gap 0.90 (bar under 0.5); closer on 2 of 10 days; final reading 11 Nov |
@@ -2745,6 +2745,20 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   rules, H7's clock across DST, Databento's blank bid) run in the pressure test with 4 auditor mutants. The real-data
   comparison is NOT nightly (an exact tie could trip it - a false alarm; no new monitors before 21 Nov): it runs on
   demand and once at verdict time inside the companions step (volrec-licensed daily.yml). For the paper: Appendix C.
+  **The whole-project re-check, 17 Oct (Gabriel: "are we sure this didnt also happen to anymore hypothesis"):**
+  every recorded result recomputed by a second implementation sharing no code (TEST-INVENTORY.md has the table).
+  **One real bug:** `tools/bloomberg_compare.py` read sheet cells in order, and Bloomberg OMITS an empty IVM cell
+  from the file (11 of 15 exports), so the row's put was dropped and, with column F missing, the call's IVM was read
+  from Volm. Fixed (cells placed by column; `VOLREC_BBG_POSITIONAL=1` reproduces the old figures exactly); a pressure
+  check on a synthetic sheet in the exports' own form + an auditor mutant. Corrected beside the originals, dated:
+  H5a 0.33 over 179 (was 0.40 over 169), H5b 44 of 44 (was 36 of 36) - both verdicts unchanged; H5's 'already
+  seen' 18 Sep figures and H3's 18 Sep lift table (Bloomberg Cboe-rule lift +0.96, not +0.85). The model_gap /
+  iv_convention conclusions (business days over 252) do not move. **The public site still says "36 of 36" and
+  "0.40" in H5's row** - a site edit is Gabriel's call. Everything else reproduced: H5f exactly (H5f-a is exactly
+  1/2 in exact arithmetic), H1/H2/H6 on a second price source (counts and conclusions identical; H2a's raw-variance
+  significance is vendor-sensitive, noted in H2), H4 exactly, TimesFM re-scored exactly from saved forecasts, the
+  lab's 628 trades (one exact strike tie, noted in lab/REGISTRATION.md). Not rebuilt: H8 (pilot), the lab's Leak
+  Map / Break-Even / stress layers.
   **cron-job.org guard jobs, 16 Oct (Gabriel):** "volrec guard 15:00" and "volrec guard 15:20" (Mon-Fri, New
   York) enabled; test run returned 204 and reached GitHub (guard run 38962170586, judged "skip - after the
   close", correct). **Made by Gabriel 16 Oct** ("all the jobs are enabled"): one-off copies at 12:00 New York

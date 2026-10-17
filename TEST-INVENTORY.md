@@ -41,11 +41,21 @@ question.
 | TimesFM | side (analysis/) | CLAUDE.md, HANDOFF | FAILS against HAR | | - |
 | P1-P5 | exploratory (lab/) | lab/REGISTRATION.md | P1 fails, P2 holds as written, P3 holds, P4 fails, P5 holds among funds with a paper profit | | - |
 
-Not a test of any hypothesis, and not counted below: **the reproduction check** (17 Oct 2026). Every reading
-above that this project computes - H3's band and wide estimates, H5e's skip rule, H7's two Cboe replicas - was
-computed a second time by an independent implementation written from the method text alone
-(`tools/independent_replica.py`; comparison `tools/independent_check.py`): 661 of 661 values agree within 0.01
-points, largest gap 0.0009 (one exact strike tie, documented). Rerun once at verdict time beside the companions.
+Not a test of any hypothesis, and not counted below: **the reproduction check** (17 Oct 2026). Every
+recorded number was computed a second time by an implementation written from the registration text,
+sharing no code with the reader that produced it:
+
+| test | how | result |
+|---|---|---|
+| H3, H5e, H7 | `tools/independent_replica.py` vs modelfree / h7_reader, same data | 661 of 661 values agree (largest gap 0.0009, one exact strike tie) |
+| H5f | exact fractions on the same OPRA files | every figure identical; H5f-a's median is exactly 1/2 (226 below, 34 on, 206 above) |
+| H5a, H5b | a second Bloomberg-export reader | **found a reader bug** (an omitted cell dropped the put; fixed 17 Oct). Corrected: H5a 0.33 over 179 (was 0.40 over 169), H5b 44 of 44 (was 36 of 36); both verdicts unchanged |
+| H1, H2 | second implementation on a SECOND price source (Yahoo); the project's code on that same data matches it exactly | every count and conclusion reproduced; H2a's raw-variance form is vendor-sensitive (p 0.074 on Yahoo, 0.033 on Alpaca) |
+| H6 | second implementation, second price source | same N in all 9 pairs; H6a fails 0 of 9, H6b holds (-0.084 vs -0.089) |
+| H4 | second implementation, same data | 8,977 runs; every bucket, the pooled mean and the date row identical |
+| TimesFM | re-scored from the saved forecasts (the model was not re-run - FRED terms) | -3.9% and 52.9%, identical; all 225 targets re-derived |
+| lab P1-P5 | trade-level rebuild from the raw OPRA files | 627 of 628 trades identical (one exact strike tie), P3 identical; Leak Map, Break-Even VIX and stress not rebuilt |
+| H8 | not rebuilt (a pilot, not registered) | - |
 
 **Count, as of 16 Oct 2026 (counted from the rows above):** 24 registered tests with a prediction - 12
 confirmatory (H3 x3, H5 x7, H7 x2), 3 validation, 9 side (H2 x3, H4 x3, H6 x2, TimesFM) - plus 2 descriptive
