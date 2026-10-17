@@ -108,5 +108,26 @@ nc = {"USO": {}, "GLD": cg}
 check("a day without its index close does not count", h7.summarise(ru + rg, nc)["USO"]["a"][0] == 0)
 
 print("\n" + "=" * 52)
+
+print("\n=== the matched-strike COMPANION (17 Oct 2026; never the registered reading) ===")
+from datetime import date as _D
+_e = _D(2026, 12, 18)
+_free = {_e: {(50.0, "P"): (0.5, 0.6), (60.0, "C"): (0.4, 0.5), (55.0, "C"): (1.0, 1.1)}}
+_opra = {_e: {(50.0, "P"): (0.5, 0.6), (60.0, "C"): (0.4, 0.5), (55.0, "C"): (1.0, 1.1),
+              (120.0, "C"): (0.02, 0.05), (20.0, "P"): (0.01, 0.03)}}
+_m = h7.match_chain(_opra, _free)
+check("match_chain keeps only the strikes the free file holds (the far wings OPRA alone has are cut)",
+      set(_m[_e]) == {(50.0, "P"), (60.0, "C"), (55.0, "C")})
+check("match_chain never invents a quote: an OPRA-only expiry comes back empty",
+      h7.match_chain({_D(2027, 1, 15): {(50.0, "P"): (1, 2)}}, _free) == {_D(2027, 1, 15): {}})
+check("edge_limited flags an expiry whose highest call still has a live bid (the walk runs off the edge)",
+      h7.edge_limited(_free) == [_e])
+_closed = {_e: {(50.0, "P"): (0.0, 0.05), (60.0, "C"): (0.0, 0.05), (55.0, "C"): (1.0, 1.1)}}
+check("edge_limited stays quiet when both outermost strikes have no bid (Cboe's stop is inside the file)",
+      h7.edge_limited(_closed) == [])
+_src = (Path(__file__).resolve().parent / "h7_reader.py").read_text()
+check("the registered reading never reads the companion (opra is computed from the full chain, as before)",
+      "opra = replica(ochain, exps, when, R)" in _src and "if \"--matched\" in sys.argv:" in _src)
+
 print(f"RESULT: {len(fails)} failure(s)" + (f": {fails}" if fails else ""))
 sys.exit(1 if fails else 0)

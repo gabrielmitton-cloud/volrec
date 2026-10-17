@@ -1017,3 +1017,18 @@ that data, not as a discovery. H3c stays registered exactly as written.
   H1 states the same proxy caveat ("Index vs ETF proxy"); the write-up states it for H3 too. No
   bar, band, window, estimator, number or verdict changes; the registered text above is left as
   written. Noticed while reading Cboe's methodology for the `lab/` side project.
+- **17 Oct 2026 - specification note, not an adjustment (Gabriel approved 16 Oct): a frozen scorer for the
+  reading of record.** Until now H3's registered statistics were computed nowhere in code (modelfree.py prints
+  signed means; the running "mean absolute gap" figures were worked out by hand). `tools/h3_scorer.py` now
+  computes, from modelfree.py's REGISTERED output (never --wide), readings to Wed 11 Nov: H3a the pooled mean
+  absolute gap over every (underlying, day) reading of the five, strictly under 1.0 - pooled as this file's
+  own running readings have been since 17 Sep (so far every underlying has the same 23 readings, so pooled and
+  mean-of-means coincide); H3b the pooled mean gap, negative; H3c the slope of |gap| on the Cboe index level,
+  positive and significant at 5%; and the BH-corrected count at q = 0.05 across the five, as registered on
+  16 Sep. **Two points the registration left open were fixed here, with PROTOCOL.md's house methods:** the
+  per-underlying tests are Newey-West with fixed-b critical values (lag 1.3 sqrt T; H3a one-sided against 1.0,
+  H3c one-sided slope > 0), and the pooled H3c significance is a wild cluster bootstrap with Webb's six-point
+  weights, clusters = the five underlyings, all 7,776 weight vectors enumerated. **Disclosed: these choices were
+  written while the daily series was visible (115 readings over 23 days as of 16 Oct), though before the reading
+  of record.** No bar, band, window, estimator, number or verdict changes. Tests: `tools/test_h3_scorer.py` (15
+  known-answer cases); auditor mutants `h3-bar-not-strict`, `h3-bootstrap-two-sided`.

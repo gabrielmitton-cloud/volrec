@@ -2721,8 +2721,21 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   refusals: H5e agrees, rate 3.910, no missing days; H7 agrees) but NOT live - the pressure test drives the
   writer with canned outputs that lack full day lists, rate and verdict lines, so the fixtures must be rebuilt in
   the real form first (and the H7 checks moved after the waiting/minimum branches). The draft is in
-  docs/drafts/record_verdict.safeguards-draft.py.txt. **Next session: finish 1-3 (fixtures), then 4-5; all
-  before 11 Nov.** Also found: tools/h5f_pooled.py divides by zero on a zero free-inflation day (only reached in
+  docs/drafts/record_verdict.safeguards-draft.py.txt. **17 Oct: 4 and 5 BUILT** - `tools/h7_reader.py --matched`
+  (companion H7a on matched strikes, registered output byte-identical) and `tools/h3_scorer.py` (frozen H3
+  scorer; specification note in the H3 file). Run both once after 11 Nov beside the registered readings.
+  **17 Oct: 1-3 LIVE** - the writer's canned outputs were rebuilt in the readers' real form (every day of each
+  window, the tally computed from the rows, the rate line, h7_reader's own verdict line) and each safeguard has a
+  refusal test plus an auditor mutant; the H7 checks sit after the waiting/minimum branches; the missing-day
+  check covers days up to yesterday (the whole window from 12 Nov). A --preview on the real data passes them all.
+  h5f_pooled.py's preview-only crash on a zero free-inflation day is LEFT ALONE: the script is frozen byte-for-
+  byte (pressure test) and H5f is already recorded, so the writer never runs it again outside --preview.
+  **Automated, 17 Oct (Gabriel: "set up now so we dont have to think about it"):** volrec-licensed's daily run
+  writes the companion readings (describe.py intervals, the frozen H3 scorer, H7a on matched strikes) ONCE, the
+  first night both final readings are recorded, to licensed/reports/companions.txt, and sends a Pushover NOTICE.
+  One-off phone reminders (Claude app; no connectors): 19 Oct Cboe follow-up; 20 Oct Marc mentor ask + SCCUR;
+  22 Oct green week + early-close guard jobs; 30 Oct Goukasian fallback; 20 Nov verdicts in / companions / site
+  discussion; 23 Nov Bloomberg intraday pull; 1 Dec token renewal + cleanup. Also found: tools/h5f_pooled.py divides by zero on a zero free-inflation day (only reached in
   --preview; H5f is already recorded, so no registered number is affected) - guard it next session.
   **cron-job.org guard jobs, 16 Oct (Gabriel):** "volrec guard 15:00" and "volrec guard 15:20" (Mon-Fri, New
   York) enabled; test run returned 204 and reached GitHub (guard run 38962170586, judged "skip - after the

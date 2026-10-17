@@ -99,6 +99,19 @@ to OVX is +0.01 over 14 days (H5e's window, 10 days: +0.05, mean absolute 0.29, 
 "+0.45 unexplained" quoted above was mostly this reading error. H7b's 0.30 bar was set as twice 0.15;
 it stays 0.30. H7c stays descriptive, as registered.
 
+**3. 17 Oct 2026 - a COMPANION reading added BESIDE H7a; the registered reading, bars, window, minimum and
+estimator are untouched (Gabriel approved 16 Oct after a read-only review of the verdict code).** The free
+monthly file stops at +/-60% of spot (`surface.MONTHLY_BAND`), while the OPRA file holds every listed strike,
+and on every monthly day so far (9-16 Oct) Cboe's walk on the free quotes runs off the recorded edge with live
+bids still there. So the registered "free minus OPRA" gap also measures strike COVERAGE, not only quote
+quality; the review sized that at roughly -0.12 to +0.19 points on USO and up to +0.12 on GLD, against a 0.25
+bar. `tools/h7_reader.py --matched` prints, after the registered lines, the same replica on OPRA cut to the
+free file's (strike, type) pairs (`match_chain`) and flags the days where the walk ends at the free edge
+(`edge_limited`). It is reported beside the registered H7a after 12 Nov and never replaces it. The registered
+output was checked byte-identical before and after on the real data (only 16 Oct's newly published closes
+differ). Tests: `tools/test_h7.py` (22 cases); auditor mutant `h7-companion-leaks`. **Not an adjustment: no
+registered number can move.**
+
 *Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
 
 *Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*

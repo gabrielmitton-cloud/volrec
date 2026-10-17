@@ -415,7 +415,7 @@ ok(_t6.returncode == 0 and _n6f == 0 and _n6p >= 25,
 _t7 = _sp.run([sys.executable, str(R / "tools/test_h7.py")], capture_output=True, text=True)
 _n7f = sum(1 for _ln in _t7.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _n7p = sum(1 for _ln in _t7.stdout.splitlines() if _ln.strip().startswith("PASS"))
-ok(_t7.returncode == 0 and _n7f == 0 and _n7p >= 17, f"H7's reader tests pass ({_n7p} cases, {_n7f} failures)")
+ok(_t7.returncode == 0 and _n7f == 0 and _n7p >= 22, f"H7's reader tests pass ({_n7p} cases, {_n7f} failures)")
 # H8's instrument (BUILDING, not registered; 10 Oct 2026): arithmetic against hand-computed answers,
 # the equivalence test both ways, and one fund-day from files in Databento's own blank-bid form.
 _t8 = _sp.run([sys.executable, str(R / "tools/test_h8.py")], capture_output=True, text=True)
@@ -441,6 +441,14 @@ _tdesc = _sp.run([sys.executable, str(R / "tools/test_describe.py")], capture_ou
 _ndf = sum(1 for _ln in _tdesc.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _ndp = sum(1 for _ln in _tdesc.stdout.splitlines() if _ln.strip().startswith("PASS"))
 ok(_tdesc.returncode == 0 and _ndf == 0 and _ndp >= 28, f"the descriptive-statistics tests pass ({_ndp} cases, {_ndf} failures)")
+# The frozen H3 scorer (17 Oct 2026, before the reading of record; Gabriel approved 16 Oct).
+_th3 = _sp.run([sys.executable, str(R / "tools/test_h3_scorer.py")], capture_output=True, text=True)
+_nh3f = sum(1 for _ln in _th3.stdout.splitlines() if _ln.strip().startswith("FAIL"))
+_nh3p = sum(1 for _ln in _th3.stdout.splitlines() if _ln.strip().startswith("PASS"))
+_h3src = (R / "tools/h3_scorer.py").read_text()
+ok(_th3.returncode == 0 and _nh3f == 0 and _nh3p >= 16 and "H3A_BAR, ALPHA, BH_Q = 1.0, 0.05, 0.05" in _h3src
+   and 'THROUGH = "2026-11-11"' in _h3src,
+   f"the frozen H3 scorer passes its known-answer tests, with the registered bar 1.0, q 0.05 and window to 11 Nov ({_nh3p} cases)")
 _fls = _iu.spec_from_file_location("fetch_lab", R / "lab/fetch_lab.py")
 _flm = _iu.module_from_spec(_fls)
 _fls.loader.exec_module(_flm)
@@ -482,11 +490,39 @@ _first10 = [("2026-09-23", 53.24, 0.16, 1.31), ("2026-09-24", 54.45, -0.98, 1.31
             ("2026-09-29", 53.74, -0.82, 0.27), ("2026-09-30", 52.24, -0.05, 1.06), ("2026-10-01", 51.69, 0.21, 1.04),
             ("2026-10-02", 51.00, 0.46, 1.19), ("2026-10-05", 48.65, 0.21, 1.02), ("2026-10-06", 48.79, -0.03, 0.84),
             ("2026-10-07", 48.61, -0.69, 0.02)]          # the recorded first verdict's ten days
-_mf_canned = ("risk-free (DGS1MO): 3.910%\n-- H5e: USO ...\n   date ...\n"
-              + "".join(f"   {d}    {o:.2f}       50.00   {g1:+.2f}      50.00   {g2:+.2f}  yes\n" for d, o, g1, g2 in _first10)
-              + "   2026-11-11      n/a  (no OVX close yet, or too thin)\n"
-              + "   mean |gap| 0.90 against 0.5 (OVER); closer than registered on 2 of 10 days (NOT a majority)\n")
-_h7_canned = _o7 + "H7 waiting on: 2026-11-11 USO OPRA\n"
+# 17 Oct 2026: the canned outputs copy the readers' REAL form (memory: fixtures must copy the real data) -
+# every expected trading day of the window, the summary computed from those rows rather than typed, the
+# risk-free line, and h7_reader's own verdict line. The writer now refuses anything less (verdict-code
+# review safeguards 1-3).
+_win = _rv7.expected_days(_rv7.H5E_START, _rv7.H5E_END)
+_first = {d: (o, g1, g2) for d, o, g1, g2 in _first10}
+def _make_mf(skip=()):
+    """modelfree's H5e block in its real form; `skip` drops days entirely (and the tally with them)."""
+    rows_, counted_ = [], []
+    for d_ in _win:
+        if d_ in skip:
+            continue
+        if d_ == "2026-11-11":
+            rows_.append("   2026-11-11      n/a  (no OVX close yet, or too thin)\n")
+            continue
+        o_, g1_, g2_ = _first.get(d_, (50.00, 0.50, 1.00))
+        counted_.append((g1_, g2_))
+        rows_.append(f"   {d_}    {o_:.2f}       50.00   {g1_:+.2f}      50.00   {g2_:+.2f}  yes\n")
+    mae_ = sum(abs(g2) for _, g2 in counted_) / len(counted_)
+    clo_ = sum(abs(g2) < abs(g1) for g1, g2 in counted_)
+    tally_ = (f"   mean |gap| {mae_:.2f} against 0.5 ({'under' if mae_ < 0.5 else 'OVER'}); closer than registered "
+              f"on {clo_} of {len(counted_)} days ({'majority' if clo_ > len(counted_) / 2 else 'NOT a majority'})\n")
+    return "risk-free (DGS1MO): 3.910%\n-- H5e: USO ...\n   date ...\n" + "".join(rows_) + tally_, mae_
+_mf_canned, _mae_c = _make_mf()
+_hrows = []
+for _d in _rv7.expected_days(_rv7.H7_START_DAY, _rv7.H7_END_DAY):
+    for _sy, _fr in (("USO", 50.00), ("GLD", 22.00)):
+        if (_d, _sy) == ("2026-11-11", "USO"):
+            _hrows.append(f"{_d:<11}{_sy:<5}{_fr:8.2f}     n/a{_fr:8.2f}        n/a      +0.00  [35, 63]\n")
+        else:
+            _hrows.append(f"{_d:<11}{_sy:<5}{_fr:8.2f}{_fr - 0.10:8.2f}{_fr:8.2f}{0.10:+11.2f}{0.00:+11.2f}  [35, 63]\n")
+_h7_canned = ("H7 - the free feed through Cboe's own rules, 2026-10-09 to 2026-11-11; r = 3.910% (DGS1MO)\n\n"
+              + "".join(_hrows) + "\n" + _o7 + "H7a HOLDS; H7b FAILS\nH7 waiting on: 2026-11-11 USO OPRA\n")
 _seen_args = []
 def _fake_run(args, _s=_seen_args):
     _s.append(args)
@@ -508,13 +544,35 @@ ok("H5e final: waiting for the OVX close on 2026-11-11" in _d12 and "H7: waiting
 ok("FINAL reading" in _d19 and "Still missing at the 2026-11-19 deadline, so not counted: 2026-11-11 USO OPRA" in _d19
    and any(a_[-2:] == ["--through", "2026-11-11"] for a_ in _seen_args),
    "at the deadline both are written, naming what is missing; the H5e final reads modelfree --through 11 Nov")
-_mf_bad = _mf_canned.replace("mean |gap| 0.90", "mean |gap| 0.70")
+_mf_bad = _mf_canned.replace(f"mean |gap| {_mae_c:.2f}", f"mean |gap| {_mae_c - 0.20:.2f}")
 _rv7.run = lambda args: _h7_canned if "h7_reader" in args[0] else _mf_bad
 try:
     _verdict_dry("2026-11-19"); _xc = False
 except SystemExit as _e7:
     _xc = "disagree" in str(_e7)
 ok(_xc, "the H5e FINAL is cross-checked against modelfree's own tally and refused on disagreement")
+# 17 Oct 2026 (verdict-code review, Gabriel approved 16 Oct): safeguards 1-3, each must REFUSE.
+def _refuses(mf, h7, needle):
+    _rv7.run = lambda args: h7 if "h7_reader" in args[0] else mf
+    try:
+        _verdict_dry("2026-11-19")
+        return False
+    except SystemExit as _e:
+        return needle in str(_e)
+_own_flip = _mf_canned.replace("(OVER); closer", "(under); closer")
+_one_gone = _make_mf(skip={"2026-10-21"})[0]     # a day gone AND the tally consistent without it
+_h7_flip = _h7_canned.replace("H7a HOLDS; H7b FAILS", "H7a FAILS; H7b FAILS")
+_h7_rate = _h7_canned.replace("; r = 3.910% (DGS1MO)", "; r = 0.000% (DGS1MO)")
+_h7_gone = "".join(ln for ln in _h7_canned.splitlines(True) if not ln.startswith("2026-10-21 GLD"))
+ok(_refuses(_own_flip, _h7_canned, "full-precision judgement differs")
+   and _refuses(_mf_canned.replace("3.910%", "0.000%"), _h7_canned, "not the frozen")
+   and _refuses(_one_gone, _h7_canned, "printed no row at all for 2026-10-21"),
+   "the writer refuses H5e on a full-precision judgement mismatch, a non-frozen rate, or a silently missing day")
+ok(_refuses(_mf_canned, _h7_flip, "differ from h7_reader's own")
+   and _refuses(_mf_canned, _h7_rate, "not the frozen")
+   and _refuses(_mf_canned, _h7_gone, "2026-10-21 GLD"),
+   "the writer refuses H7 on a mismatch with h7_reader's own verdict, a non-frozen rate, or a silently missing day")
+_rv7.run = _fake_run
 
 # 9 Oct 2026 (PROTOCOL.md): every hypothesis registered from 10 Oct carries the three sections the
 # full audit showed were missing in practice - instrument readiness, the measured noise floor, and the

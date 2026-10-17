@@ -67,16 +67,45 @@ def replica(chains, exps, when, R):
     return O.blend30(m1, s1, m2, s2)
 
 
+def match_chain(opra_chain, free_chain):
+    """The OPRA chain cut to the (strike, type) pairs the free file holds, expiry by expiry. Added 17 Oct
+    2026 for the COMPANION reading (verdict-code review, Gabriel approved): the free monthly file stops at
+    +/-60% of spot while OPRA lists every strike, so the registered free-minus-OPRA gap also measures
+    coverage. On matched strikes the two replicas integrate the same contracts. Pure."""
+    return {e: {k: q for k, q in opra_chain.get(e, {}).items() if k in free_chain.get(e, {})}
+            for e in opra_chain}
+
+
+def edge_limited(free_chain):
+    """Expiries where Cboe's walk would run off the free file's recorded edge with live bids still there:
+    the highest call or the lowest put carries a bid above zero. Pure."""
+    out = []
+    for e, q in sorted(free_chain.items()):
+        calls = sorted(k for k, t in q if t == "C")
+        puts = sorted(k for k, t in q if t == "P")
+        hi = q.get((calls[-1], "C")) if calls else None
+        lo = q.get((puts[0], "P")) if puts else None
+        if (hi and hi[0] and hi[0] > 0) or (lo and lo[0] and lo[0] > 0):
+            out.append(e)
+    return out
+
+
 def day_reading(day, symbol, R, opra_dir):
     rows = ore.monthly_recorded(day, symbol)
     when = ore.snapshot_minute(rows)
     if not rows or not when:
         return None
     exps = sorted({date.fromisoformat(r["expiration"]) for r in rows})
-    free = replica(quotes_from_rows(rows), exps, when, R)
+    fchain = quotes_from_rows(rows)
+    free = replica(fchain, exps, when, R)
     path = Path(opra_dir) / f"OPRA_M_{symbol}_{day}.csv"
-    opra = replica(O.chain_at(ore.load_opra(path), when, symbol), exps, when, R) if path.exists() else None
-    return {"day": day, "symbol": symbol, "free": free, "opra": opra, "legs": [(e - when.date()).days for e in exps]}
+    ochain = O.chain_at(ore.load_opra(path), when, symbol) if path.exists() else None
+    opra = replica(ochain, exps, when, R) if ochain is not None else None
+    # The companion (17 Oct): the same replica on OPRA cut to the free file's strikes. The registered
+    # reading ("opra") is computed exactly as before and never reads this.
+    opra_m = replica(match_chain(ochain, fchain), exps, when, R) if ochain is not None else None
+    return {"day": day, "symbol": symbol, "free": free, "opra": opra, "legs": [(e - when.date()).days for e in exps],
+            "opra_matched": opra_m, "edge": [(e - when.date()).days for e in edge_limited(fchain) if e in exps]}
 
 
 def summarise(readings, closes):
@@ -146,7 +175,28 @@ def main():
     h7a, h7b = verdicts(s)
     print(f"H7a {h7a or f'NOT YET (minimum {MIN_DAYS} days each)'}; H7b {h7b or f'NOT YET (minimum {MIN_DAYS} days)'}")
     print(f"H7 waiting on: {', '.join(waiting) if waiting else 'nothing'}")
+    if "--matched" in sys.argv:
+        print_companion(readings)
     print(f"\n{ore.ATTRIBUTION}")
+
+
+def print_companion(readings):
+    """The COMPANION reading (17 Oct 2026): beside, never instead of, the registered H7a above."""
+    print("\n-- COMPANION (dated 17 Oct 2026; NOT the registered H7a): OPRA cut to the free file's strikes")
+    print(f"{'date':<11}{'sym':<5}{'free':>8}{'OPRA':>8}{'matched':>9}{'free-matched':>14}  walk ends at the free edge")
+    for x in readings:
+        f = lambda v: f"{v:8.2f}" if v is not None else "     n/a"   # noqa: E731
+        dm = (f"{x['free'] - x['opra_matched']:+14.2f}" if x["free"] is not None and x.get("opra_matched") is not None
+              else "           n/a")
+        print(f"{x['day']:<11}{x['symbol']:<5}{f(x['free'])}{f(x['opra'])} {f(x.get('opra_matched'))}{dm}  "
+              f"{'legs ' + str(x['edge']) if x.get('edge') else '-'}")
+    for sym in INDEX:
+        rs = [x for x in readings if x["symbol"] == sym and x["free"] is not None and x.get("opra_matched") is not None]
+        m = sum(abs(x["free"] - x["opra_matched"]) for x in rs) / len(rs) if rs else None
+        e = sum(1 for x in rs if x.get("edge"))
+        print(f"companion H7a {sym}: n={len(rs)} mean |free - OPRA on matched strikes| "
+              f"{'n/a' if m is None else f'{m:.3f}'} (registered bar {BAR_A}, for comparison only); "
+              f"walk ran off the free edge on {e} of {len(rs)} days")
 
 
 if __name__ == "__main__":

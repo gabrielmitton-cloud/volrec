@@ -37,6 +37,14 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "tools"))
+import panel_health as _ph                          # noqa: E402  (stdlib only: the one holiday list)
+
+# 16 Oct 2026 (verdict-code review, Gabriel approved): the writer REFUSES - never guesses - when
+# (1) its verdict disagrees with the reader's own full-precision verdict, (2) the risk-free rate is not the
+# frozen one, or (3) an expected trading day is missing from the reader's rows. Refusing only ever makes the
+# writer more careful; no bar, window or verdict rule changes.
+FROZEN_RATE_PCT = 3.910                              # tools/seed_frozen_rate.py: DGS1MO 3.91 (10 Sep 2026)
 H5 = ROOT / "hypotheses" / "2026-09-19-h5-wing-quote-quality.md"
 HANDOFF = ROOT / "HANDOFF.md"
 DB_CREDIT = "*Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*"
@@ -51,6 +59,7 @@ MARK_H5E_FINAL = "**H5e, FINAL reading"
 # H7 (registered 8 Oct 2026): read once over 9 Oct - 11 Nov, from tools/h7_reader.py.
 H7 = ROOT / "hypotheses" / "2026-10-08-h7-free-feed-cboe-replica.md"
 H7_DUE, H7_MIN_DAYS, H7_BAR_A, H7_BAR_B = "2026-11-12", 10, 0.25, 0.30
+H7_START_DAY, H7_END_DAY = "2026-10-09", "2026-11-11"     # tools/h7_reader.py's window (checked by the pressure test)
 MARK_H7 = "**H7, reading over 9 Oct - 11 Nov 2026"
 # The final readings (H5e FINAL, H7) are written once and never rewritten, so they wait until every
 # day in their window has its data (9 Oct 2026): Databento serves day D's OPRA about a day later and
@@ -151,6 +160,13 @@ def crosscheck(out, sc):
         return m.group(0)
     if (mf < H5E_BAR) != sc["under"]:
         return f"{m.group(0)} - rounding straddles the bar; read it by hand"
+    own = re.search(r"mean \|gap\| [\d.]+ against 0\.5 \((under|OVER)\); closer than registered on \d+ of \d+ days "
+                    r"\((majority|NOT a majority)\)", out)
+    if not own:
+        return "modelfree printed no full-precision judgement (under/OVER, majority) to check against"
+    if (own.group(1) == "under") != sc["under"] or (own.group(2) == "majority") != sc["majority"]:
+        return (f"{m.group(0)} - modelfree's own full-precision judgement differs from this parser's "
+                f"(rounding at the bar); read it by hand")
     sc["mae"] = mf
     sc["near"] = round(abs(mf - H5E_BAR), 6) <= 0.05 or abs(sc["closer"] - sc["n"] / 2) <= 1
     return None
@@ -238,6 +254,47 @@ def parse_h7(out):
             raise SystemExit(f"h7_reader output lacks the {sym} {part} line - refusing to write")
         v[f"{sym}_{part}"] = (int(m.group(1)), None if m.group(2) == "n/a" else float(m.group(2)))
     return v
+
+
+def h7_reader_verdicts(out):
+    """h7_reader's OWN full-precision verdict line -> (H7a, H7b), None for NOT YET. Raises if absent."""
+    m = re.search(r"^H7a (HOLDS|FAILS|NOT YET[^;]*); H7b (HOLDS|FAILS|NOT YET.*)$", out, re.M)
+    if not m:
+        raise SystemExit("h7_reader printed no verdict line - refusing to write")
+    f = lambda x: x if x in ("HOLDS", "FAILS") else None   # noqa: E731
+    return f(m.group(1)), f(m.group(2).strip())
+
+
+def rate_ok(rf_text):
+    """True only for the frozen risk-free rate (a missing FRED cache silently gives r = 0)."""
+    try:
+        return abs(float(str(rf_text).rstrip("%")) - FROZEN_RATE_PCT) < 0.0005
+    except ValueError:
+        return False
+
+
+def expected_days(start, end):
+    """Trading days in [start, end] that the reader must print: weekdays, not holidays, not accepted gaps,
+    not the after-close days modelfree drops. ISO strings."""
+    from datetime import timedelta as _dl
+    out, d, e = [], date.fromisoformat(start), date.fromisoformat(end)
+    while d <= e:
+        if (d.weekday() < 5 and d not in _ph.US_MARKET_HOLIDAYS and d not in _ph.ACCEPTED_GAPS
+                and d not in _ph.AFTER_CLOSE_DAYS):
+            out.append(d.isoformat())
+        d += _dl(days=1)
+    return out
+
+
+def missing_days(printed, start, end):
+    """Expected trading days the reader did not print at all (counted, n/a and dropped all count as printed)."""
+    have = set(printed)
+    return [d for d in expected_days(start, end) if d not in have]
+
+
+def h7_printed(out):
+    """(date, symbol) pairs h7_reader printed a per-day row for."""
+    return set(re.findall(r"^(\d{4}-\d{2}-\d{2})\s+(USO|GLD)\s", out, re.M))
 
 
 def h7_verdicts(v):
@@ -369,6 +426,16 @@ def main():
         bad = crosscheck(out, sc)                           # against modelfree's own tally
         if bad:
             raise SystemExit(f"{label}: this parser and modelfree disagree - refusing to write ({bad})")
+        if not rate_ok(rf):
+            raise SystemExit(f"{label}: risk-free rate {rf}% is not the frozen {FROZEN_RATE_PCT:.3f}% - refusing "
+                             f"to write (is data/fred_cache.json missing? run tools/seed_frozen_rate.py)")
+        through = (date.fromordinal(today.toordinal() - 1)).isoformat()   # days up to yesterday: from 12 Nov
+                                                                           # that is the whole window
+        gone = missing_days([r[0] for r in rows] + list(na) + list(dropped_days(out)), H5E_START,
+                            min(through, H5E_END))
+        if gone:
+            raise SystemExit(f"{label}: modelfree printed no row at all for {', '.join(gone)} - refusing to write "
+                             f"(a day dropped silently; add it to panel_health.ACCEPTED_GAPS with the reason if lost)")
         fv = None
         if final:
             fm = re.search(re.escape(MARK_H5E_FIRST) + r".*?\n\n- \*\*(HOLDS|FAILS)\*\*", h5, re.S)
@@ -406,6 +473,19 @@ def main():
             notes.append(f"H7: below its minimum (USO {v['USO_a'][0]}, GLD {v['GLD_a'][0]} days for H7a; "
                          f"{v['GLD_b'][0]} for H7b; need {H7_MIN_DAYS}) - not written")
         else:
+            if (va, vb) != h7_reader_verdicts(h7out):
+                raise SystemExit(f"H7: this writer's verdicts {(va, vb)} differ from h7_reader's own full-precision "
+                                 f"{h7_reader_verdicts(h7out)} (rounding at the bar) - refusing to write; read it by hand")
+            r7 = re.search(r"; r = ([\d.]+)% \(DGS1MO\)", h7out)
+            if not r7 or not rate_ok(r7.group(1)):
+                raise SystemExit(f"H7: risk-free rate {r7.group(1) if r7 else '?'}% is not the frozen "
+                                 f"{FROZEN_RATE_PCT:.3f}% - refusing to write")
+            h7_through = min(H7_END_DAY, (date.fromordinal(today.toordinal() - 1)).isoformat())
+            h7_gone = [f"{d} {sym}" for d in expected_days(H7_START_DAY, h7_through) for sym in ("USO", "GLD")
+                       if (d, sym) not in h7_printed(h7out)]
+            if h7_gone and not a.preview:
+                raise SystemExit(f"H7: h7_reader printed no row for {', '.join(h7_gone)} - refusing to write "
+                                 f"(a day dropped silently)")
             blk = block_h7(v, today, waiting)
             if a.preview or a.dry_run:
                 print(("PREVIEW (not due, not written)\n" if str(today) < H7_DUE else "DUE\n") + blk + "\n")
