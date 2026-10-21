@@ -148,6 +148,28 @@ class H7Reading(unittest.TestCase):
                 bp.h7_reading(broken)
 
 
+class Headline(unittest.TestCase):
+    """Gabriel's 21 Oct rule, decided before H7's verdict, on blocks made by record_verdict's own writer."""
+    def h7(self, uso_a, gld_a, gld_b, n=22):
+        return bp.h7_reading(rv.append_result(base_h7(), rv.block_h7(h7_v(uso_a, gld_a, gld_b, n=n), READ_ON)))
+
+    def test_no_verdict_keeps_the_headline(self):
+        self.assertEqual(bp.headline({"verdict": "HOLDS"}, None), bp.HEADLINE)
+
+    def test_h7_holds_keeps_the_headline(self):
+        self.assertEqual(bp.headline({"verdict": "HOLDS"}, self.h7(0.112, 0.087, 0.214)), bp.HEADLINE)
+
+    def test_either_part_failing_switches(self):
+        for v in ((0.40, 0.087, 0.214), (0.10, 0.20, 0.31), (0.412, 0.087, 0.355)):
+            self.assertEqual(bp.headline({"verdict": "HOLDS"}, self.h7(*v)), bp.HEADLINE_IF_H7_FAILS)
+
+    def test_h3_failing_too_uses_the_cautious_one(self):
+        self.assertEqual(bp.headline({"verdict": "FAILS"}, self.h7(0.10, 0.20, 0.31)), bp.HEADLINE_IF_H7_AND_H3_FAIL)
+
+    def test_below_minimum_is_not_a_failure(self):
+        self.assertEqual(bp.headline({"verdict": "HOLDS"}, self.h7(0.10, None, 0.20, n=6)), bp.HEADLINE)
+
+
 class H3Box(unittest.TestCase):
     def report(self):
         import h3_scorer as hs

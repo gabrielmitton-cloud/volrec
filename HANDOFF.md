@@ -2896,7 +2896,14 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   DESIGN-MEMO-BAIER.md (PDF on Gabriel's Desktop, Mitton-research-summary-Baier.pdf): the Goukasian memo
   retitled, the mentor ask removed, wording tightened (bars dated before each test, not before all data;
   H8's figure labelled a pilot; n_eff/intervals/Holm described as planned, not done), three economist's
-  questions. Credit him on the poster only if he reviews it and agrees to be named.
+  questions. Credit him on the poster only if he reviews it and agrees to be named. Gabriel sent it 21 Oct (the copy
+  before a one-word fix: it says the snapshot is ~90 minutes before the close; the outline says ~80 - harmless).
+  (10) **Poster decisions, Gabriel 21 Oct, BEFORE any H5e FINAL / H7 verdict:** the AI-use line is approved
+  ("Code written with the help of an AI coding assistant (Claude Code); the research question, decisions and
+  interpretation are the author's."). **Headline fallback rule:** if H7's block is written and H7a or H7b FAILS,
+  the headline becomes "Widen the strikes, and free data lands within a point of Cboe's index." (if H3 holds;
+  if H3 failed too, "So far, free data loses more to the method than to the quotes."). Coded in
+  `poster/build_poster.py` (`headline()`), 5 tests; a NOT READ (below minimum) part is not a failure.
 
 ### Prompt for the next session
 

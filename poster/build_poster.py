@@ -34,8 +34,14 @@ from record_verdict import MARK_H5E_FINAL, MARK_H7  # noqa: E402  (the marks the
 HEADLINE = ("The free quotes are close.", "Most of the error is in the recipe.")
 # HEADLINE = ("The free quotes aren't the problem.", "The recipe is.")     # the first draft's headline
 
+# The fallback, decided by Gabriel on 21 Oct 2026, BEFORE H7's verdict: if H7 is written and either part
+# FAILS, the headline no longer claims the split and says only what H3 supports. If H3 had failed too
+# (it reads 0.45 against 1.0 on 21 Oct), the most cautious option of the research report is used.
+HEADLINE_IF_H7_FAILS = ("Widen the strikes,", "and free data lands within a point of Cboe's index.")
+HEADLINE_IF_H7_AND_H3_FAIL = ("So far, free data loses more", "to the method than to the quotes.")
+
 # Gabriel: set True once you approve the AI-use sentence below; until then it prints marked DRAFT.
-AI_LINE_APPROVED = False
+AI_LINE_APPROVED = True   # approved by Gabriel, 21 Oct 2026
 AI_LINE = ("Code written with the help of an AI coding assistant (Claude Code); the research question, "
            "decisions and interpretation are the author's.")
 
@@ -132,6 +138,13 @@ def h7_reading(text):
     if not (a and bb):
         raise Unrecognised("H7 block found but not recognised - the poster will not guess.")
     return {"a": a[1], "uso": a[2], "uso_n": a[3], "gld": a[4], "gld_n": a[5], "b": bb[1], "gvz": bb[2], "n": bb[3]}
+
+
+def headline(h3, h7):
+    """The decided headline, or its pre-decided fallback once H7's verdict exists and fails."""
+    if h7 is None or not any(h7[k].startswith("FAILS") for k in ("a", "b")):
+        return HEADLINE
+    return HEADLINE_IF_H7_FAILS if h3["verdict"] == "HOLDS" else HEADLINE_IF_H7_AND_H3_FAIL
 
 
 # ---------------- table cells ----------------
@@ -274,6 +287,7 @@ def build(today=None):
     h7 = h7_reading(H7_FILE.read_text())
     confirmatory, side = test_rows(h3, h5e, h7, today)
     record = today > H3_RECORD_DAY
+    head = headline(h3, h7)
 
     stats = "".join(f'<div class="q"><b>{esc(n)}</b><span>{esc(t)}</span></div>' for n, t in QUOTE_STATS)
     ai = (f'<p class="ai">{esc(AI_LINE)}</p>' if AI_LINE_APPROVED else
@@ -327,7 +341,7 @@ def build(today=None):
 
 <section class="center">
   <div class="kicker">On the evidence so far</div>
-  <div class="big">{esc(HEADLINE[0])} <em>{esc(HEADLINE[1])}</em></div>
+  <div class="big">{esc(head[0])} <em>{esc(head[1])}</em></div>
   <p class="sub">Free quotes sit a median of a third to a half of a bid-ask spread (the gap between buying and
   selling prices) from professional feeds; wider strikes cut the gap to Cboe's index from 3.97 to 0.59 points
   (one calibration day).</p>
