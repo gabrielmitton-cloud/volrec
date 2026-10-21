@@ -133,7 +133,8 @@ customer margin with daily marking (Santa-Clara & Saretto 2009's mechanic) and f
   on the equity funds, while the premium swings by several points. The widening is *consistent with*
   dealer-inventory models of quoting - Avellaneda & Stoikov (2008, Quantitative Finance 8(3), 217-224,
   doi:10.1080/14697680701381228), where the market maker's spread carries a term that grows with the
-  variance of the price - an interpretation, not a test of their model (added 21 Oct 2026; read in full).
+  variance of the price (their eq. 30, the approximate solution: gamma sigma^2 (T - t) plus an order-arrival
+  term) - an interpretation, not a test of their model (added 21 Oct 2026; equation checked in Gabriel's PDF).
 - The strip-versus-ATM cost ratio (2.1-3.4x, P3 holds on 5 of 5) - directly relevant to section 5,
   since the registered estimator is a strip.
 - Predictions as recorded: P1 fails, P2 holds as written, P3 holds, P4 fails, P5 holds among funds
