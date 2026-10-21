@@ -2861,6 +2861,14 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   `volrec-trigger` (expires 29 Dec), paste it into every job, then update `TRIGGER_TOKEN_EXPIRES` in
   `pressure_test.py` (WARN from 1 Dec, FAIL - an email - from 22 Dec).
 - **February 2027:** the write-up, TimesFM's FAIL included.
+- **Wed 21 Oct (Gabriel):** (1) **SCCUR ACCEPTED.** Register by **Fri 23 Oct** for the $90 early rate (Gabriel
+  pays; $100 to Sat 8 Nov, the presenters' hard deadline). Format (poster or talk) is in the acceptance email -
+  Gabriel forwards it. Per Decision (3), 16 Oct: a poster ready ~6 Nov with script-filled result boxes; the
+  verdict boxes fill only after 12-19 Nov, so the poster prints with them the weekend of 20-21 Nov or carries
+  "registered, reading due 19 Nov". (2) **Goukasian declined** mentoring. Marc Vinyard's 15 Oct offer is the
+  fallback; email to Marc drafted 21 Oct. The 30 Oct Goukasian reminder (`trig_018gPmAWkwUPGK94zuWNmjJw`)
+  disabled. (3) **Cboe follow-up sent** (19-21 Oct; the 14 Oct draft, its index list pointed back to the
+  original eleven). Still no answer; fallback stays FRED's reprints.
 
 ### Prompt for the next session
 
