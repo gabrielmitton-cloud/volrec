@@ -2868,7 +2868,12 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   "registered, reading due 19 Nov". (2) **Goukasian declined** mentoring. Marc Vinyard's 15 Oct offer is the
   fallback; email to Marc drafted 21 Oct. The 30 Oct Goukasian reminder (`trig_018gPmAWkwUPGK94zuWNmjJw`)
   disabled. (3) **Cboe follow-up sent** (19-21 Oct; the 14 Oct draft, its index list pointed back to the
-  original eleven). Still no answer; fallback stays FRED's reprints.
+  original eleven). Still no answer; fallback stays FRED's reprints. (4) **Prof. Scott Baier** (Clemson,
+  economics; sbaier@g.clemson.edu) emailed 21 Oct (sent). Gabriel met him at Vanderbilt's Economics for Leaders;
+  he had offered letters of recommendation. Asked to read a summary or the February draft as an outside reader
+  ("where an economist would push back") and, later, a letter. His role: design and inference review, not the
+  options math; he may see public material and aggregates only, never licensed raw files. If he replies, send
+  a retitled copy of DESIGN-MEMO-GOUKASIAN.md. Marc stays the SCCUR mentor.
 
 ### Prompt for the next session
 
