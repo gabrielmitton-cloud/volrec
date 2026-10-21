@@ -2908,6 +2908,8 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   cboe.com/us/indices/accessing-index-data names for index data licensing (phone backup: Multi-Asset Solutions
   (312) 786-7764). Same request (non-commercial, aggregates only, credited) plus SCCUR and the 2016-2026 study.
   If no answer by ~13 Nov: the FRED-reprint fallback (credit "Cboe, via FRED").
+  (12) **Marc sent the poster draft (21 Oct)** with: confirm the credit wording, a 20-30 min meeting in the
+  next two weeks, and whether Pepperdine funds or prints undergraduate research posters.
 
 ### Prompt for the next session
 
