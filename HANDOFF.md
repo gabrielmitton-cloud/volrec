@@ -2904,6 +2904,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   the headline becomes "Widen the strikes, and free data lands within a point of Cboe's index." (if H3 holds;
   if H3 failed too, "So far, free data loses more to the method than to the quotes."). Coded in
   `poster/build_poster.py` (`headline()`), 5 tests; a NOT READ (below minimum) part is not a failure.
+  (11) **Cboe asked a third way (21 Oct, sent):** marketdata@cboe.com, cc permissions@cboe.com - the address
+  cboe.com/us/indices/accessing-index-data names for index data licensing (phone backup: Multi-Asset Solutions
+  (312) 786-7764). Same request (non-commercial, aggregates only, credited) plus SCCUR and the 2016-2026 study.
+  If no answer by ~13 Nov: the FRED-reprint fallback (credit "Cboe, via FRED").
 
 ### Prompt for the next session
 
