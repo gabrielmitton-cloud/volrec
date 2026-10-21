@@ -2879,6 +2879,24 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   title "What Does Free Options Data Cost? Measuring a Retail-Grade Feed Against Cboe's Volatility Indices";
   SDSU, Sat 21 Nov; no reviewer comments; format (poster or oral) NOT stated - check Whova; presenter schedule
   after 8 Nov; questions to 2026sccur@sdsu.edu.
+  (7) **Marc Vinyard said YES (21 Oct): he is the project's mentor** (poster credit: "Mentor: Marc Vinyard,
+  Pepperdine University Libraries"). **Poster begun 21 Oct:** `poster/build_poster.py` (48x36 in landscape,
+  Better Poster layout; SCCUR limit 56x42, taped to boards). Frozen figures copied with their sources; H3's box
+  read live from `tools/h3_scorer.py`; H5e FINAL and H7 boxes parse the blocks `record_verdict.py` writes and
+  say "reading due 12-19 Nov" until then (never a preview). Gabriel: headline kept for now, no logo, credits
+  instead; a research agent then a design/build agent revise it. Print target Fri 20 Nov.
+  (8) **SCCUR Resource Guide (PDF, updated 16 Oct; Gabriel's copy in ~/Downloads):** posters max 56x42 in, tape
+  provided, stand at the poster the whole 75 min (10 min setup before, 5 min load-out); format fixed at
+  submission (confirm "poster" in Whova); AI policy: acknowledge AI-generated material and be able to explain
+  every method without AI; check-in needs the QR code from the registration email (early check-in Fri 20 Nov
+  10:30-5, Student Union courtyard); parking in P3/P4 is included but the car must be registered in advance;
+  conference hotel rate at the Marriott Mission Valley ($189) until 30 Oct (Sheraton's ended 20 Oct); poster
+  schedule after 8 Nov.
+  (9) **Prof. Scott Baier said YES (21 Oct)** to being an outside reader. Summary written for him:
+  DESIGN-MEMO-BAIER.md (PDF on Gabriel's Desktop, Mitton-research-summary-Baier.pdf): the Goukasian memo
+  retitled, the mentor ask removed, wording tightened (bars dated before each test, not before all data;
+  H8's figure labelled a pilot; n_eff/intervals/Holm described as planned, not done), three economist's
+  questions. Credit him on the poster only if he reviews it and agrees to be named.
 
 ### Prompt for the next session
 
