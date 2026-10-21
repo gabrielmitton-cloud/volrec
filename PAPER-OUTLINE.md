@@ -130,7 +130,10 @@ customer margin with daily marking (Santa-Clara & Saretto 2009's mechanic) and f
 - The tail: the COVID trade cost 26-35% of the account in one month at the modest size; ten-year
   ruin odds 2-35% (stationary bootstrap, conditional on the sample's crashes).
 - The Break-Even VIX: none reliable - costs roughly double in stress but stay hundredths of a point
-  on the equity funds, while the premium swings by several points.
+  on the equity funds, while the premium swings by several points. The widening is *consistent with*
+  dealer-inventory models of quoting - Avellaneda & Stoikov (2008, Quantitative Finance 8(3), 217-224,
+  doi:10.1080/14697680701381228), where the market maker's spread carries a term that grows with the
+  variance of the price - an interpretation, not a test of their model (added 21 Oct 2026; read in full).
 - The strip-versus-ATM cost ratio (2.1-3.4x, P3 holds on 5 of 5) - directly relevant to section 5,
   since the registered estimator is a strip.
 - Predictions as recorded: P1 fails, P2 holds as written, P3 holds, P4 fails, P5 holds among funds
