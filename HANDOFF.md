@@ -2873,7 +2873,8 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   he had offered letters of recommendation. Asked to read a summary or the February draft as an outside reader
   ("where an economist would push back") and, later, a letter. His role: design and inference review, not the
   options math; he may see public material and aggregates only, never licensed raw files. If he replies, send
-  a retitled copy of DESIGN-MEMO-GOUKASIAN.md. Marc stays the SCCUR mentor.
+  a retitled copy of DESIGN-MEMO-GOUKASIAN.md. Marc stays the SCCUR mentor. (5) **Marc asked 21 Oct (sent)**
+  to be faculty mentor, taking up his 15 Oct offer; awaiting his reply.
 
 ### Prompt for the next session
 
