@@ -2875,6 +2875,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   options math; he may see public material and aggregates only, never licensed raw files. If he replies, send
   a retitled copy of DESIGN-MEMO-GOUKASIAN.md. Marc stays the SCCUR mentor. (5) **Marc asked 21 Oct (sent)**
   to be faculty mentor, taking up his 15 Oct offer; awaiting his reply.
+  (6) **SCCUR registered** (Gabriel, 21 Oct, early rate). Acceptance email (Hsien-Chang Lin for the committee):
+  title "What Does Free Options Data Cost? Measuring a Retail-Grade Feed Against Cboe's Volatility Indices";
+  SDSU, Sat 21 Nov; no reviewer comments; format (poster or oral) NOT stated - check Whova; presenter schedule
+  after 8 Nov; questions to 2026sccur@sdsu.edu.
 
 ### Prompt for the next session
 
