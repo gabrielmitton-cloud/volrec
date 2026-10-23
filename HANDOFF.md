@@ -2916,6 +2916,8 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   that runs `record.py` from `~/volrec` with Alpaca keys written into it in plain text. `~/volrec` no longer
   exists, so it fails at `cd` and does nothing - but the keys sit in the crontab. Raised with Gabriel: remove the
   line, and rotate those keys if they are still the live ones (his decision; never edited without him).
+  **Removed 23 Oct on Gabriel's OK** (it was the crontab's only line; no copy kept, so the keys are not moved
+  into a file). Key rotation stays Gabriel's call.
 
 ### Prompt for the next session
 
