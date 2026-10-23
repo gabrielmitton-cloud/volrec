@@ -1899,7 +1899,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | cloud routines | 7 one-off reminders (19, 20, 22, 30 Oct; 20 Nov, 23 Nov, 1 Dec), the 13 Nov verdict check, the Monday auditor and the Wednesday watchdog - all enabled, no connectors attached |
 | OSF | H5e and H7 registered and live, https://osf.io/z5gfu (10 Oct) |
 | pre-push hook | installed (`core.hooksPath tools/hooks`); every push runs the pressure test |
-| iMessage (launchd `com.volrec.daily`) | still installed; retire it after the 22 Oct check of a week of green alerts |
+| iMessage (launchd `com.volrec.daily`) | **retired 23 Oct** (a green Pushover alert every weekday 16-22 Oct, Gabriel); unloaded, plist kept at ~/Documents/volrec-retired/ |
 
 ### What runs unattended (UTC; weekdays unless noted) - SESSION-START.md carries the same table
 
@@ -1914,7 +1914,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | `volrec-licensed` daily.yml (private) | 23:05 and 03:05 UTC | OPRA fetch, compare, verdicts on their dates (fixed wording), companions + the independent re-check once after both finals; Pushover NOTICE/YELLOW; RED if the repo is ever public |
 | auditor routine | Mondays 16:30 UTC | `tools/audit.py` + doc drift; notifies only on a problem |
 | watchdog routine | Wednesdays 16:13 UTC | notifies only when something is wrong |
-| launchd `com.volrec.daily` (this Mac) | 13:30 Pacific | texts the verdict by iMessage (to be retired) |
+| ~~launchd `com.volrec.daily` (this Mac)~~ | - | RETIRED 23 Oct; Pushover carries the daily alert (`tools/alert.py`) |
 
 ### Where each hypothesis stands
 
@@ -2910,6 +2910,12 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   If no answer by ~13 Nov: the FRED-reprint fallback (credit "Cboe, via FRED").
   (12) **Marc sent the poster draft (21 Oct)** with: confirm the credit wording, a 20-30 min meeting in the
   next two weeks, and whether Pepperdine funds or prints undergraduate research posters.
+- **Fri 23 Oct:** **the Mac iMessage is RETIRED** (Gabriel: a green Pushover alert arrived every weekday). launchd
+  `com.volrec.daily` unloaded; its plist moved (not deleted) to ~/Documents/volrec-retired/. `tools/notify.py`
+  stays in the repo, unused. **Found while doing it:** Gabriel's crontab still holds an OLD weekday 08:30 line
+  that runs `record.py` from `~/volrec` with Alpaca keys written into it in plain text. `~/volrec` no longer
+  exists, so it fails at `cd` and does nothing - but the keys sit in the crontab. Raised with Gabriel: remove the
+  line, and rotate those keys if they are still the live ones (his decision; never edited without him).
 
 ### Prompt for the next session
 

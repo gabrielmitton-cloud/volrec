@@ -46,7 +46,7 @@ session's job is to read results, answer a question, or do one bounded thing.
 | healthchecks.io (outside GitHub, 25 Sep; Pushover since 15 Oct) | expects pings from freshness, health and volrec-licensed | pages Gabriel if one of those jobs never runs at all |
 | `freshness.yml` | 20:00 and 23:00 daily (GitHub runs both 2-5 h late) | installs nothing, on purpose; emails on a red X; no phone alert (health sends it) |
 | `health.yml` | 23:37 | the full daily check; emails on any FAIL or crash |
-| launchd `com.volrec.daily` (this Mac, once installed) | 13:30 Pacific | texts the verdict by iMessage |
+| ~~launchd `com.volrec.daily`~~ | - | retired 23 Oct 2026; Pushover (`tools/alert.py`) carries the daily alert |
 | `volrec-licensed` daily.yml (private repo) | 23:05 UTC | OPRA fetch (USO/TSLA wide days, H7's monthly legs, H8's eight funds) + registered verdicts; opens an issue there |
 | auditor routine (Claude, cloud) | Mondays 16:30 UTC | `tools/audit.py` + doc drift; notifies only on a problem |
 
