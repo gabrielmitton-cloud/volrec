@@ -81,11 +81,14 @@ for _x in [x for x in _c4 if float(x["bid"]) > 0]:
 check("fixed strip: its mid variance is the registered estimator's own, expiry by expiry",
       all(abs(costs._basket_one_expiry(v, 0.0)[0] - _mf.variance_one_expiry(v, 0.0)[0]) < 1e-12 for v in _byx.values()))
 _itm = [dict(x) for x in _c4]
-for _x in _itm:            # widen ONE in-the-money call (not held by the strip), its mid unchanged - the review's case
-    if _x["type"] == "C" and float(_x["strike"]) == 85.0:
-        m_ = float(_x["mid"]); _x["bid"], _x["ask"] = f"{0.5 * m_:.6f}", f"{1.5 * m_:.6f}"
-check(f"fixed strip: a quote the strip does not hold cannot move its cost ({costs.strip_cost_fixed(_itm, 0.0):.6f} vs {_w2:.6f})",
-      abs(costs.strip_cost_fixed(_itm, 0.0) - _w2) < 1e-12)
+_p85 = next(float(x["bid"]) for x in _c4 if x["type"] == "P" and float(x["strike"]) == 85.0 and x["dte"] == _c4[0]["dte"])
+for _x in _itm:            # the review's case: ONE in-the-money call (not held by the strip) gets the 85 put's bid,
+    if _x["type"] == "C" and float(_x["strike"]) == 85.0 and _x["dte"] == _c4[0]["dte"]:   # its mid unchanged
+        m_ = float(_x["mid"]); _x["bid"], _x["ask"] = f"{_p85:.6f}", f"{2 * m_ - _p85:.6f}"
+_old_moves = abs(costs.strip_cost(_itm, 0.0) - costs.strip_cost(_c4, 0.0))
+check(f"fixed strip: a quote the strip does not hold cannot move its cost ({costs.strip_cost_fixed(_itm, 0.0):.6f} vs "
+      f"{_w2:.6f}), while the old re-run moved by {_old_moves:.3f} points on it",
+      abs(costs.strip_cost_fixed(_itm, 0.0) - _w2) < 1e-12 and _old_moves > 0.5)
 
 integ = load("integrity")
 from datetime import datetime, timezone    # noqa: E402
