@@ -2941,7 +2941,9 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
     project's own rule 5); H2b's verdict line tested correlation with the IV level, not the registered autocorrelation;
     RV^2 carries 1/c4^2 (~2.4%). A descriptive companion (date-clustered H2a, per-pair autocorrelation, raw variance) is
     appended to `samples/long/test_h2_variance.py`; it runs in the manual read-only `sample_a.yml` (Alpaca keys) -
-    results to be logged in the H2 file. The poster's H2a row now says its pooled t is overstated.
+    **run 28 Oct (Actions 40720872275): clustered on date, H2a's variance form is t 1.34, p 0.18 - NOT significant
+    (logs t 10.99, volatility 5.99); H2b on its registered statistic: log lower on 3 of 11 pairs.** H2a stays "holds
+    as recorded" but is reported as not robust (H2 file, poster row, TEST-INVENTORY).
   - *Wording:* PAPER-DRAFT ("truncation, not data", "every registered test rejects near 5%", "variance" vs volatility
     premium), PROTOCOL's n_eff (an AR(1) approximation), TimesFM's target (mean LOG VIX), H4's bucket labels (K/S bands
     holding both types; note in the H4 file, not a strike).

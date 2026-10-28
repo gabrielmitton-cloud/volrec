@@ -190,3 +190,35 @@ forms alongside each other and reports.
 That last clause matters. The raw-variance weakness could equally mean the
 implementation is wrong, and it should be offered as a possibility rather than
 presented as a finding.
+
+## Companion reading, 28 October 2026 - an outside review (M01, M05, M10); descriptive, the verdicts above stand
+
+An outside review (a second AI model, verified against the code by Vega) found three things, all confirmed:
+**(M05)** the pooled H2a t above treats the equity indices' windows as independent, but VIX, VXN, RVX and VXD share
+market episodes - and this project's own rule 5 (hypotheses/README.md) requires a pooled test to cluster on date;
+**(M10)** H2b was registered as LOWER AUTOCORRELATION of the log form, but the verdict line in `test_h2_variance.py`
+compares correlation with the IV level, and its autocorrelation runs across the boundaries of concatenated pairs;
+**(M01)** `realized_vol` divides by c4(n), so RV^2 carries 1/c4^2 (about 2.4% at n = 21), not Carr & Wu's raw sum of
+squares. A companion was added to `test_h2_variance.py` and run on the registered sample in the manual read-only
+`sample_a.yml` (Actions run 40720872275, closes to 6 Sep 2026; the registered lines reproduced exactly: var t 2.14,
+logvar 16.26, vol 9.28):
+
+| equity pairs, one mean per window date (219 dates) | mean | t | p |
+|---|---|---|---|
+| volatility, IV - RV | 3.17 pts | 5.99 | 9e-9 |
+| variance, IV^2 - RV^2 (as registered) | 63.1 | **1.34** | **0.18** |
+| variance, raw sum of squares (no c4) | 73.6 | 1.60 | 0.11 |
+| log variance | 46.2 | 10.99 | 1e-22 |
+
+- **H2a, read with the dependence handled as rule 5 requires, is NOT significant** (t 1.34; 1.60 with raw squares).
+  The verdict above stays as recorded - registered verdicts are never rewritten - but it is **not robust**: it rests on
+  a pooled t that overstates the evidence, and on 17 Oct it already failed to survive a change of price vendor. The
+  write-up reports H2a as "holds as recorded; not robust to date clustering or to the price source". The volatility and
+  log forms remain strongly significant under the same clustering.
+- **H2b on its registered statistic** - lag-1 autocorrelation within each pair - the log form is lower on **3 of 11**
+  pairs. "Not supported" stands, now on the question it was registered to answer.
+- The falsification line "insignificant ... would indicate an implementation error, not a discovery" overstates what a
+  replication can show (review M09): samples, instruments, periods and power differ, so a weak result can be either.
+
+*Changes the Friday question's answer: raw variance is not merely weak, it is not significant once shared market episodes
+are accounted for; log variance is.*

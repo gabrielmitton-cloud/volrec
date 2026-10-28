@@ -231,8 +231,10 @@ def test_rows(h3, h5e, h7, today):
         ("H2", "The premium in variance, not volatility", "a: significant; b: less autocorrelated",
          # 28 Oct 2026 (outside review M05): the pooled t treats the equity indices' windows as independent, though they
          # share market episodes - so it overstates; the registered verdict stands, the poster says so.
-         esc("a: pooled t 16.3 logs, 2.1 raw (overstated: shared episodes); b: no"),
-         pill("H2a HOLDS", "ok") + pill("H2b NOT SUPPORTED", "bad")),
+         # Companion, Actions run 40720872275 (28 Oct): clustered on date, raw variance t 1.34 (p 0.18), logs 10.99;
+         # H2b on its registered statistic: log lower on 3 of 11 pairs.
+         esc("a: as recorded t 2.1 raw; by date 1.3 (p 0.18) - not robust; logs 11.0. b: lower on 3 of 11"),
+         pill("H2a HOLDS as recorded", "ok") + pill("H2b NOT SUPPORTED", "bad")),
         # H4 file / hypotheses README: registered 13 Sep, not yet tested; adjustment log "STRIKE 2 of 3" (8 Oct);
         # "a third post-output adjustment abandons H4"; "roughly 40 day pairs is enough for both claims".
         ("H4", "Delta-hedged gains are negative and vary by strike", "negative; a set shape",

@@ -30,8 +30,8 @@ question.
 | H1a | validation (11 pairs, BH and BY inside) | hypotheses/2026-09-06-h1-vrp-long-sample.md | holds, 9 of 11 | | - |
 | H1b | validation | same | holds on the stated test, picture mixed | | - |
 | H1c | validation | same | holds | | - |
-| H2a | side | hypotheses/2026-09-09-h2-variance-formulation.md | holds (raw variance weakest); 28 Oct review: its pooled t treats the equity pairs' shared episodes as independent - date-clustered companion in test_h2_variance.py | | - |
-| H2b | side | same | not supported; 28 Oct review: the verdict line tested correlation with the IV level, not the registered autocorrelation - per-pair autocorrelation companion beside it | | - |
+| H2a | side | hypotheses/2026-09-09-h2-variance-formulation.md | holds as recorded; NOT robust - clustered on date (28 Oct, run 40720872275) raw variance t 1.34, p 0.18; logs t 10.99 | | - |
+| H2b | side | same | not supported; on its registered statistic (per-pair autocorrelation, 28 Oct) the log form is lower on 3 of 11 | | - |
 | H2c | side | same | see file | | - |
 | H4a | side | hypotheses/2026-09-13-h4-hedged-gains-across-the-surface.md | not yet (strike 2 of 3) | | - |
 | H4b | side | same | not yet | | - |
