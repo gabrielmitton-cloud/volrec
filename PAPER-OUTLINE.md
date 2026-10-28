@@ -64,7 +64,7 @@ measurement, not a new method. The methods are Cboe's and published work's, and 
   very sensitive to rebalancing timing. A tension worth one sentence in 5b (different samples and
   instruments, so not a measured comparison): his variance contract beats selling ATM options on a
   risk-adjusted basis, yet the lab finds the strike strip that replicates it costs a retail trader
-  2.1-3.4x the ATM straddle to trade. Bogousslavsky & Muravyev (working paper, SSRN 4682388, 9 Feb 2025) - READ 14 Oct:
+  2.1-3.3x the ATM straddle to trade (strip held fixed, 28 Oct). Bogousslavsky & Muravyev (working paper, SSRN 4682388, 9 Feb 2025) - READ 14 Oct:
   no fund-option effective/quoted ratio, but retail trades lose 0.9% against a 3.7% quoted spread
   (limit orders), so the lab's 80% retail case is likely pessimistic; $0.65 commission confirmed.
 - The gap: "to our knowledge, no study benchmarks a free retail options feed against OPRA or
@@ -115,7 +115,7 @@ with an interval.
 **5b. What the data gap costs a retail investor (exploratory side study).** *Decided 16 Oct (Vega, delegated):
 HALF A PAGE in the main text - the headline (a retail seller keeps 90-95 cents per paper dollar on the liquid
 funds; the risk is crash months, not costs) and the two lessons that serve the main question (the strike strip
-costs 2.1-3.4x the ATM straddle; data filters flattered results). Everything below moves to an appendix. Why:
+costs 2.1-3.3x the ATM straddle, held fixed; data filters flattered GLD's results - corrected 28 Oct: not USO's). Everything below moves to an appendix. Why:
 the 12-15 page budget, one question per paper, and less room for anything to read as investment advice.*
 From
 `lab/` (design: docs/superpowers/specs/2026-10-12-retail-vrp-audit-design.md; rules and predictions
@@ -135,11 +135,13 @@ customer margin with daily marking (Santa-Clara & Saretto 2009's mechanic) and f
   doi:10.1080/14697680701381228), where the market maker's spread carries a term that grows with the
   variance of the price (their eq. 30, the approximate solution: gamma sigma^2 (T - t) plus an order-arrival
   term) - an interpretation, not a test of their model (added 21 Oct 2026; equation checked in Gabriel's PDF).
-- The strip-versus-ATM cost ratio (2.1-3.4x, P3 holds on 5 of 5) - directly relevant to section 5,
+- The strip-versus-ATM cost ratio (2.1-3.3x with the strip held fixed, 28 Oct; P3 holds on 5 of 5) - directly relevant to section 5,
   since the registered estimator is a strip.
 - Predictions as recorded: P1 fails, P2 holds as written, P3 holds, P4 fails, P5 holds among funds
-  with a paper profit. Exclusions cluster in crash months; with them added back USO and GLD turn
-  worse - always shown beside the registered numbers.
+  with a paper profit. Exclusions cluster in crash months; with them added back GLD turns worse (straddle
+  -3.8% -> -9.4% of premium; half-account loss odds 35% -> 63%) and USO does NOT (+6.9% -> +7.6% once the
+  one trade held across its 2020 reverse split is settled on OCC's deliverable - corrected 28 Oct) - always
+  shown beside the registered numbers.
 Framing: an implementation audit, not a strategy. Nothing here is investment advice.
 
 **6. Limitations (1 page).** One free feed; about two months; eight underlyings; a snapshot about 80

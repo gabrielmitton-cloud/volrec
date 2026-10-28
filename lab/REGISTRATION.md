@@ -313,3 +313,32 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   SPY -3.3%), and a bootstrap drawn with a different random stream lands within Monte Carlo noise (median
   max drawdown SPY 32.9%, QQQ 27.2%, IWM 40.1%, GLD 48.7%, USO 39.9%; P(equity < $0.50) 5.9, 2.0, 15.4,
   34.4, 14.8%). Every lab result is now reproduced by code that shares nothing with lab/.
+- 2026-10-28, AFTER data - **corrections from an outside review** (a second AI model, Astra, 25 Oct; every finding
+  verified against the code and the data by Vega; Gabriel: "do whatever works the best"). Every REGISTERED number above
+  is unchanged; the code was re-run on the files already bought ($0) and the registered lines of all three reports are
+  byte-identical (Break-Even entirely so). What changed:
+  1. **USO's 1-for-8 reverse split (review M03).** The one trade held across it (entered 20 Apr 2020, expiry 15 May
+     2020; excluded from the registered sample) was settled on the new share ($22.40) against a pre-split strike, a
+     -1,280% "return". OCC Information Memo #46881: the options became USO1, delivering 12 new shares plus cash in lieu
+     of half a share, priced USO1 = 0.125 x USO until the cash was fixed - so a contract opened before 29 Apr 2020 and
+     held past it now settles (and is marked) on 0.125 x the new share (`trades.DELIVERABLE`). The lab's 4,124 quote
+     files and every listing file hold only the standard root (scanned 28 Oct), so the review's second point (USO and
+     USO1 contracts overwriting each other) never occurred; `integrity.chain_at` now refuses a mixed-root expiry.
+     **This reverses Plan 2's USO sensitivity:** with its excluded months added back USO's straddle is +0.076 per $1
+     at mid (retail +0.056), slightly ABOVE the registered +0.069 - not -0.029. Plan 3's added-back USO line: paper
+     +0.378%/mo, kept +0.235%/mo, 62.2 cents per $1 (was -0.145, undefined); its 10%-size margin call disappears.
+     **GLD's sensitivity stands:** -0.038 -> -0.093 (three gold-rally months, 2024-25). So "exclusions flatter selling
+     volatility" holds for GLD and NOT for USO.
+  2. **Strip cost, portfolio held fixed (review M02).** `costs.strip_cost` re-ran the whole estimator on bids, so the
+     forward, K0 and legs could move with the quotes. `costs.strip_cost_fixed` chooses the strip once on mids (the
+     registered estimator's own selection, checked equal) and charges each held leg its half-spread. Q3, median
+     strip/ATM ratio, fixed vs as recorded: SPY 3.33 (3.35), QQQ 2.86 (2.86), IWM 2.70 (2.71), GLD 2.06 (2.06), USO
+     2.50 (2.49). **P3 still holds on 5 of 5;** the range is 2.1-3.3x.
+  3. **The stress lab on the added-back sample (review M08)** - the registration promised every table both ways and
+     the stress lab ran on the registered months only. Same block rule, paths and seed: GLD (n=127) median max drawdown
+     61.3% (registered 48.3%), p95 82.0% (73.5%), P(equity < $0.50) 62.6% (34.8%); USO (n=127) 39.2% (39.9%), 67.8%
+     (70.0%), 12.9% (15.4%); SPY, QQQ and IWM have no excluded month. GLD's tail is materially worse with its excluded
+     months back; that is now reported beside the registered figure.
+  Tests: `lab/test_lab.py` +6 (the split, the roots, the fixed strip and its invariance to a quote it does not hold);
+  auditor mutants `lab-split-ignored`, `lab-roots-overwrite`, `lab-strip-rebuilds-basket`. The reports before this
+  change are kept in the private `lab-out.pre-review-2026-10-28/`.

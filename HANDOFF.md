@@ -1886,17 +1886,17 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 every decision. This section is the only one guaranteed current. Read it, run
 `tools/daily.py`, and open section 17 only when a task needs the why.
 
-### System status, checked 17 Oct 2026 ~19:00 UTC (Sat, start of the fall break)
+### System status, checked 28 Oct 2026 ~09:30 UTC (Wed, after the outside review's fixes)
 
 | check | result |
 |---|---|
-| diagnostic, 17 Oct | `daily.py` **ALL CLEAR** (Fri 16 Oct landed; H5e 17 counted days, mean gap 0.72, closer on 8); pressure test **0 fail, 3 warn** (the three known warnings); auditor **109 of 109**; unit tests describe, guard, H3 scorer, H6, H7, H8, hedged and independent - **0 failures** |
-| independent re-implementation, 17 Oct | `tools/independent_check.py`: **661 of 661** values agree with modelfree/h7_reader (largest gap 0.0009, one exact strike tie); 110 Cboe closes = FRED's copies exactly |
+| diagnostic, 28 Oct | `daily.py` **ALL CLEAR** (Mon 27 Oct landed 18:31/18:40 UTC); H3 scorer to 27 Oct: H3a 0.521 over 150 readings (bar 1.0); pressure test **0 fail, 2 warn** (the known FXE one-sided quote and the late GitHub backup); auditor **125 of 125** (13 mutants added for the review's guards); unit tests H3 scorer, H7, describe, lab, poster - **0 failures**. (17 Oct: ALL CLEAR, auditor 109 of 109.) |
+| independent re-implementation, 28 Oct | `tools/independent_check.py --opra`: **883 of 883** values agree, every one a real numeric pair (largest gap 0.00088); H7's 36 pairs on the 10 local OPRA files agree exactly. 17 Oct: 661 of 661; 110 Cboe closes = FRED's copies exactly |
 | Databento, 17 Oct | lifetime **$82.01** (lab/ $79.00 of its $90, finished 14 Oct; main $2.21; H7 $0.17 of $1.10; H8 $0.62 of $15). At the current ~$0.19 a day it reaches ~$85.5 by 11 Nov: inside the $100 free credit and the $120 cap, and H7's cap holds (~$0.79) |
 | workflows, 16-17 Oct | record, surface, guard, freshness, health all green; volrec-licensed daily green (17 Oct 01:15 and 07:41 UTC; it fetches day D two nights later, so 16 Oct arrives after the weekend) |
 | cron-job.org | record and surface triggers; guard 15:00 and 15:20 New York (tested 204, 16 Oct); one-off 12:00 copies for Fri 27 Nov and Thu 24 Dec (made by Gabriel 16 Oct). Token `volrec-trigger` expires 29 Dec |
 | phone (Pushover) | four levels live; the nightly GREEN arrives (confirmed by Gabriel 16 Oct); RED comes only from the guard |
-| cloud routines | 7 one-off reminders (19, 20, 22, 30 Oct; 20 Nov, 23 Nov, 1 Dec), the 13 Nov verdict check, the Monday auditor and the Wednesday watchdog - all enabled, no connectors attached |
+| cloud routines | one-off reminders 3 Nov (AAPL dividend), 20 Nov, 23 Nov, 1 Dec; the 13 Nov verdict check; the Monday auditor and the Wednesday watchdog - enabled, no connectors. The 30 Oct Goukasian reminder was disabled 21 Oct (he declined; Marc is mentor) |
 | OSF | H5e and H7 registered and live, https://osf.io/z5gfu (10 Oct) |
 | pre-push hook | installed (`core.hooksPath tools/hooks`); every push runs the pressure test |
 | iMessage (launchd `com.volrec.daily`) | **retired 23 Oct** (a green Pushover alert every weekday 16-22 Oct, Gabriel); unloaded, plist kept at ~/Documents/volrec-retired/ |
@@ -2918,6 +2918,41 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   line, and rotate those keys if they are still the live ones (his decision; never edited without him).
   **Removed 23 Oct on Gabriel's OK** (it was the crontab's only line; no copy kept, so the keys are not moved
   into a file). Key rotation stays Gabriel's call.
+- **Wed 28 Oct - the outside review (Astra = gpt-6-astra via Gabriel's ChatGPT, 24-25 Oct; reports in
+  ~/Documents/Codex/2026-10-24/hey/outputs/).** Gabriel had it review everything, then: "do whatever u want that works
+  the best just run a bunch of tests". Vega verified all 26 findings against the code (R1-R10, M01-M10, A01-A06) before
+  acting. **No registered bar, window, estimator or verdict moved; every real registered output is unchanged.**
+  - *Fixed, verdict guards (before 11-12 Nov):* H3 scorer R1 (NaN t -> UNSCORED, not p=0 HOLDS), R3 (printed gaps
+    judged with their 0.005 rounding slack; UNRESOLVED when the print cannot show the side), R4 (BH family stays five);
+    H7 R8 (finite values only), R5 (unusable OPRA waited on; every uncounted day NAMED in the record), M04 (descriptive
+    intervals use the registered sample). Logged in the H3 and H7 files as implementation guards, NOT adjustments.
+  - *Fixed, bugs:* R2 `analyze.build_panel`'s forward-window check was silently disabled by the price cache's `_start`/
+    `_feed` keys (the live-panel premium analysis has NOT been run for the record, so nothing published moved); R6
+    `independent_check` counted empty pairs as agreement (now exit 4 when nothing numeric was compared; today 883 of
+    883, all numeric); M07 the H4 delta sensitivity kept after-close days.
+  - *Lab (re-run on files already bought, $0):* **M03 was real** - the one USO trade held across the 29 Apr 2020
+    1-for-8 split settled on the new share; OCC memo #46881 (USO1 = 0.125 x USO) now applies. It REVERSES the
+    paper's "USO +6.9% -> -2.9% with excluded months added back": correctly settled, +7.6%. GLD's version stands
+    (-3.8% -> -9.4%). M02 strip cost with the portfolio held fixed: ratios unchanged (2.06-3.33), P3 still 5 of 5.
+    M08 stress lab on the added-back sample: GLD's half-account-loss odds 34.8% -> 62.6%. Every registered lab number
+    is byte-identical. lab/REGISTRATION.md, PAPER-DRAFT 5b and PAPER-OUTLINE corrected, dated.
+  - *H2 (M01, M05, M10):* confirmed - the pooled H2a t treats correlated equity indices as independent (and breaks the
+    project's own rule 5); H2b's verdict line tested correlation with the IV level, not the registered autocorrelation;
+    RV^2 carries 1/c4^2 (~2.4%). A descriptive companion (date-clustered H2a, per-pair autocorrelation, raw variance) is
+    appended to `samples/long/test_h2_variance.py`; it runs in the manual read-only `sample_a.yml` (Alpaca keys) -
+    results to be logged in the H2 file. The poster's H2a row now says its pooled t is overstated.
+  - *Wording:* PAPER-DRAFT ("truncation, not data", "every registered test rejects near 5%", "variance" vs volatility
+    premium), PROTOCOL's n_eff (an AR(1) approximation), TimesFM's target (mean LOG VIX), H4's bucket labels (K/S bands
+    holding both types; note in the H4 file, not a strike).
+  - *Deferred, with reasons:* R9 and R10 (recorder: a mid-run close re-check before the monthly pass, and recovering a
+    failed auxiliary pass) are recorder-code changes that only bite on early-close days; no recorder edits inside H7's
+    window - do them after 11 Nov, before the 27 Nov half-day. Checked 28 Oct: all 13 monthly days since 9 Oct have
+    their rows, so nothing was lost. R7 (the independent replica's crossed-quote and K0 zero-bid edge cases) after the
+    verdicts; the real data agree. The private workflow's exit-code labels were NOT edited (a mid-window workflow edit
+    once cost a trading day): an exit 4 still raises the yellow alert, labelled "crashed".
+  - *Astra's bridge* (tools/codex_review.py, its test, docs/CODEX-REVIEW.md, a CLAUDE.md section, a .gitignore line)
+    sits uncommitted in the working tree, Gabriel's local tool; not pushed to the public repo.
+  - Tests: pressure 0 fail; H3 +9, H7 +4, describe +1, lab +6, poster 19; 13 new auditor mutants (125 total).
 
 ### Prompt for the next session
 

@@ -139,10 +139,13 @@ which the frictions can be added - the same answer the main decomposition gives 
   leak by 1-3 cents per dollar on the equity funds (twice the true figure on SPY).
 
 **Two lessons for the main paper.** First, the strike strip that a model-free estimator integrates costs
-2.1-3.4 times what an at-the-money estimate suggests to trade, so cost and precision both live in the
-wings. Second, data filters can flatter results: months excluded for mechanical data reasons clustered
-in crashes, and adding the tradeable ones back turned USO's result from +6.9% to -2.9% of premium.
-Every result in the side study is therefore reported both ways.
+2.1-3.3 times what an at-the-money estimate suggests to trade (measured with the strip held fixed), so
+cost and precision both live in the wings. Second, data filters can flatter results: on GLD, adding the
+tradeable excluded months back turns the straddle from -3.8% to -9.4% of premium and raises the
+bootstrap odds of losing half the account from 35% to 63%. Every result in the side study is therefore
+reported both ways. *(Corrected 28 Oct 2026 after an outside review: this paragraph cited USO, "+6.9% to
+-2.9%", but that swing came entirely from one trade held across USO's 2020 reverse split and settled on the
+wrong deliverable; settled correctly, USO's added-back figure is +7.6%. The strip ratio read 2.1-3.4.)*
 
 *Data provided by Databento (OPRA consolidated NBBO). Cboe index levels: Cboe Global Markets. Aggregates
 only. Nothing here is investment advice.*
