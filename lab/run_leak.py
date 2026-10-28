@@ -83,10 +83,10 @@ def months_for(sym, bars, vol, stress):
                 if lvl is None:
                     continue
                 T = (date.fromisoformat(expiry) - date.fromisoformat(day)).days / 365.0
-                m = model_mark(bars[sym][day][0], K, T, lvl / 100.0)
+                m = model_mark(tr.spot(bars, sym, day, opened=entry), K, T, lvl / 100.0)
             marks.append(m)
         out.append({"entry": entry, "expiry": expiry, "registered": ok_, "K": K, "C0": mid(c), "P0": mid(pq), "half0": hc + hp,
-                    "S0": F, "days": marks, "real_days": real_days, "settle": abs(tr.settle(bars, sym, expiry) - K)})
+                    "S0": F, "days": marks, "real_days": real_days, "settle": abs(tr.settle(bars, sym, expiry, opened=entry) - K)})
     return out
 
 
@@ -112,7 +112,7 @@ def main():
     vol = json.load(open(ROOT / "data" / "market_vol.json"))
     stress = set(cal.stress_days(sorted(bars["SPY"])))
     print("lab/ margin, Leak Map, stress (EXPLORATORY). Short ATM straddle (R0), held to expiry.\n")
-    rows, kept_series, summary = [], {}, {}
+    rows, kept_series, summary, kept_added = [], {}, {}, {}
     for sym in FUNDS:
         allm = months_for(sym, bars, vol, stress)
         a, b = mg.RATES[sym]
@@ -133,6 +133,8 @@ def main():
                     f"{p} {100 * shw[p][0]:+.4f} ({100 * shw[p][1]:+.4f}..{100 * shw[p][2]:+.4f})" for p in mp.FRICTIONS))
             print("      margin: " + "  ".join(f"w {int(1000 * w) / 10:g}%: eff {100 * eff[w]:.2f}%, called in {liq[w]}"
                                                 for w in WEIGHTS))
+            if label == "added back":     # 28 Oct 2026 (outside review M08): the stress lab runs on this sample too
+                kept_added[sym] = res[(0.05, frozenset(mp.FRICTIONS))]
             if label == "registered":
                 summary[sym] = {"weights": {}}
                 for w in WEIGHTS:
@@ -163,6 +165,23 @@ def main():
         summary[sym]["stress"] = {"block": b, "dd50": q(0.5), "dd95": q(0.95), "dd99": q(0.99),
                                    "es95": sx.expected_shortfall(x, 0.95), "ruin": sx.ruin_prob(paths), "worst": worst}
         print(f"       block sensitivity: {sens}")
+        xa = kept_added.get(sym)
+        if xa is not None and len(xa) != len(x):
+            # 28 Oct 2026 (outside review M08): the registration promised every table both ways; the stress lab was
+            # registered-only. The added-back sample, same block rule, paths and seed, printed beside it.
+            ba = sx.ppw_block(xa)
+            pa = sx.stationary_paths(xa, ba, PATHS, 12 * YEARS, SEED)
+            da = sorted(sx.max_drawdown(p_) for p_ in pa)
+            qa = lambda f: da[min(len(da) - 1, int(f * len(da)))]
+            print(f"       [added back, n={len(xa)}] block {ba:.1f}  maxDD median {100 * qa(0.5):.1f}% p95 "
+                  f"{100 * qa(0.95):.1f}% p99 {100 * qa(0.99):.1f}%  ES95 {100 * sx.expected_shortfall(xa, 0.95):+.2f}%  "
+                  f"ES99 {100 * sx.expected_shortfall(xa, 0.99):+.2f}%  ruin(<$0.50) {100 * sx.ruin_prob(pa):.1f}%  "
+                  f"worst month {100 * min(xa):+.2f}%")
+            summary[sym]["stress_added_back"] = {"n": len(xa), "block": ba, "dd50": qa(0.5), "dd95": qa(0.95),
+                                                 "dd99": qa(0.99), "es95": sx.expected_shortfall(xa, 0.95),
+                                                 "ruin": sx.ruin_prob(pa), "worst": min(xa)}
+        elif xa is not None:
+            print("       [added back] no excluded month to add back - identical to the registered sample")
     print("\n== crash replays: kept return at w = 5% of every trade HELD during a stress month ==")
     # 14 Oct: keyed by holding period, not entry month - the COVID trade entered 24 Feb 2020 and
     # expired 20 Mar 2020, so an entry-month key hid it from the March 2020 row.

@@ -1037,3 +1037,15 @@ that data, not as a discovery. H3c stays registered exactly as written.
   written while the daily series was visible (115 readings over 23 days as of 16 Oct), though before the reading
   of record.** No bar, band, window, estimator, number or verdict changes. Tests: `tools/test_h3_scorer.py` (15
   known-answer cases); auditor mutants `h3-bar-not-strict`, `h3-bootstrap-two-sided`.
+- **28 Oct 2026 - implementation guards on the frozen scorer, not an adjustment (outside review by a second AI model,
+  each finding verified against the code by Vega; Gabriel: "do whatever works the best").** Three ways the scorer could
+  have given a verdict it could not support, none of which the real series comes near: (R1) an undefined cluster
+  t-statistic (zero standard error, e.g. an exact fit) compared as p = 0 and read HOLDS - it is now UNSCORED, and an
+  undefined bootstrap draw counts against rejection; (R3) the scorer reads modelfree.py's PRINTED gaps, rounded to
+  0.01, so a verdict is now given only when every true value the print allows (within 0.005) is on one side of the
+  bar, otherwise UNRESOLVED - read by hand at full precision; (R4) the registered BH family is all five pairs, and an
+  untestable pair now stays in it at p = 1 instead of leaving it (a smaller family would ease every rejection). On the
+  real series (to 27 Oct: 150 readings over 30 days, H3a 0.521) every number and verdict is unchanged; only the BH line
+  now says "across the 5 registered underlyings (5 testable)". No bar, band, window, estimator or verdict changes.
+  Tests: `tools/test_h3_scorer.py` (+9 cases); auditor mutants `h3-nan-statistic-holds`, `h3-ignores-display-rounding`,
+  `h3-main-forgets-slack`, `h3-bh-family-shrinks`. **Not an adjustment: no registered number can move.**

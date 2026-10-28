@@ -107,6 +107,26 @@ check("9 days is below the minimum: no H7a verdict", h7.verdicts(h7.summarise(ru
 nc = {"USO": {}, "GLD": cg}
 check("a day without its index close does not count", h7.summarise(ru + rg, nc)["USO"]["a"][0] == 0)
 
+# 28 Oct 2026 (outside review R8, R5): non-finite values never count as days, and an uncounted day is named.
+_nan, _inf = float("nan"), float("inf")
+rgn = [dict(x) for x in rg]
+rgn[0]["opra"] = _nan
+cgn = dict(cg)
+cgn[rg[1]["day"]] = _inf
+sn = h7.summarise(ru + rgn, {"USO": cu, "GLD": cgn})
+check("R8: a NaN OPRA reading and an infinite close do not count (GLD 8 days, not 10) and the means stay finite",
+      sn["GLD"]["a"][0] == 8 and sn["GLD"]["b"][0] == 8 and all(map(h7._ok, (sn["GLD"]["a"][1], sn["GLD"]["b"][1]))))
+check("R8: so GLD is below its minimum - no verdict, never a FAILS from comparing NaN",
+      h7.verdicts(sn) == (None, None))
+rgf = [dict(x) for x in rg]
+rgf[2]["free"] = None
+_nc = h7.not_counted(ru + rgn + rgf[2:3], {"USO": cu, "GLD": cgn})
+check(f"R5: every day with a row that does not count is named with its reason ({_nc})",
+      _nc == [f"{rg[0]['day']} GLD (OPRA reading not finite)", f"{rg[1]['day']} GLD (index close not finite)",
+              f"{rg[2]['day']} GLD (no free reading)"])
+check("R5: a day already named as waiting is not named twice",
+      h7.not_counted(rgf[2:3], {"GLD": cg}, waiting=[f"{rg[2]['day']} GLD OPRA unusable"]) == [])
+
 print("\n" + "=" * 52)
 
 print("\n=== the matched-strike COMPANION (17 Oct 2026; never the registered reading) ===")

@@ -1,8 +1,10 @@
 """
 TimesFM as a zero-shot benchmark on the LONG validation sample (FRED VIXCLS).
 
-Question: does a pretrained forecaster beat HAR at predicting the average
-VIX over the next 21 trading days? If it can't beat HAR here, with 30+ years
+Question: does a pretrained forecaster beat HAR at predicting the mean LOG
+VIX over the next 21 trading days (the target the code and the rule below use;
+"average VIX" was loose wording, corrected 28 Oct 2026 - ln of the mean is not
+the mean of the ln)? If it can't beat HAR here, with 30+ years
 of data, it has no business near the live panel.
 
 Guardrail (from volrec-data-layer-brief.md): this runs on FRED history only.

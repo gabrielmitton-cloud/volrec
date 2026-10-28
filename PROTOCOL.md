@@ -56,6 +56,10 @@ The arithmetic (added 10 Oct): daily gaps are persistent, so N days are worth fe
 independent ones. Report T, the day-to-day autocorrelation ρ, and n_eff = T(1 - ρ)/(1 + ρ);
 at T = 40 and ρ = 0.9, n_eff is about 2. The smallest effect found 80% of the time at 5%
 two-sided is about 2.8 σ / √n_eff. If that exceeds the bar, register the test as descriptive.
+*Qualified 28 Oct 2026 (outside review A03):* n_eff = T(1 - ρ)/(1 + ρ) is the large-sample AR(1) approximation; the
+variance of a mean depends on the whole autocorrelation sequence, and at T = 40, ρ = 0.9 the exact AR(1) figure is
+about 2.7, not 2.1. The 2.8 σ / √n_eff detectable effect is a normal approximation, not an exact 80% power at a few
+effective observations. Both are planning guides, never a verdict's arithmetic.
 Inference: Newey-West with fixed-b critical values over time (already the house method); when
 pooling the eight underlyings, a wild cluster bootstrap with Webb's six-point weights (at least
 9,999 draws), because ±1 weights give only 2^8 = 256 distinct draws with eight clusters.

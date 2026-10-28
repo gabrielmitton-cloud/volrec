@@ -73,19 +73,26 @@ strikes it integrates. On 11 September 2026, against Cboe's published closes:
 | ±20% (30 strikes) | 1.31 | -4.39 |
 | ±30% (40 strikes) | 0.59 | -1.84 |
 
-At the widest band the free feed's SPY estimate was 15.83 against a published VIX of 15.84. The gap
-was truncation, not data: a fixed ±10% band spans about 2.2 standard deviations on a 16-volatility
-fund but 0.6 on crude oil near 59, which is why USO read twelve points light. This is Jiang and Tian's
-(2005) mechanism, measured on free data.
+At the widest band the free feed's SPY estimate was 15.83 against a published VIX of 15.84. Most of the
+gap was truncation: a fixed ±10% band spans about 2.2 standard deviations on a 16-volatility fund but 0.6
+on crude oil near 59, which is why USO read twelve points light. This is Jiang and Tian's (2005)
+mechanism, measured on free data. Widening the band shows a coverage effect; it does not by itself rule
+out the feed's own error, the snapshot's timing or the index-versus-fund difference, which sections 5.1,
+5.4 and 6 measure separately. *(Wording narrowed 28 Oct 2026 after an outside review, M09; it read "the gap
+was truncation, not data".)*
 
-**The tests.** In simulated data with no premium by construction, every registered test rejects close
-to its nominal 5%. The simulation also shows why the design needs a second sample: pooling tickers on
+**The tests.** In simulated data with no premium by construction, the three designs simulated (the
+at-the-money non-overlapping test, the surface's date aggregation and the within-day volume contrast)
+reject close to their nominal 5%, under the simulation's assumptions; that is not a proof for every
+registered test or every dependence structure. *(Narrowed 28 Oct 2026, outside review M09; it read "every
+registered test".)* The simulation also shows why the design needs a second sample: pooling tickers on
 the collected panel rejects a true null 63.8% of the time, because most days move together.
 
 **A known result, recovered.** Before any claim about the new data, the same frozen code was run on ten
 years of Cboe's own indices against their underlying funds (2016-2026, about 127 non-overlapping
-one-month episodes per pair). The variance risk premium - implied volatility above the volatility that
-follows - is significantly positive on 9 of 11 pairs (VIX/SPY +3.52 points, t = 5.14); 9 survive
+one-month episodes per pair). The volatility risk premium - implied volatility above the realised
+volatility that follows, in volatility points (not the variance premium, whose sample mean can differ in
+sign; H2 measures that) - is significantly positive on 9 of 11 pairs (VIX/SPY +3.52 points, t = 5.14); 9 survive
 Benjamini-Hochberg control and 8 the dependence-robust Benjamini-Yekutieli correction. The method finds
 a well-documented result where it should, which is the precondition for trusting what it says about two
 months of new data.

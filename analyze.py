@@ -482,7 +482,10 @@ def build_panel(rows, closes, vol=None):
         d0 = date.fromisoformat(r["date"])
         dte = int(num(r.get("dte")) or 0)
         end = d0 + timedelta(days=dte)                       # (b) actual dte, not 30
-        avail = sorted(k for k in series if k != "_end")
+        # 28 Oct 2026 (outside review R2): the price cache also carries "_start" and "_feed", which sort after every
+        # date ("_" > "2"), so excluding only "_end" let the last "date" be "_start" and the completeness check always
+        # passed. Only real dates count.
+        avail = sorted(k for k in series if not k.startswith("_"))
         if not avail or avail[-1] < end.isoformat():
             dropped["window incomplete"] += 1; continue
         win = [series[k] for k in avail if d0.isoformat() <= k <= end.isoformat()]

@@ -66,6 +66,7 @@ def main():
     print("-" * 78)
 
     agg = {"vol": [], "var": [], "logvar": []}
+    comp = []          # (index, class, [(window start, iv, rv)]) for the 28 Oct 2026 companion below
     ivs_all = {"vol": [], "var": [], "logvar": []}
     eq = {"vol": [], "var": [], "logvar": []}
 
@@ -89,6 +90,7 @@ def main():
             ivl.append(iv)
         if len(rec["vol"]) < 5:
             continue
+        comp.append((idx, klass, [(t, iv, rv) for t, iv, rv, _ in obs if iv > 0 and rv > 0]))
         out = []
         for k in ("vol", "var", "logvar"):
             mu, se, t, p = analyze.plain_t(rec[k])
@@ -128,6 +130,50 @@ def main():
 
     print("\nNothing here replaces the volatility formulation. H2 stays registered")
     print("and unadopted until the 11 Sep meeting confirms the choice.")
+    companion(comp)
+
+
+def companion(comp):
+    """COMPANION, added 28 Oct 2026 after an outside review (M01, M05, M10) - descriptive, beside the registered
+    lines above, which stand as recorded. Nothing here changes a registered verdict.
+      M05  the pooled H2a t above treats the equity indices' windows as independent, but they share market episodes
+           (and hypotheses/README rule 5 requires pooled tests to cluster on date). Here: one mean per window date
+           across the equity pairs, then the t-test over dates.
+      M10  H2b was registered as LOWER AUTOCORRELATION of the log form; the verdict line above compares correlation
+           with the IV level instead, and its autocorrelation runs across the boundaries of concatenated pairs. Here:
+           lag-1 autocorrelation within each pair, log form against the level (variance) form.
+      M01  realized_vol divides by c4(n), so RV^2 carries 1/c4^2 (~2.4% at n = 21). Here: the variance premium with
+           the raw sum of squared returns, as in Carr & Wu."""
+    c4 = analyze.c4(H)
+    print("\n-- COMPANION (28 Oct 2026, outside review; descriptive - the registered lines above stand)")
+    by_date = {}
+    for _idx, klass, xs in comp:
+        if klass != "equity index":
+            continue
+        for t, iv, rv in xs:
+            d = by_date.setdefault(t, {"vol": [], "var": [], "logvar": [], "var_raw": []})
+            d["vol"].append(iv - rv)
+            d["var"].append(iv * iv - rv * rv)
+            d["logvar"].append(2.0 * (log(iv) - log(rv)))
+            d["var_raw"].append(iv * iv - (rv * c4) ** 2)
+    print(f"   M05  H2a, equity pairs, clustered on window date ({len(by_date)} dates):")
+    for k in ("vol", "var", "logvar", "var_raw"):
+        dm = [analyze.mean(v[k]) for v in by_date.values()]
+        mu, se, t, p = analyze.plain_t(dm)
+        scale = 100 if k == "vol" else (10000 if k.startswith("var") else 100)
+        print(f"        {k:<8} mean {mu * scale:>9.2f}  t={t:>6.2f}  p={p:.2e}"
+              + ("   <- raw sum of squares, no c4 (M01)" if k == "var_raw" else ""))
+    print("   M10  H2b as registered - lag-1 autocorrelation WITHIN each pair, log form vs the variance (level) form:")
+    lower = n_pairs = 0
+    for idx, _klass, xs in comp:
+        xs = sorted(xs)
+        a_var = autocorr([iv * iv - rv * rv for _t, iv, rv in xs])
+        a_log = autocorr([2.0 * (log(iv) - log(rv)) for _t, iv, rv in xs])
+        if a_var == a_var and a_log == a_log:
+            n_pairs += 1
+            lower += a_log < a_var
+            print(f"        {idx:<6} variance {a_var:+.3f}   log {a_log:+.3f}")
+    print(f"        log form lower on {lower} of {n_pairs} pairs (registered H2b: the log form has LOWER autocorrelation)")
 
 
 if __name__ == "__main__":

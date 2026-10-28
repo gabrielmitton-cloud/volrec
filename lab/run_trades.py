@@ -82,7 +82,7 @@ def main():
                 continue
             # Sensitivity (added 14 Oct AFTER the first run): an excluded month that can still be
             # traded is priced too, flagged registered=0, so the report shows what exclusion does.
-            S_exp = tr.settle(bars, sym, expiry)
+            S_exp = tr.settle(bars, sym, expiry, opened=entry)
             T = (date.fromisoformat(expiry) - date.fromisoformat(entry)).days / 365.0
             idx = prev_day(vol[tr.INDEX[sym]], entry)
             w = tr.rule_weights(idx, rv21({k: v[1] for k, v in bars[sym].items()}, entry),
@@ -104,7 +104,10 @@ def main():
                 atm = costs.vol_points(costs.straddle_cost(c, pq, "quoted"),
                                        tr.vega76(F, K, T, ivc) + tr.vega76(F, K, T, ivp))
             row["atm_cost_pts"] = atm
-            row["strip_cost_pts"] = costs.strip_cost(chain_rows(opra, when, entry, sym, F), 0.0)
+            crows = chain_rows(opra, when, entry, sym, F)
+            row["strip_cost_pts"] = costs.strip_cost(crows, 0.0)
+            # 28 Oct 2026 (outside review M02): the same strip, portfolio held fixed - beside the original, never in place
+            row["strip_cost_fixed_pts"] = costs.strip_cost_fixed(crows, 0.0)
             out.append(row)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", newline="") as f:
@@ -144,8 +147,11 @@ def report(out_all, excluded):
     for sym in ("SPY", "QQQ", "IWM", "GLD", "USO"):
         xs = [r["strip_cost_pts"] / r["atm_cost_pts"] for r in out
               if r["symbol"] == sym and r["strip_cost_pts"] and r["atm_cost_pts"]]
+        xf = [r["strip_cost_fixed_pts"] / r["atm_cost_pts"] for r in out
+              if r["symbol"] == sym and r["strip_cost_fixed_pts"] and r["atm_cost_pts"]]
         if xs:
-            print(f"  {sym:4s} n={len(xs):3d}  ratio median {st.median(xs):.2f}  (P3 predicts >= 2)")
+            print(f"  {sym:4s} n={len(xs):3d}  ratio median {st.median(xs):.2f}  (P3 predicts >= 2)"
+                  + (f"   | portfolio held fixed (28 Oct, review M02): n={len(xf):3d} median {st.median(xf):.2f}" if xf else ""))
     print("\n== sensitivity: the excluded months that can still be traded, added back (straddle) ==")
     for sym in ("SPY", "QQQ", "IWM", "GLD", "USO"):
         reg = [r for r in out if r["symbol"] == sym and r["straddle_mid_ret"] is not None]

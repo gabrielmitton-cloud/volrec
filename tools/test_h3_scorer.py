@@ -82,5 +82,43 @@ small = [(f"2026-10-0{d}", "GLD", 20.0 + d, 0.3) for d in range(1, 3)]
 check("an underlying with fewer than 3 readings is reported as such, not tested", H.score(small)["per"]["GLD"] is None)
 check("the scorer's labels say it was specified before the reading of record", "before the reading of record" in H.LABEL)
 
+print("\n=== guards added 28 Oct 2026 (outside review R1, R3, R4) ===")
+# R1: an exact fit has zero residuals, so the cluster standard error is 0 and t is undefined. It once compared as
+# p = 0 and read HOLDS. Now: UNSCORED, never a verdict.
+exact = [(f"2026-10-{d:02d}", sym, lvl + d, (lvl + d) / 16.0) for sym, lvl in zip(H.BENCH, (25, 20, 21, 16, 58))
+         for d in range(1, 4)]
+se = H.score(exact)
+check(f"R1: an exact fit (undefined t) is UNSCORED, not HOLDS (t {se['h3c_t']}, p {se['h3c_p']})",
+      se["h3c"] == H.UNSCORED and not math.isfinite(se["h3c_t"]))
+const_x = [(f"2026-10-{d:02d}", sym, 20.0, 0.1 * d) for sym in H.BENCH for d in range(1, 4)]
+check("R1: a constant index level (undefined slope) is UNSCORED", H.score(const_x)["h3c"] == H.UNSCORED)
+# R3: a printed gap is within 0.005 of the true one. True |gap| 0.996 prints as 1.00: the printed mean 1.0 must not
+# read FAILS (the truth is under the bar) nor HOLDS (the print cannot show it) - UNRESOLVED.
+near = [(f"2026-10-{d:02d}", sym, 20.0 + d, -1.00) for sym in H.BENCH for d in range(1, 4)]
+check("R3: a printed mean of exactly 1.00 is UNRESOLVED at display precision",
+      H.score(near, half_ulp=0.005)["h3a"] == H.UNRESOLVED)
+check("R3: the same rows read as exact values still FAIL at 1.0 (strict bar unchanged)",
+      H.score(near)["h3a"] == "FAILS")
+check("R3: far from the bar, display rounding cannot matter (0.52 HOLDS, 1.10 FAILS)",
+      H.score([(d, s, c, 0.52) for d, s, c, _ in near], half_ulp=0.005)["h3a"] == "HOLDS"
+      and H.score([(d, s, c, 1.10) for d, s, c, _ in near], half_ulp=0.005)["h3a"] == "FAILS")
+check("R3: a printed mean gap of -0.00 (H3b) is UNRESOLVED, -0.30 HOLDS",
+      H.score([(d, s, c, 0.0) for d, s, c, _ in near], half_ulp=0.005)["h3b"] == H.UNRESOLVED
+      and H.score([(d, s, c, -0.30) for d, s, c, _ in near], half_ulp=0.005)["h3b"] == "HOLDS")
+check("R3: the real-sized positive slope still HOLDS with the rounding slack", H.score(rows_pos, half_ulp=0.005)["h3c"] == "HOLDS")
+# R4: the registered BH family is five. One testable pair with p = 0.02675 and four untestable ones: a family of one
+# would reject it; the family of five (adjusted 0.134) must not.
+fam_rows = [(f"2026-10-{d:02d}", "GLD", 20.0 + d, g) for d, g in zip(range(1, 41), [0.5 + 0.01 * (k % 7) for k in range(40)])]
+fam_rows += [(f"2026-10-0{d}", s, 20.0, 0.3) for s in ("IWM", "QQQ", "SPY", "USO") for d in (1, 2)]
+sf = H.score(fam_rows)
+fam = H.bh_family(sf["per"], "p_h3a")
+check("R4: untestable pairs stay in the family of five at p = 1 (never rejected)",
+      sf["n_syms"] == 1 and sf["per"]["IWM"] is None and sorted(fam) == sorted(H.BENCH)
+      and all(fam[s] == 1.0 for s in ("IWM", "QQQ", "SPY", "USO")))
+import analyze as _an   # noqa: E402
+_rej, _adj = _an.benjamini_hochberg({"GLD": 0.02675, "IWM": 1.0, "QQQ": 1.0, "SPY": 1.0, "USO": 1.0}, 0.05)
+check(f"R4: BH over five with one p = 0.02675 adjusts it to {_adj['GLD']:.5f} and does not reject",
+      abs(_adj["GLD"] - 0.13375) < 1e-9 and "GLD" not in _rej)
+
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)

@@ -17,6 +17,7 @@ H7c: USO free - OVX, descriptive. Minimum 10 days with both readings and an inde
 Run: VOLREC_DATABENTO_DIR=~/Documents/volrec-licensed/opra FRED_KEY=use-cache python tools/h7_reader.py
 Output is aggregates only.
 """
+import math
 import os
 import sys
 from datetime import date
@@ -108,13 +109,37 @@ def day_reading(day, symbol, R, opra_dir):
             "opra_matched": opra_m, "edge": [(e - when.date()).days for e in edge_limited(fchain) if e in exps]}
 
 
+def _ok(v):
+    """A usable number: present and finite (28 Oct 2026, review R8 - a NaN once counted as a day)."""
+    return v is not None and isinstance(v, (int, float)) and math.isfinite(v)
+
+
+def counted(x, closes):
+    """Does this day count? Only with both readings AND the index close, all finite (the registered minimum)."""
+    return _ok(x["free"]) and _ok(x["opra"]) and _ok(closes.get(x["symbol"], {}).get(x["day"]))
+
+
+def not_counted(readings, closes, waiting=()):
+    """Days that have a reading row but do not count, with the reason - except those already named as waiting.
+    28 Oct 2026 (review R5): such a day used to drop out of the means without being named anywhere."""
+    out = []
+    for x in readings:
+        if counted(x, closes) or any(w.startswith(f"{x['day']} {x['symbol']} ") for w in waiting):
+            continue
+        c = closes.get(x["symbol"], {}).get(x["day"])
+        why = ("no free reading" if x["free"] is None else "free reading not finite" if not _ok(x["free"])
+               else "no OPRA reading" if x["opra"] is None else "OPRA reading not finite" if not _ok(x["opra"])
+               else "no index close" if c is None else "index close not finite")
+        out.append(f"{x['day']} {x['symbol']} ({why})")
+    return out
+
+
 def summarise(readings, closes):
     """-> {symbol: {"a": (n, mean |free-opra|), "b": (n, mean |free-close|), "c": (n, mean free-close)}}.
-    A day counts only with both readings AND the index close (the registered minimum's wording)."""
+    A day counts only with both readings AND the index close (the registered minimum's wording), all finite."""
     out = {}
     for sym in INDEX:
-        rs = [x for x in readings if x["symbol"] == sym and x["free"] is not None and x["opra"] is not None
-              and closes.get(sym, {}).get(x["day"]) is not None]
+        rs = [x for x in readings if x["symbol"] == sym and counted(x, closes)]
         n = len(rs)
         if not n:
             out[sym] = {"a": (0, None), "b": (0, None), "c": (0, None)}
@@ -158,6 +183,10 @@ def main():
         # closes can lag, so the verdict writer waits while any day in the window lacks either.
         if not (Path(ore.DATA_DIR) / f"OPRA_M_{sym}_{day}.csv").exists():
             waiting.append(f"{day} {sym} OPRA")
+        elif x["opra"] is None:
+            # 28 Oct 2026 (review R5): a file that gives no reading is waited on like a missing one, so the writer
+            # holds until the 19 Nov deadline and a person can look; after it, the day is named as not counted.
+            waiting.append(f"{day} {sym} OPRA unusable")
         if c is None:
             waiting.append(f"{day} {sym} {INDEX[sym]} close")
         f = lambda v: f"{v:8.2f}" if v is not None else "     n/a"
@@ -175,6 +204,8 @@ def main():
     h7a, h7b = verdicts(s)
     print(f"H7a {h7a or f'NOT YET (minimum {MIN_DAYS} days each)'}; H7b {h7b or f'NOT YET (minimum {MIN_DAYS} days)'}")
     print(f"H7 waiting on: {', '.join(waiting) if waiting else 'nothing'}")
+    nc = not_counted(readings, closes, waiting)
+    print(f"H7 not counted: {', '.join(nc) if nc else 'nothing'}")
     if "--matched" in sys.argv:
         print_companion(readings)
     print(f"\n{ore.ATTRIBUTION}")

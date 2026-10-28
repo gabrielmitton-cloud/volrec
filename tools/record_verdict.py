@@ -318,7 +318,15 @@ def parse_h7_waiting(out):
     return [] if m.group(1).strip() == "nothing" else [w.strip() for w in m.group(1).split(",")]
 
 
-def block_h7(v, today, waiting=()):
+def parse_h7_not_counted(out):
+    """h7_reader.py's 'H7 not counted:' line -> list (28 Oct 2026, review R5). Refuses if the line is absent."""
+    m = re.search(r"^H7 not counted: (.*)$", out, re.M)
+    if not m:
+        raise SystemExit("h7_reader output lacks its 'not counted' line - refusing to write")
+    return [] if m.group(1).strip() == "nothing" else [w.strip() for w in re.split(r",\s*(?=\d{4}-)", m.group(1))]
+
+
+def block_h7(v, today, waiting=(), not_counted=()):
     a, b = h7_verdicts(v)
     a, b = a or "NOT READ (below its minimum)", b or "NOT READ (below its minimum)"
     c = v["USO_c"]
@@ -335,6 +343,9 @@ def block_h7(v, today, waiting=()):
              "v9.0), applied to the monthly legs recorded from 9 Oct; after-close days dropped."]
     if waiting:
         lines.append(f"- Still missing at the {COMPLETE_BY} deadline, so not counted: {', '.join(waiting)}.")
+    if not_counted:
+        lines.append(f"- Also not counted (a day needs the free reading, the OPRA reading and the index close, all "
+                     f"finite): {', '.join(not_counted)}.")
     lines += ["", DB_CREDIT]
     return "\n".join(lines)
 
@@ -477,7 +488,7 @@ def main():
         notes.append(f"H7: due {H7_DUE}")
     elif h7:
         h7out = run(["tools/h7_reader.py"])
-        v, waiting = parse_h7(h7out), parse_h7_waiting(h7out)
+        v, waiting, h7_nc = parse_h7(h7out), parse_h7_waiting(h7out), parse_h7_not_counted(h7out)
         va, vb = h7_verdicts(v)
         if waiting and str(today) < COMPLETE_BY and not a.preview:
             notes.append(f"H7: waiting on {', '.join(waiting)} (written regardless from {COMPLETE_BY})")
@@ -498,7 +509,7 @@ def main():
             if h7_gone and not a.preview:
                 raise SystemExit(f"H7: h7_reader printed no row for {', '.join(h7_gone)} - refusing to write "
                                  f"(a day dropped silently)")
-            blk = block_h7(v, today, waiting)
+            blk = block_h7(v, today, waiting, h7_nc)
             if a.preview or a.dry_run:
                 print(("PREVIEW (not due, not written)\n" if str(today) < H7_DUE else "DUE\n") + blk + "\n")
             else:

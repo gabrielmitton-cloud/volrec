@@ -449,12 +449,27 @@ _h3src = (R / "tools/h3_scorer.py").read_text()
 ok(_th3.returncode == 0 and _nh3f == 0 and _nh3p >= 16 and "H3A_BAR, ALPHA, BH_Q = 1.0, 0.05, 0.05" in _h3src
    and 'THROUGH = "2026-11-11"' in _h3src,
    f"the frozen H3 scorer passes its known-answer tests, with the registered bar 1.0, q 0.05 and window to 11 Nov ({_nh3p} cases)")
+# 28 Oct 2026 (outside review R3, M07): the scorer reads modelfree's PRINTED gaps (0.01 resolution), so its main
+# must judge them with the 0.005 slack; and the H4 delta sensitivity must drop H4's after-close days.
+ok("score(parse(out, a.through), half_ulp=0.005)" in _h3src,
+   "the H3 scorer judges modelfree's printed gaps with their rounding slack (a verdict the print cannot show is UNRESOLVED)")
+_dmsrc = (R / "tools/delta_model.py").read_text()
+ok('rows = [r_ for r_ in rows if r_["date"] not in dropped]' in _dmsrc and "AFTER_CLOSE_DAYS" in _dmsrc,
+   "the H4 delta sensitivity drops the after-close days H4 itself drops")
 # The independent re-implementation (17 Oct 2026, Gabriel asked for it kept): tools/independent_replica.py, written
 # from the method text, checked here on its OWN known answers (Black-Scholes chains of known vol, the quote rules,
 # H7's clock) and held to the standard library so it can never share a mistake with the readers it checks. Its
 # agreement with modelfree/h7_reader on the real data (tools/independent_check.py, 661 of 661 on 17 Oct) runs on
 # demand and once at verdict time beside the companions - not nightly: an exact strike tie can move the two by
 # a hair, and a nightly check that can trip on that would be a false alarm (no new monitors before 21 Nov).
+# 28 Oct 2026 (outside review R6): agreement means two finite numbers within the tolerance - never "both empty".
+_ics = _iu.spec_from_file_location("independent_check_r6", R / "tools/independent_check.py")
+_icm = _iu.module_from_spec(_ics)
+_ics.loader.exec_module(_icm)
+_c0, _c1 = _icm.compare([]), _icm.compare([("x", None, None)])
+_c2 = _icm.compare([("x", float("nan"), 1.0), ("y", 1.0, 1.0)])
+ok(_c0[:2] == (0, 0) and _c1[:2] == (0, 0) and _c1[4] == 1 and _c2[:2] == (2, 1) and len(_c2[3]) == 1,
+   "the independent check counts only finite pairs as agreement: an empty or all-missing comparison checks nothing")
 _tind = _sp.run([sys.executable, str(R / "tools/test_independent.py")], capture_output=True, text=True)
 _nif = sum(1 for _ln in _tind.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _nip = sum(1 for _ln in _tind.stdout.splitlines() if _ln.strip().startswith("PASS"))
@@ -551,7 +566,8 @@ for _d in _rv7.expected_days(_rv7.H7_START_DAY, _rv7.H7_END_DAY):
         else:
             _hrows.append(f"{_d:<11}{_sy:<5}{_fr:8.2f}{_fr - 0.10:8.2f}{_fr:8.2f}{0.10:+11.2f}{0.00:+11.2f}  [35, 63]\n")
 _h7_canned = ("H7 - the free feed through Cboe's own rules, 2026-10-09 to 2026-11-11; r = 3.910% (DGS1MO)\n\n"
-              + "".join(_hrows) + "\n" + _o7 + "H7a HOLDS; H7b FAILS\nH7 waiting on: 2026-11-11 USO OPRA\n")
+              + "".join(_hrows) + "\n" + _o7 + "H7a HOLDS; H7b FAILS\nH7 waiting on: 2026-11-11 USO OPRA\n"
+              + "H7 not counted: nothing\n")
 _seen_args = []
 def _fake_run(args, _s=_seen_args):
     _s.append(args)
@@ -580,6 +596,17 @@ try:
 except SystemExit as _e7:
     _xc = "disagree" in str(_e7)
 ok(_xc, "the H5e FINAL is cross-checked against modelfree's own tally and refused on disagreement")
+# 28 Oct 2026 (outside review R5): a day with a reading row that does not count must be NAMED in the record.
+_h7_nc = _h7_canned.replace("H7 not counted: nothing", "H7 not counted: 2026-10-21 GLD (no free reading)")
+_rv7.run = lambda args: _h7_nc if "h7_reader" in args[0] else _mf_canned
+_d19nc = _verdict_dry("2026-11-19")
+_rv7.run = lambda args: (_h7_canned.replace("H7 not counted: nothing\n", "") if "h7_reader" in args[0] else _mf_canned)
+try:
+    _verdict_dry("2026-11-19"); _ncr = False
+except SystemExit as _e8:
+    _ncr = "not counted" in str(_e8)
+ok("Also not counted" in _d19nc and "2026-10-21 GLD (no free reading)" in _d19nc and _ncr,
+   "the H7 record names every day that has a row but does not count, and the writer refuses output without that line")
 # 17 Oct 2026 (verdict-code review, Gabriel approved 16 Oct): safeguards 1-3, each must REFUSE.
 def _refuses(mf, h7, needle):
     _rv7.run = lambda args: h7 if "h7_reader" in args[0] else mf
@@ -659,6 +686,15 @@ ok("SystemExit" in _mf,
 
 print("\n=== H4. MULTIPLE TESTING (H1 reports a COUNT of significant pairs) ===")
 import analyze as _az
+# 28 Oct 2026 (outside review R2): the price cache's own metadata must not satisfy the forward-window check.
+_r2row = [{"symbol": "SPY", "iv": "0.20", "date": "2026-10-01", "dte": "30"}]
+_r2px = {f"2026-10-{d:02d}": 100.0 + d for d in (1, 2, 5, 6, 7, 8)}
+_r2a, _r2da = _az.build_panel(_r2row, {"SPY": dict(_r2px)})
+_r2b, _r2db = _az.build_panel(_r2row, {"SPY": dict(_r2px, _end="2026-10-31", _start="2026-01-01", _feed="sip")})
+_r2c, _ = _az.build_panel(_r2row, {"SPY": dict(_r2px, **{f"2026-10-{d:02d}": 100.0 for d in (9, 30)},
+                                                **{"2026-11-02": 101.0, "_end": "2026-11-02", "_start": "2026-01-01"})})
+ok(not _r2a and not _r2b and _r2db["window incomplete"] == 1 and len(_r2c) == 1,
+   "a forward window whose prices stop early is dropped with or without the cache's metadata keys, and kept once covered")
 _bh_all, _bh_adj = _az.benjamini_hochberg({f"n{i}": 1.0 for i in range(10)})
 ok(len(_bh_all) == 0, "eleven true nulls reject nothing")
 _bh_all, _ = _az.benjamini_hochberg({f"z{i}": 0.0 for i in range(10)})

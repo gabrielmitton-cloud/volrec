@@ -93,7 +93,7 @@ measurement, not a new method. The methods are Cboe's and published work's, and 
 
 **4. Validating the method before using it (1.5 pages).**
 - Known-answer calibration: model-free variance on a known volatility, the pricer, test size.
-- H1: the variance risk premium recovered on ten years of Cboe indices (9 of 11 pairs; 8 under BY).
+- H1: the volatility risk premium (implied minus realised volatility, in points; not the variance premium) recovered on ten years of Cboe indices (9 of 11 pairs; 8 under BY).
   It shows the code finds a known result before it is trusted on new data.
 
 **5. Results: where the loss comes from (the core, 4-5 pages).** Opens with ONE table of every

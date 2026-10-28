@@ -14,10 +14,11 @@ Agreement = within TOL (0.01 vol points, half the last printed digit's step). In
 the recorded quotes) are shared on purpose; the arithmetic is what is being checked.
 
   FRED_KEY=use-cache python tools/independent_check.py [--through YYYY-MM-DD] [--opra DIR]
-Exit 0 when every value agrees, 3 on any disagreement (a crash exits 1, Python's own code - so the two
-are never confused). Data provided by Databento (OPRA consolidated NBBO) for H7.
+Exit 0 when every value agrees, 3 on any disagreement, 4 when no numeric comparison was made at all (28 Oct
+2026, outside review R6); a crash exits 1, Python's own code - so they are never confused. Data provided by Databento (OPRA consolidated NBBO) for H7.
 """
 import argparse
+import math
 import os
 import sys
 from collections import defaultdict
@@ -34,15 +35,21 @@ TOL = 0.01
 
 
 def compare(pairs):
-    """pairs: [(label, project, independent)] -> (n, agreeing, largest |diff|, [disagreements])."""
-    n, agree, worst, bad = 0, 0, 0.0, []
+    """pairs: [(label, project, independent)] -> (n, agreeing, largest |diff|, [disagreements], both_none).
+    28 Oct 2026 (outside review R6): only a pair of two FINITE numbers within TOL is an agreement. A pair where
+    both sides gave no value is counted apart (it shows the two agree a day is unusable, not that a number was
+    checked), and a non-finite value is a disagreement, never a silent zero difference."""
+    n, agree, worst, bad, both_none = 0, 0, 0.0, [], 0
     for label, a, b in pairs:
-        n += 1
         if a is None and b is None:
-            agree += 1
+            both_none += 1
             continue
+        n += 1
         if a is None or b is None:
             bad.append((label, "one side gave no value"))
+            continue
+        if not (math.isfinite(a) and math.isfinite(b)):
+            bad.append((label, f"a value is not finite ({a}, {b})"))
             continue
         d = abs(a - b)
         worst = max(worst, d)
@@ -50,7 +57,7 @@ def compare(pairs):
             agree += 1
         else:
             bad.append((label, f"differs by {d:.4f}"))
-    return n, agree, worst, bad
+    return n, agree, worst, bad, both_none
 
 
 def h3_pairs(r, through=None):
@@ -111,13 +118,18 @@ def main(argv=None):
         print("  (H7 skipped: no OPRA directory - licensed files live in volrec-licensed)")
     total = agreed = 0
     print()
+    none_both = 0
     for name, pairs in fams.items():
-        n, ok, worst, bad = compare(pairs)
-        total, agreed = total + n, agreed + ok
-        print(f"  {name:<36} {ok:4} of {n:4} agree   largest difference {worst:.5f}")
+        n, ok, worst, bad, nn = compare(pairs)
+        total, agreed, none_both = total + n, agreed + ok, none_both + nn
+        print(f"  {name:<36} {ok:4} of {n:4} agree   largest difference {worst:.5f}"
+              + (f"   ({nn} both unusable, not counted)" if nn else ""))
         for lab, why in bad:
             print(f"      DISAGREES  {lab}: {why}")
-    print(f"\nRESULT: {agreed} of {total} values agree")
+    print(f"\nRESULT: {agreed} of {total} values agree" + (f" ({none_both} pairs both unusable, not counted)" if none_both else ""))
+    if total == 0:
+        print("INCOMPLETE: no numeric comparison was made - this is not an agreement")
+        return 4
     if any("H7" in k for k in fams):
         print("Data provided by Databento (OPRA consolidated NBBO). Aggregates only.")
     return 0 if agreed == total else 3

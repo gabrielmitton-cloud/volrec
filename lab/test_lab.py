@@ -69,6 +69,23 @@ check(f"a zero spread costs the strip nothing ({z})", z is not None and abs(z) <
 w = costs.strip_cost(chain(0.04), 0.0)
 check(f"a 4% spread costs the strip a positive number of points ({w:.3f})", w is not None and w > 0)
 check("a wider spread costs more", costs.strip_cost(chain(0.08), 0.0) > w)
+# 28 Oct 2026 (outside review M02): the fixed-portfolio cost.
+import modelfree as _mf   # noqa: E402
+_c4 = chain(0.04)
+_z2, _w2, _w8 = costs.strip_cost_fixed(chain(0.0), 0.0), costs.strip_cost_fixed(_c4, 0.0), costs.strip_cost_fixed(chain(0.08), 0.0)
+check(f"fixed strip: a zero spread costs nothing, 4% costs more than 0, 8% more again ({_z2}, {_w2:.3f}, {_w8:.3f})",
+      abs(_z2) < 1e-12 and 0 < _w2 < _w8)
+_byx = {}
+for _x in [x for x in _c4 if float(x["bid"]) > 0]:
+    _byx.setdefault(_x["expiration"], []).append(_x)
+check("fixed strip: its mid variance is the registered estimator's own, expiry by expiry",
+      all(abs(costs._basket_one_expiry(v, 0.0)[0] - _mf.variance_one_expiry(v, 0.0)[0]) < 1e-12 for v in _byx.values()))
+_itm = [dict(x) for x in _c4]
+for _x in _itm:            # widen ONE in-the-money call (not held by the strip), its mid unchanged - the review's case
+    if _x["type"] == "C" and float(_x["strike"]) == 85.0:
+        m_ = float(_x["mid"]); _x["bid"], _x["ask"] = f"{0.5 * m_:.6f}", f"{1.5 * m_:.6f}"
+check(f"fixed strip: a quote the strip does not hold cannot move its cost ({costs.strip_cost_fixed(_itm, 0.0):.6f} vs {_w2:.6f})",
+      abs(costs.strip_cost_fixed(_itm, 0.0) - _w2) < 1e-12)
 
 integ = load("integrity")
 from datetime import datetime, timezone    # noqa: E402
@@ -421,6 +438,22 @@ check("stale quotes are flagged", "stale quotes" in eng.read(_chain(stale=True),
 check("a thin chain is flagged", "thin chain" in eng.read(_chain(step=15), hist)["flags"])
 check("spreads wider than this fund's 90th percentile are flagged", "wide spreads" in eng.read(_chain(frac=0.10), hist)["flags"])
 check("an empty chain reads nothing", eng.read([], hist)["vol"] is None)
+
+print("\n=== contract adjustments (28 Oct 2026, outside review M03) ===")
+_bars = {"USO": {"2020-04-20": (3.70, 0.0), "2020-05-15": (22.40, 0.0)}, "SPY": {"2020-05-15": (290.0, 0.0)}}
+check("a USO contract opened before the 29 Apr 2020 split settles on OCC's USO1 = 0.125 x USO (memo #46881)",
+      abs(tr.settle(_bars, "USO", "2020-05-15", opened="2020-04-20") - 2.80) < 1e-12)
+check("a contract opened after the split, or a fund without an event, settles on the raw close",
+      tr.settle(_bars, "USO", "2020-05-15", opened="2020-05-01") == 22.40
+      and tr.settle(_bars, "SPY", "2020-05-15", opened="2020-04-20") == 290.0
+      and tr.settle(_bars, "USO", "2020-05-15") == 22.40)
+_t0 = datetime(2020, 4, 27, 18, 30, tzinfo=timezone.utc)
+_mixed = {"USO   200515C00002000": [(_t0, 0.1, 0.2)], "USO1  200515C00002000": [(_t0, 14.0, 14.2)]}
+try:
+    integ.chain_at(_mixed, "2020-05-15", _t0)
+    check("two option roots for one expiry are refused, never silently overwritten", False)
+except ValueError:
+    check("two option roots for one expiry are refused, never silently overwritten", True)
 
 vp = load("verify_purchases")
 print("\n=== purchase verification ===")

@@ -81,7 +81,7 @@ def weekly(sym, bars, vol, trading):
         if got and x:
             row = {"day": day, "x": x, "vix": prev(vol["VIX"], day), "cost_pts": got[0], "cost_frac": got[1]}
             if e in bars[sym]:                  # weekly entries held to their expiry: the robustness check
-                row["net"] = (got[3] - abs(tr.settle(bars, sym, e) - got[4])) / got[2] - got[0]
+                row["net"] = (got[3] - abs(tr.settle(bars, sym, e, opened=day) - got[4])) / got[2] - got[0]
             rows.append(row)
     return rows
 
@@ -102,7 +102,7 @@ def monthly(sym, bars, vol, trading):
         if not (got and x):
             continue
         cost_pts, _f, vega, prem, K = got
-        pnl = prem - abs(tr.settle(bars, sym, expiry) - K)
+        pnl = prem - abs(tr.settle(bars, sym, expiry, opened=entry) - K)
         rows.append({"day": entry, "x": x, "vix": prev(vol["VIX"], entry), "net": pnl / vega - cost_pts})
     return rows
 

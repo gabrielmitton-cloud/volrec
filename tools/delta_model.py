@@ -215,6 +215,11 @@ def main():
     rows = list(csv.DictReader(surf.open(newline="")))
     if not rows:
         sys.exit("surface.csv is empty.")
+    # 28 Oct 2026 (outside review M07): the same after-close drop as H4 itself (hedged.py), so this sensitivity
+    # runs on H4's eligible days and its runs break where H4's do.
+    from panel_health import AFTER_CLOSE_DAYS
+    dropped = {d.isoformat() for d in AFTER_CLOSE_DAYS}
+    rows = [r_ for r_ in rows if r_["date"] not in dropped]
 
     r = modelfree.risk_free()
     print(f"risk-free (DGS1MO): {r*100:.3f}%   forward: {a.forward}\n")

@@ -107,11 +107,14 @@ def h7_series(h7_out):
     s = {"USO_a": [], "GLD_a": [], "GLD_b": [], "USO_c": []}
     for m in _H7_ROW.finditer(h7_out):
         sym, fo, fc = m.group(2), m.group(6), m.group(7)
-        if fo != "n/a":
-            s[f"{sym}_a"].append(abs(float(fo)))
-        if fc != "n/a" and sym == "GLD":
+        # 28 Oct 2026 (outside review M04): a day counts only with the free reading, the OPRA reading AND the
+        # close, exactly as h7_reader.summarise counts it - the intervals describe the registered sample.
+        if "n/a" in (m.group(3), m.group(4), m.group(5), fo, fc):
+            continue
+        s[f"{sym}_a"].append(abs(float(fo)))
+        if sym == "GLD":
             s["GLD_b"].append(abs(float(fc)))
-        if fc != "n/a" and sym == "USO":
+        else:
             s["USO_c"].append(float(fc))
     return s
 

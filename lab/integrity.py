@@ -48,11 +48,16 @@ def listed_strikes(def_path, expiry):
 
 def chain_at(opra, expiry, when, tol=120):
     """{strike: {'C': (bid, ask), 'P': (bid, ask)}} for one expiry, at the record nearest `when`."""
-    out = {}
+    out, roots = {}, set()
     for sym, recs in opra.items():
         p = parse_osi(sym)
         if not p or p[1] != expiry:
             continue
+        roots.add(p[0])
+        if len(roots) > 1:
+            # 28 Oct 2026 (outside review M03): an adjusted root (USO1) beside the standard one would key the same
+            # strike twice and one would silently overwrite the other. None exists in the lab's files; refuse if one does.
+            raise ValueError(f"two option roots for one expiry {expiry}: {sorted(roots)} - contract identity is ambiguous")
         hit = ore.nearest(recs, when, tol)
         if hit and hit[2] is not None:
             out.setdefault(p[3], {})[p[2]] = (hit[1] or 0.0, hit[2])

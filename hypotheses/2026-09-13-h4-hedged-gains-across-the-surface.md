@@ -359,3 +359,13 @@ called significant.**
   Signs checked by option type: the dividend term lowers call gains and raises put gains, the
   carry term the reverse - as the paper implies. No conclusion moves. One strike remains;
   the template's rule is that a third post-output adjustment abandons H4 and reports it.
+
+- **2026-10-28 — two notes from an outside review, NOT adjustments and NOT strikes (no bucket bound, threshold,
+  window or computation of H4 moves; H4 has not been read).** (1) *Labels (review M06).* The five buckets are
+  bands of strike over spot, K/S, and `hedged.py` puts calls and puts into the same band: "OTM put" (K/S 0.90-0.97)
+  also holds in-the-money calls, and "OTM call" (1.03-1.10) in-the-money puts. The registered prediction above is
+  about those K/S bands, so it is unchanged; the write-up will call them strike bands holding both types, never
+  "only OTM puts" or "only OTM calls". (2) *The delta sensitivity (review M07).* `tools/delta_model.py` did not drop
+  the after-close days H4 itself drops (`AFTER_CLOSE_DAYS`), so its runs could bridge a day H4 splits on; it now
+  drops them (pressure check + auditor mutant `delta-keeps-after-close`). It is a descriptive sensitivity beside
+  H4, never H4's reading.

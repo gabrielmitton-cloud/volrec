@@ -27,8 +27,26 @@ def nearest_strike(chain, target):
     return min(two, key=lambda k: (abs(k - target), k)) if two else None
 
 
-def settle(bars, symbol, day):
-    return bars[symbol][day][0]
+# 28 Oct 2026 (outside review M03). OCC Information Memo #46881 (28 Apr 2020): USO's 1-for-8 reverse split,
+# effective before the open on 29 Apr 2020. Its options became USO1, delivering 12 new USO shares plus cash in lieu
+# of half a share, and OCC priced USO1 = 0.125 x USO until the cash was fixed. A contract opened before an effective
+# day and held past it is therefore worth `ratio` x the new share, not the new share itself. Raw closes stay raw
+# (they must match the strikes of contracts opened after the event); only the position's own deliverable changes.
+# The only such event for the five funds over 2016-2026 (the lab's quote files hold no other root - scanned 28 Oct).
+DELIVERABLE = {"USO": (("2020-04-29", 0.125),)}
+
+
+def spot(bars, symbol, day, opened=None):
+    """The underlying price for a contract opened on `opened` (None = a new contract), on `day`."""
+    s = bars[symbol][day][0]
+    for eff, ratio in (DELIVERABLE.get(symbol, ()) if opened else ()):
+        if opened < eff <= day:
+            s *= ratio
+    return s
+
+
+def settle(bars, symbol, day, opened=None):
+    return spot(bars, symbol, day, opened)
 
 
 def intrinsic(kind, K, S):

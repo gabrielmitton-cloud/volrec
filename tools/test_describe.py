@@ -87,11 +87,14 @@ h7 = """date       sym      free    OPRA   close  free-OPRA free-close  legs
 2026-10-09 USO     48.90   48.75   48.90      +0.15      +0.00  [7, 42]
 2026-10-09 GLD     21.10   21.00   21.30      +0.10      -0.20  [7, 42]
 2026-10-12 USO     48.10     n/a   48.52        n/a      -0.42  [4, 39]
+2026-10-12 GLD     21.40   21.30     n/a      +0.10        n/a  [4, 39]
 """
 s = D.h7_series(h7)
 check("H7: USO_a takes |free-OPRA| and skips n/a", s["USO_a"] == [0.15])
 check("H7: GLD_b is |free - GVZ| (absolute)", s["GLD_b"] == [0.2])
-check("H7: USO_c keeps the sign (descriptive bias)", s["USO_c"] == [0.0, -0.42])
+check("H7: USO_c keeps the sign (descriptive bias)", s["USO_c"] == [0.0])
+check("H7 (review M04, 28 Oct): a day lacking OPRA or the close counts in NO series, as in h7_reader.summarise",
+      s["USO_c"] == [0.0] and s["GLD_a"] == [0.1] and len(s["GLD_b"]) == 1)
 check("H7: GLD_a", s["GLD_a"] == [0.1])
 
 print("\n=== discipline ===")

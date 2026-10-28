@@ -112,6 +112,20 @@ output was checked byte-identical before and after on the real data (only 16 Oct
 differ). Tests: `tools/test_h7.py` (22 cases); auditor mutant `h7-companion-leaks`. **Not an adjustment: no
 registered number can move.**
 
+**4. 28 Oct 2026 - disclosure and validity guards, BEFORE any H7 reading (outside review by a second AI model,
+verified against the code by Vega).** (R8) A day counted when its values were merely present; a NaN or infinite value
+could have counted toward the 10-day minimum and turned a comparison into FAILS. A day now counts only when the free
+reading, the OPRA reading and the index close are all finite - the registered wording ("both readings and an index
+close") read strictly. (R5) A day whose OPRA file exists but yields no reading dropped out of the means without being
+named anywhere, and the writer's "waiting" list only checked that the file existed. Such a day is now WAITED on like a
+missing file ("OPRA unusable"), so the writer holds until the registered 19 Nov deadline and a person can look; and
+`h7_reader.py` prints "H7 not counted:" naming every day that has a row but does not count, with its reason, which the
+writer copies into the record (and refuses to write without). (M04) The descriptive intervals (`tools/describe.py`) now
+use exactly the days the registered summary counts. On today's local data the reader's output is byte-identical apart
+from the new "not counted: nothing" line. Tests: `tools/test_h7.py` (+4), a pressure check on the writer, auditor
+mutants `h7-nan-counts-as-day`, `h7-uncounted-day-unnamed`, `describe-h7-wider-sample`. **Not an adjustment: no bar,
+window, minimum, estimator or registered number moves.**
+
 *Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
 
 *Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*

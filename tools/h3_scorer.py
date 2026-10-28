@@ -124,23 +124,54 @@ def wild_cluster_p(x, y, groups):
         ys = [my + w[idx[g]] * r for g, r in zip(groups, e0)]
         _b, ts = cluster_t(x, ys, groups)
         draws += 1
-        hits += ts >= t
+        hits += ts >= t or not math.isfinite(ts)   # 28 Oct 2026 (review R1): an undefined draw counts AGAINST rejection
     return b, t, hits / draws, draws
 
 
-def score(rows):
-    """Every registered H3 statistic from the readings. Pure."""
+UNRESOLVED = "UNRESOLVED (within display rounding of the bar)"
+UNSCORED = "UNSCORED (the statistic is undefined)"
+
+
+def _side(lo, hi, holds_if_below):
+    """A verdict only when the whole interval [lo, hi] the true value can lie in is on one side of the bar."""
+    if holds_if_below(hi) and holds_if_below(lo):
+        return "HOLDS"
+    if not holds_if_below(hi) and not holds_if_below(lo):
+        return "FAILS"
+    return UNRESOLVED
+
+
+def bh_family(per, key):
+    """The registered BH family: all five pairs; an untestable one enters at p = 1 (review R4, 28 Oct 2026)."""
+    return {s: (per[s][key] if per.get(s) and per[s][key] is not None and math.isfinite(per[s][key]) else 1.0)
+            for s in BENCH}
+
+
+def score(rows, half_ulp=0.0):
+    """Every registered H3 statistic from the readings. Pure.
+    half_ulp (28 Oct 2026, review R3): modelfree.py prints each gap to 0.01, so a printed gap is within 0.005 of
+    the true one; main() passes 0.005. A verdict is given only when it holds for every true value the printed ones
+    allow, otherwise UNRESOLVED (read it at full precision by hand). 0.0 = exact inputs (the tests)."""
     if not rows:
         return None
     ab = [abs(g) for _, _, _, g in rows]
     out = {"n": len(rows), "days": len({d for d, *_ in rows}),
            "h3a_mean_abs": sum(ab) / len(ab), "h3b_mean": sum(g for *_, g in rows) / len(rows)}
-    out["h3a"] = "HOLDS" if out["h3a_mean_abs"] < H3A_BAR else "FAILS"
-    out["h3b"] = "HOLDS" if out["h3b_mean"] < 0 else "FAILS"
+    h = half_ulp
+    out["h3a"] = _side(out["h3a_mean_abs"] - h, out["h3a_mean_abs"] + h, lambda m: m < H3A_BAR)
+    out["h3b"] = _side(out["h3b_mean"] - h, out["h3b_mean"] + h, lambda m: m < 0)
     x, y, grp = [c for _, _, c, _ in rows], ab, [s for _, s, _, _ in rows]
     b, t, p, draws = wild_cluster_p(x, y, grp)
-    out.update(h3c_slope=b, h3c_t=t, h3c_p=p, h3c_draws=draws,
-               h3c="HOLDS" if (b > 0 and p < ALPHA) else "FAILS")
+    mx = sum(x) / len(x)
+    sxx = sum((a - mx) ** 2 for a in x)
+    slack = h * sum(abs(a - mx) for a in x) / sxx if sxx > 0 else float("inf")   # most rounding can move the slope
+    if not (math.isfinite(b) and math.isfinite(t)):
+        h3c = UNSCORED                     # 28 Oct 2026 (review R1): a NaN t once compared as p = 0 and read HOLDS
+    elif p >= ALPHA:
+        h3c = "FAILS"
+    else:
+        h3c = _side(b - slack, b + slack, lambda v: v > 0)
+    out.update(h3c_slope=b, h3c_t=t, h3c_p=p, h3c_draws=draws, h3c=h3c)
     per = {}
     for sym in BENCH:
         sub = sorted((d, c, g) for d, s, c, g in rows if s == sym)
@@ -155,7 +186,9 @@ def score(rows):
                     "slope": bs, "p_h3c": fixed_b_p_upper(ts, len(sub), lag) if math.isfinite(ts) else None}
     syms = [s for s in BENCH if per[s]]
     for key in ("p_h3a", "p_h3c"):
-        fam = {s: per[s][key] for s in syms if per[s][key] is not None and math.isfinite(per[s][key])}
+        # 28 Oct 2026 (review R4): the registered family is all FIVE pairs. An untestable pair stays in it at p = 1
+        # (it can never be rejected) instead of leaving, which would shrink the family and ease every rejection.
+        fam = bh_family(per, key)
         rejected, _adj = analyze.benjamini_hochberg(fam, BH_Q)     # (set of survivors, adjusted p)
         for s in syms:
             per[s][key + "_bh"] = s in rejected
@@ -176,8 +209,8 @@ def report(sc, through=THROUGH):
          f"H3c {sc['h3c']}: pooled slope of |gap| on the index level {sc['h3c_slope']:+.4f} per point, "
          f"t {sc['h3c_t']:.2f}, one-sided p {sc['h3c_p']:.4f} (wild cluster bootstrap, Webb weights, "
          f"{sc['h3c_draws']} weight vectors enumerated; registered: positive and significant)",
-         f"BH (q {BH_Q}) across the {sc['n_syms']} underlyings: H3a tracks (mean |gap| under {H3A_BAR}) on "
-         f"{sc['bh_h3a_k']} of {sc['n_syms']}; H3c slope positive on {sc['bh_h3c_k']} of {sc['n_syms']}"]
+         f"BH (q {BH_Q}) across the {len(BENCH)} registered underlyings ({sc['n_syms']} testable): H3a tracks (mean |gap| "
+         f"under {H3A_BAR}) on {sc['bh_h3a_k']} of {len(BENCH)}; H3c slope positive on {sc['bh_h3c_k']} of {len(BENCH)}"]
     for s, v in sc["per"].items():
         if v:
             L.append(f"   {s:<4} T={v['T']:>3}  mean |gap| {v['mean_abs']:.3f}  p(H3a) {v['p_h3a']:.4f}"
@@ -205,7 +238,7 @@ def main(argv=None):
     rf = re.search(r"risk-free \(DGS1MO\): ([\d.]+)%", out)
     if not rf or abs(float(rf.group(1)) - 3.910) > 0.0005:
         raise SystemExit(f"risk-free rate {rf.group(1) if rf else '?'}% is not the frozen 3.910% - refusing to score")
-    print(report(score(parse(out, a.through)), a.through))
+    print(report(score(parse(out, a.through), half_ulp=0.005), a.through))
     return 0
 
 
