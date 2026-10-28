@@ -2918,6 +2918,7 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   line, and rotate those keys if they are still the live ones (his decision; never edited without him).
   **Removed 23 Oct on Gabriel's OK** (it was the crontab's only line; no copy kept, so the keys are not moved
   into a file). Key rotation stays Gabriel's call.
+**Wed 28 Oct - state after the outside review (the dated plan above still holds; nothing needs Gabriel before 30 Oct)**
 - **Wed 28 Oct - the outside review (Astra = gpt-6-astra via Gabriel's ChatGPT, 24-25 Oct; reports in
   ~/Documents/Codex/2026-10-24/hey/outputs/).** Gabriel had it review everything, then: "do whatever u want that works
   the best just run a bunch of tests". Vega verified all 26 findings against the code (R1-R10, M01-M10, A01-A06) before
@@ -2958,6 +2959,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
     held strip leg gives an unavailable cost; the added-back broker, block-length and crash-replay tables added; the
     split rule's cash-in-lieu limit stated and bounded (0.00017); R4 tested through score() itself. All taken.
   - Tests: pressure 0 fail; H3 +11, H7 +5, describe +1, lab +7, poster 19; 15 new auditor mutants (127 total).
+- **Wed 28 Oct, Gabriel's updates:** Marc spoke with Gabriel 27 Oct - no meeting date set yet; **poster printing will be
+  funded** (no cost to Gabriel). Prof. Baier has not replied; Gabriel will send him the paper draft in February (no
+  chasing before then). Cboe: still nothing (third request 21 Oct); the FRED fallback stands from ~13 Nov. Pitch
+  practice: not yet (Gabriel's call) - offer again closer to 21 Nov.
 
 ### Prompt for the next session
 
