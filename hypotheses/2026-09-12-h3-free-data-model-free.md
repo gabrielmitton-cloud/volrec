@@ -1048,4 +1048,10 @@ that data, not as a discovery. H3c stays registered exactly as written.
   real series (to 27 Oct: 150 readings over 30 days, H3a 0.521) every number and verdict is unchanged; only the BH line
   now says "across the 5 registered underlyings (5 testable)". No bar, band, window, estimator or verdict changes.
   Tests: `tools/test_h3_scorer.py` (+9 cases); auditor mutants `h3-nan-statistic-holds`, `h3-ignores-display-rounding`,
-  `h3-main-forgets-slack`, `h3-bh-family-shrinks`. **Not an adjustment: no registered number can move.**
+  `h3-reads-rounded-print`, `h3-bh-family-shrinks`. **Not an adjustment: no registered number can move.**
+  *Same day, after the reviewing model checked these fixes:* the rounding slack protected the means and the slope's sign
+  but not the p-values, so the scorer now reads modelfree.py at FULL precision (`--precise` prints each day's estimate
+  and gap to 6 decimals; the estimate is the same, only its printing changes, and without the flag nothing changes). On
+  the real series every verdict and BH count is identical; the third or fourth decimal moves (H3c t 21.24 -> 21.30,
+  SPY mean |gap| 0.214 -> 0.213). A saved 2-decimal output (--file) is still read with the 0.005 slack but gets no H3c
+  verdict or BH count. A test drives score() itself with a borderline p (0.02675) and four untestable pairs.

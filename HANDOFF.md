@@ -1890,7 +1890,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 
 | check | result |
 |---|---|
-| diagnostic, 28 Oct | `daily.py` **ALL CLEAR** (Mon 27 Oct landed 18:31/18:40 UTC); H3 scorer to 27 Oct: H3a 0.521 over 150 readings (bar 1.0); pressure test **0 fail, 2 warn** (the known FXE one-sided quote and the late GitHub backup); auditor **125 of 125** (13 mutants added for the review's guards); unit tests H3 scorer, H7, describe, lab, poster - **0 failures**. (17 Oct: ALL CLEAR, auditor 109 of 109.) |
+| diagnostic, 28 Oct | `daily.py` **ALL CLEAR** (Mon 27 Oct landed 18:31/18:40 UTC); H3 scorer to 27 Oct: H3a 0.521 over 150 readings (bar 1.0); pressure test **0 fail, 2 warn** (the known FXE one-sided quote and the late GitHub backup); auditor **127 of 127** (15 mutants added for the review's guards); unit tests H3 scorer, H7, describe, lab, poster - **0 failures**. (17 Oct: ALL CLEAR, auditor 109 of 109.) |
 | independent re-implementation, 28 Oct | `tools/independent_check.py --opra`: **883 of 883** values agree, every one a real numeric pair (largest gap 0.00088); H7's 36 pairs on the 10 local OPRA files agree exactly. 17 Oct: 661 of 661; 110 Cboe closes = FRED's copies exactly |
 | Databento, 17 Oct | lifetime **$82.01** (lab/ $79.00 of its $90, finished 14 Oct; main $2.21; H7 $0.17 of $1.10; H8 $0.62 of $15). At the current ~$0.19 a day it reaches ~$85.5 by 11 Nov: inside the $100 free credit and the $120 cap, and H7's cap holds (~$0.79) |
 | workflows, 16-17 Oct | record, surface, guard, freshness, health all green; volrec-licensed daily green (17 Oct 01:15 and 07:41 UTC; it fetches day D two nights later, so 16 Oct arrives after the weekend) |
@@ -2952,7 +2952,12 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
     once cost a trading day): an exit 4 still raises the yellow alert, labelled "crashed".
   - *Astra's bridge* (tools/codex_review.py, its test, docs/CODEX-REVIEW.md, a CLAUDE.md section, a .gitignore line)
     sits uncommitted in the working tree, Gabriel's local tool; not pushed to the public repo.
-  - Tests: pressure 0 fail; H3 +9, H7 +4, describe +1, lab +6, poster 19; 13 new auditor mutants (125 total).
+  - *Astra reviewed the fixes the same day* (tools/codex_review.py; "incomplete" - its bundle could not include every
+    file - but six concrete points, each checked): H3 now scored at FULL precision (`modelfree.py --precise`), so the
+    p-values are protected too, every verdict unchanged; non-finite H7 inputs are WAITED on, not only listed; a crossed
+    held strip leg gives an unavailable cost; the added-back broker, block-length and crash-replay tables added; the
+    split rule's cash-in-lieu limit stated and bounded (0.00017); R4 tested through score() itself. All taken.
+  - Tests: pressure 0 fail; H3 +11, H7 +5, describe +1, lab +7, poster 19; 15 new auditor mutants (127 total).
 
 ### Prompt for the next session
 

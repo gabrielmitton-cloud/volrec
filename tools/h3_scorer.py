@@ -230,7 +230,7 @@ def main(argv=None):
     if a.file:
         out = a.file.read_text()
     else:
-        p = subprocess.run([sys.executable, str(ROOT / "modelfree.py")], cwd=ROOT, capture_output=True, text=True,
+        p = subprocess.run([sys.executable, str(ROOT / "modelfree.py"), "--precise"], cwd=ROOT, capture_output=True, text=True,
                            env=dict(os.environ, FRED_KEY="use-cache"))
         if p.returncode != 0:
             raise SystemExit(f"modelfree.py failed ({p.returncode}): {p.stderr[-500:]}")
@@ -238,7 +238,19 @@ def main(argv=None):
     rf = re.search(r"risk-free \(DGS1MO\): ([\d.]+)%", out)
     if not rf or abs(float(rf.group(1)) - 3.910) > 0.0005:
         raise SystemExit(f"risk-free rate {rf.group(1) if rf else '?'}% is not the frozen 3.910% - refusing to score")
-    print(report(score(parse(out, a.through), half_ulp=0.005), a.through))
+    # 28 Oct 2026 (outside review R3, and Astra's follow-up the same day): the reading of record is scored at full
+    # precision (modelfree.py --precise, 6 decimals), so the means, the slope AND the p-values all use the estimator's
+    # own numbers. A saved 2-decimal output (--file) is still judged with its 0.005 slack, but its significance
+    # cannot be protected the same way, so it is refused for H3c and the BH counts.
+    precise = "--precise: per-day estimates" in out
+    if not precise:
+        print("NOTE: this output was printed to 2 decimals - H3a/H3b judged with the 0.005 slack; H3c and the BH counts "
+              "are NOT given (re-run with modelfree.py --precise)")
+    sc = score(parse(out, a.through), half_ulp=0.0000005 if precise else 0.005)
+    if not precise:
+        sc["h3c"] = UNRESOLVED
+        sc["bh_h3a_k"] = sc["bh_h3c_k"] = "n/a"
+    print(report(sc, a.through))
     return 0
 
 

@@ -33,6 +33,10 @@ def nearest_strike(chain, target):
 # day and held past it is therefore worth `ratio` x the new share, not the new share itself. Raw closes stay raw
 # (they must match the strikes of contracts opened after the event); only the position's own deliverable changes.
 # The only such event for the five funds over 2016-2026 (the lab's quote files hold no other root - scanned 28 Oct).
+# Known limit (Astra, 28 Oct): once OCC fixed the cash in lieu, USO1 = 0.12 x USO + cash, not exactly 0.125 x USO. The
+# final cash memo (#46961) could not be read (OCC's site refuses automated reads), so OCC's published 0.125 rule is used.
+# Bound for the one affected trade (20 Apr -> 15 May 2020): with the review's unverified $8.18 per contract the settlement
+# value moves by about $0.03 a share, which moves USO's added-back mean return by about 0.0002 - immaterial.
 DELIVERABLE = {"USO": (("2020-04-29", 0.125),)}
 
 

@@ -119,6 +119,24 @@ def counted(x, closes):
     return _ok(x["free"]) and _ok(x["opra"]) and _ok(closes.get(x["symbol"], {}).get(x["day"]))
 
 
+def waits_for(x, close, opra_file_exists):
+    """What this day still waits on (the writer holds until the 19 Nov deadline while anything is listed).
+    9 Oct 2026: OPRA for day D is served about a day later and Cboe's closes can lag, so a missing file or close is
+    waited on. 28 Oct 2026 (review R5, and Astra's follow-up): an OPRA file that gives no FINITE reading, and a close
+    that is not finite, are waited on too - a person can look before the deadline; after it the day is named as not
+    counted."""
+    out = []
+    if not opra_file_exists:
+        out.append(f"{x['day']} {x['symbol']} OPRA")
+    elif not _ok(x["opra"]):
+        out.append(f"{x['day']} {x['symbol']} OPRA unusable")
+    if close is None:
+        out.append(f"{x['day']} {x['symbol']} {INDEX[x['symbol']]} close")
+    elif not _ok(close):
+        out.append(f"{x['day']} {x['symbol']} {INDEX[x['symbol']]} close unusable")
+    return out
+
+
 def not_counted(readings, closes, waiting=()):
     """Days that have a reading row but do not count, with the reason - except those already named as waiting.
     28 Oct 2026 (review R5): such a day used to drop out of the means without being named anywhere."""
@@ -179,16 +197,7 @@ def main():
             continue
         readings.append(x)
         c = closes[sym].get(day)
-        # 9 Oct 2026: OPRA for day D is served historically only about a day later and Cboe's
-        # closes can lag, so the verdict writer waits while any day in the window lacks either.
-        if not (Path(ore.DATA_DIR) / f"OPRA_M_{sym}_{day}.csv").exists():
-            waiting.append(f"{day} {sym} OPRA")
-        elif x["opra"] is None:
-            # 28 Oct 2026 (review R5): a file that gives no reading is waited on like a missing one, so the writer
-            # holds until the 19 Nov deadline and a person can look; after it, the day is named as not counted.
-            waiting.append(f"{day} {sym} OPRA unusable")
-        if c is None:
-            waiting.append(f"{day} {sym} {INDEX[sym]} close")
+        waiting += waits_for(x, c, (Path(ore.DATA_DIR) / f"OPRA_M_{sym}_{day}.csv").exists())
         f = lambda v: f"{v:8.2f}" if v is not None else "     n/a"
         d = lambda a, b: f"{a - b:+11.2f}" if a is not None and b is not None else "        n/a"
         print(f"{day:<11}{sym:<5}{f(x['free'])}{f(x['opra'])}{f(c)}{d(x['free'], x['opra'])}{d(x['free'], c)}  {x['legs']}")

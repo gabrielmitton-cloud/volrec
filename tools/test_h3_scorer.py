@@ -83,6 +83,25 @@ check("an underlying with fewer than 3 readings is reported as such, not tested"
 check("the scorer's labels say it was specified before the reading of record", "before the reading of record" in H.LABEL)
 
 print("\n=== guards added 28 Oct 2026 (outside review R1, R3, R4) ===")
+_prec = """--precise: per-day estimates and gaps printed to 6 decimals.
+
+risk-free (DGS1MO): 3.910%
+2026-10-27  GLD       22.091578   22.58    -0.488422   24d/31d  176
+2026-10-27  IWM       21.446475   20.84    +0.606475   24d/31d  152
+"""
+check("R3: modelfree --precise rows parse at full precision (6 decimals)",
+      H.parse(_prec) == [("2026-10-27", "GLD", 22.58, -0.488422), ("2026-10-27", "IWM", 20.84, 0.606475)])
+# R4 through score() itself (Astra, 28 Oct): one testable pair whose per-underlying p is exactly 0.02675 and four
+# untestable ones. Scored against a family of five it must NOT be rejected; a family of one would reject it.
+_orig_describe = H.describe
+H.describe = lambda xs, bar, side: {"mean": sum(xs) / len(xs), "p_bar": 0.02675}
+try:
+    _sb = H.score([(f"2026-10-{d:02d}", "GLD", 20.0 + d, 0.5 + 0.01 * (d % 3)) for d in range(1, 13)]
+                  + [(f"2026-10-0{d}", s_, 20.0, 0.3) for s_ in ("IWM", "QQQ", "SPY", "USO") for d in (1, 2)])
+finally:
+    H.describe = _orig_describe
+check("R4: score() keeps the family of five - GLD at p 0.02675 is not rejected (adjusted 0.134), count 0 of 5",
+      _sb["per"]["GLD"]["p_h3a_bh"] is False and _sb["bh_h3a_k"] == 0)
 # R1: an exact fit has zero residuals, so the cluster standard error is 0 and t is undefined. It once compared as
 # p = 0 and read HOLDS. Now: UNSCORED, never a verdict.
 exact = [(f"2026-10-{d:02d}", sym, lvl + d, (lvl + d) / 16.0) for sym, lvl in zip(H.BENCH, (25, 20, 21, 16, 58))

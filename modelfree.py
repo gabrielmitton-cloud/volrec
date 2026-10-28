@@ -305,6 +305,12 @@ def main():
         rows = [x for x in rows if x["date"] <= through]
         print(f"--through {through}: days after it are not read.\n")
     registered, extra = rows, []
+    # --precise (28 Oct 2026, outside review R3): print each registered day's estimate and gap to 6 decimals
+    # instead of 2, so tools/h3_scorer.py can score H3 at full precision. The estimate is the same; only its
+    # printing changes, and without the flag nothing changes.
+    dg = 6 if "--precise" in sys.argv else 2
+    if dg == 6:
+        print("--precise: per-day estimates and gaps printed to 6 decimals.\n")
     # --wide adds the contracts beyond the registered band. The integral then
     # reaches further into the tails, which is exactly what H3c predicts should
     # close the gap on high-volatility names. Without the flag, nothing changes:
@@ -349,7 +355,8 @@ def main():
             if cb:
                 gap = ours - cb
                 gaps.setdefault(sym, []).append(gap)
-                print(f"{d:<12}{sym:<6}{ours:>8.2f}{cb:>8.2f}{gap:>+8.2f}"
+                wd = 8 if dg == 2 else 13
+                print(f"{d:<12}{sym:<6}{ours:>{wd}.{dg}f}{cb:>8.2f}{gap:>+{wd}.{dg}f}"
                       f"{legs:>10}{n:>5}")
             else:
                 print(f"{d:<12}{sym:<6}{ours:>8.2f}{'n/a':>8}{'':>8}{legs:>10}{n:>5}")

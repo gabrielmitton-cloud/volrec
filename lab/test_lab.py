@@ -90,6 +90,13 @@ check(f"fixed strip: a quote the strip does not hold cannot move its cost ({cost
       f"{_w2:.6f}), while the old re-run moved by {_old_moves:.3f} points on it",
       abs(costs.strip_cost_fixed(_itm, 0.0) - _w2) < 1e-12 and _old_moves > 0.5)
 
+_crossed = [dict(x) for x in _c4]
+for _x in _crossed:        # Astra, 28 Oct: a HELD out-of-the-money put with a positive bid above its ask (crossed)
+    if _x["type"] == "P" and float(_x["strike"]) == 90.0 and _x["dte"] == _c4[0]["dte"]:
+        _x["bid"], _x["ask"] = _x["ask"], _x["bid"]
+check("fixed strip: a crossed quote on a held leg makes the cost unavailable (None), never a zero cost",
+      costs.strip_cost_fixed(_crossed, 0.0) is None)
+
 integ = load("integrity")
 from datetime import datetime, timezone    # noqa: E402
 import opra_reference as ore               # noqa: E402

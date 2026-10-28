@@ -124,6 +124,11 @@ _nc = h7.not_counted(ru + rgn + rgf[2:3], {"USO": cu, "GLD": cgn})
 check(f"R5: every day with a row that does not count is named with its reason ({_nc})",
       _nc == [f"{rg[0]['day']} GLD (OPRA reading not finite)", f"{rg[1]['day']} GLD (index close not finite)",
               f"{rg[2]['day']} GLD (no free reading)"])
+_xg = {"day": "2026-10-20", "symbol": "GLD", "free": 22.0, "opra": float("nan")}
+check("R5: an OPRA file giving a NaN reading, and an infinite close, are WAITED on (the writer holds), not just listed",
+      h7.waits_for(_xg, float("inf"), True) == ["2026-10-20 GLD OPRA unusable", "2026-10-20 GLD GVZ close unusable"]
+      and h7.waits_for(dict(_xg, opra=None), None, False) == ["2026-10-20 GLD OPRA", "2026-10-20 GLD GVZ close"]
+      and h7.waits_for(dict(_xg, opra=22.1), 22.3, True) == [])
 check("R5: a day already named as waiting is not named twice",
       h7.not_counted(rgf[2:3], {"GLD": cg}, waiting=[f"{rg[2]['day']} GLD OPRA unusable"]) == [])
 

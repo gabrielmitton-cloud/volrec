@@ -79,8 +79,9 @@ def _basket_one_expiry(rows, r):
         mid, k = modelfree._num(row["mid"]), modelfree._num(row["strike"])
         if mid is None or mid <= 0 or k is None:
             continue
-        h = half_spread(modelfree._num(row.get("bid")), modelfree._num(row.get("ask")))
-        (calls if row["type"] == "C" else puts)[k] = (mid, h if h is not None else 0.0)
+        # a crossed quote or one without an ask has NO half-spread (None) - never a zero cost (Astra, 28 Oct)
+        (calls if row["type"] == "C" else puts)[k] = (mid, half_spread(modelfree._num(row.get("bid")),
+                                                                       modelfree._num(row.get("ask"))))
     both = sorted(set(calls) & set(puts))
     if len(both) < 3:
         return None
@@ -98,7 +99,8 @@ def _basket_one_expiry(rows, r):
         elif k > K0 and k in calls:
             q[k] = calls[k]
         elif k == K0 and k in calls and k in puts:
-            q[k] = ((calls[k][0] + puts[k][0]) / 2.0, (calls[k][1] + puts[k][1]) / 2.0)
+            hk = None if calls[k][1] is None or puts[k][1] is None else (calls[k][1] + puts[k][1]) / 2.0
+            q[k] = ((calls[k][0] + puts[k][0]) / 2.0, hk)
     ks = sorted(q)
     if len(ks) < 3:
         return None
@@ -129,11 +131,17 @@ def strip_cost_fixed(rows, r):
         got = _basket_one_expiry(rs, r)
         if got:
             s2, T, held = got
-            legs.append((int(rs[0]["dte"]), s2, T, sum(w * h for w, h in held.values())))
+            if any(h is None for _w, h in held.values()):
+                cost2 = None          # a held leg has no valid spread: the cost is unavailable, not zero
+            else:
+                cost2 = sum(w * h for w, h in held.values())
+            legs.append((int(rs[0]["dte"]), s2, T, cost2))
     if not legs:
         return None
     pair = modelfree.pick_pair([x[0] for x in legs])
     legs = sorted(x for x in legs if x[0] in pair)
+    if any(x[3] is None for x in legs):
+        return None
     td = modelfree.TARGET_DAYS
     if len(legs) == 1 or not (legs[0][0] <= td <= legs[-1][0]):
         d, s2, T, c2 = min(legs, key=lambda x: abs(x[0] - td))

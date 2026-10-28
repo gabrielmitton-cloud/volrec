@@ -342,3 +342,11 @@ liquidations under margin; Q5 bootstrap tails; Q6 the free-data estimate error (
   Tests: `lab/test_lab.py` +6 (the split, the roots, the fixed strip and its invariance to a quote it does not hold);
   auditor mutants `lab-split-ignored`, `lab-roots-overwrite`, `lab-strip-rebuilds-basket`. The reports before this
   change are kept in the private `lab-out.pre-review-2026-10-28/`.
+  **Same day, after Astra reviewed these fixes:** (a) a held strip leg with a crossed quote now makes the fixed cost
+  unavailable rather than zero - no real ratio moved, so no held leg was crossed; (b) the added-back sample now also gets
+  the broker-margin line (GLD kept -0.486%/mo, called in 4 months at w = 5%; USO +0.235%/mo, none), the block-length
+  sensitivity (GLD ruin 60.6-64.8% across b = 1-12; USO 7.0-12.4%) and its crash-replay trades (March 2020: USO's
+  added-back 23 Mar -> 17 Apr trade kept +2.60%); (c) the split rule's known limit is stated in `trades.py`: after OCC
+  fixed the cash in lieu, USO1 = 0.12 x USO + cash, not exactly 0.125 x USO; the final cash memo could not be read, and
+  with the review's unverified $8.18 per contract the one affected trade's settlement moves $0.030 a share and USO's
+  added-back mean by 0.00017 - immaterial. Mutant `lab-strip-crossed-costs-zero`.

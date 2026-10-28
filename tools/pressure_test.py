@@ -451,8 +451,9 @@ ok(_th3.returncode == 0 and _nh3f == 0 and _nh3p >= 16 and "H3A_BAR, ALPHA, BH_Q
    f"the frozen H3 scorer passes its known-answer tests, with the registered bar 1.0, q 0.05 and window to 11 Nov ({_nh3p} cases)")
 # 28 Oct 2026 (outside review R3, M07): the scorer reads modelfree's PRINTED gaps (0.01 resolution), so its main
 # must judge them with the 0.005 slack; and the H4 delta sensitivity must drop H4's after-close days.
-ok("score(parse(out, a.through), half_ulp=0.005)" in _h3src,
-   "the H3 scorer judges modelfree's printed gaps with their rounding slack (a verdict the print cannot show is UNRESOLVED)")
+ok('str(ROOT / "modelfree.py"), "--precise"]' in _h3src and "half_ulp=0.0000005 if precise else 0.005" in _h3src
+   and 'sc["h3c"] = UNRESOLVED' in _h3src,
+   "the H3 scorer reads modelfree at full precision (--precise); a 2-decimal print gets the 0.005 slack and no H3c verdict")
 _dmsrc = (R / "tools/delta_model.py").read_text()
 ok('rows = [r_ for r_ in rows if r_["date"] not in dropped]' in _dmsrc and "AFTER_CLOSE_DAYS" in _dmsrc,
    "the H4 delta sensitivity drops the after-close days H4 itself drops")

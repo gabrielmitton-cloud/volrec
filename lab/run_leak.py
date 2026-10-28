@@ -112,7 +112,7 @@ def main():
     vol = json.load(open(ROOT / "data" / "market_vol.json"))
     stress = set(cal.stress_days(sorted(bars["SPY"])))
     print("lab/ margin, Leak Map, stress (EXPLORATORY). Short ATM straddle (R0), held to expiry.\n")
-    rows, kept_series, summary, kept_added = [], {}, {}, {}
+    rows, kept_series, summary, kept_added, added_rows = [], {}, {}, {}, []
     for sym in FUNDS:
         allm = months_for(sym, bars, vol, stress)
         a, b = mg.RATES[sym]
@@ -135,6 +135,12 @@ def main():
                                                 for w in WEIGHTS))
             if label == "added back":     # 28 Oct 2026 (outside review M08): the stress lab runs on this sample too
                 kept_added[sym] = res[(0.05, frozenset(mp.FRICTIONS))]
+                if len(ms) != sum(1 for m in allm if m["registered"]):
+                    bres, _e, bliq = table(ms, *mg.BROKER)
+                    print(f"      broker 40%/35% [added back]: kept {100 * st.mean(bres[(0.05, frozenset(mp.FRICTIONS))]):+.3f}%/mo, "
+                          f"called in {bliq[0.05]} at w 5%")
+                    added_rows += [{"symbol": sym, "entry": m["entry"], "expiry": m["expiry"], "kept_5": r}
+                                   for m, r in zip(ms, kept_added[sym]) if not m["registered"]]
             if label == "registered":
                 summary[sym] = {"weights": {}}
                 for w in WEIGHTS:
@@ -173,10 +179,13 @@ def main():
             pa = sx.stationary_paths(xa, ba, PATHS, 12 * YEARS, SEED)
             da = sorted(sx.max_drawdown(p_) for p_ in pa)
             qa = lambda f: da[min(len(da) - 1, int(f * len(da)))]
+            sens_a = "  ".join(f"b{bb}: ruin {100 * sx.ruin_prob(sx.stationary_paths(xa, bb, 2000, 12 * YEARS, SEED)):.1f}%"
+                               for bb in (1, 3, 6, 12))
             print(f"       [added back, n={len(xa)}] block {ba:.1f}  maxDD median {100 * qa(0.5):.1f}% p95 "
                   f"{100 * qa(0.95):.1f}% p99 {100 * qa(0.99):.1f}%  ES95 {100 * sx.expected_shortfall(xa, 0.95):+.2f}%  "
                   f"ES99 {100 * sx.expected_shortfall(xa, 0.99):+.2f}%  ruin(<$0.50) {100 * sx.ruin_prob(pa):.1f}%  "
                   f"worst month {100 * min(xa):+.2f}%")
+            print(f"       [added back] block sensitivity: {sens_a}")
             summary[sym]["stress_added_back"] = {"n": len(xa), "block": ba, "dd50": qa(0.5), "dd95": qa(0.95),
                                                  "dd99": qa(0.99), "es95": sx.expected_shortfall(xa, 0.95),
                                                  "ruin": sx.ruin_prob(pa), "worst": min(xa)}
@@ -188,7 +197,10 @@ def main():
     for mth in cal.STRESS_MONTHS[1:]:
         held = [r for r in rows if r["entry"][:7] <= mth <= r["expiry"][:7]]
         cells = [f"{r['symbol']} {r['entry'][5:]}->{r['expiry'][5:]} {100 * r['kept_5']:+.2f}%" for r in held]
-        print(f"  {mth}: " + "  ".join(cells))
+        extra = [r for r in added_rows if r["entry"][:7] <= mth <= r["expiry"][:7]]
+        print(f"  {mth}: " + "  ".join(cells)
+              + ("   | added back: " + "  ".join(f"{r['symbol']} {r['entry'][5:]}->{r['expiry'][5:]} {100 * r['kept_5']:+.2f}%"
+                                              for r in extra) if extra else ""))
     OUT.parent.mkdir(parents=True, exist_ok=True)
     json.dump(summary, open(OUT.parent / "leak_summary.json", "w"), indent=1)
     with OUT.open("w", newline="") as f:

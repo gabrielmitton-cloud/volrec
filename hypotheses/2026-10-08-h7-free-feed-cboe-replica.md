@@ -124,7 +124,9 @@ writer copies into the record (and refuses to write without). (M04) The descript
 use exactly the days the registered summary counts. On today's local data the reader's output is byte-identical apart
 from the new "not counted: nothing" line. Tests: `tools/test_h7.py` (+4), a pressure check on the writer, auditor
 mutants `h7-nan-counts-as-day`, `h7-uncounted-day-unnamed`, `describe-h7-wider-sample`. **Not an adjustment: no bar,
-window, minimum, estimator or registered number moves.**
+window, minimum, estimator or registered number moves.** *Same day, after the reviewing model checked this:* an OPRA
+file giving a NaN reading, or a close that is not finite, is now WAITED on as well ("OPRA unusable", "close unusable"),
+not only listed, so the writer cannot finish before 19 Nov on such a day (`waits_for`, mutant `h7-nan-input-not-waited`).
 
 *Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
 
