@@ -21,6 +21,7 @@ import json
 import re
 import subprocess
 import sys
+import time
 from datetime import date
 from pathlib import Path
 
@@ -524,14 +525,26 @@ window.addEventListener("load", () => setTimeout(() => {
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 
+def chrome(args, out=None):
+    """Headless Chrome, judged by what it produced. 31 Oct 2026: under heavy load Chrome wrote the complete PDF
+    and then exited 2 ("Teardown watchdog expired") - the file was whole, the exit code was not. A run counts
+    when its output is fresh (the file at `out`, else the dumped page with its check); otherwise once more, then
+    fail with Chrome's own last words."""
+    for _ in range(2):
+        t0 = time.time()
+        p = subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--virtual-time-budget=8000",
+                            *args], capture_output=True, text=True)
+        fresh = (out.exists() and out.stat().st_mtime >= t0 and out.stat().st_size > 0) if out else 'data-check="' in p.stdout
+        if p.returncode == 0 or fresh:
+            return p
+    raise SystemExit(f"Chrome failed twice (exit {p.returncode}): " + " | ".join(p.stderr.splitlines()[-3:]))
+
+
 def render(path):
-    common = [CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--virtual-time-budget=8000"]
-    subprocess.run(common + [f"--print-to-pdf={OUT / 'poster.pdf'}", "--no-pdf-header-footer", path.as_uri()],
-                   check=True, capture_output=True)
-    subprocess.run(common + [f"--screenshot={OUT / 'preview.png'}", "--window-size=4608,3456",
-                             "--force-device-scale-factor=0.5", path.as_uri()], check=True, capture_output=True)
-    dom = subprocess.run(common + ["--window-size=4608,3456", "--dump-dom", path.as_uri()],
-                         check=True, capture_output=True, text=True).stdout
+    chrome([f"--print-to-pdf={OUT / 'poster.pdf'}", "--no-pdf-header-footer", path.as_uri()], OUT / "poster.pdf")
+    chrome([f"--screenshot={OUT / 'preview.png'}", "--window-size=4608,3456", "--force-device-scale-factor=0.5",
+            path.as_uri()], OUT / "preview.png")
+    dom = chrome(["--window-size=4608,3456", "--dump-dom", path.as_uri()]).stdout
     m = re.search(r'data-check="([^"]*)"', dom)
     if not m:
         raise SystemExit("the page check did not run (fonts or scripts did not load?)")
