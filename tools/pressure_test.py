@@ -1661,6 +1661,16 @@ ok(_bte("2026-09-24T18:05:00") and not _bte("2026-10-09T19:45:00")
    and not _bte("2026-11-03T17:00:00", "workflow_dispatch") and not _bte("2026-11-03T17:00:00", "")
    and _bte("2026-11-27T16:40:00") and not _bte("2026-11-27T16:46:00"),
    "a GitHub backup starting before the trigger's slot (14:30 New York + 15 min) leaves the day to it; the trigger never waits")
+# 31 Oct 2026: no hand push to main while the recorders commit (15 Oct 2026 lost a snapshot that way). The
+# pre-push hook enforces it from record.py's slots in New York time; its UTC form moves at the clock change.
+_pws = _iu.spec_from_file_location("pushwin", R / "tools/push_window.py")
+_pwm = _iu.module_from_spec(_pws); _pws.loader.exec_module(_pwm)
+_pw = lambda s: _pwm.window(_DT.fromisoformat(s).replace(tzinfo=_TZ.utc)) is not None   # noqa: E731
+ok(_pw("2026-10-30T18:15:00") and _pw("2026-10-30T19:14:00") and not _pw("2026-10-30T19:15:00")
+   and not _pw("2026-11-02T18:30:00") and _pw("2026-11-02T19:30:00") and not _pw("2026-11-02T20:15:00")
+   and _pw("2026-11-27T16:20:00") and not _pw("2026-11-27T19:30:00") and not _pw("2026-10-31T18:30:00")
+   and '"$PY" tools/push_window.py || exit 1' in (R / "tools/hooks/pre-push").read_text(),
+   "the pre-push hook refuses a hand push while the recorders commit: 14:15-15:15 New York across the clock change, 11:15-12:15 on early closes")
 _recsrc, _srfsrc = (R / "record.py").read_text(), (R / "surface.py").read_text()
 def _before(src, call, fetch):               # find(), not index(): a missing call must FAIL, not crash
     m = max(src.find("def main"), 0)

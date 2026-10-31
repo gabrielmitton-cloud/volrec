@@ -14,6 +14,8 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 done
 [ "$pushing_main" = 1 ] || exit 0
 cd "$(git rev-parse --show-toplevel)" || exit 1
+# 31 Oct 2026: no hand push while the recorders commit (14:15-15:15 New York; tools/push_window.py).
+"$PY" tools/push_window.py || exit 1
 out=$("$PY" tools/pressure_test.py 2>&1); code=$?
 echo "$out" | grep -E "^RESULT" || { echo "pre-push: the pressure test CRASHED - push blocked"; echo "$out" | tail -8; exit 1; }
 if [ $code -ne 0 ]; then
