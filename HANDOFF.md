@@ -2965,6 +2965,12 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   funded** (no cost to Gabriel). Prof. Baier has not replied; Gabriel will send him the paper draft in February (no
   chasing before then). Cboe: still nothing (third request 21 Oct); the FRED fallback stands from ~13 Nov. Pitch
   practice: not yet (Gabriel's call) - offer again closer to 21 Nov.
+- **Fri 30 Oct, SCCUR's presenter email (Liza Bennett, 29 Oct) + guide updated 23 Oct:** POSTER confirmed. Session time
+  and room announced **Mon 16 Nov** (in Whova). Badge pickup at least 30 min before the session (early check-in Fri 20
+  Nov 10:30-5); 10 min setup, 75 min at the poster, 5 min breakdown; double-sided tape provided; max 56 x 42 in.
+  Parking: register the car on OffStreet for Lot P3 or P4 before arriving. Conference wifi 2026SCCUR (21 Nov only);
+  lunch is a campus meal voucher. IP note in the email does not apply: the work is already public (MIT code, public
+  site). Print order (funded via Marc) can go in once the verdicts land; the session time does not affect it.
 
 ### Prompt for the next session
 
