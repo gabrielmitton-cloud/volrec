@@ -31,11 +31,20 @@ def _start(rel):
     out, err = tempfile.TemporaryFile("w+"), tempfile.TemporaryFile("w+")
     return subprocess.Popen([sys.executable, str(R / rel)], stdout=out, stderr=err, text=True), out, err
 def _result(rel):
-    p, out, err = _JOBS[rel]
+    p, out, err = _JOBS.pop(rel)
     p.wait(); out.seek(0); err.seek(0)
-    return subprocess.CompletedProcess(p.args, p.returncode, out.read(), err.read())
+    try:
+        return subprocess.CompletedProcess(p.args, p.returncode, out.read(), err.read())
+    finally:
+        out.close(); err.close()
 _JOBS = {rel: _start(rel) for rel in ("tools/calibrate.py", "tools/test_h3_scorer.py", "lab/verify_purchases.py",
                                       "tools/panel_health.py")}
+@__import__("atexit").register
+def _reap():                     # a run that ends early (a crash) leaves no child or open file behind
+    for p, out, err in _JOBS.values():
+        if p.poll() is None:
+            p.kill()
+        p.wait(); out.close(); err.close()
 
 BACKUP_MD5 = "75035d11b530681571dbeb3294af5926"   # pre-17col backup. IMMUTABLE.
 ORIGINAL_DAY, ORIGINAL_ROWS = "2026-09-04", 52
@@ -508,6 +517,7 @@ if _flm.LAB_DIR.exists():
     ok(_vr.returncode == 0 and "RESULT: VERIFIED" in _vr.stdout,
        "lab/ purchases verified: every used file has data, files and ledger match one to one, dates in range")
 else:
+    _result("lab/verify_purchases.py")       # started at the top; reaped, not judged, without the lab data
     print("  SKIP  lab/ purchase verification (the licensed lab data is not on this machine)")
 _regs = ["modelfree.py", "analyze.py", "hedged.py", "record.py", "surface.py", "tools/h7_reader.py",
          "tools/h8_quotes.py", "tools/record_verdict.py", "tools/opra_reference.py", "tools/ovx_replicate.py"]
@@ -1683,8 +1693,9 @@ _pw = lambda s: _pwm.window(_DT.fromisoformat(s).replace(tzinfo=_TZ.utc)) is not
 ok(_pw("2026-10-30T18:15:00") and _pw("2026-10-30T19:14:00") and not _pw("2026-10-30T19:15:00")
    and not _pw("2026-11-02T18:30:00") and _pw("2026-11-02T19:30:00") and not _pw("2026-11-02T20:15:00")
    and _pw("2026-11-27T16:20:00") and not _pw("2026-11-27T19:30:00") and not _pw("2026-10-31T18:30:00")
-   and '"$PY" tools/push_window.py || exit 1' in (R / "tools/hooks/pre-push").read_text(),
-   "the pre-push hook refuses a hand push while the recorders commit: 14:15-15:15 New York across the clock change, 11:15-12:15 on early closes")
+   and (R / "tools/hooks/pre-push").read_text().find('"$PY" tools/push_window.py || exit 1')
+       > (R / "tools/hooks/pre-push").read_text().find('"$PY" tools/pressure_test.py'),
+   "the pre-push hook refuses a hand push while the recorders commit: 14:15-15:15 New York across the clock change, 11:15-12:15 on early closes; checked after the pressure test")
 _recsrc, _srfsrc = (R / "record.py").read_text(), (R / "surface.py").read_text()
 def _before(src, call, fetch):               # find(), not index(): a missing call must FAIL, not crash
     m = max(src.find("def main"), 0)
