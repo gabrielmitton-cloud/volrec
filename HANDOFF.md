@@ -1880,18 +1880,18 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 
 ---
 
-## 18. Current state — opened 23 September 2026, updated to 16 October 2026; the reading every session starts from
+## 18. Current state — opened 23 September 2026, updated to 31 October 2026; the reading every session starts from
 
 **Section 17 is now history:** dated notes from 16-23 Sep, with the reasoning behind
 every decision. This section is the only one guaranteed current. Read it, run
 `tools/daily.py`, and open section 17 only when a task needs the why.
 
-### System status, checked 28 Oct 2026 ~09:30 UTC (Wed, after the outside review's fixes)
+### System status, checked 31 Oct 2026 ~05:30 UTC (Sat, the full top-to-bottom audit)
 
 | check | result |
 |---|---|
-| diagnostic, 28 Oct | `daily.py` **ALL CLEAR** (Mon 27 Oct landed 18:31/18:40 UTC); H3 scorer to 27 Oct: H3a 0.521 over 150 readings (bar 1.0); pressure test **0 fail, 2 warn** (the known FXE one-sided quote and the late GitHub backup); auditor **127 of 127** (15 mutants added for the review's guards); unit tests H3 scorer, H7, describe, lab, poster - **0 failures**. (17 Oct: ALL CLEAR, auditor 109 of 109.) |
-| independent re-implementation, 28 Oct | `tools/independent_check.py --opra`: **883 of 883** values agree, every one a real numeric pair (largest gap 0.00088); H7's 36 pairs on the 10 local OPRA files agree exactly. 17 Oct: 661 of 661; 110 Cboe closes = FRED's copies exactly |
+| diagnostic, 31 Oct | `daily.py` **ALL CLEAR** (Fri 30 Oct landed 18:31/18:40 UTC); H3 scorer to 30 Oct: H3a 0.598 over 165 readings (bar 1.0); pressure test **0 fail, 2 warn** (the known FXE one-sided quote and the late GitHub backup), now ~16 s; auditor **130 of 130** (final run before the 31 Oct push); all ten unit suites **0 failures**. (28 Oct: auditor 127 of 127; 17 Oct: 109 of 109.) |
+| independent re-implementation, 31 Oct | `tools/independent_check.py`: **937 of 937** values agree (largest gap 0.00088). 28 Oct, `--opra`: **883 of 883** values agree, every one a real numeric pair (largest gap 0.00088); H7's 36 pairs on the 10 local OPRA files agree exactly. 17 Oct: 661 of 661; 110 Cboe closes = FRED's copies exactly |
 | Databento, 17 Oct | lifetime **$82.01** (lab/ $79.00 of its $90, finished 14 Oct; main $2.21; H7 $0.17 of $1.10; H8 $0.62 of $15). At the current ~$0.19 a day it reaches ~$85.5 by 11 Nov: inside the $100 free credit and the $120 cap, and H7's cap holds (~$0.79) |
 | workflows, 16-17 Oct | record, surface, guard, freshness, health all green; volrec-licensed daily green (17 Oct 01:15 and 07:41 UTC; it fetches day D two nights later, so 16 Oct arrives after the weekend) |
 | cron-job.org | record and surface triggers; guard 15:00 and 15:20 New York (tested 204, 16 Oct); one-off 12:00 copies for Fri 27 Nov and Thu 24 Dec (made by Gabriel 16 Oct). Token `volrec-trigger` expires 29 Dec |
@@ -1922,7 +1922,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 |---|---|---|
 | H1 | tested, holds | 9 of 11 Cboe pairs survive FDR control |
 | H2 | tested, not adopted | log variance strongest (t=16.26) |
-| H3 | series running | H3a mean abs gap **0.40 over 80 readings (8 Oct; hypotheses/README.md is current)**; 23 Sep: 0.53 over 30 (bar 1.0). First registered wide reading **OUTSIDE** 1.4-3.2 (+9.41; +10.71 with 23 Sep): quote contamination, as the grid anticipated. **IWM reads positive on all six days**, against H3b's sign - watch. **Day count: Bloomberg stated ACT/252 in writing (23 Sep); at 21 months ~1 point remains, not the forward or rate, unidentified and closed (24 Sep).** H3c's mechanism is Jiang & Tian (2007)'s, credited |
+| H3 | series running | H3a mean abs gap **0.598 over 165 readings to 30 Oct (frozen scorer; bar 1.0; reading of record 11 Nov; USO alone 1.548, the oil-volatility jump of late October)**; 8 Oct: 0.40 over 80; 23 Sep: 0.53 over 30 (bar 1.0). First registered wide reading **OUTSIDE** 1.4-3.2 (+9.41; +10.71 with 23 Sep): quote contamination, as the grid anticipated. **IWM reads positive on all six days**, against H3b's sign - watch. **Day count: Bloomberg stated ACT/252 in writing (23 Sep); at 21 months ~1 point remains, not the forward or rate, unidentified and closed (24 Sep).** H3c's mechanism is Jiang & Tian (2007)'s, credited |
 | H4 | descriptive, **strike 2 of 3** (8 Oct) | strike 2: calendar-day carry + Bakshi-Kapadia dividend-adjusted price (strike 1, 23 Sep: runs break on a missed trading day). Data to 7 Oct: date level -5.23bp (t -2.50) vs -5.22bp under strike 1; no conclusion moved. One strike left |
 | H5a | **tested 23 Sep, holds weakly** | pooled median 0.40 of a spread over 169 wing contracts on 3 days (bar 0.5); **0.67 on the 132 both feeds bid** - the two readings of "quoted" are logged, nothing adjusted. **Corrected 17 Oct (reader bug, verdict unchanged): 0.33 over 179; 0.67 on 134** |
 | H5b | **tested 23 Sep, holds** | 36 of 36 free-feed missing bids are missing on Bloomberg (bar 80%). **Corrected 17 Oct: 44 of 44** |
@@ -2971,6 +2971,35 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   Parking: register the car on OffStreet for Lot P3 or P4 before arriving. Conference wifi 2026SCCUR (21 Nov only);
   lunch is a campus meal voucher. IP note in the email does not apply: the work is already public (MIT code, public
   site). Print order (funded via Marc) can go in once the verdicts land; the session time does not affect it.
+- **Sat 31 Oct - full top-to-bottom audit** (Gabriel: "check everything top to bottom ... not just a test, but also an
+  audit ... optimize it"). Read-only checks first, then five fixes, each tested, reviewed by Astra twice, audited.
+  - *Clean:* ten unit suites 0 failures; pressure test 0 fail, 2 known warns; auditor 127 of 127 on the old code, **130 of
+    130** on the new; independent re-implementation 937 of 937. **Data:** all four panels - no duplicate rows, no crossed or
+    non-finite quote, mids, moneyness and days-to-expiry consistent; the only gaps are the accepted ones (16 Sep; DUK, FXE,
+    MDY, XLRE on 28 Sep-5 Oct, no listed expiry inside the window). **Operations:** 200 GitHub runs since 16 Oct, all green;
+    all 10 workflows active; volrec-licensed PRIVATE and every nightly run green; 7 volrec routines enabled, none with
+    connectors; the 26 Oct cloud auditor read 112 of 112. **The clock change (Sun 1 Nov) needs nothing:** cron-job.org runs
+    in New York time (checked 9 Oct), record.py and the guard use zoneinfo, the backup's stand-aside is tested at EST times.
+    **Security:** no key or token in any tracked file or anywhere in git history; no licensed file ever committed; the live
+    site is HEAD and every link resolves. **Lint** (ruff, pyflakes rules): no undefined name in live code.
+  - *Fixed:* (1) `daily.py` had said LOOK AT: git pull every day since 24 Oct (`pull --rebase` refuses while Astra's
+    uncommitted bridge files are present) - it now fast-forwards around an uncommitted file, syncs main only, and never
+    stashes or overwrites an ignored file; ALL CLEAR again. (2) The no-push window is ENFORCED: the pre-push hook asks
+    `tools/push_window.py` (record.py's slots, New York time, early closes) after the pressure test; the UTC rule of thumb
+    would have been an hour wrong from Monday. Three mutants. (3) **Speed:** pressure test 37-58 s -> ~16 s (the seeded
+    fixed-b null memoised; the four slowest checks run side by side and are judged where they were; one test no longer
+    waits out API pacing); h3_scorer 15 s -> 4 s. Every check line and the scorer's output byte-identical; auditor CPU
+    -19%. (4) hypotheses/README: H2's row now carries the 28 Oct "not robust, clustered on date" result, as the poster,
+    TEST-INVENTORY and the outline already did; H3's row is at 30 Oct. (5) Astra (two reviews; the first bundle was
+    truncated): six points, all verified and taken - including a mutant the memo commit had stranded, which the audit
+    itself reported as INCONCLUSIVE before the fix.
+  - *Forward, with numbers (nothing before 21 Nov):* **data/surface.csv grows ~0.5 MB a trading day** (15.7 MB on 30 Oct):
+    GitHub warns past 50 MB (~mid-Feb 2027) and refuses a file over 100 MB (~late June 2027), when the recorder could no
+    longer commit. Split it by month after the January confirmatory window (a recorder change, so not before). **The site
+    downloads all of surface.csv on every visit** (3.9 MB compressed now, ~5.5 MB by 21 Nov) for its health panel only; the
+    page shows at once, the live panel waits - for the post-verdict site discussion (a small daily summary file, or a
+    ranged read of the tail). A full audit is now ~25-30 min (130 mutants); the cloud routine backgrounds it. A stale app
+    worktree (`.claude/worktrees/hopeful-meitner-74bb9a`, merged, clean) can go when convenient.
 
 ### Prompt for the next session
 

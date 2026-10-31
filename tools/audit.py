@@ -23,7 +23,7 @@ removed afterwards. Doc-drift checks follow (stale "current state" dates).
 
 USAGE
 -----
-  python3 tools/audit.py              # all mutants, 4 at a time (~1 min)
+  python3 tools/audit.py              # all mutants, 4 at a time (~1 min in Sep; 130 took ~25-30 min at -j 6, 31 Oct)
   python3 tools/audit.py --list       # what each mutant breaks, run nothing
   python3 tools/audit.py -k credit    # only mutants whose name contains "credit"
 """

@@ -21,7 +21,7 @@ session's job is to read results, answer a question, or do one bounded thing.
 
     PY=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3
     $PY tools/daily.py                           # the whole daily check
-    $PY tools/pressure_test.py                   # before and after ANY change: 0 fail
+    $PY tools/pressure_test.py                   # before and after ANY change: 0 fail (~16 s)
     FRED_KEY=use-cache $PY modelfree.py --wide   # H3 + H5e; without the prefix r=0
     FRED_KEY=use-cache $PY hedged.py             # H4, descriptive until ~40 date pairs
     $PY tools/bloomberg_prep.py --date YYYY-MM-DD      # before a terminal session
@@ -30,7 +30,7 @@ session's job is to read results, answer a question, or do one bounded thing.
     $PY tools/opra_reference.py --all                  # fetch what Databento has released
     $PY tools/opra_reference.py --all --compare        # free feed vs OPRA, same minute
     $PY tools/daily.py --notify                        # and text the verdict (tools/notify.py)
-    $PY tools/audit.py                                 # break every safeguard, prove each check fails (~1.5 min)
+    $PY tools/audit.py -j 6                            # break every safeguard, prove each check fails (~25-30 min; -k NAME for one)
     $PY tools/independent_check.py                     # a second, independent implementation agrees with every reading
 
 `analysis/` runs in `.venv` instead. Pushes to main run the pressure test through
@@ -61,9 +61,11 @@ session's job is to read results, answer a question, or do one bounded thing.
   news (a verdict, a recovered day); GREEN = the quiet daily all-clear - a weekday without one means the
   alert pipe is broken. Every alert is confirmed from the data first. Test: run guard.yml by hand with
   "test_alerts" ticked.
-- **No hand pushes to main between 14:15 and 15:15 New York on weekdays.** The recorders commit then;
-  on 15 Oct 2026 a hand push rejected record.yml's snapshot (re-run before the close; record.yml now
-  rebases and retries). If a recorder fails before 16:00 New York, `gh workflow run record.yml` recovers it.
+- **No hand pushes to main between 14:15 and 15:15 New York on weekdays** (11:15-12:15 on an early close).
+  The recorders commit then; on 15 Oct 2026 a hand push rejected record.yml's snapshot (re-run before the
+  close; record.yml now rebases and retries). Since 31 Oct the pre-push hook refuses such a push
+  (`tools/push_window.py`, New York time, so the clock change cannot move it). If a recorder fails before
+  16:00 New York, `gh workflow run record.yml` recovers it.
 - **Licensed data never enters the repo.** Bloomberg exports live in
   `~/Documents/volrec-bloomberg`, Databento data in `~/Documents/volrec-databento`,
   interlibrary-loan papers in `~/Documents/volrec-papers`, keys outside the repo.
