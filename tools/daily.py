@@ -45,18 +45,24 @@ def sync():
     refuses outright on any unstaged change, so a local file kept uncommitted on purpose (Astra's bridge,
     since 24 Oct) turned every day into LOOK AT: git pull while main was already in step. Now: fetch; nothing
     new is up to date; new commits and no local ones fast-forward (git refuses, touching nothing, if they
-    would overwrite an uncommitted file); local commits as well take the old rebase."""
+    would overwrite an uncommitted file); local commits as well take the old rebase. Hardened the same day
+    (Astra's review): only main is synced - another branch or a detached HEAD is reported, not rebased; the
+    comparison is against the commit this fetch brought (FETCH_HEAD); git may neither stash a dirty file
+    aside (autostash) nor overwrite an ignored one."""
+    code, out = run(["git", "symbolic-ref", "--quiet", "--short", "HEAD"])
+    if code or out.strip() != "main":
+        return 1, f"  not on main ({out.strip() or 'detached HEAD'}): nothing synced; switch to main or use --no-pull"
     code, out = run(["git", "fetch", "--quiet", "origin", "main"])
     if code:
         return code, out
-    code, out = run(["git", "rev-list", "--left-right", "--count", "HEAD...origin/main"])
+    code, out = run(["git", "rev-list", "--left-right", "--count", "HEAD...FETCH_HEAD"])
     if code:
         return code, out
-    ahead, behind = (int(n) for n in out.split())
+    ahead, behind = (int(n) for n in out.split()[:2])         # stdout first; a stray stderr line follows
     if not behind:
         return 0, f"  up to date{f' ({ahead} local commit(s) not pushed yet)' if ahead else ''}"
-    code, out = run(["git", "merge", "--ff-only", "--quiet", "origin/main"] if not ahead
-                    else ["git", "pull", "--rebase", "--quiet", "origin", "main"])
+    code, out = run(["git", "merge", "--ff-only", "--no-autostash", "--no-overwrite-ignore", "--quiet", "FETCH_HEAD"]
+                    if not ahead else ["git", "pull", "--rebase", "--no-autostash", "--quiet", "origin", "main"])
     return code, out if code else f"  up to date (pulled {behind} commit(s))"
 
 
