@@ -2,13 +2,13 @@
 """The whole daily check, one command, one screen. Operations only (OPS-AGENT.md, item 2).
 
 Runs, in order, and prints only what needs a human:
-  1. git pull --rebase           (skip with --no-pull)
+  1. sync with main              (skip with --no-pull; see sync())
   2. tools/panel_health.py       did today land, is the wide file current
   3. tools/pressure_test.py      0 fail / n warn, and every FAIL or WARN line
   4. modelfree.py --wide         the registered H3 reading, the controls, the H5e tally
 
-It changes nothing: every step is read-only except the pull (git pull --rebase, which replays any
-unpushed local commits on top of main). A step that crashes is reported as a crash, never as a pass - on
+It changes nothing: every step is read-only except the sync (a fast-forward, or git pull --rebase when
+there are unpushed local commits to replay on top of main). A step that crashes is reported as a crash, never as a pass - on
 23 Sep 2026 the pressure test had been crashing silently for two days.
 
 USAGE
@@ -40,12 +40,32 @@ def crashed(out):
     return "Traceback (most recent call last)" in out
 
 
+def sync():
+    """Bring main up to date without tripping over an uncommitted file. 31 Oct 2026: `git pull --rebase`
+    refuses outright on any unstaged change, so a local file kept uncommitted on purpose (Astra's bridge,
+    since 24 Oct) turned every day into LOOK AT: git pull while main was already in step. Now: fetch; nothing
+    new is up to date; new commits and no local ones fast-forward (git refuses, touching nothing, if they
+    would overwrite an uncommitted file); local commits as well take the old rebase."""
+    code, out = run(["git", "fetch", "--quiet", "origin", "main"])
+    if code:
+        return code, out
+    code, out = run(["git", "rev-list", "--left-right", "--count", "HEAD...origin/main"])
+    if code:
+        return code, out
+    ahead, behind = (int(n) for n in out.split())
+    if not behind:
+        return 0, f"  up to date{f' ({ahead} local commit(s) not pushed yet)' if ahead else ''}"
+    code, out = run(["git", "merge", "--ff-only", "--quiet", "origin/main"] if not ahead
+                    else ["git", "pull", "--rebase", "--quiet", "origin", "main"])
+    return code, out if code else f"  up to date (pulled {behind} commit(s))"
+
+
 def main():
     bad, facts = [], {}
     if "--no-pull" not in sys.argv:
         section("sync")
-        code, out = run(["git", "pull", "--rebase", "--quiet", "origin", "main"])
-        print("  up to date" if code == 0 else f"  PULL FAILED:\n{out}")
+        code, out = sync()
+        print(out if code == 0 else f"  PULL FAILED:\n{out}")
         if code:
             bad.append("git pull")
 
