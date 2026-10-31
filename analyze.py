@@ -32,6 +32,7 @@ Usage:
 
 import csv, json, os, random, sys, time
 from datetime import date, timedelta
+from functools import lru_cache
 from math import erf, exp, lgamma, sqrt, isfinite
 from pathlib import Path
 
@@ -155,10 +156,16 @@ def newey_west(x, lag):
 def fixed_b_null(T, lag, reps=4000, seed=20261008):
     """The simulated null of the Newey-West (Bartlett) t at this T and lag, in draw order: iid
     Gaussian series, seeded so it reproduces. One copy, shared by fixed_b_pvalue and
-    tools/describe.py (16 Oct 2026; fixed_b_pvalue's numbers are unchanged, checked to the digit)."""
+    tools/describe.py (16 Oct 2026; fixed_b_pvalue's numbers are unchanged, checked to the digit).
+    Memoised 31 Oct 2026: the draws depend only on (T, lag, reps, seed), and the H3 scorer's tests asked
+    for the same four nulls 128 times. Every caller still gets its own list."""
+    return list(_fixed_b_null(T, max(0, min(lag, T - 1)), reps, seed))
+
+
+@lru_cache(maxsize=None)
+def _fixed_b_null(T, lag, reps, seed):
     import random
     rng = random.Random(seed)
-    lag = max(0, min(lag, T - 1))
     out = []
     for _ in range(reps):
         x = [rng.gauss(0.0, 1.0) for _ in range(T)]
@@ -168,7 +175,7 @@ def fixed_b_null(T, lag, reps=4000, seed=20261008):
         for j in range(1, lag + 1):
             var += 2.0 * (1.0 - j / (lag + 1.0)) * sum(d[i] * d[i - j] for i in range(j, T)) / T
         out.append(mu / sqrt(max(var, 1e-18) / T))
-    return out
+    return tuple(out)
 
 
 def fixed_b_pvalue(t, T, lag, reps=4000, seed=20261008):

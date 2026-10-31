@@ -22,6 +22,21 @@ from datetime import date
 from pathlib import Path
 
 R = Path(__file__).resolve().parent.parent
+
+# 31 Oct 2026: the slowest checks are separate programs that read the repository and write nothing into it.
+# Started here, side by side, and collected where they are judged, a run takes ~12 s instead of ~37 s (the
+# pre-push hook waits on it; the auditor runs it once per mutant). Each is judged exactly as before, on its
+# own exit code and output, which go to files rather than pipes so a talkative child can never stall.
+def _start(rel):
+    out, err = tempfile.TemporaryFile("w+"), tempfile.TemporaryFile("w+")
+    return subprocess.Popen([sys.executable, str(R / rel)], stdout=out, stderr=err, text=True), out, err
+def _result(rel):
+    p, out, err = _JOBS[rel]
+    p.wait(); out.seek(0); err.seek(0)
+    return subprocess.CompletedProcess(p.args, p.returncode, out.read(), err.read())
+_JOBS = {rel: _start(rel) for rel in ("tools/calibrate.py", "tools/test_h3_scorer.py", "lab/verify_purchases.py",
+                                      "tools/panel_health.py")}
+
 BACKUP_MD5 = "75035d11b530681571dbeb3294af5926"   # pre-17col backup. IMMUTABLE.
 ORIGINAL_DAY, ORIGINAL_ROWS = "2026-09-04", 52
 
@@ -272,7 +287,8 @@ ok(_sm.wide_band("", 30) == _sm.STRIKE_BAND and _sm.wide_band(None, 30) == _sm.S
 # The wide pass must never fail the run: a non-zero exit skips the commit step,
 # which would lose surface.csv even though it had already been written.
 import contextlib as _ctx2, io as _io2, datetime as _dtw
-_orig = _sm.wide_rows_for
+_orig, _pace = _sm.wide_rows_for, _sm.PACE
+_sm.PACE = 0                                  # 31 Oct 2026: the test need not wait out the API pacing
 for _exc in (RuntimeError("api down"), SystemExit(1), KeyError("x")):
     def _boom(*a, _e=_exc, **k): raise _e
     _sm.wide_rows_for = _boom
@@ -285,7 +301,7 @@ for _exc in (RuntimeError("api down"), SystemExit(1), KeyError("x")):
     except BaseException as _e2:
         _raised = _e2
     ok(_raised is None, f"the wide pass swallows {type(_exc).__name__} instead of failing the run")
-_sm.wide_rows_for = _orig
+_sm.wide_rows_for, _sm.PACE = _orig, _pace
 # And the file-level separation, checked against the real data.
 if surf.exists():
     _far = [r for r in csv.DictReader(surf.open(newline=""))
@@ -442,7 +458,7 @@ _ndf = sum(1 for _ln in _tdesc.stdout.splitlines() if _ln.strip().startswith("FA
 _ndp = sum(1 for _ln in _tdesc.stdout.splitlines() if _ln.strip().startswith("PASS"))
 ok(_tdesc.returncode == 0 and _ndf == 0 and _ndp >= 28, f"the descriptive-statistics tests pass ({_ndp} cases, {_ndf} failures)")
 # The frozen H3 scorer (17 Oct 2026, before the reading of record; Gabriel approved 16 Oct).
-_th3 = _sp.run([sys.executable, str(R / "tools/test_h3_scorer.py")], capture_output=True, text=True)
+_th3 = _result("tools/test_h3_scorer.py")
 _nh3f = sum(1 for _ln in _th3.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _nh3p = sum(1 for _ln in _th3.stdout.splitlines() if _ln.strip().startswith("PASS"))
 _h3src = (R / "tools/h3_scorer.py").read_text()
@@ -488,7 +504,7 @@ ok(not _flm.ore.inside_repo(_flm.LAB_DIR), "lab/ OPRA files live outside this re
 # 14 Oct audit: 15 lab files had been charged and logged as bought yet held only a header. The
 # verifier re-checks every purchase against the ledger and the plan - on the Mac, where the data is.
 if _flm.LAB_DIR.exists():
-    _vr = _sp.run([sys.executable, str(R / "lab/verify_purchases.py")], capture_output=True, text=True)
+    _vr = _result("lab/verify_purchases.py")
     ok(_vr.returncode == 0 and "RESULT: VERIFIED" in _vr.stdout,
        "lab/ purchases verified: every used file has data, files and ledger match one to one, dates in range")
 else:
@@ -669,8 +685,7 @@ print("\n=== H3b. CALIBRATION (every instrument against a known reference truth)
 # Each instrument is fed an input whose right answer is known in advance - parity,
 # invertibility, Carr-Madan's sigma^2, a simulated known vol, a no-premium world -
 # so a failure here means an instrument is wrong, never that the market moved.
-_c = _sp.run([sys.executable, str(R / "tools/calibrate.py")],
-             capture_output=True, text=True)
+_c = _result("tools/calibrate.py")
 _cfail = [ln.strip()[6:] for ln in _c.stdout.splitlines() if ln.strip().startswith("FAIL")]
 _cpass = sum(1 for ln in _c.stdout.splitlines() if ln.strip().startswith("PASS"))
 ok(_c.returncode == 0 and not _cfail,
@@ -1117,8 +1132,7 @@ ok("sys.exit(main())" in phsrc and "return 1" in phsrc,
    "exits non-zero on failure, which is what actually sends the email")
 ok(phsrc.count("warns.append") == 1 and "return 1" not in phsrc.split("def warn")[1].split("def ")[0],
    "warnings never change the exit code (an alert that cries wolf stops being read)")
-_ph = subprocess.run([sys.executable, str(R / "tools" / "panel_health.py")],
-                     capture_output=True, text=True)
+_ph = _result("tools/panel_health.py")
 # This one is about the DATA, not the code. Everything above checks that
 # panel_health is written correctly; this checks what it currently says. A
 # failure here is a real gap in the panels - a missed trading day, a snapshot
