@@ -1894,10 +1894,10 @@ every decision. This section is the only one guaranteed current. Read it, run
 | independent re-implementation, 3 Nov | `tools/independent_check.py`: **971 of 971** values agree (largest gap 0.00088). 31 Oct: 937 of 937. 28 Oct, `--opra`: **883 of 883** values agree, every one a real numeric pair (largest gap 0.00088); H7's 36 pairs on the 10 local OPRA files agree exactly. 17 Oct: 661 of 661; 110 Cboe closes = FRED's copies exactly |
 | Databento, 3 Nov | lifetime **$84.04** (17 Oct: $82.01, of which lab/ $79.00, finished 14 Oct): on course for ~$85.5 by 11 Nov, inside the $100 free credit and the $120 cap |
 | workflows, 3 Nov | record, surface, guard, freshness, health green, and the cron-job.org triggers and the guard on time, every day since 19 Oct; volrec-licensed daily green every night (it fetches day D two nights later). **volrec-licensed `daily.yml` edited 3 Nov 17:55 UTC** (its commit 9d6de2c: `--precise` on the once-only H3 companion line; see the 3 Nov entry) - the 23:05 UTC run that night is the first on it |
-| cron-job.org | record and surface triggers; guard 15:00 and 15:20 New York (tested 204, 16 Oct); one-off 12:00 guard copies for Fri 27 Nov and Thu 24 Dec (made by Gabriel 16 Oct). **3 Nov: the 27 Nov copy fires at 12:00 on every November weekday** - harmless, the guard stands aside before the day's slot, and the 24 Dec copy likely does the same in December; Gabriel can set each to its single date. Token `volrec-trigger` expires 29 Dec |
-| GitHub tokens (row added 3 Nov) | cron-job.org's `volrec-trigger` expires **Tue 29 Dec**. volrec-licensed's `PUBLIC_REPO_TOKEN` (every nightly private run checks this repo out with it): made 24 Sep for 90 days, so **~Wed 23 Dec** - Gabriel to confirm on GitHub's token page. The pressure test dates both: WARN four weeks ahead (licensed 25 Nov, trigger 1 Dec), FAIL the last week (16 Dec, 22 Dec). Renew both by **Tue 15 Dec** |
+| cron-job.org | record and surface triggers; guard 15:00 and 15:20 New York (tested 204, 16 Oct); one-off 12:00 guard copies for Fri 27 Nov and Thu 24 Dec (made by Gabriel 16 Oct; **set to their single dates 3 Nov** - before, the 27 Nov copy fired at 12:00 on every November weekday, harmlessly). Token `volrec-trigger` renewed 3 Nov, expires **Mon 1 Feb 2027**; a guard dispatch with it went through (22:41 UTC) |
+| GitHub tokens (row added 3 Nov) | **Both renewed by Gabriel on 3 Nov; both expire Mon 1 Feb 2027** (they were 29 Dec and 23 Dec), after H8's last purchase (29 Jan). cron-job.org's `volrec-trigger` is in every job (a guard dispatch went through, 22:41 UTC); volrec-licensed's `PUBLIC_REPO_TOKEN` secret was replaced at 22:32 UTC (every nightly private run checks this repo out with it). The pressure test dates both: WARN from Mon 4 Jan, FAIL from Mon 25 Jan. Renew both by **Fri 22 Jan**; reminder Mon 11 Jan |
 | phone (Pushover) | four levels live; the nightly GREEN arrives (confirmed by Gabriel 16 Oct; 2 Nov's went out); RED comes only from the guard. From 3 Nov the nightly H5e figure is the record version (GitHub's runner now gets the frozen rate) |
-| cloud routines | one-off reminders 20 Nov, 23 Nov and **1 Dec (both token renewals, since 3 Nov)**; the 13 Nov verdict check; the Monday auditor and the Wednesday watchdog - enabled; none of the 13 routines has a connector (3 Nov). The 3 Nov AAPL item is done (ex-date added that day). The 30 Oct Goukasian reminder was disabled 21 Oct (he declined; Marc is mentor) |
+| cloud routines | one-off reminders 20 Nov, 23 Nov and **11 Jan 2027 (both token renewals; moved from 1 Dec on 3 Nov)**; the 13 Nov verdict check; the Monday auditor and the Wednesday watchdog - enabled; none of the 13 routines has a connector (3 Nov). The 3 Nov AAPL item is done (ex-date added that day). The 30 Oct Goukasian reminder was disabled 21 Oct (he declined; Marc is mentor) |
 | OSF | H5e and H7 registered and live, https://osf.io/z5gfu (10 Oct) |
 | pre-push hook | installed (`core.hooksPath tools/hooks`); every push runs the pressure test |
 | iMessage (launchd `com.volrec.daily`) | **retired 23 Oct** (a green Pushover alert every weekday 16-22 Oct, Gabriel); unloaded, plist kept at ~/Documents/volrec-retired/ |
@@ -2858,12 +2858,12 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 - **AAPL first (corrected 17 Oct):** its last listed ex-date is 10 Aug, so the stale-dividend WARN fires from
   **19 Nov**, and Apple usually goes ex around 10 Nov - add it to `data/dividends.csv` when declared (late Oct;
   H4's dividend adjustment uses it). **DONE 3 Nov:** ex-date 12 Nov, $0.27 (Apple's 8-K). **December:** the
-  December ex-dates for SPY, QQQ, IWM and NVDA (WARNs from about 19-30 Dec). **By Tue 15 Dec (moved from 22 Dec
-  on 3 Nov): renew BOTH GitHub tokens.** (1) cron-job.org's `volrec-trigger` (expires 29 Dec): paste the new one
-  into every job, then update `TRIGGER_TOKEN_EXPIRES` in `pressure_test.py` (WARN from 1 Dec, FAIL - an email -
-  from 22 Dec). (2) volrec-licensed's `PUBLIC_REPO_TOKEN` (~23 Dec; the private nightly run checks this repo out
-  with it, so a lapse stops the whole run, H8's purchases included): replace the secret in volrec-licensed, then
-  `LICENSED_TOKEN_EXPIRES` (WARN from 25 Nov, FAIL from 16 Dec). The 1 Dec reminder carries both.
+  December ex-dates for SPY, QQQ, IWM and NVDA (WARNs from about 19-30 Dec). **Both GitHub tokens: DONE 3 Nov**
+  (Gabriel renewed both to expire Mon 1 Feb 2027). **By Fri 22 Jan 2027: renew BOTH again.** (1) cron-job.org's
+  `volrec-trigger`: paste the new one into every job, then update `TRIGGER_TOKEN_EXPIRES` in `pressure_test.py`.
+  (2) volrec-licensed's `PUBLIC_REPO_TOKEN` (the private nightly run checks this repo out with it, so a lapse stops
+  the whole run): replace the secret, then `LICENSED_TOKEN_EXPIRES`. WARN from 4 Jan, FAIL - an email - from 25
+  Jan; the 11 Jan reminder carries both.
 - **February 2027:** the write-up, TimesFM's FAIL included.
 - **Wed 21 Oct (Gabriel):** (1) **SCCUR ACCEPTED.** Register by **Fri 23 Oct** for the $90 early rate (Gabriel
   pays; $100 to Sat 8 Nov, the presenters' hard deadline). Format (poster or talk) is in the acceptance email -
@@ -3005,7 +3005,7 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
     ranged read of the tail). A full audit is now ~25-30 min (130 mutants); the cloud routine backgrounds it. A stale app
     worktree (`.claude/worktrees/hopeful-meitner-74bb9a`, merged, clean) can go when convenient.
 
-**Tue 3 Nov - the deep audit and its fixes (the dated plan above still holds; Gabriel's next dated task: both tokens by 15 Dec)**
+**Tue 3 Nov - the deep audit and its fixes (the dated plan above still holds; both tokens renewed that evening, next by 22 Jan)**
 - *Asked* (Gabriel, "paranoid again"): "run a check on everything ... Dig DEEEEPPP"; after the read-only report, "make
   all the fixes that you believe to be the best, then run tests on them". Nothing below touches recorded data, a
   registered bar or verdict, a frozen file, recorder code or a recorder schedule.
@@ -3073,9 +3073,9 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   step stubbed - a seed that fails or crashes must read "LOOK AT: frozen rate", a sound one ALL CLEAR - and two
   more mutants break it. Left open by design: the Ubuntu / Python 3.12 run is tonight's health run (the changed
   files parse under 3.12's grammar), and H7's licensed comparison was out of its scope.
-- *Forward:* **Gabriel:** confirm `PUBLIC_REPO_TOKEN`'s date on GitHub's token page (if it is not 23 Dec, Claude
-  changes `LICENSED_TOKEN_EXPIRES`); renew both tokens by 15 Dec; optionally set the cron-job.org 27 Nov and 24 Dec
-  guard copies to their single dates. **After 11 Nov (the schedule freeze ends):** GitHub's backup cron has less room
+- *Forward:* **Gabriel, DONE the same evening:** both tokens renewed to Mon 1 Feb 2027 (the old dates were right:
+  29 Dec and 23 Dec), the secret replaced and every cron-job.org job updated, the 27 Nov and 24 Dec guard copies
+  set to their single dates; the pressure test's dates follow, and the reminder moved to Mon 11 Jan. **After 11 Nov (the schedule freeze ends):** GitHub's backup cron has less room
   in winter time - by GitHub's usual delays it would have saved ~45% of days in summer time and ~33% now; an hour
   later (15:47 / 15:57 UTC) restores the summer figure, and it moves back on Sun 14 Mar 2027. Low priority:
   cron-job.org is what records; the backup matters only if that trigger fails. **Small:**

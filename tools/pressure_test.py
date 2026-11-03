@@ -928,14 +928,16 @@ warn(_land <= US_CLOSE_UTC_MIN,
 # read/write, volrec only), saved 24 Sep for 90 days. Lapsed, the whole nightly run fails at that checkout: no
 # OPRA, no verdict, no H8 day (H8 buys to 29 Jan). Renewing: make a new token, replace the secret
 # PUBLIC_REPO_TOKEN in volrec-licensed (Settings > Secrets and variables > Actions), then update the date here.
-TRIGGER_TOKEN_EXPIRES = date(2026, 12, 29)
+# 3 Nov 2026 (Gabriel): both renewed that evening to expire Mon 1 Feb 2027 - after H8's last purchase (29 Jan) -
+# the secret replaced (22:32 UTC) and every cron-job.org job updated (a guard dispatch at 22:41 UTC went through).
+TRIGGER_TOKEN_EXPIRES = date(2027, 2, 1)
 _tk_left = (TRIGGER_TOKEN_EXPIRES - date.today()).days
 ok(_tk_left > 7, f"the cron-job.org trigger's GitHub token has more than a week left ({TRIGGER_TOKEN_EXPIRES}, "
                  f"{_tk_left} days)")
 warn(_tk_left > 28,
      f"the cron-job.org trigger's GitHub token expires {TRIGGER_TOKEN_EXPIRES} ({_tk_left} days): renew it, "
      f"update every cron-job.org job, then TRIGGER_TOKEN_EXPIRES in pressure_test.py")
-LICENSED_TOKEN_EXPIRES = date(2026, 12, 23)
+LICENSED_TOKEN_EXPIRES = date(2027, 2, 1)
 _lk_left = (LICENSED_TOKEN_EXPIRES - date.today()).days
 ok(_lk_left > 7, f"the private run's GitHub token (PUBLIC_REPO_TOKEN) has more than a week left "
                  f"({LICENSED_TOKEN_EXPIRES}, {_lk_left} days)")
