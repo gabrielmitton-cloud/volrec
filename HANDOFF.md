@@ -1890,7 +1890,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 
 | check | result |
 |---|---|
-| diagnostic, 3 Nov | `daily.py` **ALL CLEAR** (Mon 2 Nov, the first day in EST, landed 19:31/19:40 UTC = 14:31/14:40 New York); H3 scorer to 2 Nov at full precision: H3a 0.616 over 170 readings (bar 1.0), H3b -0.324, H3c p 0.0215, BH 4 of 5 and 3 of 5; H5e (the record version) 0.98, 19 of 28; pressure test **0 fail, 2 warn** (the known FXE one-sided quote and the late GitHub backup); auditor **144 of 144**; all eleven test suites **0 failures** (the ten unit suites and the poster's 19). (31 Oct: auditor 130 of 130; 28 Oct: 127 of 127.) |
+| diagnostic, 3 Nov | `daily.py` **ALL CLEAR** (Mon 2 Nov, the first day in EST, landed 19:31/19:40 UTC = 14:31/14:40 New York); H3 scorer to 2 Nov at full precision: H3a 0.616 over 170 readings (bar 1.0), H3b -0.324, H3c p 0.0215, BH 4 of 5 and 3 of 5; H5e (the record version) 0.98, 19 of 28; pressure test **0 fail, 2 warn** (the known FXE one-sided quote and the late GitHub backup); auditor **145 of 145**; all eleven test suites **0 failures** (the ten unit suites and the poster's 19). (31 Oct: auditor 130 of 130; 28 Oct: 127 of 127.) |
 | independent re-implementation, 3 Nov | `tools/independent_check.py`: **971 of 971** values agree (largest gap 0.00088). 31 Oct: 937 of 937. 28 Oct, `--opra`: **883 of 883** values agree, every one a real numeric pair (largest gap 0.00088); H7's 36 pairs on the 10 local OPRA files agree exactly. 17 Oct: 661 of 661; 110 Cboe closes = FRED's copies exactly |
 | Databento, 3 Nov | lifetime **$84.04** (17 Oct: $82.01, of which lab/ $79.00, finished 14 Oct): on course for ~$85.5 by 11 Nov, inside the $100 free credit and the $120 cap |
 | workflows, 3 Nov | record, surface, guard, freshness, health green, and the cron-job.org triggers and the guard on time, every day since 19 Oct; volrec-licensed daily green every night (it fetches day D two nights later). **volrec-licensed `daily.yml` edited 3 Nov 17:55 UTC** (its commit 9d6de2c: `--precise` on the once-only H3 companion line; see the 3 Nov entry) - the 23:05 UTC run that night is the first on it |
@@ -3052,11 +3052,15 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   the rail is, so it rolls on past a start instead of resting at zero.
   (6) The backup WARN said "landed 20:01 UTC" of a run that started 8 h 06 m late; it now says the quote stamps read
   20:01 and stop at the close.
-  *Tests:* pressure test 0 fail, 2 warn; eleven suites 0 failures; independent 971 of 971. **Fourteen new auditor
-  mutants, 144 in all** (a side job writing the cache, the placeholder fetching, each token lapsing, daily.py
+  (7) **Seen on the live site after the push:** the rail read "LAST SNAPSHOT 1h 60m ago". `V.since` rounded the
+  minutes after taking the hours, so for 30 seconds every hour it read "Nh 60m" (since 13 Sep); it now rounds to
+  whole minutes first, and the pressure test runs it in node at 8 values (the old formula fails 3 of them).
+  *Tests:* pressure test 0 fail, 2 warn; eleven suites 0 failures; independent 971 of 971. **Fifteen new auditor
+  mutants, 145 in all** (a side job writing the cache, the placeholder fetching, each token lapsing, daily.py
   skipping the seed, ignoring its failure, switching its test off or missing a crash, a cache without the rate, the
   seed passing one, the site's start time drifting, a holiday dropped, the rail counting to the surface, the
-  countdown ignoring holidays): the full run on the final code reads **144 of 144** (3 Nov, 22 min).
+  countdown ignoring holidays, the rail's "ago" rounding the old way): the full run on the final code reads
+  **145 of 145** (3 Nov, 30 min).
   *Astra* (Ultra) reviewed packets of the diffs - its runner bundles only uncommitted files, each cut at 32 KB. The
   first review read INCOMPLETE (it lacked `V.isoDay`, daily.py's run and status code, and the audit's per-mutant
   results), with four findings, all verified and taken: a cache holding other series but not the rate gave r = 0
