@@ -1880,23 +1880,24 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 
 ---
 
-## 18. Current state — opened 23 September 2026, updated to 31 October 2026; the reading every session starts from
+## 18. Current state — opened 23 September 2026, updated to 3 November 2026; the reading every session starts from
 
 **Section 17 is now history:** dated notes from 16-23 Sep, with the reasoning behind
 every decision. This section is the only one guaranteed current. Read it, run
 `tools/daily.py`, and open section 17 only when a task needs the why.
 
-### System status, checked 31 Oct 2026 ~05:30 UTC (Sat, the full top-to-bottom audit)
+### System status, checked 3 Nov 2026 (Tue, the deep audit and its fixes)
 
 | check | result |
 |---|---|
-| diagnostic, 31 Oct | `daily.py` **ALL CLEAR** (Fri 30 Oct landed 18:31/18:40 UTC); H3 scorer to 30 Oct: H3a 0.598 over 165 readings (bar 1.0); pressure test **0 fail, 2 warn** (the known FXE one-sided quote and the late GitHub backup), now ~16 s; auditor **130 of 130** (final run before the 31 Oct push); all ten unit suites **0 failures**. (28 Oct: auditor 127 of 127; 17 Oct: 109 of 109.) |
-| independent re-implementation, 31 Oct | `tools/independent_check.py`: **937 of 937** values agree (largest gap 0.00088). 28 Oct, `--opra`: **883 of 883** values agree, every one a real numeric pair (largest gap 0.00088); H7's 36 pairs on the 10 local OPRA files agree exactly. 17 Oct: 661 of 661; 110 Cboe closes = FRED's copies exactly |
-| Databento, 17 Oct | lifetime **$82.01** (lab/ $79.00 of its $90, finished 14 Oct; main $2.21; H7 $0.17 of $1.10; H8 $0.62 of $15). At the current ~$0.19 a day it reaches ~$85.5 by 11 Nov: inside the $100 free credit and the $120 cap, and H7's cap holds (~$0.79) |
-| workflows, 16-17 Oct | record, surface, guard, freshness, health all green; volrec-licensed daily green (17 Oct 01:15 and 07:41 UTC; it fetches day D two nights later, so 16 Oct arrives after the weekend) |
-| cron-job.org | record and surface triggers; guard 15:00 and 15:20 New York (tested 204, 16 Oct); one-off 12:00 copies for Fri 27 Nov and Thu 24 Dec (made by Gabriel 16 Oct). Token `volrec-trigger` expires 29 Dec |
-| phone (Pushover) | four levels live; the nightly GREEN arrives (confirmed by Gabriel 16 Oct); RED comes only from the guard |
-| cloud routines | one-off reminders 3 Nov (AAPL dividend), 20 Nov, 23 Nov, 1 Dec; the 13 Nov verdict check; the Monday auditor and the Wednesday watchdog - enabled, no connectors. The 30 Oct Goukasian reminder was disabled 21 Oct (he declined; Marc is mentor) |
+| diagnostic, 3 Nov | `daily.py` **ALL CLEAR** (Mon 2 Nov, the first day in EST, landed 19:31/19:40 UTC = 14:31/14:40 New York); H3 scorer to 2 Nov at full precision: H3a 0.616 over 170 readings (bar 1.0), H3b -0.324, H3c p 0.0215, BH 4 of 5 and 3 of 5; H5e (the record version) 0.98, 19 of 28; pressure test **0 fail, 2 warn** (the known FXE one-sided quote and the late GitHub backup); auditor **144 of 144**; all eleven test suites **0 failures** (the ten unit suites and the poster's 19). (31 Oct: auditor 130 of 130; 28 Oct: 127 of 127.) |
+| independent re-implementation, 3 Nov | `tools/independent_check.py`: **971 of 971** values agree (largest gap 0.00088). 31 Oct: 937 of 937. 28 Oct, `--opra`: **883 of 883** values agree, every one a real numeric pair (largest gap 0.00088); H7's 36 pairs on the 10 local OPRA files agree exactly. 17 Oct: 661 of 661; 110 Cboe closes = FRED's copies exactly |
+| Databento, 3 Nov | lifetime **$84.04** (17 Oct: $82.01, of which lab/ $79.00, finished 14 Oct): on course for ~$85.5 by 11 Nov, inside the $100 free credit and the $120 cap |
+| workflows, 3 Nov | record, surface, guard, freshness, health green, and the cron-job.org triggers and the guard on time, every day since 19 Oct; volrec-licensed daily green every night (it fetches day D two nights later). **volrec-licensed `daily.yml` edited 3 Nov 17:55 UTC** (its commit 9d6de2c: `--precise` on the once-only H3 companion line; see the 3 Nov entry) - the 23:05 UTC run that night is the first on it |
+| cron-job.org | record and surface triggers; guard 15:00 and 15:20 New York (tested 204, 16 Oct); one-off 12:00 guard copies for Fri 27 Nov and Thu 24 Dec (made by Gabriel 16 Oct). **3 Nov: the 27 Nov copy fires at 12:00 on every November weekday** - harmless, the guard stands aside before the day's slot, and the 24 Dec copy likely does the same in December; Gabriel can set each to its single date. Token `volrec-trigger` expires 29 Dec |
+| GitHub tokens (row added 3 Nov) | cron-job.org's `volrec-trigger` expires **Tue 29 Dec**. volrec-licensed's `PUBLIC_REPO_TOKEN` (every nightly private run checks this repo out with it): made 24 Sep for 90 days, so **~Wed 23 Dec** - Gabriel to confirm on GitHub's token page. The pressure test dates both: WARN four weeks ahead (licensed 25 Nov, trigger 1 Dec), FAIL the last week (16 Dec, 22 Dec). Renew both by **Tue 15 Dec** |
+| phone (Pushover) | four levels live; the nightly GREEN arrives (confirmed by Gabriel 16 Oct; 2 Nov's went out); RED comes only from the guard. From 3 Nov the nightly H5e figure is the record version (GitHub's runner now gets the frozen rate) |
+| cloud routines | one-off reminders 20 Nov, 23 Nov and **1 Dec (both token renewals, since 3 Nov)**; the 13 Nov verdict check; the Monday auditor and the Wednesday watchdog - enabled; none of the 13 routines has a connector (3 Nov). The 3 Nov AAPL item is done (ex-date added that day). The 30 Oct Goukasian reminder was disabled 21 Oct (he declined; Marc is mentor) |
 | OSF | H5e and H7 registered and live, https://osf.io/z5gfu (10 Oct) |
 | pre-push hook | installed (`core.hooksPath tools/hooks`); every push runs the pressure test |
 | iMessage (launchd `com.volrec.daily`) | **retired 23 Oct** (a green Pushover alert every weekday 16-22 Oct, Gabriel); unloaded, plist kept at ~/Documents/volrec-retired/ |
@@ -2856,10 +2857,13 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 - **After the verdicts:** the site and any next step are a discussion with Gabriel first (his 4 Oct rule).
 - **AAPL first (corrected 17 Oct):** its last listed ex-date is 10 Aug, so the stale-dividend WARN fires from
   **19 Nov**, and Apple usually goes ex around 10 Nov - add it to `data/dividends.csv` when declared (late Oct;
-  H4's dividend adjustment uses it). **December:** the December ex-dates for SPY, QQQ, IWM and NVDA (WARNs from
-  about 19-30 Dec). **By Tue 22 Dec:** renew the cron-job.org GitHub token
-  `volrec-trigger` (expires 29 Dec), paste it into every job, then update `TRIGGER_TOKEN_EXPIRES` in
-  `pressure_test.py` (WARN from 1 Dec, FAIL - an email - from 22 Dec).
+  H4's dividend adjustment uses it). **DONE 3 Nov:** ex-date 12 Nov, $0.27 (Apple's 8-K). **December:** the
+  December ex-dates for SPY, QQQ, IWM and NVDA (WARNs from about 19-30 Dec). **By Tue 15 Dec (moved from 22 Dec
+  on 3 Nov): renew BOTH GitHub tokens.** (1) cron-job.org's `volrec-trigger` (expires 29 Dec): paste the new one
+  into every job, then update `TRIGGER_TOKEN_EXPIRES` in `pressure_test.py` (WARN from 1 Dec, FAIL - an email -
+  from 22 Dec). (2) volrec-licensed's `PUBLIC_REPO_TOKEN` (~23 Dec; the private nightly run checks this repo out
+  with it, so a lapse stops the whole run, H8's purchases included): replace the secret in volrec-licensed, then
+  `LICENSED_TOKEN_EXPIRES` (WARN from 25 Nov, FAIL from 16 Dec). The 1 Dec reminder carries both.
 - **February 2027:** the write-up, TimesFM's FAIL included.
 - **Wed 21 Oct (Gabriel):** (1) **SCCUR ACCEPTED.** Register by **Fri 23 Oct** for the $90 early rate (Gabriel
   pays; $100 to Sat 8 Nov, the presenters' hard deadline). Format (poster or talk) is in the acceptance email -
@@ -3000,6 +3004,80 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
     page shows at once, the live panel waits - for the post-verdict site discussion (a small daily summary file, or a
     ranged read of the tail). A full audit is now ~25-30 min (130 mutants); the cloud routine backgrounds it. A stale app
     worktree (`.claude/worktrees/hopeful-meitner-74bb9a`, merged, clean) can go when convenient.
+
+**Tue 3 Nov - the deep audit and its fixes (the dated plan above still holds; Gabriel's next dated task: both tokens by 15 Dec)**
+- *Asked* (Gabriel, "paranoid again"): "run a check on everything ... Dig DEEEEPPP"; after the read-only report, "make
+  all the fixes that you believe to be the best, then run tests on them". Nothing below touches recorded data, a
+  registered bar or verdict, a frozen file, recorder code or a recorder schedule.
+- *Clean:* **Data** - all four panels: no duplicate row, no crossed or broken quote; no recorded row rewritten in 75
+  commits except the one documented migration; the clock change landed (Mon 2 Nov rows taken 14:31 and 14:40 New
+  York). **Jobs** - triggers and guard on time every day since 19 Oct, every workflow green, the nightly GREEN sent,
+  the private run green every night, Databento $84.04; the verdict dry run lines up H5e FINAL and H7 for 12 Nov.
+  **Security** - no key or token in git history, no licensed file ever committed, no routine with a connector.
+  **Public** - the site is live at HEAD with no console error, the poster builds, OSF is public. **Interim readings
+  (not the record):** H3 to 2 Nov at full precision H3a 0.616, H3b -0.324, H3c p 0.0215 (all three hold), BH 4 of 5
+  and 3 of 5; H5e 0.98, 19 of 28.
+- *Fixed* (this repo's "3 Nov audit fixes" commits; `9d6de2c` in volrec-licensed):
+  (1) **The once-only H3 companion would have read "H3c UNRESOLVED" on 12 Nov.** The private run gave the frozen
+  scorer a 2-decimal `modelfree.py` file, and since 28 Oct the scorer gives H3c and the BH counts only at full
+  precision. Reproduced first: the 2-decimal file gives "H3c UNRESOLVED" and "n/a of 5"; the same data with
+  `--precise` gives exactly the scorer's own run (H3a 0.616 HOLDS, H3c p 0.0215 HOLDS, 4 of 5 and 3 of 5). That one
+  line in volrec-licensed's `daily.yml` gained `--precise` (3 Nov 17:55 UTC, five hours before the night's run; the
+  step runs once, after both finals). No verdict changes.
+  (2) **volrec-licensed's `PUBLIC_REPO_TOKEN` expires ~23 Dec, and nothing said so** (only the cron-job.org token was
+  dated). Now dated in the pressure test beside the trigger's (WARN 25 Nov, FAIL 16 Dec); each token's check is a
+  FAIL line plus a WARN line, so the auditor can break each one. The 1 Dec reminder covers both; both are due 15 Dec.
+  (3) **The pressure test fetched the live FRED rate** in a fresh copy on a machine with a real key - this Mac,
+  inside the audit's worktrees: 4.06% fetched, the rate check rightly FAILED against 3.91%, and one mutant read
+  INCONCLUSIVE. GitHub and the cloud auditor have no key, so never hit it; a stranger with a key would. Two layers:
+  the pressure test swaps a real `FRED_KEY` for the `use-cache` placeholder, for every check and child (an absent key
+  stays absent: r = 0, as on GitHub), and `use-cache` can no longer reach FRED - a series missing from the cache is
+  refused (`tools/fred.py`, LookupError; `modelfree.risk_free` already falls back to r = 0 on any error). New checks:
+  the run must leave `data/fred_cache.json` byte-identical (judged last, in a new section U), and an in-process test
+  with the network patched out proves a miss makes no request and writes nothing.
+  (4) **The phone's nightly H5e figure was the r = 0 version** (0.99 against the record's 0.98 on 2 Nov; in daily.py's
+  full line, 20 of 28 days against 19): GitHub's runner has no FRED cache (git-ignored), and the alert's filter drops
+  daily.py's "NOT the reading of record" label. `daily.py` now runs `tools/seed_frozen_rate.py` before the H3/H5e
+  step and after the pressure test (so every check still sees what it saw before): it writes the frozen rate only
+  where no cache exists and checks one that does, and a cache without the registered rate is a LOOK AT. Proved end to
+  end in a fresh clone, with a real key set and again as GitHub's runner (UTC, no key, no cache): rate 3.910%, H5e
+  0.98 and 19 of 28, the phone text "0.98", afterwards only the seed in the cache - nothing fetched. With a cache
+  holding another series only: "LOOK AT: pressure_test, frozen rate", the cache left untouched.
+  (5) **The site's countdowns pointed at GitHub's backup cron** (14:47 / 14:57 UTC; the rail read ~21 hours when the
+  recording was ~2 hours away). They now count to the recorders' real start - 14:30 / 14:40 New York,
+  11:30 / 11:40 on an early close - skipping weekends and market holidays (`V.nextTrigger` in `tools/volrec.js`, used
+  by the rail and the monitor page). The pressure test compares the site's copies of the start times, early closes
+  and holidays with record.py, the guard and panel_health, and runs the countdown itself in node in 11 cases (both
+  clock changes, a weekend, holidays, an early close). The monitor's pending countdown is recomputed each second, as
+  the rail is, so it rolls on past a start instead of resting at zero.
+  (6) The backup WARN said "landed 20:01 UTC" of a run that started 8 h 06 m late; it now says the quote stamps read
+  20:01 and stop at the close.
+  *Tests:* pressure test 0 fail, 2 warn; eleven suites 0 failures; independent 971 of 971. **Fourteen new auditor
+  mutants, 144 in all** (a side job writing the cache, the placeholder fetching, each token lapsing, daily.py
+  skipping the seed, ignoring its failure, switching its test off or missing a crash, a cache without the rate, the
+  seed passing one, the site's start time drifting, a holiday dropped, the rail counting to the surface, the
+  countdown ignoring holidays): the full run on the final code reads **144 of 144** (3 Nov, 22 min).
+  *Astra* (Ultra) reviewed packets of the diffs - its runner bundles only uncommitted files, each cut at 32 KB. The
+  first review read INCOMPLETE (it lacked `V.isoDay`, daily.py's run and status code, and the audit's per-mutant
+  results), with four findings, all verified and taken: a cache holding other series but not the rate gave r = 0
+  under ALL CLEAR (daily.py seeded only where no file existed and ignored the seed's exit code) - now a LOOK AT, with
+  a seed test and three mutants; the same gap in the pressure test's rate check; the monitor's pending countdown
+  rested at zero past a start; and this entry had said every check runs with `use-cache`. The follow-up review had
+  an evidence packet too (the full audit mutant by mutant, the fresh-clone runs, the browser readings, the suites)
+  and confirmed the four fixes and this entry's claims, with one LOW finding, taken: the daily.py check read text
+  only, so `if False:` in place of the seed's test would have passed it. Now `daily.main()` also runs with every
+  step stubbed - a seed that fails or crashes must read "LOOK AT: frozen rate", a sound one ALL CLEAR - and two
+  more mutants break it. Left open by design: the Ubuntu / Python 3.12 run is tonight's health run (the changed
+  files parse under 3.12's grammar), and H7's licensed comparison was out of its scope.
+- *Forward:* **Gabriel:** confirm `PUBLIC_REPO_TOKEN`'s date on GitHub's token page (if it is not 23 Dec, Claude
+  changes `LICENSED_TOKEN_EXPIRES`); renew both tokens by 15 Dec; optionally set the cron-job.org 27 Nov and 24 Dec
+  guard copies to their single dates. **After 11 Nov (the schedule freeze ends):** GitHub's backup cron has less room
+  in winter time - by GitHub's usual delays it would have saved ~45% of days in summer time and ~33% now; an hour
+  later (15:47 / 15:57 UTC) restores the summer figure, and it moves back on Sun 14 Mar 2027. Low priority:
+  cron-job.org is what records; the backup matters only if that trigger fails. **Small:**
+  `samples/long/test_h2_variance.py` reads like a test but is `sample_a.yml`'s script and needs Alpaca keys - rename
+  it with the write-up, not before. The stale app worktree (`.claude/worktrees/hopeful-meitner-74bb9a`, merged and
+  clean) was removed 3 Nov; its branch is kept.
 
 ### Prompt for the next session
 
