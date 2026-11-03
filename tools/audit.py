@@ -562,6 +562,16 @@ if shutil.which("node"):
     MUTANTS.append(("site-countdown-ignores-holidays", "the site's countdown counts to a market holiday",
                     lambda w: _sub(w / "tools/volrec.js", " || V.HOLIDAYS.includes(iso)) continue;", ") continue;"),
                     "the site's countdown lands on the recorders' next real start"))
+    # 3 Nov 2026: the 13 Sep formula, which read "1h 60m ago" for 30 s an hour.
+    MUTANTS.append(("site-ago-reads-60m", "the rail's 'ago' rounds the minutes after taking the hours again",
+                    lambda w: _sub(w / "tools/volrec.js",
+                                   '    const m = Math.round(Math.max(0, ms) / 6e4);\n    return m < 60 ? m + "m ago" : '
+                                   'm < 2880 ? Math.floor(m / 60) + "h " + p2(m % 60) + "m ago" : Math.floor(m / 1440) '
+                                   '+ "d ago";',
+                                   '    const h = Math.max(0, ms) / 36e5;\n    return h < 1 ? Math.round(h * 60) + "m ago" : '
+                                   'h < 48 ? Math.floor(h) + "h " + p2(Math.round((h % 1) * 60)) + "m ago" : '
+                                   'Math.floor(h / 24) + "d ago";'),
+                    "the site's 'ago' never reads 60m"))
 
 
 def check_lines(out):

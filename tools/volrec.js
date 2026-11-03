@@ -131,9 +131,10 @@
     const s = Math.floor(ms / 1000), dd = Math.floor(s / 86400);
     return (dd ? dd + "d " : "") + p2(Math.floor(s % 86400 / 3600)) + ":" + p2(Math.floor(s % 3600 / 60)) + ":" + p2(s % 60);
   };
+  // 3 Nov 2026: whole minutes first. Rounding the minutes after taking the hours read "1h 60m ago" for 30 s an hour.
   V.since = ms => {
-    const h = Math.max(0, ms) / 36e5;
-    return h < 1 ? Math.round(h * 60) + "m ago" : h < 48 ? Math.floor(h) + "h " + p2(Math.round((h % 1) * 60)) + "m ago" : Math.floor(h / 24) + "d ago";
+    const m = Math.round(Math.max(0, ms) / 6e4);
+    return m < 60 ? m + "m ago" : m < 2880 ? Math.floor(m / 60) + "h " + p2(m % 60) + "m ago" : Math.floor(m / 1440) + "d ago";
   };
   V.utc = d => p2(d.getUTCHours()) + ":" + p2(d.getUTCMinutes()) + ":" + p2(d.getUTCSeconds()) + "Z";
 

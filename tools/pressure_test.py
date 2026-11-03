@@ -1341,8 +1341,24 @@ if _node:
     ok(_pn.returncode == 0 and _got == _want,
        f"the site's countdown lands on the recorders' next real start in {len(_cases)} cases (both clock changes, "
        f"a weekend, holidays, an early close; run in node)" + (f" - first miss {_miss[0]}" if _miss else ""))
+    # 3 Nov 2026, seen on the live site after the push: the rail read "LAST SNAPSHOT 1h 60m ago".
+    _ago = [(0, "0m ago"), (59 * 60e3 + 29e3, "59m ago"), (59 * 60e3 + 40e3, "1h 00m ago"),
+            (2 * 36e5 - 20e3, "2h 00m ago"), (2 * 36e5 + 5 * 60e3, "2h 05m ago"), (48 * 36e5 - 20e3, "2d ago"),
+            (3 * 864e5, "3d ago"), (-5e3, "0m ago")]
+    _pa = subprocess.run([_node, "-e", "const w = {}; new Function('window', require('fs').readFileSync(process.argv[1], "
+                          "'utf8'))(w); console.log(JSON.stringify(JSON.parse(process.argv[2]).map(w.V.since)));",
+                          str(R / "tools/volrec.js"), _jsk.dumps([a for a, _ in _ago])],
+                         capture_output=True, text=True, timeout=60)
+    try:
+        _agot = _jsk.loads(_pa.stdout)
+    except ValueError:
+        _agot = None
+    ok(_pa.returncode == 0 and _agot == [b for _, b in _ago],
+       f"the site's 'ago' never reads 60m: 59 m 40 s is 1h 00m, 1 h 59 m 40 s is 2h 00m ({len(_ago)} cases, run in "
+       f"node)" + (f" - got {_agot}" if _agot != [b for _, b in _ago] else ""))
 else:
-    warn(False, "node is not installed here, so the site's countdown was not run (its copies were still checked)")
+    warn(False, "node is not installed here, so the site's countdown and 'ago' were not run (their constants were "
+                "still checked)")
 ok("15:40 UTC" not in (R / "tools/monitor.html").read_text()
    and "15:30 UTC" not in (R / "tools/monitor.html").read_text(),
    "monitor.html does not hard-code a cron time beside the constant")
