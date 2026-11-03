@@ -437,13 +437,10 @@
       const wrap = V.h("div", { class: "pending" }, host);
       const left = V.h("div", null, wrap);
       V.h("span", { class: "st", "data-state": h.state }, left, h.label);
-      const first = new Date(`${V.SURFACE_START}T${String(V.SURFACE_CRON[0]).padStart(2, "0")}:${String(V.SURFACE_CRON[1]).padStart(2, "0")}:00Z`);
-      const now = new Date(), target = now < first ? first : V.nextRun(V.SURFACE_CRON, now);
-      const count = V.h("div", { class: "count", style: "margin-top:12px" }, left, "T−" + V.clock(target - now));
-      V.h("p", null, left, now < first
-        ? `until the first scheduled run, Monday ${V.SURFACE_START} at ${V.cronUTC(V.SURFACE_CRON)}. GitHub usually starts it three to four hours late.`
-        : `until the next scheduled run at ${V.cronUTC(V.SURFACE_CRON)}.`);
-      setInterval(() => { count.textContent = "T−" + V.clock(target - new Date()); }, 1000);
+      const now = new Date(), target = V.nextTrigger("surface", now);
+      const count = V.h("div", { class: "count", style: "margin-top:12px" }, left, target ? "T−" + V.clock(target - now) : "n/a");
+      V.h("p", null, left, `until the next scheduled run, ${V.trigText("surface")}.`);
+      if (target) setInterval(() => { count.textContent = "T−" + V.clock(target - new Date()); }, 1000);
       const right = V.h("div", null, wrap);
       V.h("p", null, right, h.msg);
       V.h("p", null, right, "When rows land, this panel draws the implied volatility smile for each of the eight underlyings, near and far expiry, with traded volume at every strike beneath it. H4 becomes testable after two consecutive trading days.");

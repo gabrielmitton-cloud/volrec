@@ -8,7 +8,8 @@ Runs, in order, and prints only what needs a human:
   4. modelfree.py --wide         the registered H3 reading, the controls, the H5e tally
 
 It changes nothing: every step is read-only except the sync (a fast-forward, or git pull --rebase when
-there are unpushed local commits to replay on top of main). A step that crashes is reported as a crash, never as a pass - on
+there are unpushed local commits to replay on top of main), and, in a clone with no FRED cache (GitHub's runner),
+the frozen-rate seed before step 4. A step that crashes is reported as a crash, never as a pass - on
 23 Sep 2026 the pressure test had been crashing silently for two days.
 
 USAGE
@@ -108,6 +109,11 @@ def main():
             bad.append("pressure_test")
 
     section("H3 reading, controls, H5e")
+    # 3 Nov 2026: with no cache (git-ignored, so never on GitHub's runner) this read r = 0, and the phone's nightly
+    # H5e line was not the reading of record: 0.99, 20 of 28 against 0.98, 19 of 28 on 2 Nov. Such a clone gets the
+    # frozen seed first; tools/seed_frozen_rate.py writes only where no cache exists, so a real one is never touched.
+    if not (ROOT / "data" / "fred_cache.json").exists():
+        run([PY, "tools/seed_frozen_rate.py"])
     code, out = run([PY, "modelfree.py", "--wide"], {"FRED_KEY": "use-cache"})
     if code != 0 or crashed(out):        # 16 Oct: a sys.exit("...") has no traceback but is still a crash
         print("\n".join(out.splitlines()[-6:]))

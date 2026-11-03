@@ -30,14 +30,19 @@
   V.SURFACE_START = "2026-09-14";
   V.SURFACE_LANDED_HOUR_UTC = 20;
 
-  // Scheduled times from the workflows. GitHub delays both by ~3 hours in practice.
-  // Must match .github/workflows/*.yml. pressure_test.py section K asserts it,
-  // because these drive the live countdown and a stale pair is a public clock
-  // that is quietly wrong. Moved 16 Sep 2026 from 15:30/15:40; see record.yml
-  // for why 14:xx and why not a quarter hour.
-  V.RECORD_CRON = [14, 47];
-  V.SURFACE_CRON = [14, 57];
-  V.cronUTC = (c) => `${String(c[0]).padStart(2, "0")}:${String(c[1]).padStart(2, "0")} UTC`;
+  // When the recorders start, New York time: since 30 Sep 2026 an outside trigger (cron-job.org) starts them
+  // at 14:30 and 14:40, and at 11:30 and 11:40 on an early close; GitHub's own cron is only the backup, hours
+  // late. These drive the live countdowns, and a stale copy is a public clock that is quietly wrong: until
+  // 3 Nov 2026 this file still counted to the backup's cron. Mirrored from record.py, tools/guard.py and
+  // tools/panel_health.py; pressure_test.py section K asserts all four and runs nextTrigger.
+  V.TRIGGER_NY = {"record": [14, 30], "surface": [14, 40]};
+  V.EARLY_TRIGGER_NY = {"record": [11, 30], "surface": [11, 40]};
+  V.EARLY_CLOSES = ["2026-11-27", "2026-12-24", "2027-11-26", "2028-07-03", "2028-11-24"];
+  V.HOLIDAYS = ["2026-11-26", "2026-12-25", "2027-01-01", "2027-01-18", "2027-02-15", "2027-03-26", "2027-05-31",
+    "2027-06-18", "2027-07-05", "2027-09-06", "2027-11-25", "2027-12-24", "2028-01-17", "2028-02-21", "2028-04-14",
+    "2028-05-29", "2028-06-19", "2028-07-04", "2028-09-04", "2028-11-23", "2028-12-25", "2029-01-01"];
+  const hm = c => String(c[0]).padStart(2, "0") + ":" + String(c[1]).padStart(2, "0");
+  V.trigText = p => `${hm(V.TRIGGER_NY[p])} New York (${hm(V.EARLY_TRIGGER_NY[p])} on an early close)`;
 
   V.T30 = 30 / 365;
   V.calm = !!(global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -86,13 +91,38 @@
     return new Date(best !== null ? best : Date.parse(`${newest}T18:45:00Z`));
   };
 
-  V.nextRun = function (hm, now) {
+  // New York's wall clock for an instant, and the instant for a New York wall-clock time. The offset (EST or
+  // EDT) comes from the browser's own time-zone data, so a clock change needs nothing here.
+  const NYF = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const nyParts = t => {
+    const o = {};
+    for (const p of NYF.formatToParts(new Date(t))) if (p.type !== "literal") o[p.type] = +p.value;
+    return o;
+  };
+  V.nyInstant = (iso, h, m) => {
+    const [y, mo, d] = iso.split("-").map(Number), want = Date.UTC(y, mo - 1, d, h, m);
+    let t = want;
+    for (let i = 0; i < 2; i++) {
+      const p = nyParts(t);
+      t += want - Date.UTC(p.year, p.month - 1, p.day, p.hour % 24, p.minute);
+    }
+    return t;
+  };
+
+  // The next start of a recorder ("record" or "surface"): its New York time on the next trading day, the
+  // earlier time on an early close, weekends and holidays skipped.
+  V.nextTrigger = function (panel, now) {
     now = now || new Date();
-    const d = new Date(now.getTime());
-    d.setUTCHours(hm[0], hm[1], 0, 0);
-    if (d <= now) d.setUTCDate(d.getUTCDate() + 1);
-    while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() + 1);
-    return d;
+    const p = nyParts(now.getTime());
+    for (let day = Date.UTC(p.year, p.month - 1, p.day), i = 0; i < 30; i++, day += 864e5) {
+      const iso = V.isoDay(new Date(day)), wd = new Date(day).getUTCDay();
+      if (wd === 0 || wd === 6 || V.HOLIDAYS.includes(iso)) continue;
+      const c = (V.EARLY_CLOSES.includes(iso) ? V.EARLY_TRIGGER_NY : V.TRIGGER_NY)[panel];
+      const t = V.nyInstant(iso, c[0], c[1]);
+      if (t > now.getTime()) return new Date(t);
+    }
+    return null;
   };
 
   const p2 = n => String(n).padStart(2, "0");
@@ -339,7 +369,7 @@
 
   // The telemetry strip across the top of both pages. It ticks every second:
   // the UTC clock, the age of the last snapshot, and the countdown to the
-  // recorder's next scheduled run are what make it read as a live system.
+  // recorder's next start are what make it read as a live system.
   V.rail = function (host, opt) {
     V.clear(host);
     const here = opt.here;
@@ -373,7 +403,8 @@
       const now = new Date();
       clk.textContent = V.utc(now);
       age.textContent = snap ? V.since(now - snap) : "n/a";
-      next.textContent = "T−" + V.clock(V.nextRun(V.RECORD_CRON, now) - now);
+      const n = V.nextTrigger("record", now);
+      next.textContent = n ? "T−" + V.clock(n - now) : "n/a";
     };
     tick();
     clearInterval(host._tick);

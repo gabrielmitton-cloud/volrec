@@ -17,11 +17,22 @@ file is checked *against* it - the original 52 rows must still be there,
 value-for-value. That catches the failure that actually matters (history being
 rewritten) without firing on the one that does not (history growing).
 """
-import csv, hashlib, importlib.util, re, subprocess, sys, tempfile
+import csv, hashlib, importlib.util, os, re, subprocess, sys, tempfile
 from datetime import date
 from pathlib import Path
 
 R = Path(__file__).resolve().parent.parent
+
+# 3 Nov 2026: this run must never fetch from FRED. With a real FRED_KEY in the shell and no cache (a fresh
+# clone, or every auditor worktree), calibrate.py's OPRA path fetched the live rate and WROTE
+# data/fred_cache.json, so the seed check below failed on an unbroken repository. A real key is swapped for
+# the placeholder here, for every check and child: the frozen cache is read where there is one, r = 0 where
+# not, exactly as in CI and the private run (no key there; unset stays unset). The two checks after the
+# fresh-clone seed check prove it.
+if os.environ.get("FRED_KEY") not in (None, "", "use-cache"):
+    os.environ["FRED_KEY"] = "use-cache"
+_FRED_CACHE = R / "data/fred_cache.json"
+_FRED_CACHE_BEFORE = _FRED_CACHE.read_bytes() if _FRED_CACHE.exists() else None
 
 # 31 Oct 2026: the slowest checks are separate programs that read the repository and write nothing into it.
 # Started here, side by side, and collected where they are judged, a run takes ~12 s instead of ~37 s (the
@@ -901,18 +912,36 @@ ok(_land <= US_CLOSE_UTC_MIN or _GUARD,
    f"record's worst delay seen still lands before the earlier close, or the after-close guard "
    f"makes a late landing a missed day rather than a wrong one "
    f"(lands {_land // 60:02d}:{_land % 60:02d}, close 20:00 UTC; guard {'live' if _GUARD else 'ABSENT'})")
+# 3 Nov 2026: the time below is read off the quote stamps, and a run after the close is stamped at the close,
+# so it is the latest the data can show, not when GitHub started the run (8h06m after its cron at worst, on
+# 2 Nov 2026, by GitHub's own run list).
 warn(_land <= US_CLOSE_UTC_MIN,
-     f"record's GitHub-cron backup can land after the close (worst {_land // 60:02d}:{_land % 60:02d} UTC); "
-     f"the guard refuses such a run and the day is missed - the outside trigger at 14:30 New York is what prevents it")
+     f"record's GitHub-cron backup can land after the close (the quote stamps read {_land // 60:02d}:{_land % 60:02d} "
+     f"UTC, and stop at the close, so the real start was later); the guard refuses such a run and the day is "
+     f"missed - the outside trigger at 14:30 New York is what prevents it")
+# Both outside tokens EXPIRE, and a lapsed one stops its job without a word. Warn four weeks ahead; FAIL
+# (health.yml emails) the last week, on a line of its own so the auditor can break it (a WARN is not a check).
 # 9 Oct 2026: the outside trigger authenticates to GitHub with the fine-grained token `volrec-trigger`
-# (Actions read/write, volrec only), which EXPIRES. Lapsed, the trigger stops silently and only GitHub's
-# delayed backup is left. Warn four weeks ahead; FAIL (health.yml emails) the last week. Renewing: make a
-# new token, paste it into every cron-job.org job's Authorization header, then update the date here.
+# (Actions read/write, volrec only). Lapsed, only GitHub's delayed backup is left. Renewing: make a new token,
+# paste it into every cron-job.org job's Authorization header, then update the date here.
+# 3 Nov 2026: the private run (volrec-licensed) checks this repository out with PUBLIC_REPO_TOKEN (Contents
+# read/write, volrec only), saved 24 Sep for 90 days. Lapsed, the whole nightly run fails at that checkout: no
+# OPRA, no verdict, no H8 day (H8 buys to 29 Jan). Renewing: make a new token, replace the secret
+# PUBLIC_REPO_TOKEN in volrec-licensed (Settings > Secrets and variables > Actions), then update the date here.
 TRIGGER_TOKEN_EXPIRES = date(2026, 12, 29)
 _tk_left = (TRIGGER_TOKEN_EXPIRES - date.today()).days
-(ok if _tk_left <= 7 else warn)(_tk_left > 28,
-   f"the cron-job.org trigger's GitHub token expires {TRIGGER_TOKEN_EXPIRES} ({_tk_left} days): renew it, "
-   f"update every cron-job.org job, then TRIGGER_TOKEN_EXPIRES in pressure_test.py")
+ok(_tk_left > 7, f"the cron-job.org trigger's GitHub token has more than a week left ({TRIGGER_TOKEN_EXPIRES}, "
+                 f"{_tk_left} days)")
+warn(_tk_left > 28,
+     f"the cron-job.org trigger's GitHub token expires {TRIGGER_TOKEN_EXPIRES} ({_tk_left} days): renew it, "
+     f"update every cron-job.org job, then TRIGGER_TOKEN_EXPIRES in pressure_test.py")
+LICENSED_TOKEN_EXPIRES = date(2026, 12, 23)
+_lk_left = (LICENSED_TOKEN_EXPIRES - date.today()).days
+ok(_lk_left > 7, f"the private run's GitHub token (PUBLIC_REPO_TOKEN) has more than a week left "
+                 f"({LICENSED_TOKEN_EXPIRES}, {_lk_left} days)")
+warn(_lk_left > 28,
+     f"the private run's GitHub token (PUBLIC_REPO_TOKEN) expires {LICENSED_TOKEN_EXPIRES} ({_lk_left} days): "
+     f"renew it, replace volrec-licensed's secret, then LICENSED_TOKEN_EXPIRES in pressure_test.py")
 # Accepted by Gabriel on 23 Sep 2026 until the window closes: a schedule change would
 # move every remaining snapshot, while a post-close landing costs one day, which
 # panel_health FAILS on (and emails) so it is dropped rather than silently kept. The
@@ -1245,18 +1274,75 @@ ok(not _osi, f"no raw OPRA data on the site: no option symbol ({_osi[:3] or 'non
 ok("DGS1MO" in idx and "VIXCLS" in idx and "retrieved from FRED" in idx,
    "the site cites both FRED series in FRED's own form")
 
-# The site's countdown runs off its own copy of the cron. A stale copy is a
-# public clock that is quietly wrong, which is worse than no clock, and moving
-# the workflows on 16 Sep did exactly that until this caught it.
-_js = (R / "tools/volrec.js").read_text()
-for _name, _wf, _job in (("RECORD_CRON", "record.yml", "record"),
-                         ("SURFACE_CRON", "surface.yml", "surface")):
-    _m = re.search(rf"V\.{_name} = \[(\d+), (\d+)\]", _js)
-    _cr = yaml.safe_load((R / f".github/workflows/{_wf}").read_text())
-    _h, _mi = cron_minutes(_cr[True]["schedule"][0]["cron"])[0] // 60, \
-              cron_minutes(_cr[True]["schedule"][0]["cron"])[0] % 60
-    ok(_m is not None and (int(_m.group(1)), int(_m.group(2))) == (_h, _mi),
-       f"site's {_name} matches {_wf} ({_h:02d}:{_mi:02d} UTC)")
+# The site's countdowns run off its own copy of when the recorders start. A stale copy is a public clock that
+# is quietly wrong, which is worse than no clock: moving the workflows on 16 Sep did exactly that until this
+# caught it, and from 30 Sep (the outside trigger) the copy was GitHub's backup cron, so the rail counted to
+# 09:47 New York all winter while the recorders started at 14:30 (found 3 Nov 2026). The site now mirrors the
+# start times, the early closes and the holidays from record.py, tools/guard.py and tools/panel_health.py, and
+# its nextTrigger is run here on the dates that matter, against the same rule computed in Python.
+import json as _jsk, shutil as _shk
+from zoneinfo import ZoneInfo as _ZIk
+def _jsv(name):
+    _jm = re.search(rf"V\.{name} = (.*?);\n", site, re.S)
+    try:
+        return _jsk.loads(_jm.group(1)) if _jm else None
+    except ValueError:
+        return None
+_gsk = _iu.spec_from_file_location("_guard_site", R / "tools/guard.py")
+_gdk = _iu.module_from_spec(_gsk); _gsk.loader.exec_module(_gdk)
+_PANEL = {"record": "atm", "surface": "surface"}
+def _hmk(m):
+    return [m // 60, m % 60]
+_tx = ", ".join(f"{p} {_gdk.PANELS[g][2] // 60:02d}:{_gdk.PANELS[g][2] % 60:02d}" for p, g in _PANEL.items())
+ok(_jsv("TRIGGER_NY") == {p: _hmk(_gdk.PANELS[g][2]) for p, g in _PANEL.items()}
+   and _jsv("EARLY_TRIGGER_NY") == {p: _hmk(_gdk.PANELS[g][3]) for p, g in _PANEL.items()}
+   and [_hmk(_gdk.PANELS["atm"][2]), _hmk(_gdk.PANELS["atm"][3])] == [list(rec.TRIGGER_NY), list(rec.EARLY_TRIGGER_NY)],
+   f"site's start times match record.py and the guard ({_tx} New York, earlier on an early close)")
+ok(_jsv("EARLY_CLOSES") == sorted(d.isoformat() for d in rec.EARLY_CLOSES)
+   and _jsv("HOLIDAYS") == sorted(d.isoformat() for d in _gdk.ph.US_MARKET_HOLIDAYS),
+   f"site's early closes and holidays match record.py and panel_health.py "
+   f"({len(rec.EARLY_CLOSES)} and {len(_gdk.ph.US_MARKET_HOLIDAYS)})")
+ok('V.nextTrigger("record", now)' in site and 'V.nextTrigger("surface", now)' in mon
+   and not re.search(r"RECORD_CRON|SURFACE_CRON|nextRun", site + mon),
+   "the site's countdowns count to the recorders' real start, not to GitHub's backup cron")
+_NYk = _ZIk("America/New_York")
+def _next_start(panel, now):
+    _tg, _d = _gdk.PANELS[_PANEL[panel]], now.astimezone(_NYk).date()
+    while True:
+        if _d.weekday() < 5 and _d not in _gdk.ph.US_MARKET_HOLIDAYS:
+            _mm = _tg[3] if _d in rec.EARLY_CLOSES else _tg[2]
+            _t = _dt.datetime(_d.year, _d.month, _d.day, _mm // 60, _mm % 60, tzinfo=_NYk)
+            if _t > now:
+                return _t.astimezone(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        _d += _dt.timedelta(days=1)
+_cases = [("2026-10-30T18:00:00Z", "record"),    # a Friday in summer time, before the start
+          ("2026-10-30T19:00:00Z", "record"),    # after it: Monday, across the clock change
+          ("2026-11-03T17:00:00Z", "record"),    # winter time, before the start
+          ("2026-11-03T19:30:00Z", "record"),    # at the start itself: the next day's
+          ("2026-11-04T04:30:00Z", "record"),    # 23:30 New York, already the 4th in UTC
+          ("2026-11-07T12:00:00Z", "surface"),   # a Saturday
+          ("2026-11-25T20:00:00Z", "record"),    # Thanksgiving skipped, then the early close's 11:30
+          ("2026-11-27T16:35:00Z", "surface"),   # on the early close, between its two starts
+          ("2026-12-24T17:00:00Z", "record"),    # after the early start; Christmas and a weekend skipped
+          ("2026-12-31T20:00:00Z", "surface"),   # New Year's Day skipped
+          ("2027-03-12T20:00:00Z", "record")]    # the spring clock change
+_want = [_next_start(p, _dt.datetime.fromisoformat(t.replace("Z", "+00:00"))) for t, p in _cases]
+_node = _shk.which("node")
+if _node:
+    _pn = subprocess.run([_node, "-e", "const w = {}; new Function('window', require('fs').readFileSync(process.argv[1], "
+                          "'utf8'))(w); console.log(JSON.stringify(JSON.parse(process.argv[2]).map(([t, p]) => "
+                          "{ const n = w.V.nextTrigger(p, new Date(t)); return n && n.toISOString(); })));",
+                          str(R / "tools/volrec.js"), _jsk.dumps(_cases)], capture_output=True, text=True, timeout=60)
+    try:
+        _got = _jsk.loads(_pn.stdout)
+    except ValueError:
+        _got = None
+    _miss = [(c[0], c[1], g, w_) for c, g, w_ in zip(_cases, _got or [None] * len(_cases), _want) if g != w_]
+    ok(_pn.returncode == 0 and _got == _want,
+       f"the site's countdown lands on the recorders' next real start in {len(_cases)} cases (both clock changes, "
+       f"a weekend, holidays, an early close; run in node)" + (f" - first miss {_miss[0]}" if _miss else ""))
+else:
+    warn(False, "node is not installed here, so the site's countdown was not run (its copies were still checked)")
 ok("15:40 UTC" not in (R / "tools/monitor.html").read_text()
    and "15:30 UTC" not in (R / "tools/monitor.html").read_text(),
    "monitor.html does not hard-code a cron time beside the constant")
@@ -1395,6 +1481,38 @@ _fc_rate = (_json.loads(_fc.read_text()).get("DGS1MO||") or {}) if _fc.exists() 
 ok(_sfr.FROZEN == {"DGS1MO||": {"2026-09-10": 3.91}}
    and (not _fc_rate or (max(_fc_rate) == "2026-09-10" and _fc_rate[max(_fc_rate)] == 3.91)),
    "the fresh-clone seed carries the registered rate (DGS1MO 3.91% on 2026-09-10), and so does the cache")
+# 3 Nov 2026 (see the top of this file): nothing this run starts may fetch from FRED or write the cache. Every
+# child has finished by here. And the placeholder itself never goes to FRED: tools/fred.py refuses a miss.
+ok((_FRED_CACHE.read_bytes() if _FRED_CACHE.exists() else None) == _FRED_CACHE_BEFORE,
+   "this run left data/fred_cache.json as it found it: no check or side job fetched from FRED")
+_frs = _ilu.spec_from_file_location("_fred_check", R / "tools/fred.py")
+_frm = _ilu.module_from_spec(_frs); _frs.loader.exec_module(_frm)
+class _NoNet(BaseException):             # not an Exception, so fred's own retry loop cannot swallow it
+    pass
+def _no_net(*_a, **_k):
+    raise _NoNet()
+_frd = Path(tempfile.mkdtemp(prefix="volrec-fred-"))
+_frm.CACHE, _frm.urlopen = _frd / "fred_cache.json", _no_net
+_frk = os.environ.get("FRED_KEY")
+os.environ["FRED_KEY"] = "use-cache"
+try:
+    _frm.series("DGS1MO")
+    _frr = "returned a series"
+except LookupError:
+    _frr = "refused"
+except _NoNet:
+    _frr = "went to FRED"
+except Exception as _fre:
+    _frr = type(_fre).__name__
+finally:
+    if _frk is None:
+        os.environ.pop("FRED_KEY", None)
+    else:
+        os.environ["FRED_KEY"] = _frk
+ok(_frr == "refused" and not _frm.CACHE.exists(),
+   f"FRED_KEY=use-cache reads the cache only: a miss is refused, with no request and no cache written ({_frr})")
+import shutil as _shf
+_shf.rmtree(_frd, ignore_errors=True)
 
 print("\n=== M. REGISTERED CONSTANTS, ZERO-BID SEMANTICS, OPERATIONS TOOLS ===")
 # A pre-registered bar that can be edited without anything noticing is not a bar.
@@ -1436,6 +1554,12 @@ ok(_prep_pair(date(2026, 9, 18)) == ["16-Oct-26", "23-Oct-26"]
 _daily = (R / "tools/daily.py").read_text()
 ok(all(s in _daily for s in ("panel_health.py", "pressure_test.py", '"--wide"', "Traceback")),
    "daily.py runs panel health, the pressure test and the H3/H5e reading, and reports crashes")
+# 3 Nov 2026: GitHub's runner has no FRED cache, so its nightly H3/H5e lines - the phone's green line among them -
+# read r = 0 unless the frozen seed comes first: guarded on a missing cache, before the reading.
+_seed_at = _daily.find('run([PY, "tools/seed_frozen_rate.py"])')
+ok(0 <= _daily.find('if not (ROOT / "data" / "fred_cache.json").exists():') < _seed_at
+   < _daily.find('run([PY, "modelfree.py", "--wide"]'),
+   "daily.py seeds the frozen rate in a clone with no FRED cache, before the H3/H5e reading")
 
 print("\n=== N. OPRA REFERENCE (Databento) - money, keys, time, parsing ===")
 _ops = _iu.spec_from_file_location("opraref", R / "tools/opra_reference.py")

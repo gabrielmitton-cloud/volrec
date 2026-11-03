@@ -507,7 +507,41 @@ MUTANTS = [
                     "          python tools/daily.py --no-pull | tee report.txt\n",
                     "          python tools/daily.py --no-pull | tee report.txt\n          git commit -am report\n"),
      "health is read-only and never commits"),
+    # 3 Nov 2026 - the deep audit's fixes (Gabriel: "check everything"). Each new check must be caught.
+    ("side-job-writes-fred-cache", "a pressure-test side job writes data/fred_cache.json (calibrate did, with a real key)",
+     lambda w: _sub(w / "tools/calibrate.py", "def main():\n",
+                    'def main():\n    (ROOT / "data" / "fred_cache.json").write_text("{}")\n'),
+     "this run left data/fred_cache.json as it found it"),
+    ("fred-placeholder-fetches", "FRED_KEY=use-cache goes to FRED again on a cache miss",
+     lambda w: _sub(w / "tools/fred.py", '    if k == "use-cache":', "    if False:"),
+     "FRED_KEY=use-cache reads the cache only"),
+    ("trigger-token-lapses", "the cron-job.org trigger's token is days from lapsing",
+     lambda w: _sub(w / "tools/pressure_test.py", "TRIGGER_TOKEN_EXPIRES = date(",
+                    "TRIGGER_TOKEN_EXPIRES = date.today() or date("),
+     "the cron-job.org trigger's GitHub token has more than a week left"),
+    ("licensed-token-lapses", "the private run's PUBLIC_REPO_TOKEN is days from lapsing",
+     lambda w: _sub(w / "tools/pressure_test.py", "LICENSED_TOKEN_EXPIRES = date(",
+                    "LICENSED_TOKEN_EXPIRES = date.today() or date("),
+     "the private run's GitHub token (PUBLIC_REPO_TOKEN) has more than a week left"),
+    ("daily-skips-rate-seed", "GitHub's nightly H3/H5e lines read r = 0 again (no frozen seed)",
+     lambda w: _sub(w / "tools/daily.py", '        run([PY, "tools/seed_frozen_rate.py"])\n', "        pass\n"),
+     "daily.py seeds the frozen rate in a clone with no FRED cache"),
+    ("site-start-time-drifts", "the site's record start drifts from record.py's 14:30 New York",
+     lambda w: _sub(w / "tools/volrec.js", '{"record": [14, 30],', '{"record": [14, 47],'),
+     "site's start times match record.py and the guard"),
+    ("site-holiday-dropped", "the site's holiday list loses Thanksgiving",
+     lambda w: _sub(w / "tools/volrec.js", '"2026-11-26", ', ""),
+     "site's early closes and holidays match record.py and panel_health.py"),
+    ("site-rail-counts-to-surface", "the rail's countdown is wired to the wrong recorder",
+     lambda w: _sub(w / "tools/volrec.js", 'V.nextTrigger("record", now)', 'V.nextTrigger("surface", now)'),
+     "the site's countdowns count to the recorders' real start"),
 ]
+# The pressure test runs the site's countdown in node; where node is missing that check is only a WARN, so
+# its mutant would be INCONCLUSIVE rather than KILLED. It runs wherever the check can.
+if shutil.which("node"):
+    MUTANTS.append(("site-countdown-ignores-holidays", "the site's countdown counts to a market holiday",
+                    lambda w: _sub(w / "tools/volrec.js", " || V.HOLIDAYS.includes(iso)) continue;", ") continue;"),
+                    "the site's countdown lands on the recorders' next real start"))
 
 
 def check_lines(out):

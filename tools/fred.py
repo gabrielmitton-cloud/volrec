@@ -12,6 +12,10 @@ So: the transport is built and tested, the choice of series is not made.
   python tools/fred.py VIXCLS                # print a summary of one series
   python tools/fred.py --check               # verify the key works
 
+FRED_KEY=use-cache is the project's placeholder, not a key: it reads data/fred_cache.json and never
+goes to FRED. A series missing from the cache raises LookupError (3 Nov 2026; before, the placeholder
+was sent to FRED and refused three times, so it could never fetch, but it did try).
+
 In code:
   from tools.fred import series
   obs = series("VIXCLS")                     # {"YYYY-MM-DD": float}
@@ -35,6 +39,8 @@ def _key():
     if not k:
         sys.exit("FRED_KEY not set. Free key: https://fredaccount.stlouisfed.org/apikeys\n"
                  "Store it as a GitHub Actions secret, never in a file.")
+    if k == "use-cache":                # reached only on a cache miss; modelfree.risk_free() then uses r = 0
+        raise LookupError("FRED_KEY=use-cache reads data/fred_cache.json only, and this series is not in it")
     return k
 
 
