@@ -432,15 +432,20 @@
 
   function surface() {
     const host = V.clear($("surface")), h = S.h.surface;
+    clearInterval(host._tick);
     $("surf-aux").textContent = h.label;
     if (!S.surf || !S.surf.length) {
       const wrap = V.h("div", { class: "pending" }, host);
       const left = V.h("div", null, wrap);
       V.h("span", { class: "st", "data-state": h.state }, left, h.label);
-      const now = new Date(), target = V.nextTrigger("surface", now);
-      const count = V.h("div", { class: "count", style: "margin-top:12px" }, left, target ? "T−" + V.clock(target - now) : "n/a");
+      // Recomputed every second, as the rail is, so the countdown rolls on past a start instead of resting at zero.
+      const untilNext = () => {
+        const now = new Date(), target = V.nextTrigger("surface", now);
+        return target ? "T−" + V.clock(target - now) : "n/a";
+      };
+      const count = V.h("div", { class: "count", style: "margin-top:12px" }, left, untilNext());
       V.h("p", null, left, `until the next scheduled run, ${V.trigText("surface")}.`);
-      if (target) setInterval(() => { count.textContent = "T−" + V.clock(target - new Date()); }, 1000);
+      host._tick = setInterval(() => { count.textContent = untilNext(); }, 1000);
       const right = V.h("div", null, wrap);
       V.h("p", null, right, h.msg);
       V.h("p", null, right, "When rows land, this panel draws the implied volatility smile for each of the eight underlyings, near and far expiry, with traded volume at every strike beneath it. H4 becomes testable after two consecutive trading days.");

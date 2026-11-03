@@ -1478,9 +1478,35 @@ _sfr = _ilu.module_from_spec(_sp); _sp.loader.exec_module(_sfr)
 _fc = R / "data/fred_cache.json"
 import json as _json
 _fc_rate = (_json.loads(_fc.read_text()).get("DGS1MO||") or {}) if _fc.exists() else {}
+# 3 Nov 2026 (Astra's review): a cache that exists must carry the rate. One holding other series only passed here,
+# while every reading on it fell back to r = 0. No cache at all still passes: a fresh clone (GitHub) gets the seed.
 ok(_sfr.FROZEN == {"DGS1MO||": {"2026-09-10": 3.91}}
-   and (not _fc_rate or (max(_fc_rate) == "2026-09-10" and _fc_rate[max(_fc_rate)] == 3.91)),
+   and (not _fc.exists() or (bool(_fc_rate) and max(_fc_rate) == "2026-09-10" and _fc_rate[max(_fc_rate)] == 3.91)),
    "the fresh-clone seed carries the registered rate (DGS1MO 3.91% on 2026-09-10), and so does the cache")
+# daily.py runs the seed in every clone and trusts its exit code, so the seed itself is run here, in a scratch
+# folder: it writes the rate where there is no cache, and leaves a cache untouched - exit 0 when that cache carries
+# the registered rate, 1 when it does not.
+import contextlib as _ctxs, io as _ios, shutil as _shs
+_sds = _ilu.spec_from_file_location("_seed_check", R / "tools/seed_frozen_rate.py")
+_sdm = _ilu.module_from_spec(_sds); _sds.loader.exec_module(_sdm)
+_sdd = Path(tempfile.mkdtemp(prefix="volrec-seed-"))
+_sdm.CACHE = _sdd / "fred_cache.json"
+def _seed_exit():
+    try:
+        with _ctxs.redirect_stdout(_ios.StringIO()):
+            _sdm.main()
+        return 0
+    except SystemExit as _sde:
+        return _sde.code if isinstance(_sde.code, int) else 1
+_sd1 = _seed_exit(); _sw1 = _sdm.CACHE.read_text() if _sdm.CACHE.exists() else "null"
+_sd2 = _seed_exit(); _sw2 = _sdm.CACHE.read_text()
+_sdo = '{"OTHER||": {"2026-09-10": 1.0}}'
+_sdm.CACHE.write_text(_sdo)
+_sd3 = _seed_exit(); _sw3 = _sdm.CACHE.read_text()
+_shs.rmtree(_sdd, ignore_errors=True)
+ok((_sd1, _sd2, _sd3) == (0, 0, 1) and _json.loads(_sw1) == _sdm.FROZEN and _sw2 == _sw1 and _sw3 == _sdo,
+   f"the seed writes the rate where there is no cache and leaves a cache untouched: exit 0 when it carries the "
+   f"registered rate, 1 when not ({_sd1}, {_sd2}, {_sd3})")
 # 3 Nov 2026 (see the top of this file): the placeholder itself never goes to FRED - tools/fred.py refuses a
 # miss. That nothing this run started fetched or wrote the cache is judged last, in section U.
 _frs = _ilu.spec_from_file_location("_fred_check", R / "tools/fred.py")
@@ -1553,11 +1579,12 @@ _daily = (R / "tools/daily.py").read_text()
 ok(all(s in _daily for s in ("panel_health.py", "pressure_test.py", '"--wide"', "Traceback")),
    "daily.py runs panel health, the pressure test and the H3/H5e reading, and reports crashes")
 # 3 Nov 2026: GitHub's runner has no FRED cache, so its nightly H3/H5e lines - the phone's green line among them -
-# read r = 0 unless the frozen seed comes first: guarded on a missing cache, before the reading.
-_seed_at = _daily.find('run([PY, "tools/seed_frozen_rate.py"])')
-ok(0 <= _daily.find('if not (ROOT / "data" / "fred_cache.json").exists():') < _seed_at
-   < _daily.find('run([PY, "modelfree.py", "--wide"]'),
-   "daily.py seeds the frozen rate in a clone with no FRED cache, before the H3/H5e reading")
+# read r = 0 unless the frozen seed comes first. The seed runs in every clone (it writes only where there is no
+# cache, and checks one that exists), before the reading, and a failure is a LOOK AT (Astra's review).
+_seed_at = _daily.find('code, out = run([PY, "tools/seed_frozen_rate.py"])')
+ok(0 <= _seed_at < _daily.find('bad.append("frozen rate")') < _daily.find('run([PY, "modelfree.py", "--wide"]'),
+   "daily.py seeds the frozen rate where there is no cache and checks it where there is, before the H3/H5e "
+   "reading; a failure is a LOOK AT")
 
 print("\n=== N. OPRA REFERENCE (Databento) - money, keys, time, parsing ===")
 _ops = _iu.spec_from_file_location("opraref", R / "tools/opra_reference.py")
