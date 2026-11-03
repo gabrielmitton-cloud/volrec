@@ -27,8 +27,8 @@ R = Path(__file__).resolve().parent.parent
 # clone, or every auditor worktree), calibrate.py's OPRA path fetched the live rate and WROTE
 # data/fred_cache.json, so the seed check below failed on an unbroken repository. A real key is swapped for
 # the placeholder here, for every check and child: the frozen cache is read where there is one, r = 0 where
-# not, exactly as in CI and the private run (no key there; unset stays unset). The two checks after the
-# fresh-clone seed check prove it.
+# not, exactly as in CI and the private run (no key there; unset stays unset). Section U, last, proves the cache
+# was left as found; the check after the fresh-clone seed check, that the placeholder cannot fetch.
 if os.environ.get("FRED_KEY") not in (None, "", "use-cache"):
     os.environ["FRED_KEY"] = "use-cache"
 _FRED_CACHE = R / "data/fred_cache.json"
@@ -1481,10 +1481,8 @@ _fc_rate = (_json.loads(_fc.read_text()).get("DGS1MO||") or {}) if _fc.exists() 
 ok(_sfr.FROZEN == {"DGS1MO||": {"2026-09-10": 3.91}}
    and (not _fc_rate or (max(_fc_rate) == "2026-09-10" and _fc_rate[max(_fc_rate)] == 3.91)),
    "the fresh-clone seed carries the registered rate (DGS1MO 3.91% on 2026-09-10), and so does the cache")
-# 3 Nov 2026 (see the top of this file): nothing this run starts may fetch from FRED or write the cache. Every
-# child has finished by here. And the placeholder itself never goes to FRED: tools/fred.py refuses a miss.
-ok((_FRED_CACHE.read_bytes() if _FRED_CACHE.exists() else None) == _FRED_CACHE_BEFORE,
-   "this run left data/fred_cache.json as it found it: no check or side job fetched from FRED")
+# 3 Nov 2026 (see the top of this file): the placeholder itself never goes to FRED - tools/fred.py refuses a
+# miss. That nothing this run started fetched or wrote the cache is judged last, in section U.
 _frs = _ilu.spec_from_file_location("_fred_check", R / "tools/fred.py")
 _frm = _ilu.module_from_spec(_frs); _frs.loader.exec_module(_frm)
 class _NoNet(BaseException):             # not an Exception, so fred's own retry loop cannot swallow it
@@ -1976,6 +1974,11 @@ ok(abs(_ovm.blend30(9 * 1440, _s1, 44 * 1440, _s1) - 25) < 1e-9 and _ovm.blend30
 _ovsrc = (R / "tools/ovx_replicate.py").read_text()
 ok("write" not in re.sub(r"#.*", "", _ovsrc).replace("writes", "") and "get_range" not in _ovsrc and "get_cost" not in _ovsrc,
    "the OVX replica buys nothing and writes nothing (licensed data stays where it is)")
+
+print("\n=== U. THIS RUN ITSELF (3 Nov 2026) ===")
+# Judged last, so it covers every check above and every side job started at the top (see the top of this file).
+ok((_FRED_CACHE.read_bytes() if _FRED_CACHE.exists() else None) == _FRED_CACHE_BEFORE,
+   "this run left data/fred_cache.json as it found it: no check or side job fetched from FRED")
 
 print("\n" + "=" * 56)
 print(f"RESULT: {len(fails)} fail, {len(warns)} warn")
