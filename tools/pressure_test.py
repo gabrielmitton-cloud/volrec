@@ -1585,6 +1585,36 @@ _seed_at = _daily.find('code, out = run([PY, "tools/seed_frozen_rate.py"])')
 ok(0 <= _seed_at < _daily.find('bad.append("frozen rate")') < _daily.find('run([PY, "modelfree.py", "--wide"]'),
    "daily.py seeds the frozen rate where there is no cache and checks it where there is, before the H3/H5e "
    "reading; a failure is a LOOK AT")
+# 3 Nov 2026 (Astra's follow-up review): the check above reads text, so `if False:` in place of the seed's test
+# would still pass it. This one runs daily.main() with every step stubbed: the seed alone fails (an exit code, then
+# a crash) and the day must read LOOK AT: frozen rate; with the seed sound, ALL CLEAR.
+_dds = _ilu.spec_from_file_location("_daily_check", R / "tools/daily.py")
+_ddm = _ilu.module_from_spec(_dds); _dds.loader.exec_module(_ddm)
+def _daily_day(seed):
+    calls = []
+    def _fake_run(args, env_extra=None):
+        step = Path(args[1]).name
+        calls.append((step, env_extra))
+        return {"panel_health.py": (0, "HEALTHY\n"), "pressure_test.py": (0, "RESULT: 0 fail, 0 warn\n"),
+                "seed_frozen_rate.py": seed, "modelfree.py": (0, "risk-free (DGS1MO): 3.910%\n")}[step]
+    _argv, _run = sys.argv, _ddm.run
+    sys.argv, _ddm.run = ["daily.py", "--no-pull"], _fake_run
+    try:
+        with _ctxs.redirect_stdout(_ios.StringIO()) as _ddo:
+            code = _ddm.main()
+    finally:
+        sys.argv, _ddm.run = _argv, _run
+    return code, _ddo.getvalue(), calls
+_dd_ok = _daily_day((0, "fred_cache.json already exists (DGS1MO last 2026-09-10 = 3.91%); left untouched.\n"))
+_dd_exit = _daily_day((1, "fred_cache.json already exists (DGS1MO last None - NOT the registered value); left untouched.\n"))
+_dd_crash = _daily_day((0, "Traceback (most recent call last):\n  ...\njson.decoder.JSONDecodeError: Expecting value\n"))
+ok([s for s, _ in _dd_ok[2]] == ["panel_health.py", "pressure_test.py", "seed_frozen_rate.py", "modelfree.py"]
+   and dict(_dd_ok[2])["modelfree.py"] == {"FRED_KEY": "use-cache"}
+   and _dd_ok[0] == 0 and "ALL CLEAR" in _dd_ok[1]
+   and all(r[0] == 1 and "LOOK AT: frozen rate" in r[1] for r in (_dd_exit, _dd_crash)),
+   "daily.py, every step stubbed: a seed that fails (exit 1) or crashes makes the day LOOK AT: frozen rate, a sound "
+   f"one reads ALL CLEAR, and the seed runs after the pressure test, before the reading (exits {_dd_ok[0]}, "
+   f"{_dd_exit[0]}, {_dd_crash[0]})")
 
 print("\n=== N. OPRA REFERENCE (Databento) - money, keys, time, parsing ===")
 _ops = _iu.spec_from_file_location("opraref", R / "tools/opra_reference.py")
