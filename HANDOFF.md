@@ -3099,6 +3099,11 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 - *4 Nov (Gabriel):* Cboe has forwarded the permission request internally - a reply may come; the FRED fallback
   still stands if none arrives. Thank-you to Marc drafted, asking WRDS's credit wording and, if easy, the daily
   highs and lows from the same table (for a range-based check in the registered test).
+- *Databento Core Indices (newsletter, 4 Nov):* dataset `DBIX.CORE`, 2,500+ indices incl. VIX and OVX, history
+  only from 23 Nov 2025 (no use for the 1990 test). $99/month plans, or usage-based at $10/GB. **For the 20 Nov
+  discussion, not before:** usage-based intraday OVX/GVZ/VXN/RVX over the H5e/H7 window could answer the
+  snapshot-timing question with a licensed, scriptable source, likely for cents - price it first (`get_cost` is
+  free), then choose it or the 23 Nov Bloomberg pull. No subscription; nothing bought or analysed before the verdicts.
 
 ### Prompt for the next session
 
