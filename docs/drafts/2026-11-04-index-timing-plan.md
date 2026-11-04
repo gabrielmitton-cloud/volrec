@@ -12,7 +12,7 @@ route's sequence (a new review round).
 this: it lists intraday index values among what it leaves out. So this file is the draft of a descriptive
 registration (no bar, no verdict), written before any value is read (the structural reads are listed under
 "The data"). *Sequence settled later on 4 Nov 2026 by Vega, under Gabriel's go-ahead that day to settle what
-can be settled now (his to veto); it replaces this paragraph's first version, which had Gabriel approve the
+can be settled now, and approved by him the same day; it replaces this paragraph's first version, which had Gabriel approve the
 plan at the post-verdict discussion and the script written after the verdicts.* In order:
 1. The reader (sha256 check against the private README, the `ts_event + 1 s <= T` rule, the same-day and
    60-second rules), the exact split and the report are built and tested on synthetic files in DBIX's

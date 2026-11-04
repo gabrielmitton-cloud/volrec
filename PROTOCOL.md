@@ -91,8 +91,8 @@ tagged release, not before (decided 4 Nov 2026).
 Deviations follow Lakens (2024); the three-strikes rule is ours, stricter than any published
 norm, and the paper says so.
 
-**Secondary data (added 4 Nov 2026 by Vega, under Gabriel's go-ahead that day to settle what can
-be settled now; his to veto).** A hypothesis on data that already exist cannot meet "days not yet
+**Secondary data (added 4 Nov 2026 by Vega under Gabriel's go-ahead that day, and approved by
+Gabriel the same day: "I approve the decisions").** A hypothesis on data that already exist cannot meet "days not yet
 recorded", nor SCIENTIST.md's rules that a registration is drafted "before any data is touched" and
 that no one may "look at data a registration will later test". It may still be registered as a
 *preregistered secondary-data analysis*, an exception to those three rules for that hypothesis only,

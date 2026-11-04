@@ -115,7 +115,8 @@ secondary, descriptive reading, not a result.
 
 ## Decided 4 Nov 2026 (was: still to decide with Gabriel after 19 Nov)
 Settled early by Vega, under Gabriel's go-ahead that day to settle now whatever can be settled now and is in
-the project's interest. Each is his to veto before registration, and nothing binds until then. Target:
+the project's interest, and **approved by Gabriel the same day** ("I approve the decisions"). Nothing binds
+until registration. Target:
 registered about Tue 24 Nov, with an OSF freeze in Gabriel's browser, a week before the window opens.
 1. **Δ = 0.10**, for the reasons above, the 12 Oct correction included.
 2. **Lag: the whole number nearest 1.3√T**, T = the fund's measured days (8 at T = 41), fixed now as a rule

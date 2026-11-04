@@ -15,8 +15,8 @@ analysis**: frozen on OSF with the secondary-data template PROTOCOL already name
 like H5e and H7. That needs Gabriel's explicit, dated exception to step 5 (item 1 below); without it, H10
 is descriptive only. *(4 Nov: PROTOCOL step 5 now carries a dated secondary-data rule, an exception to
 step 5 and to SCIENTIST.md's two prospective rules for one hypothesis at a time, and item 1 of the decisions
-at the end applies it; Gabriel's dated approval of the exception and of the final registration is still
-needed before anything runs.)* H1 was also registered on history that already existed, but on 6 Sep, before PROTOCOL
+at the end applies it; Gabriel approved the exception for H10 the same day ("I approve the decisions"), and
+his dated approval of the final registration is still needed before anything runs.)* H1 was also registered on history that already existed, but on 6 Sep, before PROTOCOL
 was written, and "before any join was run" on data nobody had yet opened.
 
 ## The question (PROTOCOL step 1)
@@ -185,8 +185,9 @@ failure is reported as a failure.
 
 ## Decided 4 Nov 2026 (was: still to decide with Gabriel after 19 Nov)
 Settled early by Vega, under Gabriel's go-ahead that day to settle now whatever can be settled now and is in
-the project's interest. Each is his to veto, and registering still needs his dated approval of the
-exception and of the final registration. Target:
+the project's interest, and **approved by Gabriel the same day** ("I approve the decisions"), item 1's use of
+the secondary-data exception included. Registering still needs his dated approval of the final
+registration. Target:
 registered mid-December, after H8's registration and the Bloomberg session, once the loader is built,
 tested and a day old.
 1. **Register it, as a preregistered secondary-data analysis** under PROTOCOL step 5's secondary-data rule

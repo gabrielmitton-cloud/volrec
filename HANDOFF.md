@@ -3186,9 +3186,13 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   - **H9** (reserved: the Cboe-method replica on the lab's OPRA days): drafted after the verdicts and
     registered under the secondary-data rule only if it meets every condition; target December.
   - **Zenodo:** with the write-up's tagged release (Feb 2027), not before.
-- *Still Gabriel's:* confirm or veto the above (the PROTOCOL rule above all); a short thank-you to Cboe; the
-  lab tab on the site (yes/no); the Bloomberg session; OSF freezes (~10 Nov timing plan, ~24 Nov H8, H9/H10
-  later); his SCCUR session time in Whova (16 Nov); pitch practice before 21 Nov.
+- *Gabriel, later on 4 Nov:* "yes to the lab tab, and I approve the decisions, I sent the email". So every
+  decision above is approved, the PROTOCOL rule and H10's use of it included (each registration still needs
+  his dated approval of its final text; for H9, not yet drafted, the exception is confirmed when its draft
+  shows it meets every condition). The Cboe thank-you is sent. The lab report goes on the site as a tab
+  (Cboe's approval lifted the last block; built next).
+- *Still Gabriel's:* the Bloomberg session; OSF freezes (~10 Nov timing plan, ~24 Nov H8, H9/H10 later); his
+  SCCUR session time in Whova (16 Nov); pitch practice before 21 Nov.
 - *Dates:* 10 Nov timing-plan registration; 12 Nov DBIX top-up; 13 Nov verdict check; 16 Nov SCCUR time;
   20 Nov reminder and discussion; 21 Nov SCCUR; 23-25 Nov Bloomberg; ~24 Nov H8 registration; 1 Dec H8's
   window opens; after 24 Dec delete the four cron-job.org early-close copies; 11 Jan token renewals (by 1 Feb);
