@@ -120,3 +120,22 @@ secondary, descriptive reading, not a result.
 4. The minimum days per fund (proposed 30 of about 40).
 5. Whether to name the bid / ask / mid breakdown above as a secondary, descriptive reading of the
    window (proposed: yes; it explains the lean without changing the test).
+6. **Proposed 4 Nov 2026 (Vega; to decide with Gabriel):** a second secondary, descriptive reading - both
+   feeds' estimates against the **official index at the same minute**, from Databento Core Indices
+   (`DBIX.CORE`, one-second bars; usage-based, about $0.01 a trading day for these six indices, so about
+   $0.50 over the window, from H8's budget or its own, Gabriel's call). Pairs: USO/OVX, GLD/GVZ and
+   AAPL/VXAPL (the index is built on the same fund's or stock's options); SPY/VIX, QQQ/VXN and IWM/RVX
+   (built on SPX, NDX and RUT options, so the index-versus-fund difference is part of any gap). TSLA and
+   NVDA have no Cboe index. The index value is the close of the last one-second bar whose second has
+   ended by the snapshot minute (`opra_reference.snapshot_minute`; Databento's OHLCV documentation, read
+   4 Nov, stamps a bar with the inclusive start of its second), so never one printed after it. It must be
+   from the same trading day and at most 60 s old; otherwise that fund-day is not measured, never filled,
+   and the count of such days is reported. Quotes are matched to that minute within up to 120 s, so the
+   alignment is to the minute, not to each quote's instant. Per fund: mean and mean absolute (estimate
+   minus index), free and OPRA side by side; no bar, no test, never part of the H8 verdict.
+   **Why:** it takes out the snapshot-to-close move that clouds every index comparison so far (H3, H5e,
+   H7), and says how far each feed's estimate sits from Cboe's own number at the snapshot minute. **Caveat:** this
+   project's estimator (weekly expiries, a +/-30% band, whole-day time) is not Cboe's, so a gap here mixes
+   method with data; H8's primary free-versus-OPRA test stays the only clean data comparison. Data
+   checked 4 Nov: the six indices are offered (21 Oct onward on usage-based access; earlier history needs a
+   subscription), each published every 15 s. *Data provided by Databento. Aggregates only.*

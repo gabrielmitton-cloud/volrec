@@ -3099,11 +3099,47 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 - *4 Nov (Gabriel):* Cboe has forwarded the permission request internally - a reply may come; the FRED fallback
   still stands if none arrives. Thank-you to Marc drafted, asking WRDS's credit wording and, if easy, the daily
   highs and lows from the same table (for a range-based check in the registered test).
-- *Databento Core Indices (newsletter, 4 Nov):* dataset `DBIX.CORE`, 2,500+ indices incl. VIX and OVX, history
-  only from 23 Nov 2025 (no use for the 1990 test). $99/month plans, or usage-based at $10/GB. **For the 20 Nov
-  discussion, not before:** usage-based intraday OVX/GVZ/VXN/RVX over the H5e/H7 window could answer the
-  snapshot-timing question with a licensed, scriptable source, likely for cents - price it first (`get_cost` is
-  free), then choose it or the 23 Nov Bloomberg pull. No subscription; nothing bought or analysed before the verdicts.
+- *Databento Core Indices (newsletter, 4 Nov):* dataset `DBIX.CORE`, 2,500+ indices incl. VIX and OVX; a
+  subscriber's history starts 7 Dec 2025 (Databento's blog; the "23 Nov 2025" first written here came from a
+  secondary summary, corrected the same day), so no use for the 1990 test. $99/month plans, or usage-based at
+  $10/GB. **For the 20 Nov discussion, not before:** usage-based intraday OVX/GVZ/VXN/RVX over the H5e/H7 window
+  could answer the snapshot-timing question with a licensed, scriptable source, likely for cents - price it first
+  (`get_cost` is free), then choose it or the 23 Nov Bloomberg pull. No subscription; nothing bought or analysed
+  before the verdicts. *(The purchase part was superseded the same day: next bullet.)*
+- *DBIX bought and SEALED (same day; Gabriel: "yes go ahead", plus "if u get any more ideas ... go ahead"):* the
+  free checks showed usage-based access reaches back only to **21 Oct** (earlier needs a subscription; undocumented
+  whether that start is fixed or rolls - it was exactly 14 days back). Those are the late-October days of H5e's
+  and H7's windows, so they were bought now: 17 indices incl. OVX, GVZ, VXN, RVX, VIX, VXAPL; one-second bars +
+  daily bars, 21 Oct - 3 Nov; **$0.33**, ledger tag `-dbix`, own $1 cap; ledger $84.55 of $120. They sit in the
+  PRIVATE repo's `dbix/`, with every file's sha256 in private commit `0098e82`. Only structure was read (rows,
+  symbols, columns, timestamps): the hashes show the files unchanged, and that no value was read rests on this
+  record. 4-11 Nov to add after 11 Nov (phone reminder Thu 12 Nov, `trig_016FJwoG5fqGtL5FcK1EJQF3`).
+- *The plan:* `docs/drafts/2026-11-04-index-timing-plan.md`, committed in the same commit as this entry,
+  before any value is opened; that commit's hash goes beside the seal in the private `dbix/README.md`.
+  Exploratory, OVX and GVZ only: each registered gap (H5e, H7) splits exactly into the estimate's gap to the
+  index at the snapshot minute plus the index's move to the close. No test and no split of causes. It cannot
+  reach H7's in-sample +0.45, whose days predate 21 Oct. SCIENTIST.md runs nothing unregistered (and H7 leaves
+  intraday index values out), so it runs only once Gabriel approves it as a descriptive registration in
+  `hypotheses/`, or under a dated exception he writes down.
+- *Drafts, nothing registered:* H8-DRAFT choice 6 (both feeds against the same-minute index, ~$0.50) and
+  `H10-DRAFT.md` (H1's frozen code on the WRDS index closes, windows ending before 2016). H10 would be a
+  preregistered secondary-data analysis and needs a dated exception to PROTOCOL step 5: all its days are
+  recorded, and the price files were opened for the quality check. Its planning power is clear for VIX/SPX only;
+  the other three fall short in the harshest case (σ ×1.5, ρ 0.4, fixed-b critical values). **Correction to the
+  *Use* line above:** Cboe's own files for VXD, VXN and RVX start only in Sep 2009 (`samples/long/SOURCES.md`);
+  the 1997, 2001 and 2004 starts exist only in FRED's reprints, so H10's early windows for those three rest on
+  FRED (on Cboe's files alone, about 75 windows each before 2016, too few for the power figures).
+- *Review:* Astra Ultra read all three the same day (`.codex-reviews/20261104T165551Z-w998stl_`): 1 high, 10
+  medium, 1 low, all verified and fixed - the split's wording (and a "method dominates" inference, dropped),
+  the timestamp, freshness and close rules, and H10's route, inference (fixed-b Newey-West proposed, as
+  PROTOCOL's house method), power, segmentation and noise floor. The one follow-up (`20261104T172618Z-_vdcxg45`)
+  rated 10 of the 12 resolved (H10's as drafts or planning only), one partly and one not, and raised one new
+  point. All three verified and fixed after it: H8 choice 6 lacked the plan's same-day, 60-second and no-fill
+  rules (added, citing Databento's documentation for the bar timestamp); "committed" was read before the
+  commit existed (now worded as this commit, with its hash going into the private README); and, new,
+  SCIENTIST's rule against running an unregistered analysis (the route above). Those last fixes, and the
+  IV-coverage correction found after them, were not reviewed again: one follow-up is the rule. All three
+  drafts are for the 20 Nov discussion.
 
 ### Prompt for the next session
 
