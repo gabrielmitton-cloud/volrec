@@ -3141,6 +3141,74 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   IV-coverage correction found after them, were not reviewed again: one follow-up is the rule. All three
   drafts are for the 20 Nov discussion.
 
+**Wed 4 Nov (later) - Cboe approved; Databento stays pay-as-you-go; decisions settled early**
+- *Cboe (Gabriel, 4 Nov):* Cboe answered the permission request (sent 10 Oct, repeated 21 Oct: non-commercial
+  research, aggregates only, credited, with SCCUR and the 2016-2026 study named): "This is approved." So Cboe's
+  own files stay the source of every registered verdict, as registered, and **the FRED fallback planned from
+  ~13 Nov is cancelled** (a manual step; no routine carried it). Recorded in README's data-terms table,
+  PAPER-DRAFT (section 3 and Appendix C), PAPER-OUTLINE, PROTOCOL step 5 and the timing plan. Keep Cboe's
+  email. Cboe's use-of-content page says approval means signing a licence agreement: if one arrives, Gabriel
+  signs it. The lab report's "private until Cboe's reply" gate is lifted; putting it on the site is now only
+  Gabriel's yes.
+- *Databento (Gabriel, 4 Nov):* never the $99/month plan; keep using the pay-as-you-go credits, and spending
+  more of them to grow the dataset is pre-approved ("be my guest") - inside the $120 lifetime cap, priced
+  first with `get_cost`, logged in the ledger, reported after. Ledger $84.56 of $120 (lab $79.00, H8 so far
+  $2.07, the other OPRA references $3.16, DBIX $0.33). Already spoken for through 29 Jan: about $9 for H8's
+  daily OPRA (about $0.15 a trading day for the eight funds, ~60 days), ~$0.30 for H7's monthly-expiry files to
+  its window's end, ~$0.20 for the DBIX top-up and ~$0.50 for H8 choice 6. About $25 stays free.
+- *Decisions settled early (Gabriel: "any decisions we can do now lets do them if it is in our best
+  interest"):* settled by Vega the same day. Each is Gabriel's to veto; nothing binds until it is registered.
+  - PROTOCOL step 5 gains a dated **secondary-data rule**, an exception to step 5 and to SCIENTIST.md's two
+    prospective rules, for one hypothesis at a time. A hypothesis on data that already exist may be
+    registered as a preregistered secondary-data analysis only if the effect it tests has not been estimated
+    on that data (no proxy assembled either); every prior look is listed, with how it shaped the
+    specification and any proxy that could be assembled; nothing was chosen because a look favoured the
+    result; Gabriel approves the exception and the final registration with a date; it is frozen on OSF with
+    the secondary-data template before it runs; and every report calls it that. No agent invokes it on its
+    own. H9 and H10 are the first candidates, each on its own merits.
+  - **H8** (`H8-DRAFT.md`, "Decided 4 Nov"): Δ 0.10; Newey-West lag nearest 1.3√T with one-sided fixed-b
+    critical values, t(T-1) beside (code, known-answer test and auditor mutant before registering, then a
+    day's wait); each fund reported, the count as headline; at least 30 of the window's 41 trading days; the
+    bid/ask/mid breakdown as a descriptive reading; choice 6 yes, on its own $1 cap (`-h8dbix`), dropped if
+    its reader is not tested by registration. Register about Tue 24 Nov, OSF freeze in Gabriel's browser.
+  - **H10** (`H10-DRAFT.md`, "Decided 4 Nov"): register as a secondary-data analysis; fixed-b Newey-West
+    carries the verdict; FRED's reprints for all four; the SPX, INDU, NDX and RTY daily closes join the
+    Bloomberg session; a Parkinson-range D4 only if Marc's highs and lows arrive before registration; D2 in
+    the paper. Target mid-December.
+  - **The timing plan:** the descriptive-registration route, now one sequence in its Route section. The
+    reader, the split and the report are built and tested on synthetic files first; a day passes and the code
+    is re-read; Gabriel approves and it is registered and frozen about Tue 10 Nov, before either verdict;
+    the files stay sealed and the script runs only after both verdicts are recorded.
+  - **Bloomberg, 23-25 Nov:** keep the 1-minute pull of OVX, GVZ, VXN and RVX - it reaches the days before
+    21 Oct, H7's in-sample stretch included, which DBIX cannot - and add the four index closes. Reading the
+    1-minute bars needs its own short descriptive registration, written once the export's layout is seen
+    and before any analysis. The 23 Nov phone reminder (`trig_014FSkJSmGQqutozEtGxhSVq`) now names both.
+  - **H9** (reserved: the Cboe-method replica on the lab's OPRA days): drafted after the verdicts and
+    registered under the secondary-data rule only if it meets every condition; target December.
+  - **Zenodo:** with the write-up's tagged release (Feb 2027), not before.
+- *Still Gabriel's:* confirm or veto the above (the PROTOCOL rule above all); a short thank-you to Cboe; the
+  lab tab on the site (yes/no); the Bloomberg session; OSF freezes (~10 Nov timing plan, ~24 Nov H8, H9/H10
+  later); his SCCUR session time in Whova (16 Nov); pitch practice before 21 Nov.
+- *Dates:* 10 Nov timing-plan registration; 12 Nov DBIX top-up; 13 Nov verdict check; 16 Nov SCCUR time;
+  20 Nov reminder and discussion; 21 Nov SCCUR; 23-25 Nov Bloomberg; ~24 Nov H8 registration; 1 Dec H8's
+  window opens; after 24 Dec delete the four cron-job.org early-close copies; 11 Jan token renewals (by 1 Feb);
+  Feb 2027 the write-up and Zenodo.
+- *Review:* Astra Ultra read this entry and the changed files (`.codex-reviews/20261104T180407Z-og2r7tpm`):
+  pressure test and independent check passed; nothing registered changed; its arithmetic matched (41 trading
+  days, $84.56 spent, about $25 free after the commitments); Cboe's reply read as covering the requested
+  non-commercial, credited, aggregate use, not redistribution of raw data. Three medium points, all verified
+  and fixed: the secondary-data rule now requires saying how each prior look shaped the specification, naming
+  any proxy of the effect, forbidding choices made because a look favoured the result, and Gabriel's dated
+  approval, and it names the SCIENTIST.md rules it relaxes; the timing plan's first route text (approval after
+  the verdicts, script written after them) is replaced by one sequence; H10 now says how its looks shaped it,
+  and names the one proxy that could be assembled (S&P 500 full-sample volatility beside VIX's long-run level:
+  the sign for VIX/SPX, already the published prior). From its notes, H8 now states the simulation error of a
+  fixed-b p-value (about 0.003 near 0.05) and that the headline count is a tally, not a joint 95% statement.
+  The one follow-up (`20261104T181228Z-f6v10yb7`) read CLEAR: all three resolved, nothing new found; pressure
+  test and independent check passed again. Its standing notes: H8's fixed-b code, known-answer test, auditor
+  mutant and day's wait are still to do before registration, and approvals, OSF freezes and the private seal
+  are outside what it could check.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run

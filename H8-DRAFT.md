@@ -51,7 +51,8 @@ is how many of the eight show equivalence.
   h8-trim-drops-header (all killed, auditor 68/68 on 10 Oct).
 - Data: the cloud buys all eight funds daily from 9 Oct 2026 (`opra_reference.py --h8`, own $15 cap).
 - **Open, decide at registration:** the Newey-West lag (Lazarus et al. 2018: about 1.3·√T, so ~8 at
-  T≈40) and fixed-b critical values (`analyze.fixed_b_pvalue`) in place of t(T−1).
+  T≈40) and fixed-b critical values (`analyze.fixed_b_pvalue`) in place of t(T−1). *(Decided 4 Nov: item 2
+  at the end; the code change and its tests come before registration.)*
 
 ## Noise floor [required]
 OPRA against itself one minute later, same contracts, registered estimator (mean |S1n − S1b|),
@@ -112,7 +113,29 @@ Medians at the money only, on about three weeks: a mechanism to name in the regi
 secondary, descriptive reading, not a result.
 *Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
 
-## Still to decide with Gabriel (after 19 Nov)
+## Decided 4 Nov 2026 (was: still to decide with Gabriel after 19 Nov)
+Settled early by Vega, under Gabriel's go-ahead that day to settle now whatever can be settled now and is in
+the project's interest. Each is his to veto before registration, and nothing binds until then. Target:
+registered about Tue 24 Nov, with an OSF freeze in Gabriel's browser, a week before the window opens.
+1. **Δ = 0.10**, for the reasons above, the 12 Oct correction included.
+2. **Lag: the whole number nearest 1.3√T**, T = the fund's measured days (8 at T = 41), fixed now as a rule
+   because T is not yet known. **Critical values: fixed-b, one-sided for each of the two tests**, from
+   `analyze.fixed_b_null` at that T and lag (the share of null draws at or beyond the statistic, in the
+   direction tested); t(T−1)'s p-values printed beside, never in place. The simulated null (iid
+   Gaussian, 4,000 seeded draws) is an approximation at T of 30-41, and a p-value near 0.05 carries a
+   simulation standard error of about 0.003. Before registering, `h8_quotes.tost` gains this with a known-answer test and
+   an auditor mutant, then at least a day passes (PROTOCOL step 2).
+3. **Each fund reported; the headline is the count** of the eight that show equivalence: a tally of eight
+   separate tests, not a joint 95% statement about all of them.
+4. **At least 30 measured days** of the window's 41 trading days (22 in December, 19 in January). A fund
+   with fewer is reported as not measured and is not counted among those showing equivalence.
+5. **Yes:** the bid / ask / mid breakdown is a secondary, descriptive reading of the window.
+6. **Yes**, on its own $1 cap (ledger tag `-h8dbix`, inside the $120 lifetime cap): bought at least every 10
+   calendar days through the window, because usage-based access reaches back only about 14 days. It reads
+   the files with the timing plan's reader once that reader is built and tested; if it is not ready by
+   registration, choice 6 is dropped rather than registered on an untested path.
+
+*The six questions as drafted, kept for their reasons (and, for 6, its specification):*
 1. Δ (proposed 0.10; its trading-cost reason was corrected on 12 Oct and now holds only for the
    less liquid funds, while the noise-floor reason stands).
 2. The lag and the critical values.

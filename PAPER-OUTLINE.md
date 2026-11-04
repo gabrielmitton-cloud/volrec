@@ -172,10 +172,10 @@ as disclosure. The script is built before the verdicts and run once after them.
 **Presentation (16 Oct, cold review):** the headline stays "on the evidence so far" until the verdicts, and the
 poster shows the thin margins (H5a holds weakly; H5f-a sits exactly on its bar; H8's pilot reads high on 7
 of 8); at SCCUR, H8 appears only as a labelled pilot. The whole-project count lives in TEST-INVENTORY.md.
-**If Cboe does not grant permission:** the index closes are re-sourced from FRED's reprints, published with
-Cboe's permission (VIXCLS, VXNCLS, RVXCLS, GVZCLS, OVXCLS, VXVCLS - all checked live on FRED, 16 Oct 2026;
-FRED's values agreed with Cboe's files where compared, EVZ over 2,166 days). Switching a registered verdict's
-source is a logged change, reported beside the original reading.
+**Cboe granted permission on 4 Nov 2026** (non-commercial research, aggregate results only, credited), so the
+index closes stay sourced from Cboe's own files, as registered, and the FRED fallback planned from ~13 Nov is
+not used. FRED's reprints (VIXCLS, VXNCLS, RVXCLS, GVZCLS, OVXCLS, VXVCLS - all checked live on FRED, 16 Oct
+2026; FRED's values agreed with Cboe's files where compared, EVZ over 2,166 days) remain a replication route.
 
 **Appendix.**
 - A. The pre-registration record (OSF: https://osf.io/z5gfu for H5e and H7): every hypothesis, its bar, its verdict and its adjustment log,

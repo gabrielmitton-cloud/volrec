@@ -5,15 +5,24 @@ this repository in the same commit as HANDOFF's 4 Nov DBIX entry, before any val
 opened, and that commit's hash is written beside the seal in the private `dbix/README.md`, so each record can
 be checked against the other. Nothing here changes a registered bar, window, estimator, verdict or file.
 Revised the same day after Astra's review and its one follow-up (wording of the split, timestamp and
-freshness rules, the close check, the route below).
+freshness rules, the close check, the route below), and again later that day for Cboe's approval and the
+route's sequence (a new review round).
 
 **Route (SCIENTIST.md: an analysis runs only once it is registered).** H7's registration does not cover
 this: it lists intraday index values among what it leaves out. So this file is the draft of a descriptive
-registration, written before any value is read (the structural reads are listed under "The data"). It runs
-only after H5e FINAL and H7 are recorded (12-19 Nov), and only once Gabriel has approved it at the
-post-verdict discussion and it is committed to `hypotheses/` as a descriptive registration (no bar, no
-verdict), or under a dated exception he writes down. Its results are reported beside the registered
-numbers, never in place of them.
+registration (no bar, no verdict), written before any value is read (the structural reads are listed under
+"The data"). *Sequence settled later on 4 Nov 2026 by Vega, under Gabriel's go-ahead that day to settle what
+can be settled now (his to veto); it replaces this paragraph's first version, which had Gabriel approve the
+plan at the post-verdict discussion and the script written after the verdicts.* In order:
+1. The reader (sha256 check against the private README, the `ts_event + 1 s <= T` rule, the same-day and
+   60-second rules), the exact split and the report are built and tested on synthetic files in DBIX's
+   recorded layout, made from the structure already recorded, never from a value.
+2. At least a day passes, and the code is re-read cold (PROTOCOL step 2).
+3. Gabriel approves it, and it is committed to `hypotheses/` and frozen on OSF: target about Tue 10 Nov,
+   so the plan is fixed before either verdict is known.
+4. Only after H5e FINAL and H7 are both recorded (12-19 Nov) are the files opened and the script run.
+
+Its results are reported beside the registered numbers, never in place of them.
 
 ## The question
 H5e compares USO's estimate, built from quotes taken at about 14:30 New York, with OVX's daily close.
@@ -53,7 +62,8 @@ Already public before this plan: daily.py's H5e table through 2 Nov, and H7's in
   filled. **Sensitivity**, labelled as able to use a value printed after `T`: the bar nearest `T`
   within 15 s either side.
 - **Close `C`:** Cboe's published daily close as the registered readings use it, unchanged: the CLOSE
-  column of Cboe's `OVX_History.csv` / `GVZ_History.csv` (FRED's copy if Cboe refuses the file).
+  column of Cboe's `OVX_History.csv` / `GVZ_History.csv` (Cboe approved this use on 4 Nov 2026, so the
+  FRED copy is not needed).
 - **Consistency check:** `|last DBIX value of the day - C| > 0.05` flags the day, in either direction;
   flagged days are kept and listed, never dropped. DBIX's last print came at 16:02 on 3 Nov; whether it
   is Cboe's official close is settled from the two sources' documentation before any disagreement is
@@ -87,6 +97,7 @@ Already public before this plan: daily.py's H5e table through 2 Nov, and H7's in
   between causes.
 
 ## Afterwards
-The script that computes this is written after the verdicts, checks each file's sha256 against the
-private README before reading it, and prints aggregates only. Its output goes to HANDOFF and, if Gabriel
+The script that computes this is written and tested before registration (Route, steps 1-2), checks each
+file's sha256 against the private README before reading it, runs only after both verdicts are recorded,
+and prints aggregates only. Its output goes to HANDOFF and, if Gabriel
 agrees, to the write-up's limitations section, credited "Data provided by Databento".

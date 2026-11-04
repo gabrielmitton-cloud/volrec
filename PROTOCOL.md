@@ -86,9 +86,31 @@ commit's date is set by the committer's own machine, so for anything in the pape
 the registration somewhere independent: an OSF registration (the "Preregistration Template for
 Secondary Data Analysis", van den Akker et al. 2021) of the hypothesis files. A Zenodo archive
 of a tagged release is also possible since Alpaca's answer of 10 Oct (personal, non-commercial
-use), but it would mirror `data/`, so it waits for Cboe's reply and Gabriel's say-so.
+use) and Cboe's approval of 4 Nov; it would mirror `data/`, so it is made with the write-up's
+tagged release, not before (decided 4 Nov 2026).
 Deviations follow Lakens (2024); the three-strikes rule is ours, stricter than any published
 norm, and the paper says so.
+
+**Secondary data (added 4 Nov 2026 by Vega, under Gabriel's go-ahead that day to settle what can
+be settled now; his to veto).** A hypothesis on data that already exist cannot meet "days not yet
+recorded", nor SCIENTIST.md's rules that a registration is drafted "before any data is touched" and
+that no one may "look at data a registration will later test". It may still be registered as a
+*preregistered secondary-data analysis*, an exception to those three rules for that hypothesis only,
+when all of these hold:
+- the effect it tests has not been estimated on that data: no join of the series it compares, no
+  estimate of the effect, no test statistic, and no proxy of the effect assembled from summaries;
+- its file lists every prior look, by series and date range, with any summary figure already
+  computed; says how each look shaped any choice in the specification (window, source, exclusion,
+  estimator); and names any proxy of the effect that could be assembled from what was seen;
+- no window, source, exclusion or estimator was chosen because a look suggested it would favour the
+  result; any claim such a choice touches is reported as exploratory;
+- Gabriel approves, with a date, both the exception and the final registration before anything runs
+  (a provisional choice he may veto is not that approval), and it is frozen on OSF with the
+  secondary-data template before it runs;
+- every report calls it a secondary-data analysis, never a prospective test.
+
+Steps 1-4 apply in full, and every other rule here and in SCIENTIST.md stands; no agent invokes this
+on its own. H9 and H10 are the first candidates; each must meet every condition on its own.
 
 Known breaks in the long Cboe sample, for anything that uses it: USO's 1-for-8 reverse split
 (29 Apr 2020; our daily bars are split-adjusted), negative WTI (20 Apr 2020), OVX/GVZ moving

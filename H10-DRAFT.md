@@ -13,7 +13,10 @@ them, no window formed and no premium computed. So H10 can only be a **preregist
 analysis**: frozen on OSF with the secondary-data template PROTOCOL already names (van den Akker et al.
 2021), every prior look listed, and described in the paper as exactly that, never as a prospective test
 like H5e and H7. That needs Gabriel's explicit, dated exception to step 5 (item 1 below); without it, H10
-is descriptive only. H1 was also registered on history that already existed, but on 6 Sep, before PROTOCOL
+is descriptive only. *(4 Nov: PROTOCOL step 5 now carries a dated secondary-data rule, an exception to
+step 5 and to SCIENTIST.md's two prospective rules for one hypothesis at a time, and item 1 of the decisions
+at the end applies it; Gabriel's dated approval of the exception and of the final registration is still
+needed before anything runs.)* H1 was also registered on history that already existed, but on 6 Sep, before PROTOCOL
 was written, and "before any join was run" on data nobody had yet opened.
 
 ## The question (PROTOCOL step 1)
@@ -171,16 +174,45 @@ failure is reported as a failure.
   their 2016 onward values entered either analysis.
 - The VIX family's history is public and widely studied; its broad shape (the spikes of 2008 and 2020)
   is common knowledge, stated here rather than claimed unseen.
+- **How these looks shaped the specification** (PROTOCOL step 5's secondary-data rule, 4 Nov): the 2016
+  cut-off follows H1's coverage; FRED as the source follows the files' start dates; σ in the power table is
+  H1's recorded spread; the loader follows the files' layout. The quality check's volatility figures shaped
+  no choice. **Proxies of the tested effect:** none was assembled. One could be: the S&P 500's full-sample
+  volatility above (18.0%), beside VIX's long-run level (seen in the TimesFM benchmark), bears on the sign of
+  VIX/SPX's whole-sample premium. That sign is the published prior (Carr & Wu 2009), so H10a's information
+  lies in each pair's size and significance before 2016, and the paper says the sign for VIX/SPX was
+  expected.
 
-## Still to decide with Gabriel (after 19 Nov)
+## Decided 4 Nov 2026 (was: still to decide with Gabriel after 19 Nov)
+Settled early by Vega, under Gabriel's go-ahead that day to settle now whatever can be settled now and is in
+the project's interest. Each is his to veto, and registering still needs his dated approval of the
+exception and of the final registration. Target:
+registered mid-December, after H8's registration and the Bloomberg session, once the loader is built,
+tested and a day old.
+1. **Register it, as a preregistered secondary-data analysis** under PROTOCOL step 5's secondary-data rule
+   (added 4 Nov), frozen on OSF with the secondary-data template before anything runs.
+2. **Fixed-b Newey–West carries the verdict**, with H1's plain t, the sign test, BH and BY beside, as
+   specified above.
+3. **FRED's reprints for all four**, credited "Cboe, via FRED", with Cboe's own files compared on their
+   overlap. Cboe approved the project's use of its files on 4 Nov; that settles credit and publishing, not
+   which years exist.
+4. **Yes:** the four indices' daily closes (SPX, INDU, NDX and RTY) are added to the 23-25 Nov Bloomberg
+   session as a second price source for the noise floor. Once pulled they are listed under "Data already
+   seen"; no premium is computed from them before registration.
+5. **If Marc's daily highs and lows arrive before registration**, a range-based realized volatility
+   (Parkinson 1980) joins as a descriptive D4, specified here before any value is read. If they arrive
+   later, H10 does not use them.
+6. **D2 goes in the paper.** Whether it also goes on the site waits for the post-verdict site discussion.
+
+*The six questions as drafted, kept for their reasons:*
 1. Whether to register H10 at all, and on what footing: a dated exception to PROTOCOL step 5 for a
    preregistered secondary-data analysis (proposed: yes; it completes the 1990–2026 design H1 had to drop,
    with every prior look listed), or a descriptive replication with no verdict.
 2. The inference: fixed-b Newey–West carrying the verdict with H1's plain t beside (proposed), or the
    reverse as an explicit H1-replication exception. Fixed before any output.
 3. The IV source, fixed before the run (proposed: FRED's reprints for all four, since Cboe's own files reach
-   before September 2009 only for VIX). Cboe's reply bears on the credit and publishing, not on which years
-   exist.
+   before September 2009 only for VIX). Cboe's reply (an approval, 4 Nov) bears on the credit and
+   publishing, not on which years exist.
 4. A Bloomberg pull of the four indices' daily closes, to give the Russell 2000 (and the early S&P and
    DJIA years) a second price source.
 5. If Marc sends daily highs and lows (asked 4 Nov): whether a range-based RV joins as a descriptive D4.

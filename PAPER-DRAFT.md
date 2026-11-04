@@ -50,7 +50,8 @@ day of wing data, which its file states. The two still open (H5e and H7) were al
 Science Framework (osf.io/z5gfu) for an independent timestamp.
 
 **Licensing.** Recorded free-feed data is published with Alpaca's agreement for personal, non-commercial
-use. Cboe's closes are read from Cboe's public files and not republished. OPRA and Bloomberg data are
+use. Cboe's closes are read from Cboe's public files, with Cboe's permission (granted 4 November 2026),
+and not republished. OPRA and Bloomberg data are
 licensed: only aggregates appear here, credited "Data provided by Databento" and "Source: Bloomberg
 Finance L.P."
 
@@ -161,9 +162,9 @@ before submission.*
   written agreement (10 Oct 2026) for personal, non-commercial use. Anyone may re-record the same feed with a
   free Alpaca account; the recorders are in the repository.
 - **Cboe index closes.** Read at run time from Cboe's public files; not redistributed. Permission for this use
-  was requested from Cboe on 10 Oct 2026. If Cboe does not grant it, the same series are available from FRED,
-  which republishes them with Cboe's permission (VIXCLS, VXNCLS, RVXCLS, GVZCLS, OVXCLS, VXVCLS), and the
-  results would be re-sourced there, as a logged change.
+  was requested from Cboe on 10 Oct 2026 and granted on 4 Nov 2026 (non-commercial research, aggregate results
+  only, credited). Replicators can also take the same series from FRED, which republishes them with Cboe's
+  permission (VIXCLS, VXNCLS, RVXCLS, GVZCLS, OVXCLS, VXVCLS).
 - **Consolidated OPRA quotes (Databento).** Licensed; not redistributed. Replicators can buy the same files
   (OPRA.PILLAR, cbbo-1m); the repository records every request and its cost. Only aggregates appear here,
   credited "Data provided by Databento".
