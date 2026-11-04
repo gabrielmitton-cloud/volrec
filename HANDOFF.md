@@ -3083,6 +3083,20 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   it with the write-up, not before. The stale app worktree (`.claude/worktrees/hopeful-meitner-74bb9a`, merged and
   clean) was removed 3 Nov; its branch is kept.
 
+**Wed 4 Nov - the index closes arrived (Marc Vinyard, 3 Nov), and the new token works**
+- *Token:* the private run's first night on the new `PUBLIC_REPO_TOKEN` (run 41764163534; GitHub started the
+  23:05 UTC schedule at 02:58 UTC) went green end to end, the public checkout included.
+- *Data:* Marc pulled daily closes from **Compustat through WRDS** (Index Prices - Daily): S&P 500 from 2 Jan 1990
+  (9,277 days), DJIA from 2 Jan 1997 (7,505), Nasdaq-100 from 2 Jan 2001 (6,497), Russell 2000 from 2 Jan 2004
+  (5,747), all to 2 Nov 2026. Closes only, no highs or lows; price indexes. Checked: no missing close, duplicate,
+  weekend date or non-positive price; the only gaps over four days are real closures (9/11, 2 Jan 2007, Sandy).
+- *Terms (Marc, 3 Nov):* "you can publish aggregate findings, but not share the raw data" - the Bloomberg/LSEG rule.
+  The files live in `~/Documents/volrec-wrds` (outside both repositories, README with checksums); `*.xlsx` is
+  already ignored here. Credit line when used: Compustat via WRDS, Pepperdine University Libraries.
+- *Use:* unchanged from 2 Nov - a NEW registered test after the 12-19 Nov verdicts; H1 stays as recorded. The
+  implied-volatility side for the same start dates is Cboe's VIX, VXD, VXN and RVX (FRED reprints them; Cboe's
+  permission is still unanswered, FRED fallback from ~13 Nov). Nothing is analysed before the registration.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
