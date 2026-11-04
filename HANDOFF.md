@@ -3096,6 +3096,9 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 - *Use:* unchanged from 2 Nov - a NEW registered test after the 12-19 Nov verdicts; H1 stays as recorded. The
   implied-volatility side for the same start dates is Cboe's VIX, VXD, VXN and RVX (FRED reprints them; Cboe's
   permission is still unanswered, FRED fallback from ~13 Nov). Nothing is analysed before the registration.
+- *4 Nov (Gabriel):* Cboe has forwarded the permission request internally - a reply may come; the FRED fallback
+  still stands if none arrives. Thank-you to Marc drafted, asking WRDS's credit wording and, if easy, the daily
+  highs and lows from the same table (for a range-based check in the registered test).
 
 ### Prompt for the next session
 
