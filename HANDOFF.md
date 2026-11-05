@@ -3547,7 +3547,8 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   - Usable days: 7,181 of 9,279, 7,180 of 7,507, and 6,497 of 6,499.
   - D4 is not amended to fill 1990 to March 1998 from Bloomberg: that would splice a second vendor into
     one series, and the sources were fixed before the check. Gabriel's to veto.
-- *Reply to Marc:* drafted for Gabriel in the session's report. Not sent.
+- *Reply to Marc:* drafted by Vega; Gabriel sent it the same evening (5 Nov). Any answer about the
+  pre-April-1998 highs and lows changes nothing in D4, since those days are unusable either way.
 - *Astra (Ultra), 18:07 UTC: INCOMPLETE,* because the packet lacked the separate commit contents, a dated
   run transcript and the date-listing script, and licensed inputs were excluded on purpose. The
   deterministic checks passed. It found the formula, the 21-day alignment, the missing c4, the usable-day
