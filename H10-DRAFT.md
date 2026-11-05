@@ -83,7 +83,10 @@ Descriptive, no prediction, printed beside and never folded into H10a:
     DJIA's high equals the low on every day before 1 April 1998, and on 11 later days each (listed under
     "Data already seen"). Under the rule above those days are unusable, so D4 measures those two indices
     from April 1998, and their earlier windows are listed as not measured. The Nasdaq-100's highs and lows
-    are usable throughout. The rule and the sources stay as written.
+    are usable throughout. The rule and the sources stay as written. *Marc Vinyard confirmed the reason the
+    same day: before April 1998 Compustat archived only closing prices, so those years suit closes but not
+    intraday ranges. H10a's closes are unaffected. The 11 later days have no stated reason and stay
+    unusable under the rule.*
 
 ## Specification (proposed; frozen at registration)
 - `IV(t)` = the Cboe index close on date t, divided by 100. **Only FRED's reprints reach the early years

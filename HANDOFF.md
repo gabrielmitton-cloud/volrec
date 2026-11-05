@@ -3549,6 +3549,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
     one series, and the sources were fixed before the check. Gabriel's to veto.
 - *Reply to Marc:* drafted by Vega; Gabriel sent it the same evening (5 Nov). Any answer about the
   pre-April-1998 highs and lows changes nothing in D4, since those days are unusable either way.
+- *Marc's answer, the same evening:* before April 1998, Compustat appears to have archived only closing
+  prices. Those years are fine for closes, which is all H10a uses, but not for intraday ranges. That is
+  the documented reason for the coverage finding. D4 is unchanged, and the reason is noted in H10-DRAFT's
+  D4 coverage note for the paper.
 - *Astra (Ultra), 18:07 UTC: INCOMPLETE,* because the packet lacked the separate commit contents, a dated
   run transcript and the date-listing script, and licensed inputs were excluded on purpose. The
   deterministic checks passed. It found the formula, the 21-day alignment, the missing c4, the usable-day
