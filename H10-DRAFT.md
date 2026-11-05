@@ -3,8 +3,9 @@
 Nothing here binds until it is copied into `hypotheses/` with a date, committed, and frozen on OSF.
 (H9 is reserved for the Cboe-method replica on the lab's OPRA days, HANDOFF 14 Oct.) Revised the same day
 after Astra's review; the IV-coverage correction (Specification) came after its one follow-up and has not
-been reviewed. D4's specification (5 Nov) is reviewed with its coverage check. No premium has been
-computed on the data below.
+been reviewed. D4's specification and its coverage check (5 Nov) were reviewed by Astra that day, and its
+two findings, both about wording, are fixed: the definition-change rule no longer re-anchors the grid, and
+the biases no longer claim an ordering. No premium has been computed on the data below.
 
 **Which route this is, stated plainly.** SCIENTIST.md allows a registration drafted "before any data is
 touched", and PROTOCOL step 5 applies a new bar only to "days not yet recorded when it is committed". H10
@@ -55,17 +56,20 @@ Descriptive, no prediction, printed beside and never folded into H10a:
     are the day's high and low. There is no c4 factor, since c4 corrects the close-to-close estimator only.
   - **Per pair:** the mean of `IV(t) - RV_P(t, t+21)`, with the registered fixed-b Newey-West statistic
     printed beside it (no verdict), and the mean of `RV_P - RV` over the same windows.
-  - **Known biases, all pushing RV_P down:** the range misses the overnight move, which close-to-close
-    returns include; a high and low sampled at discrete moments understate the true range; and the square
-    root of an unbiased variance is biased low. A larger premium under D4 is therefore expected by
-    construction and is no evidence about H10a.
+  - **Known biases:** under the Parkinson model's assumptions (continuous trading, no drift), three effects
+    pull RV_P down on average. The range misses the overnight move, which close-to-close returns include;
+    a high and low sampled at discrete moments understate the true range; and the square root of an
+    unbiased variance is biased low. So a larger premium under D4 would be no evidence about H10a. These
+    effects do not order the two estimators window by window: `RV_P - RV` can take either sign (a wide
+    intraday range with an unchanged close gives RV_P above RV).
   - **Usable days:** a day is usable only if its high and low are present and positive, its high is above
     its low, and low <= close <= high. A window enters D4 only if all 21 of its days are usable. Other
     windows are counted and listed by year, never filled.
   - **Definition changes:** if a source's documentation shows its daily high and low changed definition
     inside the sample (for example, from extremes computed from each member's own high and low to the
-    index's actual intraday extremes), the date is a method break for D4, handled as the Specification
-    handles the closes' breaks. This is read from the documentation, never inferred from the values.
+    index's actual intraday extremes), D4 keeps H10a's and D1's windows unchanged. A window with days on
+    both sides of the date is left out of D4 and listed as not measured, and the grid is never re-anchored.
+    This is read from the documentation, never inferred from the values.
   - **Sources, fixed now:** for the S&P 500, DJIA and Nasdaq-100, Compustat's `prchd` and `prcld`, checked
     against Compustat's close (`prccd`, the close H10 uses). For the Russell 2000, which Compustat lacks,
     Bloomberg's `PX_HIGH` and `PX_LOW` from the 23-25 Nov pull, checked against Bloomberg's own close

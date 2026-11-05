@@ -3548,6 +3548,14 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   - D4 is not amended to fill 1990 to March 1998 from Bloomberg: that would splice a second vendor into
     one series, and the sources were fixed before the check. Gabriel's to veto.
 - *Reply to Marc:* drafted for Gabriel in the session's report. Not sent.
+- *Astra (Ultra), 18:07 UTC: INCOMPLETE,* because the packet lacked the separate commit contents, a dated
+  run transcript and the date-listing script, and licensed inputs were excluded on purpose. The
+  deterministic checks passed. It found the formula, the 21-day alignment, the missing c4, the usable-day
+  rule and the no-fill decision sound, and the usable-day totals reconcile. Both findings are fixed:
+  - Medium: the definition-change rule pointed to the Specification's break rule, which restarts the grid.
+    D4 now keeps H10a's and D1's windows and leaves out a window that spans the date.
+  - Low: "a larger premium is expected by construction" overclaimed. The biases now hold under the
+    Parkinson model's assumptions and on average only, and `RV_P - RV` can take either sign.
 
 ### Prompt for the next session
 
