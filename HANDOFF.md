@@ -3566,6 +3566,21 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   the date-listing script, and it says the order is consistent with the record, not proof of when values
   were first opened. The review packet was moved out of the repository.
 
+**Thu 5 Nov (20:16 UTC) - pushed after the window; a second one-sided FXE quote (4 Nov)**
+- *Pushed:* `0573182` (the reply to Marc was sent) and `4913882` (Marc's answer) went out at 20:16 UTC,
+  a minute after the no-push window closed, on top of the day's recorder commits (`082a8dc` snapshot,
+  `7a6244f` surface). The auditor read **195 of 195** first, and only the recorder's data files had come in
+  since `cf02eef`. Pre-push test 0 fail, 2 warn; the site rebuilt.
+- *FXE:* the pressure test's one-sided-quote warning now lists two FXE days, 7 Oct and **4 Nov**. On 4 Nov
+  FXE's ATM call (18 Dec expiry) was quoted bid 0, ask 2.03, with no vendor IV. Its put was two-sided
+  (0.83/1.07), and FXE quoted two-sided again on 5 Nov.
+  - As on 7 Oct, the panel keeps what the feed said and is never rewritten. The check that no one-sided
+    quote carries an IV into the analysis passes.
+  - That warning reads the call leg only. Across all three legs the panel holds 7 one-sided quotes - calls:
+    FXE 7 Oct and 4 Nov; puts: FXE 28 Oct; far legs: RIVN 24 Sep, and VZ, T and CMCSA 22 Oct - and none
+    carries an IV.
+  - No action: warnings pass, and the ticker universe is frozen.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
