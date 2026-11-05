@@ -3,7 +3,8 @@
 Nothing here binds until it is copied into `hypotheses/` with a date, committed, and frozen on OSF.
 (H9 is reserved for the Cboe-method replica on the lab's OPRA days, HANDOFF 14 Oct.) Revised the same day
 after Astra's review; the IV-coverage correction (Specification) came after its one follow-up and has not
-been reviewed. No premium has been computed on the data below.
+been reviewed. D4's specification (5 Nov) is reviewed with its coverage check. No premium has been
+computed on the data below.
 
 **Which route this is, stated plainly.** SCIENTIST.md allows a registration drafted "before any data is
 touched", and PROTOCOL step 5 applies a new bar only to "days not yet recorded when it is committed". H10
@@ -45,6 +46,35 @@ Descriptive, no prediction, printed beside and never folded into H10a:
   fresh grid on the index calendar is not D2; if ever wanted, it is separate and descriptive.
 - **D3. Grid phase.** All 21 offsets of the non-overlapping grid: the range of the mean premium and of the
   test statistic per pair. The headline uses offset 0, anchored at the first common date, as H1 did.
+- **D4. A range-based realized volatility (Parkinson 1980).** *Specified 5 Nov 2026, after Marc's highs and
+  lows arrived and before any of their values was read. Only the files' structure had been read: the
+  header, row counts, and first and last dates.*
+  - **Windows:** H10a's and D1's own windows, on the same 21 trading days t+1 ... t+21 whose returns H1's RV
+    uses.
+  - **Formula:** `RV_P(t, t+21) = sqrt(252 x mean over those days of (ln(H/L))^2 / (4 ln 2))`, where H and L
+    are the day's high and low. There is no c4 factor, since c4 corrects the close-to-close estimator only.
+  - **Per pair:** the mean of `IV(t) - RV_P(t, t+21)`, with the registered fixed-b Newey-West statistic
+    printed beside it (no verdict), and the mean of `RV_P - RV` over the same windows.
+  - **Known biases, all pushing RV_P down:** the range misses the overnight move, which close-to-close
+    returns include; a high and low sampled at discrete moments understate the true range; and the square
+    root of an unbiased variance is biased low. A larger premium under D4 is therefore expected by
+    construction and is no evidence about H10a.
+  - **Usable days:** a day is usable only if its high and low are present and positive, its high is above
+    its low, and low <= close <= high. A window enters D4 only if all 21 of its days are usable. Other
+    windows are counted and listed by year, never filled.
+  - **Definition changes:** if a source's documentation shows its daily high and low changed definition
+    inside the sample (for example, from extremes computed from each member's own high and low to the
+    index's actual intraday extremes), the date is a method break for D4, handled as the Specification
+    handles the closes' breaks. This is read from the documentation, never inferred from the values.
+  - **Sources, fixed now:** for the S&P 500, DJIA and Nasdaq-100, Compustat's `prchd` and `prcld`, checked
+    against Compustat's close (`prccd`, the close H10 uses). For the Russell 2000, which Compustat lacks,
+    Bloomberg's `PX_HIGH` and `PX_LOW` from the 23-25 Nov pull, checked against Bloomberg's own close
+    (`PX_LAST`). If that pull brings no usable Russell 2000 highs and lows, D4 reports the pair as not
+    measured.
+  - **Cross-check:** Bloomberg's highs and lows for the other three, as the distribution of daily
+    differences in ln(H/L) between the two sources on common days, beside decision 4's comparison of
+    their closes.
+  - Nothing in D4 changes after its values are seen. It is printed beside H10a and never folded into it.
 
 ## Specification (proposed; frozen at registration)
 - `IV(t)` = the Cboe index close on date t, divided by 100. **Only FRED's reprints reach the early years
@@ -155,8 +185,10 @@ failure is reported as a failure.
 - The term structure (VIX3M starts in 2006 and VIX9D in 2011, too short to extend H1c), and the
   commodity and currency pairs (not in the library's pull).
 - Any split by crisis or regime chosen after seeing the series.
-- The raw data anywhere public: aggregates only, credited "Compustat via WRDS, Pepperdine University
-  Libraries" (Marc Vinyard's rule, 3 Nov 2026). The files stay in `~/Documents/volrec-wrds`.
+- The raw data anywhere public: aggregates only (Marc Vinyard's rule, 3 Nov 2026). The credit uses WRDS's
+  own wording, which Marc sent on 5 Nov: "Data were obtained from the Compustat database via Wharton
+  Research Data Services (WRDS)." Pepperdine University Libraries is thanked in the acknowledgments. The
+  files stay in `~/Documents/volrec-wrds`.
 
 ## Data already seen (PROTOCOL step 5)
 - **The four Compustat files, opened 4 Nov for a quality check over their whole span** (S&P 500
@@ -165,6 +197,10 @@ failure is reported as a failure.
   prices; each index's full-sample annualised volatility of daily log returns (18.0%, 18.3%, 25.2%,
   24.2%) and its three largest daily moves. The volatility figures span H10a's years. No implied
   volatility was joined, no window formed, no premium computed.
+- **Marc's daily highs and lows (Compustat `prchd`/`prcld`), received 5 Nov.** S&P 500 from 1990-01-02,
+  DJIA from 1997-01-02 and Nasdaq-100 from 2001-01-02, each to 2026-11-04 (9,279, 7,507 and 6,499 days). No
+  Russell 2000: Compustat has none. Before D4's specification was committed, only their structure was
+  read: the header, row counts, and first and last dates. The coverage check came after that commit.
 - **Dates only**, for the planning counts above.
 - **FRED's VIXCLS, 1990–2026, in the TimesFM benchmark (17 Sep) and its 17 Oct recheck:** VIX forecast
   against VIX itself (HAR fitted on all earlier days, forecasts from 2008). No realized volatility and no
@@ -207,7 +243,10 @@ tested and a day old.
    from 1 Jan 1986) beside the closes, so D4 no longer depends on Marc's file. Once pulled they are listed
    under "Data already seen" and not studied. Whether D4 runs, and on which source, is fixed here before
    registration, after a check of coverage only: first and last dates, counts, and that each low is at or
-   below the close and each high at or above it.*
+   below the close and each high at or above it.* *5 Nov: Marc's file arrived before registration, so D4
+   joins. It covers the S&P 500, DJIA and Nasdaq-100 to 4 Nov 2026; Compustat has no Russell 2000 highs
+   and lows. D4 is specified in the D-list above, its sources included, before any value was read.
+   Settled by Vega under the 4 Nov go-ahead to settle what can be settled now; Gabriel's to veto.*
 6. **D2 goes in the paper.** Whether it also goes on the site waits for the post-verdict site discussion.
 
 *The six questions as drafted, kept for their reasons:*

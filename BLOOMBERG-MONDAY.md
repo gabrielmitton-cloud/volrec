@@ -47,7 +47,9 @@ Compustat, and checks them against a second source before it is registered. The 
 second source. This is H10's decision 4, approved 4 Nov. The highs and lows were added that night, with
 Gabriel's yes, for H10's possible range-based measure (D4), so it does not depend on Marc's file; whether D4
 uses them is decided before H10 is registered. The ~90-day limit above is for option quotes; index prices go
-back decades.
+back decades. *5 Nov: Marc's highs and lows arrived for the S&P 500, DJIA and Nasdaq-100, but not the
+Russell 2000 (Compustat has none). The pull still takes all four indices. RTY's highs and lows are D4's only
+source for the Russell 2000, and the other three are its cross-check (H10-DRAFT, D4).*
 
 1. In Excel, each index on its own sheet, three formulas side by side - closes in A1, highs in C1, lows in
    E1 (each fills a date column and a value column):
