@@ -3556,6 +3556,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
     D4 now keeps H10a's and D1's windows and leaves out a window that spans the date.
   - Low: "a larger premium is expected by construction" overclaimed. The biases now hold under the
     Parkinson model's assumptions and on average only, and `RV_P - RV` can take either sign.
+- *The one follow-up (18:16 UTC, `f9986d3`): CLEAR.* Both findings are resolved and nothing new was found.
+  It had the commit times, the coverage output's write time (18:03:42 UTC, after `cbd8d03` at 18:02:11) and
+  the date-listing script, and it says the order is consistent with the record, not proof of when values
+  were first opened. The review packet was moved out of the repository.
 
 ### Prompt for the next session
 
