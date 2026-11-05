@@ -115,6 +115,73 @@ MUTANTS = [
     ("h8-neff-ignores-rho", "H8 counts every day as independent",
      lambda w: _sub(w / "tools/h8_quotes.py", "return max(1.0, T * (1 - r) / (1 + r))", "return float(T)"),
      "H8's instrument tests pass"),
+    ("h8-tost-uses-t", "H8's equivalence decision reads t(T-1) p-values instead of the registered fixed-b ones",
+     lambda w: _sub(w / "tools/h8_quotes.py",
+                    "    p_lo = sum(x >= t_lo for x in null) / len(null)\n    p_hi = sum(x <= t_hi for x in null) / len(null)\n",
+                    "    p_lo = t_pvalue(t_lo, T - 1) / 2 if t_lo > 0 else 1 - t_pvalue(t_lo, T - 1) / 2\n"
+                    "    p_hi = t_pvalue(t_hi, T - 1) / 2 if t_hi < 0 else 1 - t_pvalue(t_hi, T - 1) / 2\n"),
+     "H8's instrument tests pass"),
+    ("h8-fixedb-two-sided", "H8's lower one-sided test counts both tails of the fixed-b null",
+     lambda w: _sub(w / "tools/h8_quotes.py", "    p_lo = sum(x >= t_lo for x in null) / len(null)\n",
+                    "    p_lo = sum(abs(x) >= abs(t_lo) for x in null) / len(null)\n"),
+     "H8's instrument tests pass"),
+    ("h8-lag-rule", "H8's lag rule truncates 1.3*sqrt(T) instead of rounding it",
+     lambda w: _sub(w / "tools/h8_quotes.py", "    return math.floor(1.3 * math.sqrt(T) + 0.5)",
+                    "    return math.floor(1.3 * math.sqrt(T))"),
+     "H8's instrument tests pass"),
+    ("h8-reps-shared", "H8's equivalence test falls back to the shared 4,000 draws",
+     lambda w: _sub(w / "tools/h8_quotes.py", "def tost(d, bound, lag, reps=H8_REPS):",
+                    "def tost(d, bound, lag, reps=4000):"),
+     "H8's instrument tests pass"),
+    ("h8-reps-not-passed", "H8's equivalence test drops its draw count on the way to the shared null",
+     lambda w: _sub(w / "tools/h8_quotes.py", "    null = fixed_b_null(T, lag, reps)\n", "    null = fixed_b_null(T, lag)\n"),
+     "H8's instrument tests pass"),
+    ("h8-tie-excluded", "H8's lower test leaves out a null draw equal to its statistic",
+     lambda w: _sub(w / "tools/h8_quotes.py", "    p_lo = sum(x >= t_lo for x in null) / len(null)\n",
+                    "    p_lo = sum(x > t_lo for x in null) / len(null)\n"),
+     "H8's instrument tests pass"),
+    ("h8-tie-excluded-upper", "H8's upper test leaves out a null draw equal to its statistic",
+     lambda w: _sub(w / "tools/h8_quotes.py", "    p_hi = sum(x <= t_hi for x in null) / len(null)\n",
+                    "    p_hi = sum(x < t_hi for x in null) / len(null)\n"),
+     "H8's instrument tests pass"),
+    ("h8-threshold-inclusive", "H8 calls a p of exactly 0.05 significant",
+     lambda w: _sub(w / "tools/h8_quotes.py", "(p_lo < 0.05 and p_hi < 0.05)", "(p_lo <= 0.05 and p_hi <= 0.05)"),
+     "H8's instrument tests pass"),
+    ("timing-reads-ahead", "the index-timing reader takes a bar whose second has not ended by the snapshot minute",
+     lambda w: _sub(w / "tools/index_timing.py", "if ts + ONE_SECOND <= T:", "if ts <= T:"),
+     "the index-timing reader's tests pass"),
+    ("timing-stale-index", "the index-timing reader fills a day from an index value more than 60 s old",
+     lambda w: _sub(w / "tools/index_timing.py", "    if T - ts > MAX_AGE:\n", "    if False:\n"),
+     "the index-timing reader's tests pass"),
+    ("timing-seal-unchecked", "the index-timing reader reads a sealed file without checking its sha256",
+     lambda w: _sub(w / "tools/index_timing.py", "    if hashlib.sha256(raw).hexdigest() != want:\n", "    if False:\n"),
+     "the index-timing reader's tests pass"),
+    ("timing-opens-before-verdicts", "the index-timing reader opens the sealed files before both verdicts are recorded",
+     lambda w: _sub(w / "tools/index_timing.py", "    if not verdicts_recorded():\n", "    if False:\n"),
+     "the index-timing reader's tests pass"),
+    ("timing-gate-either", "the index-timing reader opens the sealed files once EITHER verdict is recorded",
+     lambda w: _sub(w / "tools/index_timing.py", "rv.MARK_H5E_FINAL in rv.H5.read_text() and rv.MARK_H7",
+                    "rv.MARK_H5E_FINAL in rv.H5.read_text() or rv.MARK_H7"),
+     "the index-timing reader's tests pass"),
+    ("timing-lost-file-unchecked", "the index-timing reader reads a sealed day file missing from disk as a day not covered",
+     lambda w: _sub(w / "tools/index_timing.py", "    if gone:\n", "    if False:\n"),
+     "the index-timing reader's tests pass"),
+    ("timing-reference-exit-ignored", "the index-timing reader accepts a reference run that failed",
+     lambda w: _sub(w / "tools/index_timing.py", "    if code != 0:\n", "    if False:\n"),
+     "the index-timing reader's tests pass"),
+    ("timing-rate-unchecked", "the index-timing reader rebuilds the readings at a rate other than the frozen one",
+     lambda w: _sub(w / "tools/index_timing.py", '    if not rv.rate_ok(f"{100 * r:.3f}"):\n', "    if False:\n"),
+     "the index-timing reader's tests pass"),
+    ("timing-printed-rate-unchecked", "the index-timing reader accepts modelfree's output at another rate",
+     lambda w: _sub(w / "tools/index_timing.py", "    if not rv.rate_ok(rf):\n", "    if False:\n"),
+     "the index-timing reader's tests pass"),
+    ("timing-empty-agreement", "the index-timing reader calls two empty H5e sides an agreement",
+     lambda w: _sub(w / "tools/index_timing.py", "    if not printed and not mine:\n", "    if False:\n"),
+     "the index-timing reader's tests pass"),
+    ("timing-key-kept", "the index-timing reader keeps a real FRED key, which can fetch today's rate",
+     lambda w: _sub(w / "tools/index_timing.py", 'os.environ["FRED_KEY"] = "use-cache"',
+                    'os.environ.setdefault("FRED_KEY", "use-cache")'),
+     "the index-timing reader's tests pass"),
     ("site-option-symbol", "a raw option symbol is pasted onto the site",
      lambda w: _sub(w / "index.html", "<tr><td>18 Sep</td><td>USO</td><td>138</td>",
                     "<tr><td>18 Sep</td><td>USO261016P00119000</td><td>138</td>"),
@@ -555,6 +622,48 @@ MUTANTS = [
     ("site-rail-counts-to-surface", "the rail's countdown is wired to the wrong recorder",
      lambda w: _sub(w / "tools/volrec.js", 'V.nextTrigger("record", now)', 'V.nextTrigger("surface", now)'),
      "the site's countdowns count to the recorders' real start"),
+    # 4 Nov 2026: the Lab page (tools/lab.html, rendered by lab/report.py) publishes OPRA-derived aggregates.
+    ("lab-page-uncredited", "a table on the Lab page loses its Databento credit",
+     lambda w: _sub(w / "tools/lab.html", '<div class="src">Data provided by Databento (OPRA consolidated NBBO).',
+                    '<div class="src">(OPRA consolidated NBBO).'),
+     "every section and every figure of the Lab page credits Databento"),
+    # Astra, 4 Nov 2026: a part stating only whole numbers passed uncredited. The generator and the page change
+    # together, so only the credit rule can catch it.
+    ("lab-page-integer-uncredited", "the Lab page's Data sources section, which states only whole numbers, loses its credit",
+     lambda w: (_sub(w / "lab/report.py", "Databento, Inc. Data provided by Databento. Derived", "Databento, Inc. Derived"),
+                _sub(w / "tools/lab.html", "Databento, Inc. Data provided by Databento. Derived", "Databento, Inc. Derived")),
+     "every section and every figure of the Lab page credits Databento"),
+    ("lab-page-fetches-opra", "the Lab page's script starts fetching an OPRA file",
+     lambda w: _sub(w / "tools/lab.html", 'V.load("data/surface.csv", "../")]',
+                    'V.load("data/surface.csv", "../"), fetch("../data/opra.csv")]'),
+     "the site's code loads no OPRA data"),
+    ("lab-page-unlinked", "the paper's navigation loses the Lab page",
+     lambda w: _sub(w / "index.html", ', ["Lab", "tools/lab.html", "lab"]', ""),
+     "every page's navigation reaches the Lab page"),
+    # Astra, 4 Nov 2026: a figure is held to the registration's figure for the same fund. Here the generator pins two
+    # funds' COVID losses on each other and the page is re-rendered to match, so the page still equals the render and
+    # every number on it is still somewhere in the registration.
+    ("lab-page-claims-swapped", "the Lab page gives IWM's COVID loss to USO and USO's to IWM",
+     lambda w: (_sub(w / "lab/report.py", '    added, covid = p3plan["added"], p3plan["covid"]\n',
+                     '    added, covid = p3plan["added"], p3plan["covid"]\n'
+                     '    covid = {**covid, "IWM": covid["USO"], "USO": covid["IWM"]}\n'),
+                _sub(w / "tools/lab.html", 'IWM <span class="m">34.8%</span> and USO <span class="m">29.4%</span>',
+                     'IWM <span class="m">29.4%</span> and USO <span class="m">34.8%</span>')),
+     "the COVID sentence names the registration's three largest COVID losses"),
+    # Astra's follow-up, 4 Nov 2026: a key number's value was checked anywhere on the page, not under its own label.
+    # Only the label moves, in the generator and the page alike, so the page still equals the render and every
+    # figure on it is still right.
+    ("lab-page-kpi-mislabelled", "the Lab page's key numbers show SPY's COVID loss under QQQ's name",
+     lambda w: (_sub(w / "lab/report.py", 'kpi("SPY\'s COVID month"', 'kpi("QQQ\'s COVID month"'),
+                _sub(w / "tools/lab.html", '<div class="kpi-k">SPY\'s COVID month</div>',
+                     '<div class="kpi-k">QQQ\'s COVID month</div>')),
+     "every key number at the top of the Lab page sits under its own label"),
+    ("lab-page-partial-skip", "the Lab page's generator treats a half-copied summaries folder as a fresh clone",
+     lambda w: _sub(w / "lab/report.py", "    if not have:\n        return None", "    if len(have) < len(INPUTS):\n        return None"),
+     "lab/ tests pass"),
+    ("lab-page-margin-range-unchecked", "the Leak Map checks only the margin leaks' mean, not their range over the orders",
+     lambda w: _sub(w / "lab/report.py", 'if any(v != 0.0 for v in d["leaks"][k]):', 'if d["leaks"][k][0] != 0.0:'),
+     "lab/ tests pass"),
 ]
 # The pressure test runs the site's countdown in node; where node is missing that check is only a WARN, so
 # its mutant would be INCONCLUSIVE rather than KILLED. It runs wherever the check can.
@@ -572,6 +681,14 @@ if shutil.which("node"):
                                    'h < 48 ? Math.floor(h) + "h " + p2(Math.round((h % 1) * 60)) + "m ago" : '
                                    'Math.floor(h / 24) + "d ago";'),
                     "the site's 'ago' never reads 60m"))
+
+
+# The Lab page is compared with the private lab summaries only where they exist (this Mac); elsewhere the
+# check is a SKIP, so its mutant would be INCONCLUSIVE rather than KILLED. It runs wherever the check can.
+if (Path.home() / "Documents" / "volrec-licensed" / "lab-out" / "leak_summary.json").exists():
+    MUTANTS.append(("lab-page-hand-edited", "a figure on the Lab page is edited by hand instead of re-rendered",
+                    lambda w: _sub(w / "tools/lab.html", '<span class="lm-v">95.4¢</span>', '<span class="lm-v">96.4¢</span>'),
+                    "the Lab page is exactly what lab/report.py renders from the lab summaries"))
 
 
 def check_lines(out):

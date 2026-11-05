@@ -41,18 +41,26 @@ is how many of the eight show equivalence.
 ## Instrument readiness [required]
 - `tools/h8_quotes.py` (built 10 Oct; re-read cold the same day, which added the snapshot-minute
   reading). Estimator unchanged: `modelfree.model_free_30d`, the ±30% band.
-- Known-answer tests: `tools/test_h8.py`, 26 cases. Identical quotes give a gap of exactly 0; a
-  uniform 2-cent OPRA premium reads with the right sign; stale quotes are handled both ways;
+- Known-answer tests: `tools/test_h8.py`, 36 cases (26 until 4 Nov; 32 that evening; 36 after Astra's review the same night). Identical quotes give a gap of
+  exactly 0; a uniform 2-cent OPRA premium reads with the right sign; stale quotes are handled both ways;
   n_eff, the smallest detectable effect and the two one-sided tests are checked against hand-computed
-  values; the purchase trim keeps exactly what is read.
+  values; the purchase trim keeps exactly what is read. Since 4 Nov: the lag rule (8 at 41 days, 8 at 36,
+  7 at 30); at lag 0 the fixed-b p at 1.70477 is the exact 0.05 within simulation error (Newey-West at lag 0
+  is √(T/(T−1)) times Student's t); a gap 1.9 standard errors inside each bound passes under t(40) and fails
+  under fixed-b at lag 8; each one-sided test reads its own tail. Since Astra's review: `tost` hands H8's own
+  200,000 draws to the shared null (item 2), and on a null fixed by hand a draw equal to the statistic counts
+  as "at or beyond" while a p of exactly 0.05 is not below 0.05.
 - Real-format fixtures: Databento's own header and padded OSI symbols, a BLANK for no bid.
 - Every report path has run on the real calibration data (all eight funds, 14–16 days each).
 - Auditor mutants: h8-blank-bid-dropped, h8-tost-one-sided, h8-neff-ignores-rho, h8-cap-ignored,
-  h8-trim-drops-header (all killed, auditor 68/68 on 10 Oct).
+  h8-trim-drops-header (all killed, auditor 68/68 on 10 Oct); since 4 Nov also h8-tost-uses-t,
+  h8-fixedb-two-sided and h8-lag-rule, and after Astra's review h8-reps-shared, h8-reps-not-passed,
+  h8-tie-excluded, h8-tie-excluded-upper and h8-threshold-inclusive (each killed when checked alone before
+  it was added).
 - Data: the cloud buys all eight funds daily from 9 Oct 2026 (`opra_reference.py --h8`, own $15 cap).
-- **Open, decide at registration:** the Newey-West lag (Lazarus et al. 2018: about 1.3·√T, so ~8 at
-  T≈40) and fixed-b critical values (`analyze.fixed_b_pvalue`) in place of t(T−1). *(Decided 4 Nov: item 2
-  at the end; the code change and its tests come before registration.)*
+- **Was open, decided 4 Nov and built the same evening:** the Newey-West lag (`h8_quotes.lag_for`, the
+  whole number nearest 1.3·√T) and fixed-b one-sided p-values (`h8_quotes.tost` reads
+  `analyze.fixed_b_null`; t(T−1)'s p-values come back beside, never in place). Item 2 at the end.
 
 ## Noise floor [required]
 OPRA against itself one minute later, same contracts, registered estimator (mean |S1n − S1b|),
@@ -123,9 +131,21 @@ registered about Tue 24 Nov, with an OSF freeze in Gabriel's browser, a week bef
    because T is not yet known. **Critical values: fixed-b, one-sided for each of the two tests**, from
    `analyze.fixed_b_null` at that T and lag (the share of null draws at or beyond the statistic, in the
    direction tested); t(T−1)'s p-values printed beside, never in place. The simulated null (iid
-   Gaussian, 4,000 seeded draws) is an approximation at T of 30-41, and a p-value near 0.05 carries a
-   simulation standard error of about 0.003. Before registering, `h8_quotes.tost` gains this with a known-answer test and
-   an auditor mutant, then at least a day passes (PROTOCOL step 2).
+   Gaussian, seeded; 200,000 draws for H8, see below) is an approximation at T of 30-41, and at 200,000
+   draws a p-value near 0.05 carries a simulation standard error of about 0.0005. Before registering, `h8_quotes.tost` gains this with a known-answer test and
+   an auditor mutant, then at least a day passes (PROTOCOL step 2). *Built 4 Nov (evening): see Instrument
+   readiness. Measured that night at T = 41, lag 8: the shared seeded 4,000-draw null puts the one-sided 5%
+   points at 2.03 (upper) and -2.06 (lower); 200,000 draws put them at 2.09 and -2.11 (the fixed-b limit at
+   b = 9/41, simulated at T = 2,050 and 4,100: about 2.10). At the 200,000-draw points the 4,000-draw null gives p = 0.047 and 0.046:
+   this seed's draws run light in both tails here, about one simulation standard error each (sampling error,
+   not a bias of the method), and light tails are the lenient direction for an equivalence test.
+   **Changed the same night, as Astra's review recommended:** H8 uses 200,000 seeded draws of its own
+   (`h8_quotes.H8_REPS`, the same seed; about 8 seconds at T = 41); the shared default of 4,000 is
+   unchanged for every registered figure. More draws make the simulation precise; they do not make the
+   iid-Gaussian fixed-b approximation exact at T of 30-41. Vega's call, Gabriel's to veto before
+   registration. (Until this change the note read: "Kept at 4,000 so every fixed-b number in the project
+   comes from the same seeded null", and gave the gap as 0.0455 at 2.11, a point measured on the upper tail
+   only.)*
 3. **Each fund reported; the headline is the count** of the eight that show equivalence: a tally of eight
    separate tests, not a joint 95% statement about all of them.
 4. **At least 30 measured days** of the window's 41 trading days (22 in December, 19 in January). A fund

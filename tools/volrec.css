@@ -27,7 +27,7 @@
   --ink:   #e8eef3;
   --read:  #c5cfd7;
   --ink-2: #9eacb8;
-  --ink-3: #697785;
+  --ink-3: #6e7c8a;   /* 4.67:1 on --panel, 4.91 on black; was #697785 (4.35 on --panel, under AA) until 4 Nov 2026 */
   --ink-4: #3f4a55;
 
   --free:  #2396C4;
@@ -194,7 +194,7 @@ svg .lab-dim    { fill: var(--ink-4); }
 .vtip-r { display: grid; grid-template-columns: 12px auto 1fr; gap: 9px; align-items: center; font-size: 11px; line-height: 1.7; }
 .vtip-k { width: 12px; height: 2px; display: block; }
 .vtip-r b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
-.vtip-r span { color: var(--ink-3); }
+.vtip-r span { color: var(--ink-2); }
 
 /* ----------------------------------------------------------- data tables */
 
@@ -229,10 +229,10 @@ table.data td:first-child { color: var(--ink); }
   max-width: 44ch; margin: 30px 0 0; text-wrap: pretty;
 }
 .meta { margin: 0; display: grid; gap: 16px; font-size: 11px; }
-.meta dt { color: var(--ink-4); font-size: 10px; }
+.meta dt { color: var(--ink-3); font-size: 10px; }
 .meta dd { margin: 3px 0 0; color: var(--ink-2); }
 .meta .byline { font-family: var(--serif); font-size: 21px; line-height: 1.2; color: var(--ink); font-variation-settings: "opsz" 24; }
-.meta a { color: var(--ink-2); word-break: break-all; }
+.meta a { color: var(--ink-2); overflow-wrap: anywhere; }
 
 /* figures */
 .fig { margin: 72px 0 0; }

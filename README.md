@@ -6,6 +6,8 @@ Measuring the volatility risk premium with data I collect myself.
 
 **Watch the recorder:** https://gabrielmitton-cloud.github.io/volrec/tools/monitor.html
 
+**The side study, what a retail seller keeps:** https://gabrielmitton-cloud.github.io/volrec/tools/lab.html
+
 ## The question
 
 Options are priced off an implied volatility — the market's forecast of how much
@@ -98,7 +100,13 @@ positives against this exact design. The effective sample size is roughly the
 number of *non-overlapping* windows, not the number of rows. `HANDOFF.md` §4
 carries the corrected method.
 
-## Companion tool
+## Companion pages
+
+`tools/lab.html` is the side study in `lab/` (exploratory, registered in
+`lab/REGISTRATION.md` before any data was bought): how much of the volatility premium a retail seller
+of fund straddles keeps after spreads, commissions and margin, 2016-2026, on OPRA quotes. It shows
+aggregates only and is rendered by `lab/report.py` from the private summaries; the pressure test
+checks the page against them, and its credits, wherever they exist.
 
 `gamma-lab.html` is a delta-hedging simulator built alongside this. It shows why
 the question matters: a long option, delta-hedged, profits when realized
@@ -157,7 +165,7 @@ clauses). Code and derived results are published; licensed raw data is not.
 | Alpaca Markets (free Basic plan) | indicative option quotes, IEX/SIP stock bars | the daily snapshots in `data/` | Alpaca's Terms and Conditions require written consent to republish Content; asked 9 Oct 2026, and Alpaca answered 10 Oct that the package may be used as the author pleases provided the market-data use stays personal and non-commercial |
 | Cboe Global Markets | daily index closes, read at run time from Cboe's public files; methodology documents | none (cached locally, git-ignored) | website terms require consent to use Materials "to verify or correct other data"; requested 10 Oct 2026 and **approved by Cboe on 4 Nov 2026**, as requested: non-commercial research, aggregates only, credited |
 | FRED, Federal Reserve Bank of St. Louis | DGS1MO; Cboe series reprinted with permission (EVZCLS, VXXLECLS, VIXCLS) | none (cached locally, git-ignored) | non-commercial educational use permitted with citation; copyrighted series keep Cboe's notice |
-| Databento (OPRA consolidated quotes) | one-minute NBBO, historical, for checks | none; derived aggregates only | OPRA's terms pass through; credited "Data provided by Databento" |
+| Databento (OPRA consolidated quotes) | one-minute NBBO, historical, for checks and the `lab/` side study | none; derived aggregates only | OPRA's terms pass through; credited "Data provided by Databento" |
 | Bloomberg (Pepperdine terminal) | four days of option quotes for checks | none; derived aggregates only | library terms: derived figures with "Source: Bloomberg Finance L.P.", raw data never in an open repository |
 | LSEG Workspace (Pepperdine) | intraday index bars, if pulled | none; summary statistics only | library terms: summary statistics with "Data source: LSEG Workspace.", raw data never shared |
 

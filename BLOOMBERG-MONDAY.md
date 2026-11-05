@@ -5,6 +5,79 @@
 collect. What it can do, and nothing else can, is tell you how good your free
 data is. See HANDOFF section 15.1.
 
+## NEXT VISIT: Mon 23 - Wed 25 Nov 2026 - two pulls, in this order
+
+*Added 4 Nov 2026. Both verdicts are recorded by then (12-19 Nov), which is why these pulls waited for this
+visit. Neither needs the recorder or a set time of day, so ask 0 matters only if you also do an OMON pull.
+**Go on Monday 23 Nov if you can:** pull A loses its oldest day for every day you wait.*
+
+### A. One-minute bars of OVX, GVZ, VXN and RVX - first, because it expires
+
+**Why.** The registered readings compare the free feed's 14:30 snapshot with Cboe's daily close, which comes
+later in the afternoon. These bars give each index's level at 14:30 itself, so the gap between those two
+moments can be measured on every day of H5e's and H7's windows - including the days before 21 Oct, which the
+Databento bars bought on 4 Nov (sealed) cannot reach.
+
+**Range.** From **Mon 14 Sep 2026** (the start of H7's in-sample stretch), or the earliest day the terminal
+gives if that is later, to the last full trading day. H5e's window starts Wed 23 Sep: if the bars do not reach
+that far, write down the first day they do reach and pull anyway.
+
+1. `HELP` `HELP` (the desk). Ask these two and write the answers down word for word:
+   - "How far back does 1-minute intraday bar history go for OVX Index?"
+   - "When I export 1-minute bars to Excel, what time zone are the timestamps in, and is a bar stamped 14:30
+     the minute that starts at 14:30 or the minute that ends at 14:30?"
+
+   The second answer decides how the bars are read; without it the 14:30 level is off by up to a minute.
+2. `TZDF <GO>` shows the terminal's default time zone. **Write down what it shows; do not change it** (it is
+   the library's terminal). Knowing the zone is enough to convert.
+3. In Excel's Bloomberg tab: **Spreadsheet Builder**, the intraday bar option, security `OVX Index`, bar size
+   **1 minute**, bar type **Trade** (an index has no bid or ask), the range above, then Finish. If the wizard
+   is not there or will not take the range, ask the desk for "one-minute intraday bars of OVX Index into
+   Excel" - they walked you through the day count the same way.
+4. The same for `GVZ Index`, `VXN Index` and `RVX Index`. One file per index.
+5. Save each as `OVX_1MIN_2026-11-23.xlsx` (the index, then the day you pulled it).
+6. Before leaving, for each file: the first timestamp, the last, and the number of rows. **Do not study the
+   values.** Reading them waits for a short descriptive registration I write once I have seen the layout
+   (column headers, timestamps and row counts are the layout; the numbers are not).
+
+### B. Daily closes of SPX, INDU, NDX and RTY - second, from 1986
+
+**Why.** H10 (the 1990-2026 test; registration planned for mid-December) takes its index prices from
+Compustat, and checks them against a second source before it is registered. The Russell 2000 has no free
+second source. This is H10's decision 4, approved 4 Nov. The ~90-day limit above is for option quotes; index
+closes go back decades.
+
+1. In Excel, one formula per index, each on its own sheet:
+   `=BDH("SPX Index","PX_LAST","1/1/1986","11/20/2026")`
+   then the same for `INDU Index`, `NDX Index` and `RTY Index`. (Or Spreadsheet Builder, historical table,
+   field `PX_LAST`, daily, the same dates.) The end date is the last full trading day before the visit -
+   Fri 20 Nov if you go on the 23rd. An index that starts after 1986 simply starts later; that is fine.
+2. For each sheet: the first date and the last, written down.
+3. Save as `INDEX_CLOSES_2026-11-23.xlsx`.
+
+**One rule.** Closes only - no implied volatility (VXD, VXN or RVX daily) at this visit. Once pulled, the
+closes go on H10's "Data already seen" list, and nothing about the premium is computed from them before H10 is
+registered.
+
+### If time is left
+
+The older asks below still stand, ask 2 (SPY's matched day) first. For any OMON pull, check the recorder ran
+that day (ask 0) and pull at **11:30am Pacific** - 14:30 New York, when the recorders now run (the Timing
+section below predates that).
+
+### Send me (this visit)
+
+- The five files, saved on the Mac in `~/Documents/volrec-bloomberg/`, **never the repo folder** (afterwards,
+  check Downloads and the repo folder: licensed files have landed there before).
+- The desk's two answers, word for word, and what `TZDF` showed.
+- Per file: the first timestamp or date, the last, and the row count.
+- The day and time you pulled, and anything that did not work.
+
+*Anything derived from these files is credited "Source: Bloomberg Finance L.P."; the files themselves are never
+shared.*
+
+---
+
 **18 September: fourth pull (USO, 16 Oct, wide) — see ask 1b and ask 3.**
 
 **23 September: the sixth pull answered asks 1, 1b and 3.** USO and TSLA on BOTH of the
@@ -255,6 +328,10 @@ ticker. TSLA and USO on any two further days would move H3 from "a cross-check" 
 ---
 
 ## Timing — this changed on 16 September, read it again
+
+*4 Nov 2026: superseded. Since 1 Oct the recorders run at 14:30 New York (started by cron-job.org), and US
+clocks changed on 1 Nov, so the snapshot lands at 19:30 UTC = **11:30am Pacific** (11:30 New York on an
+early close). Pull then. The rest of this section is the 16 September record.*
 
 **The recorders moved.** `record.yml` now fires 14:47 UTC and `surface.yml` 14:57,
 and GitHub delays them 3-4.5 hours, so **the snapshot now lands roughly

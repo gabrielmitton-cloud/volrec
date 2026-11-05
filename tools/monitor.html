@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,300..700&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&display=swap">
-<link rel="stylesheet" href="volrec.css?v=20261010">
+<link rel="stylesheet" href="volrec.css?v=20261104">
 </head>
 <body>
 <header class="rail" id="rail"></header>
@@ -122,6 +122,7 @@
     <a href="../">The paper</a>
     <a href="https://github.com/gabrielmitton-cloud/volrec">Repository</a>
     <a href="https://github.com/gabrielmitton-cloud/volrec/blob/main/tools/panel_health.py">tools/panel_health.py</a>
+    <a href="lab.html">The lab</a>
     <a href="gamma-lab-v2.html">Gamma Lab</a>
   </footer>
 </main>
@@ -131,7 +132,7 @@
 (function () {
   "use strict";
   const $ = id => document.getElementById(id);
-  const LINKS = [["Paper", "../", "paper"], ["Instrument", "monitor.html", "monitor"], ["Code", V.REPO, "code"]];
+  const LINKS = [["Paper", "../", "paper"], ["Instrument", "monitor.html", "monitor"], ["Lab", "lab.html", "lab"], ["Code", V.REPO, "code"]];
   V.rail($("rail"), { home: "../", here: "monitor", state: "loading", links: LINKS });
 
   const S = { rows: [], days: [], byDay: new Map(), day: null, pinned: null, filter: "all", q: "", surf: null, h: null };

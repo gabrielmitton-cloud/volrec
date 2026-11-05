@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,300..700&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&display=swap">
-<link rel="stylesheet" href="tools/volrec.css?v=20261010">
+<link rel="stylesheet" href="tools/volrec.css?v=20261104">
 </head>
 <body>
 <header class="rail" id="rail"></header>
@@ -376,6 +376,7 @@
     </ul></div>
     <div><h3>Tools</h3><ul>
       <li><a href="tools/monitor.html">The instrument</a></li>
+      <li><a href="tools/lab.html">The lab, what a retail seller keeps</a></li>
       <li><a href="tools/gamma-lab-v2.html">Gamma Lab, delta-hedging under friction</a></li>
       <li><a href="tools/gamma-lab.html">Gamma Lab, the first version</a></li>
     </ul></div>
@@ -392,7 +393,7 @@
 (function () {
   "use strict";
   const $ = id => document.getElementById(id);
-  const LINKS = [["Paper", "./", "paper"], ["Instrument", "tools/monitor.html", "monitor"], ["Code", V.REPO, "code"]];
+  const LINKS = [["Paper", "./", "paper"], ["Instrument", "tools/monitor.html", "monitor"], ["Lab", "tools/lab.html", "lab"], ["Code", V.REPO, "code"]];
   V.rail($("rail"), { home: "./", here: "paper", state: "loading", links: LINKS });
 
   /* ---------------------------------------------------- documented results */

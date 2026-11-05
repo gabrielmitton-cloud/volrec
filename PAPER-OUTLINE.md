@@ -139,9 +139,10 @@ customer margin with daily marking (Santa-Clara & Saretto 2009's mechanic) and f
   since the registered estimator is a strip.
 - Predictions as recorded: P1 fails, P2 holds as written, P3 holds, P4 fails, P5 holds among funds
   with a paper profit. Exclusions cluster in crash months; with them added back GLD turns worse (straddle
-  -3.8% -> -9.4% of premium; half-account loss odds 35% -> 63%) and USO does NOT (+6.9% -> +7.6% once the
-  one trade held across its 2020 reverse split is settled on OCC's deliverable - corrected 28 Oct) - always
-  shown beside the registered numbers.
+  -3.8% -> -9.3% of premium, not -9.4% as written until 4 Nov 2026; half-account loss odds 35% -> 63%) and USO does NOT (+6.9% -> +7.6% once the
+  one trade held across its 2020 reverse split is settled on OCC's deliverable - corrected 28 Oct). The
+  added-back rows sit beside the registered ones in the Leak Map's table, the 20% margin table and the stress
+  table; the free-data spread table and the break-even curves use the registered months only.
 Framing: an implementation audit, not a strategy. Nothing here is investment advice.
 
 **6. Limitations (1 page).** One free feed; about two months; eight underlyings; a snapshot about 80

@@ -331,7 +331,13 @@
 
   let tipEl = null;
   function tipNode() {
-    if (!tipEl) { tipEl = V.h("div", { class: "vtip", role: "status" }, document.body); tipEl.hidden = true; }
+    if (!tipEl) {
+      tipEl = V.h("div", { class: "vtip", role: "status" }, document.body); tipEl.hidden = true;
+      // A tooltip never outlives its mark: any scroll hides it (a tapped point can scroll away while its tooltip
+      // stays put) and so does Escape (WCAG 1.4.13). Found by the design review, 4 Nov 2026.
+      addEventListener("scroll", () => V.tipHide(), { passive: true, capture: true });
+      addEventListener("keydown", e => { if (e.key === "Escape") V.tipHide(); });
+    }
     return tipEl;
   }
   // rows: [{ v: value, k: label, c: CSS colour for the line key }]. Text only,

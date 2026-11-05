@@ -135,18 +135,23 @@ which the frictions can be added - the same answer the main decomposition gives 
   chance of losing half the account 2-35%, conditional on the crashes in the sample.
 - *No fear level at which costs eat the premium.* Spreads widen in stress - SPY's cost roughly doubles
   from calm to stressed markets - but stay a few hundredths of a volatility point against monthly swings
-  of several, and widen in proportion to the premium on four of five funds.
+  of several. As a fraction of the premium, the cost rises significantly with the index only on GLD (P4
+  failed, 1 of 5); on the other four the slope's interval includes zero. *(Narrowed 4 Nov 2026 after an
+  outside review: it read "and widen in proportion to the premium on four of five funds", which a failed
+  test for a rising fraction does not show.)*
 - *Free data misjudges the cost.* Pricing costs from the free feed's wider quotes overstates the spread
   leak by 1-3 cents per dollar on the equity funds (twice the true figure on SPY).
 
 **Two lessons for the main paper.** First, the strike strip that a model-free estimator integrates costs
 2.1-3.3 times what an at-the-money estimate suggests to trade (measured with the strip held fixed), so
 cost and precision both live in the wings. Second, data filters can flatter results: on GLD, adding the
-tradeable excluded months back turns the straddle from -3.8% to -9.4% of premium and raises the
-bootstrap odds of losing half the account from 35% to 63%. Every result in the side study is therefore
-reported both ways. *(Corrected 28 Oct 2026 after an outside review: this paragraph cited USO, "+6.9% to
+tradeable excluded months back turns the straddle from -3.8% to -9.3% of premium and raises the
+bootstrap odds of losing half the account from 35% to 63%. Every Leak Map, margin and stress result in the
+side study is therefore reported both ways; the break-even analysis was run on the registered months only,
+and says so. *(Corrected 28 Oct 2026 after an outside review: this paragraph cited USO, "+6.9% to
 -2.9%", but that swing came entirely from one trade held across USO's 2020 reverse split and settled on the
-wrong deliverable; settled correctly, USO's added-back figure is +7.6%. The strip ratio read 2.1-3.4.)*
+wrong deliverable; settled correctly, USO's added-back figure is +7.6%. The strip ratio read 2.1-3.4. GLD's
+added-back figure read -9.4% until 4 Nov 2026, a double rounding of the mean, -0.09348.)*
 
 *Data provided by Databento (OPRA consolidated NBBO). Cboe index levels: Cboe Global Markets. Aggregates
 only. Nothing here is investment advice.*

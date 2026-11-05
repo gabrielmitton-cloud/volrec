@@ -493,5 +493,349 @@ check("the stress quarters are split evenly (3 and 3)", len(set(vt.STRESS) & set
 check("COVID's quarter is sealed, the 2025 tariff crash is open", vt.is_sealed("2020-03-16") and not vt.is_sealed("2025-04-07"))
 check("the split is the same every time it is drawn", vt.split() == (_o, _s))
 
+rp = load("report")
+print("\n=== the Lab page (report.py) ===")
+check("figures use a true minus, a plus on request, and never '-0.0'",
+      rp.num(-1.25) == "−1.2" and rp.num(2, 0, True) == "+2" and rp.num(-0.04) == "0.0" and rp.num(0.319, 3, True) == "+0.319")
+check("y ticks cover the data in whole steps", rp.ticks(-1.77, 2.15) == [-2, -1, 0, 1, 2, 3])
+check("x ticks step by 5 over a 20-point range", rp.ticks(10.7, 30.4) == [10, 15, 20, 25, 30, 35])
+check("the pilot ratios are read from engine.py's own PILOT",
+      rp.pilot_ratios() == {k: v[2] for k, v in eng.PILOT.items()})
+
+
+import copy as _copy        # noqa: E402
+import csv as _csv          # noqa: E402
+import html as _html        # noqa: E402
+import json as _json        # noqa: E402
+
+
+def _stop(fn, *a):
+    """The message a refusal stops with, or None when fn returns: each refusal test names the guard it expects, so
+    a stop from some other guard cannot pass it."""
+    try:
+        fn(*a)
+    except SystemExit as e:
+        return str(e)
+    return None
+
+
+def _page(*a):
+    """rp.page's output, or the error it stopped or crashed with: a broken guard then fails its own check instead of
+    ending the run."""
+    try:
+        return rp.page(*a)
+    except (SystemExit, Exception) as e:
+        return f"[{type(e).__name__}: {e}]"
+
+
+def _lw(paper, sp, cm, lim=0.0, liq=0.0, called=0):
+    """One weight in leak_summary.json's layout. Shapley values add up, so kept is the paper return less the four
+    leaks; each leak is [value, min, max] over the 24 orders, the margin pair spread around its value."""
+    rng = lambda v: [v, min(0.5 * v, 1.5 * v), max(0.5 * v, 1.5 * v)]
+    return {"paper": paper, "kept": paper - (sp + lim + liq + cm), "called": called,
+            "leaks": {"spreads": [sp, sp, sp], "limits": rng(lim), "liquidation": rng(liq), "commissions": [cm, cm, cm]}}
+
+
+# The fixture holds the facts the page's sentences rest on (report.py's premises and the logged verdicts): only GLD
+# lacks a paper profit; SPY, QQQ and IWM keep over 85 cents, USO 58 with the widest spreads; at 20% forced
+# liquidation leads on SPY and QQQ, while on IWM it cut a growing loss, so more is kept than the paper trade made.
+_PAPER = {"SPY": 0.004, "QQQ": 0.004, "IWM": 0.004, "GLD": -0.002, "USO": 0.004}
+_SPREAD = {"SPY": 0.00012, "QQQ": 0.0002, "IWM": 0.00028, "GLD": 0.0001, "USO": 0.0016}
+_RUIN = {"SPY": 0.02, "QQQ": 0.03, "IWM": 0.12, "GLD": 0.2, "USO": 0.15}
+_CALLED = {"SPY": 31, "QQQ": 30, "IWM": 40, "GLD": 20, "USO": 45}
+_N = {"SPY": 127, "QQQ": 127, "IWM": 127, "GLD": 123, "USO": 125}
+
+
+def _fund(s):
+    p, w5 = _PAPER[s], _lw(_PAPER[s], _SPREAD[s], 0.00008)
+    w20 = _lw(4 * p, 0.0064 if s == "USO" else 0.0002, 0.0001, -0.0016, -0.0032 if s == "IWM" else 0.0032, _CALLED[s])
+    return {"weights": {"0.025": w5, "0.05": w5, "0.1": w5, "0.2": w20},
+            "stress": {"block": 1.0, "dd50": 0.2, "dd95": 0.45, "dd99": 0.6, "es95": -0.05, "ruin": _RUIN[s], "worst": -0.25}}
+
+
+def _be1(s):
+    counts = {127: [25, 25, 25, 26, 26], 123: [24, 25, 25, 24, 25], 125: [25] * 5}[_N[s]]
+    xs = [12.0, 15.0, 18.0, 21.0, 30.0]
+    # SPY's groups average onto one line, net = -0.1 x (VIX - 18): its middle three sit off it by amounts that cancel
+    # in the count-weighted mean (25 x 2.6 - 25 x 5.2 + 26 x 2.5 = 0), so the fit is still known - slope -0.1,
+    # crossing 18 - while the groups swing by points from one to the next, as the page says they do.
+    net = ([-0.1 * (x - 18.0) + dy for x, dy in zip(xs, (0.0, 2.6, -5.2, 2.5, 0.0))] if s == "SPY"
+           else [0.5, -1.0, 1.5, 0.2, -0.4])
+    peak = {"USO": 1.5, "GLD": 0.3}.get(s, 0.09)
+    d = {"index": {"SPY": "VIX", "QQQ": "VXN", "IWM": "RVX", "GLD": "GVZ", "USO": "OVX"}[s],
+         "net_bins": [[x, y, n] for x, y, n in zip(xs, net, counts)],
+         "cost_bins": [[x + 0.1, peak * f, n] for x, f, n in zip(xs, (0.2, 0.3, 0.5, 0.7, 1.0), (100, 101, 100, 101, 102))],
+         "crossing": 9.7 if s == "GLD" else 18.0, "ci": [12.1, 27.6] if s == "SPY" else [12.0, 30.0],
+         "out": 100 if s == "IWM" else 200, "n_month": _N[s], "n_week": 504, "range": [9.4, 66.0],
+         "p4_slope": [2e-4, 1e-4, 3e-4] if s == "GLD" else [1e-5, -1e-5, 3e-5]}
+    if s == "SPY":
+        d["vix_axis"] = {"slope": -0.1, "crossing": 18.0}
+    return d
+
+
+_leak = {s: _fund(s) for s in rp.FUNDS}
+_be = {s: _be1(s) for s in rp.FUNDS}
+_ADDED = {"GLD": {"n": 127, "0.05": _lw(-0.0025, 0.0001, 0.00008), "0.2": _lw(-0.01, 0.0002, 0.0001, -0.0016, 0.0032, 22)},
+          "USO": {"n": 127, "0.05": _lw(0.0039, 0.0016, 0.00008), "0.2": _lw(0.0156, 0.0064, 0.0001, -0.0016, 0.0032, 46)}}
+_ADD_STRESS = {"GLD": {"n": 127, "block": 1.0, "dd50": 0.3, "dd95": 0.6, "ruin": 0.35, "worst": -0.3},
+               "USO": {"n": 127, "block": 1.0, "dd50": 0.22, "dd95": 0.5, "ruin": 0.16, "worst": -0.28}}
+_COVID = {"SPY": -0.1, "QQQ": -0.09, "IWM": -0.12, "GLD": -0.03, "USO": -0.11}
+_RATIO = {"SPY": (3.0, 3.4, 3.2), "QQQ": (2.8, 2.9, 3.0), "IWM": (2.6, 2.7, 2.8), "GLD": (1.9, 2.1, 2.0), "USO": (2.4, 2.6, 2.5)}
+_trades = []
+for _s in rp.FUNDS:
+    _ret, (_lo, _, _hi) = {"GLD": "-0.04", "USO": "0.07"}.get(_s, "0.05"), sorted(_RATIO[_s])
+    for (_e, _x), _r in zip((("2016-01-19", "2016-02-19"), ("2021-06-21", "2021-07-16"), ("2026-07-20", "2026-08-21")), _RATIO[_s]):
+        _trades.append({"entry": _e, "expiry": _x, "symbol": _s, "registered": "1", "straddle_mid_ret": _ret,
+                        "strip_cost_fixed_pts": f"{0.5 * _r:.4f}", "atm_cost_pts": "0.5"})
+    # The rest of the fund's registered months (every input counts the same months, _N), inside that span and 28 days
+    # long; half at the fund's lowest strip ratio and half at its highest, so the median is still the middle trade's
+    # and one excluded month's ratio would move it.
+    for _i in range(_N[_s] - 3):
+        _e = _d(2016 + (2 + _i) // 12, (2 + _i) % 12 + 1, 10)
+        _trades.append({"entry": _e.isoformat(), "expiry": (_e + _td(28)).isoformat(), "symbol": _s, "registered": "1",
+                        "straddle_mid_ret": _ret, "strip_cost_fixed_pts": f"{0.5 * (_lo if _i % 2 else _hi):.4f}",
+                        "atm_cost_pts": "0.5"})
+    # Excluded months, before the registered span, strip ratio 1. GLD's four and USO's two can still be traded (both
+    # added-back samples hold all 127 months); one more of USO's cannot, nor can the equity funds' one each.
+    for _i, _v in enumerate({"GLD": ["-0.16"] * 4, "USO": ["0.20", "0.20", ""]}.get(_s, [""])):
+        _trades.append({"entry": f"2015-0{_i + 1}-05", "expiry": f"2015-0{_i + 2}-02", "symbol": _s, "registered": "0",
+                        "straddle_mid_ret": _v, "strip_cost_fixed_pts": "0.5", "atm_cost_pts": "0.5"})
+
+
+def _p3text(leak, added, add_stress, covid):
+    """lab-out/report-plan3.txt in run_leak.py's form - every line shape copied from the real file, the numbers
+    this fixture's: a [registered] and an [added back] block per fund, the stress lab, the crash replays."""
+    pc, lc = (lambda v: f"{100 * v:+.3f}"), (lambda v: f"{100 * v:+.4f}")
+    out = ["lab/ margin, Leak Map, stress (EXPLORATORY). Short ATM straddle (R9), held to expiry.", ""]
+
+    def block(s, kind, n, ws, broker):
+        w5, w20 = ws["0.05"], ws["0.2"]
+        c = f"  {100 * w5['kept'] / w5['paper']:.1f} cents per $1" if w5["paper"] > 0 else "   not defined (paper <= 0)"
+        out.append(f"{s} [{kind}] n={n}  paper {pc(w5['paper'])}%/mo  kept {pc(w5['kept'])}%/mo  ->{c};  largest leak: spreads")
+        out.extend(f"      {k:<12} {lc(w5['leaks'][k][0])}%/mo  (orders: {lc(w5['leaks'][k][1])} to {lc(w5['leaks'][k][2])})"
+                   for k in rp.LEAKS)
+        for w, d in (("2.5", w5), ("10", w5), ("20", w20)):
+            out.append(f"      at w {w}%: paper {pc(d['paper'])} kept {pc(d['kept'])}%/mo; leaks " + ", ".join(
+                f"{k} {lc(d['leaks'][k][0])} ({lc(d['leaks'][k][1])}..{lc(d['leaks'][k][2])})" for k in rp.LEAKS))
+        out.append(f"      margin: w 2.5%: eff 1.25%, called in 0  w 5%: eff 2.50%, called in {w5['called']}  "
+                   f"w 10%: eff 5.00%, called in 2  w 20%: eff 10.00%, called in {w20['called']}")
+        if broker is not None:
+            out.append(f"      broker 25%/15%{broker}: kept {pc(w5['kept'])}%/mo, called in 0 at w 5%")
+
+    for s in rp.FUNDS:
+        block(s, "registered", _N[s], leak[s]["weights"], "")
+        if s in added:
+            block(s, "added back", added[s]["n"], added[s], " [added back]")
+        else:
+            block(s, "added back", _N[s], leak[s]["weights"], None)
+        out.append("")
+
+    def sline(x):
+        return (f"block {x['block']:.1f}  maxDD median {100 * x['dd50']:.1f}% p95 {100 * x['dd95']:.1f}% p99 61.0%  "
+                f"ES95 -5.00%  ES99 -7.50%  ruin(<$0.50) {100 * x['ruin']:.1f}%  worst month {100 * x['worst']:+.2f}%")
+
+    sens = "block sensitivity: b1: ruin 2.0%  b2: ruin 2.1%  b3: ruin 2.2%  b12: ruin 1.9%"
+    out.append("== stress lab: kept monthly returns at w = 5%, stationary bootstrap, 10,000 ten-year paths ==")
+    for s in rp.FUNDS:
+        st = leak[s]["stress"]
+        out += [f"  {s} {sline(st)} (x1.5: {150 * st['worst']:+.2f}%)", f"       {sens}"]
+        if s in add_stress:
+            out += [f"       [added back, n={add_stress[s]['n']}] {sline(add_stress[s])}", f"       [added back] {sens}"]
+        else:
+            out.append("       [added back] no excluded month to add back - identical to the registered sample")
+    out += ["", "== crash replays: kept return at w = 5% of every trade HELD during a stress month ==",
+            "  2018-02: " + "  ".join(f"{s} 01-22->02-16 -1.50%  {s} 02-20->03-16 +0.80%" for s in rp.FUNDS),
+            "  2020-03: " + "  ".join(f"{s} 02-24->03-20 {100 * v:+.2f}%  {s} 03-23->04-17 -2.00%" for s, v in covid.items())
+            + "   | added back: USO 03-23->04-17 +5.00%",
+            "", "Data provided by Databento (OPRA consolidated NBBO). Aggregates only. Cboe index levels: Cboe Global Markets."]
+    return "\n".join(out) + "\n"
+
+
+_sens = rp.sensitivity(_trades)
+check(f"the excluded-months sensitivity averages registered months, then all tradeable months, never USO's "
+      f"untradeable one ({_sens})", abs(_sens["GLD"][0] + 4.0) < 1e-9 and abs(_sens["USO"][0] - 7.0) < 1e-9
+      and abs(_sens["GLD"][1] - 100 * (123 * -0.04 + 4 * -0.16) / 127) < 1e-9
+      and abs(_sens["USO"][1] - 100 * (125 * 0.07 + 2 * 0.20) / 127) < 1e-9)
+_r3 = rp.strip_ratios(_trades)
+check(f"P3's medians use the registered trades only, never an excluded month's ratio of 1 ({_r3['SPY']:.2f}, {_r3['GLD']:.2f})",
+      all(abs(_r3[s] - sorted(_RATIO[s])[1]) < 1e-12 for s in rp.FUNDS))
+check("the trade's span is the registered trades': first and last entry, last expiry, 25 to 32 days held",
+      rp.span(_trades) == (_d(2016, 1, 19), _d(2026, 7, 20), _d(2026, 8, 21), 25, 32))
+
+_txt = _p3text(_leak, _ADDED, _ADD_STRESS, _COVID)
+_p3 = rp.plan3(_txt, _leak)
+check("the Plan 3 report parses: GLD and USO come back with all 127 months, USO keeping 56.9 cents; the others "
+      "have nothing to add back", sorted(_p3["added"]) == ["GLD", "USO"] and _p3["added"]["USO"]["n"] == 127
+      and abs(_p3["added"]["USO"]["0.05"]["paper"] - 0.0039) < 1e-9 and _p3["added"]["USO"]["0.05"]["cents"] == 56.9
+      and _p3["added"]["GLD"]["0.2"]["called"] == 22 and sorted(_p3["stress"]) == ["GLD", "USO"]
+      and abs(_p3["stress"]["GLD"]["ruin"] - 0.35) < 1e-12)
+check("...and the COVID trade is each fund's first one held through March 2020 (24 Feb to 20 Mar), never the "
+      "second or the added-back one", _p3["covid"]["SPY"][:2] == ((2, 24), (3, 20))
+      and all(abs(_p3["covid"][s][2] - _COVID[s]) < 1e-12 for s in rp.FUNDS))
+for _why, _old, _new, _want in (
+        ("a registered line that no longer matches leak_summary.json (a stale report)",
+         "SPY [registered] n=127  paper +0.400", "SPY [registered] n=127  paper +0.410", "registered SPY line at w = 0.05"),
+        ("a stress line that no longer matches it", "ruin(<$0.50) 2.0%", "ruin(<$0.50) 3.0%", "registered SPY stress line"),
+        ("a missing block", "QQQ [added back]", "QQQ [added]", "added back block for QQQ is missing"),
+        ("added-back figures that differ though no month was excluded",
+         "SPY [added back] n=127  paper +0.400", "SPY [added back] n=127  paper +0.401", "SPY has no excluded month"),
+        ("an added-back sample smaller than the registered one", "USO [added back] n=127", "USO [added back] n=120", "smaller"),
+        ("added-back figures that do not add up", "USO [added back] n=127  paper +0.390%/mo  kept +0.222",
+         "USO [added back] n=127  paper +0.390%/mo  kept +0.232", "USO added back, w = 0.05: kept plus the four leaks"),
+        ("added-back cents that do not follow from its returns", "56.9 cents", "58.9 cents", "cents kept do not follow"),
+        ("a crash replay without one fund's COVID trade", "GLD 02-24->03-20", "GLD 02-25->03-20", "March 2020 crash replay"),
+        ("a block printed twice, whose lines would mix with the first's", "QQQ [registered]", "SPY [registered]",
+         "registered block for SPY appears twice"),
+        ("a stress line printed twice", "  QQQ block 1.0", "  SPY block 1.0", "registered stress line for SPY appears twice")):
+    _bad = _txt.replace(_old, _new, 1)
+    check(f"the report is refused for {_why}", _bad != _txt and _want in (_stop(rp.plan3, _bad, _leak) or ""))
+_bad = _txt.replace("       [added back] no excluded month to add back - identical to the registered sample\n", "", 1)
+check("...and for a fund with nothing to add back whose stress lab does not say so",
+      _bad != _txt and "SPY has no excluded month" in (_stop(rp.plan3, _bad, _leak) or ""))
+_t126 = _txt.replace("SPY [registered] n=127", "SPY [registered] n=126").replace("SPY [added back] n=127", "SPY [added back] n=126")
+_p126 = rp.plan3(_t126, _leak) if _stop(rp.plan3, _t126, _leak) is None else None
+check("Plan 3, the break-even summary and trades.csv must count the same months: a report whose two SPY blocks both "
+      "say 126 parses, and the page refuses it", _p126 is not None and _p126["n"]["SPY"] == 126
+      and "SPY: the inputs count different months" in (_stop(rp.page, _leak, _be, _trades, _p126) or ""))
+check("...and refuses a trades.csv missing one registered month",
+      "QQQ: the inputs count different months" in (_stop(rp.page, _leak, _be, [t for t in _trades if not (
+          t["symbol"] == "QQQ" and t["entry"] == "2021-06-21")], _p3) or ""))
+check("...and one with a tradeable excluded month on a fund the report says has nothing to add back",
+      "SPY: the inputs count different months" in (_stop(rp.page, _leak, _be, _trades + [dict(
+          _trades[0], entry="2015-03-02", expiry="2015-03-20", registered="0")], _p3) or ""))
+
+_pg = rp.page(_leak, _be, _trades, _p3)
+check("known answer: paper 0.4%, spreads 0.012% and commissions 0.008% -> 95.0 cents kept, 3.0 and 2.0 leaked, "
+      "each part its true share of the bar's width", '<span class="lm-v">95.0¢</span>' in _pg
+      and 'style="width:95.00%"' in _pg and 'style="width:3.00%"' in _pg and 'style="width:2.00%"' in _pg)
+check("the bar names its parts for a screen reader", 'aria-label="SPY, premium 5% of the account: 95.0¢ kept; '
+      '3.0¢ spreads; 2.0¢ commissions; +0.400% paper return a month"' in _pg)
+check("a fund with no paper profit is listed, never drawn, and its table rows say why", "no paper dollar to keep" in _pg
+      and _pg.count('class="lm-row"') == 4 and _pg.count("no paper profit, so nothing kept to share out") == 4)
+check("at 20% each margin share shows its range over the 24 orders: limits -10.0 (-15.0 to -5.0), "
+      "liquidation +20.0 (+10.0 to +30.0)", "−10.0 <span class=\"rg\">(−15.0 to −5.0)</span>" in _pg
+      and "+20.0 <span class=\"rg\">(+10.0 to +30.0)</span>" in _pg)
+check("the excluded months come back beneath GLD and USO in both leak tables and the stress table, and the "
+      "Leak Map's caption says what they change", _pg.count("GLD, all 127 months") == 3
+      and _pg.count("USO, all 127 months") == 3 and "With its 2 excluded months added back, USO keeps 56.9 cents." in _pg
+      and "With its 4 excluded months added back, GLD still has no paper profit." in _pg
+      and "with its 4 gold-rally months back" in _pg)
+check("at 20% the text names where forced liquidation leads (SPY and QQQ) and where it left more than the paper "
+      "trade made (IWM, 128 cents)", "forced liquidation became the largest leak on SPY and QQQ." in _pg
+      and 'On IWM the same rule cut losses that kept growing, so the seller kept <span class="m">128</span>' in _pg)
+check("the COVID sentence names the three largest losses, in fund order",
+      'cost SPY <span class="m">10.0%</span>, IWM <span class="m">12.0%</span> and USO <span class="m">11.0%</span> '
+      "of the account" in _pg and "(24 February to 20 March 2020)" in _pg)
+check("the trade's dates on the page are the registered trades' own",
+      "The first entry was on 19 January 2016, the last on 20 July 2026, expiring 21 August 2026." in _pg
+      and "(25 to 32 days)" in _pg)
+check("SPY's fitted line is the one its months give (slope -0.1 through 18) and is drawn",
+      abs(rp.fit_slope("SPY", _be["SPY"]) + 0.1) < 1e-12 and _pg.count('class="fit"') == 5)
+check("a crossing outside its own interval is said to be, and one beyond the axis is written at its edge",
+      "Crosses zero at 9.7, outside its own interval" in _pg and ">← 9.7</text>" in _pg)
+check("the predictions table carries each claim word for word, the logged verdicts and the evidence",
+      all(_html.escape(c[0].upper() + c[1:]) in _pg for c in rp.CLAIMS.values()) and _pg.count("Tested, fails") == 2
+      and "No fund keeps under 50 cents" in _pg and "5 of 5 funds, 2.0 to 3.2 times" in _pg
+      and "Rises on 1 of 5 (GLD)" in _pg and "SPY 95 highest, USO 58 lowest" in _pg)
+_b5 = _copy.deepcopy(_be)
+_b5["SPY"]["p4_slope"] = [-2e-4, -3e-4, -1e-4]
+_p4n = _page(_leak, _b5, _trades, _p3)
+check("P4's evidence states the registered test and claims no proportional widening: with the others' intervals "
+      "around zero it says so; a significantly falling slope leaves the verdict alone and is not called flat",
+      "lies wholly above zero only there; on the others it includes zero" in _pg and "in step" not in _pg
+      and "Rises on 1 of 5 (GLD)" in _p4n and "the others do not pass it" in _p4n and "includes zero" not in _p4n)
+check("the equity funds' spread cost is bounded without overstating: its peak is 0.09, so 'at or below 0.09', "
+      "never 'under'", 'stays at or below <span class="m">0.09</span> of a point' in _pg and "stays under" not in _pg)
+_bn = _copy.deepcopy(_be)
+_bn["SPY"]["ci"], _bn["QQQ"]["crossing"] = None, None
+_pn = _page(_leak, _bn, _trades, _p3)
+check("on the page, a crossing without an interval and an interval without a crossing each render as what they "
+      "are, and the text counts only the intervals there are",
+      "<b>SPY</b> on VIX (9.4 to 66.0 in the data). Crosses zero at 18.0; no interval;" in _pn
+      and "<b>QQQ</b> on VXN (9.4 to 66.0 in the data). No crossing inside the data; 90% interval 12.0 to 30.0;" in _pn
+      and ('crosses zero for 4 of 5 funds, but its 90% interval is <span class="m">18</span> index points wide '
+           "(SPY has no interval)") in _pn and _pn.count('class="fit"') == 4)
+check("every section with a figure credits Databento, and the page marks itself in the navigation",
+      all(rp.CREDIT in p for p in _pg.split("<figure")[1:]) and 'here: "lab"' in _pg and '["Lab", "lab.html", "lab"]' in _pg)
+
+_m = _copy.deepcopy(_leak)
+_m["SPY"]["weights"]["0.05"] = _lw(0.004, 0.00012, 0.00008, liq=0.0001)
+check("a margin leak at 5% stops the Leak Map rather than draw a bar that is not one paper dollar",
+      "a liquidation leak at w = 5%" in (_stop(rp.leak_map, _m, {}) or ""))
+_m["SPY"]["weights"]["0.05"] = _lw(0.004, 0.00012, 0.00008)
+_m["SPY"]["weights"]["0.05"]["leaks"]["limits"] = [0.0, -0.0001, 0.0001]
+check("...and so does a margin leak that is zero on average but not in every order",
+      "a limits leak at w = 5%" in (_stop(rp.leak_map, _m, {}) or ""))
+_m["SPY"]["weights"]["0.05"] = _lw(0.004, 0.00012, 0.00008, called=1)
+check("...and a margin call at 5%", "a margin call at w = 5%" in (_stop(rp.leak_map, _m, {}) or ""))
+_m["SPY"]["weights"]["0.05"] = _lw(0.004, 0.005, 0.00008)
+check("...and a negative part (kept, when the spreads exceed the paper return)", "a negative part" in (_stop(rp.leak_map, _m, {}) or ""))
+_m["SPY"]["weights"]["0.05"] = _lw(0.004, 0.00012, 0.00008)
+_m["SPY"]["weights"]["0.05"]["kept"] += 1e-6
+check("...and parts that do not add up to the paper return", "is not the paper return" in (_stop(rp.leak_map, _m, {}) or ""))
+_m = _copy.deepcopy(_leak)
+_m["SPY"]["weights"]["0.05"]["leaks"]["spreads"] = [0.00012, 0.0001, 0.00014]
+check("...and spreads whose share changes with the order, which the caption says cannot happen at this size",
+      "the spreads share differs across the 24 orders" in (_stop(rp.leak_map, _m, {}) or ""))
+_m = _copy.deepcopy(_leak)
+_m["GLD"]["weights"]["0.05"] = _lw(-0.002, 0.0001, 0.00008, liq=0.0001)
+check("...and a margin leak on the fund with no paper profit, which is listed, not drawn, but which the caption "
+      "covers too", "GLD: a liquidation leak at w = 5%" in (_stop(rp.leak_map, _m, {}) or ""))
+_a = _copy.deepcopy(_p3["added"])
+_a["USO"]["0.05"]["called"] = 1
+check("...and a margin call in an added-back sample, shown in the figure's own table",
+      "USO added back: a margin call at w = 5%" in (_stop(rp.leak_map, _leak, _a) or ""))
+_k5 = {s: 100 * _leak[s]["weights"]["0.05"]["kept"] / _leak[s]["weights"]["0.05"]["paper"] for s in rp.FUNDS if s != "GLD"}
+check("the fixture gives the logged verdicts (P1 fails, P2 and P3 hold, P4 fails, P5 holds)",
+      _stop(rp.predictions, _leak, _be, _k5, _r3) is None)
+check("summaries that would turn P5 (USO no longer lowest) stop the page: the logged verdict stands",
+      "judge P5 differently" in (_stop(rp.predictions, _leak, _be, {**_k5, "USO": 99.0}, _r3) or ""))
+_b4 = _copy.deepcopy(_be)
+for _s in rp.FUNDS:
+    _b4[_s]["p4_slope"] = [2e-4, 1e-4, 3e-4]
+check("...and so do summaries that would turn P4", "judge P4 differently" in (_stop(rp.predictions, _leak, _b4, _k5, _r3) or ""))
+_p3b = _copy.deepcopy(_p3)
+_p3b["stress"]["GLD"]["ruin"] = 0.25
+check("summaries that no longer fit a sentence stop the page and name the sentence",
+      "materially worse" in (_stop(rp.premises, _leak, _be, _k5, _p3b, _sens) or ""))
+_l20 = _copy.deepcopy(_leak)
+_l20["SPY"]["weights"]["0.2"]["called"] = 12
+check("...margin calls in fewer than one month in ten at 20% are not 'often'",
+      "margin calls came often" in (_stop(rp.premises, _l20, _be, _k5, _p3, _sens) or ""))
+_bf = _copy.deepcopy(_be)
+_bf["SPY"]["net_bins"][2][1] = 1.5
+check("...and SPY's middle groups less than two points apart do not 'swing by several volatility points'",
+      "swings by several volatility points" in (_stop(rp.premises, _leak, _bf, _k5, _p3, _sens) or ""))
+_bs = _copy.deepcopy(_be["SPY"])
+_bs["vix_axis"]["slope"] += 1e-6
+check("a stored VIX fit the quintile table does not give stops the chart",
+      "is not the stored fit" in (_stop(rp.fit_slope, "SPY", _bs) or ""))
+_bs = dict(_be["SPY"], n_month=128)
+check("...and so does a quintile table that does not hold every month traded",
+      "not the 128 traded" in (_stop(rp.fit_slope, "SPY", _bs) or ""))
+check("a crossing without an interval keeps its point estimate",
+      "Crosses zero at 18.0; no interval; 10% of resamples" in rp.be_caption("SPY", dict(_be["SPY"], ci=None)))
+check("an interval without a crossing is still reported, and no crossing is invented",
+      "No crossing inside the data; 90% interval 12.1 to 27.6; 10% of resamples"
+      in rp.be_caption("SPY", dict(_be["SPY"], crossing=None))
+      and "No crossing inside the data; no interval; 10% of resamples" in rp.be_caption("SPY", dict(_be["SPY"], crossing=None, ci=None)))
+
+_od, _real_out = Path(__import__("tempfile").mkdtemp()), rp.OUT_DIR
+rp.OUT_DIR = _od
+try:
+    check("with no summaries on the machine (a fresh clone, CI) there is nothing to render", rp.render() is None)
+    (_od / "leak_summary.json").write_text(_json.dumps(_leak))
+    check("some summaries without the rest is a broken setup, not a fresh clone: it stops and names what is missing",
+          "missing breakeven_summary.json, trades.csv, report-plan3.txt" in (_stop(rp.render) or ""))
+    (_od / "breakeven_summary.json").write_text(_json.dumps(_be))
+    with open(_od / "trades.csv", "w", newline="") as _f:
+        _w = _csv.DictWriter(_f, fieldnames=list(_trades[0]))
+        _w.writeheader()
+        _w.writerows(_trades)
+    (_od / "report-plan3.txt").write_text(_txt)
+    check("from the four files on disk, render() gives exactly the page the parts give", rp.render() == _pg)
+finally:
+    rp.OUT_DIR = _real_out
+
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)

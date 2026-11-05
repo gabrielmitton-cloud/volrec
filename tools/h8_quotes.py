@@ -14,7 +14,8 @@ Per PROTOCOL.md this file exists BEFORE any registration: it measures, on data a
   - the arithmetic:  T, day-to-day autocorrelation, n_eff = T(1-rho)/(1+rho), and the smallest
                      effect found 80% of the time, about 2.8 sd/sqrt(n_eff)
 and carries the equivalence test the registration will name (two one-sided tests against +/-bound,
-Newey-West standard error). Nothing here is a verdict.
+Newey-West standard error, fixed-b one-sided p-values with t(T-1)'s beside, lag by `lag_for`; the
+4 Nov 2026 decision, H8-DRAFT.md item 2). Nothing here is a verdict.
 
     VOLREC_DATABENTO_DIR=~/Documents/volrec-licensed/opra FRED_KEY=use-cache python tools/h8_quotes.py
 
@@ -33,7 +34,7 @@ os.environ.setdefault("FRED_KEY", "use-cache")
 
 import modelfree                                   # noqa: E402
 import opra_reference as ore                       # noqa: E402
-from analyze import newey_west, t_pvalue           # noqa: E402
+from analyze import fixed_b_null, newey_west, t_pvalue   # noqa: E402
 
 FUNDS = ("SPY", "QQQ", "IWM", "GLD", "USO", "TSLA", "NVDA", "AAPL")   # surface.py's SURFACE
 NEXT_MINUTE = timedelta(seconds=60)
@@ -65,23 +66,39 @@ def mde(sd, neff):
     return 2.8 * sd / math.sqrt(neff) if neff and neff > 0 else float("nan")
 
 
-def tost(d, bound, lag):
+def lag_for(T):
+    """The Newey-West lag the registration fixes as a rule (decided 4 Nov 2026, H8-DRAFT.md item 2): the
+    whole number nearest 1.3*sqrt(T), T = the fund's measured days (Lazarus, Lewis, Stock and Watson
+    2018). 8 at T = 41, 7 at T = 30."""
+    return math.floor(1.3 * math.sqrt(T) + 0.5)
+
+
+H8_REPS = 200_000     # H8's own fixed-b draw count (4 Nov 2026, after Astra's review); same seed, and the
+                      # shared default of 4,000 stays for every registered figure
+
+
+def tost(d, bound, lag, reps=H8_REPS):
     """Equivalence by two one-sided tests: is the mean of d inside (-bound, +bound)?
-    Newey-West (Bartlett) standard error; one-sided p from t(T-1). Equivalent at 5% when BOTH
-    one-sided p are below 0.05. Returns (mean, se, p_lower, p_upper, equivalent).
-    Open for the registration: the lag (Lazarus et al. 2018 suggest 1.3*sqrt(T), ~5-8 here) and
-    fixed-b critical values (analyze.fixed_b_pvalue) in place of t(T-1)."""
+    Newey-West (Bartlett) standard error. Each one-sided p is FIXED-b (decided 4 Nov 2026): the share
+    of analyze.fixed_b_null's draws at this T and lag at or beyond the statistic, in the direction
+    tested (Kiefer and Vogelsang 2005; iid Gaussian, seeded; at H8's 200,000 draws a p near 0.05 carries
+    a simulation error of about 0.0005). t(T-1)'s one-sided p comes beside each, never in its place.
+    Equivalent at 5% when BOTH fixed-b p are below 0.05.
+    Returns (mean, se, p_lower, p_upper, equivalent, p_lower_t, p_upper_t)."""
     mu, se, _t, _p = newey_west(d, lag)
     # newey_west floors the variance at 1e-18, so a constant series gets se ~1e-9 and any bound
     # would pass. Real gaps always vary; a series that does not means the instrument is broken.
     if not (se and math.isfinite(se) and se > 1e-8):
-        return mu, se, float("nan"), float("nan"), False
+        return mu, se, float("nan"), float("nan"), False, float("nan"), float("nan")
     T = len(d)
-    t_lo = (mu + bound) / se            # H0: mu <= -bound
-    t_hi = (mu - bound) / se            # H0: mu >= +bound
-    p_lo = t_pvalue(t_lo, T - 1) / 2 if t_lo > 0 else 1 - t_pvalue(t_lo, T - 1) / 2
-    p_hi = t_pvalue(t_hi, T - 1) / 2 if t_hi < 0 else 1 - t_pvalue(t_hi, T - 1) / 2
-    return mu, se, p_lo, p_hi, (p_lo < 0.05 and p_hi < 0.05)
+    t_lo = (mu + bound) / se            # H0: mu <= -bound, rejected when t_lo is large
+    t_hi = (mu - bound) / se            # H0: mu >= +bound, rejected when t_hi is small
+    null = fixed_b_null(T, lag, reps)
+    p_lo = sum(x >= t_lo for x in null) / len(null)
+    p_hi = sum(x <= t_hi for x in null) / len(null)
+    pt_lo = t_pvalue(t_lo, T - 1) / 2 if t_lo > 0 else 1 - t_pvalue(t_lo, T - 1) / 2
+    pt_hi = t_pvalue(t_hi, T - 1) / 2 if t_hi < 0 else 1 - t_pvalue(t_hi, T - 1) / 2
+    return mu, se, p_lo, p_hi, (p_lo < 0.05 and p_hi < 0.05), pt_lo, pt_hi
 
 
 # ---------------- one fund, one day ----------------

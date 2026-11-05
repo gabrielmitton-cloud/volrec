@@ -457,13 +457,22 @@ ok(_t7.returncode == 0 and _n7f == 0 and _n7p >= 22, f"H7's reader tests pass ({
 _t8 = _sp.run([sys.executable, str(R / "tools/test_h8.py")], capture_output=True, text=True)
 _n8f = sum(1 for _ln in _t8.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _n8p = sum(1 for _ln in _t8.stdout.splitlines() if _ln.strip().startswith("PASS"))
-ok(_t8.returncode == 0 and _n8f == 0 and _n8p >= 26, f"H8's instrument tests pass ({_n8p} cases, {_n8f} failures)")
+ok(_t8.returncode == 0 and _n8f == 0 and _n8p >= 36, f"H8's instrument tests pass ({_n8p} cases, {_n8f} failures)")
+# The index-timing reader (EXPLORATORY, 4 Nov 2026; docs/drafts/2026-11-04-index-timing-plan.md): the seal and
+# every sealed day file present, the ts_event + 1 s <= T rule, the same-day and 60-second rules, OVX and GVZ
+# only, the exact split, the frozen rate and the reference run's exit code, and the refusal before both
+# verdicts, on SYNTHETIC files in DBIX's recorded layout. The sealed files are never read here.
+_ti = _sp.run([sys.executable, str(R / "tools/test_index_timing.py")], capture_output=True, text=True)
+_ntif = sum(1 for _ln in _ti.stdout.splitlines() if _ln.strip().startswith("FAIL"))
+_ntip = sum(1 for _ln in _ti.stdout.splitlines() if _ln.strip().startswith("PASS"))
+ok(_ti.returncode == 0 and _ntif == 0 and _ntip >= 63,
+   f"the index-timing reader's tests pass ({_ntip} cases, {_ntif} failures)")
 # lab/ (EXPLORATORY side project, 12 Oct 2026): known answers for costs, integrity and margin; its
 # own purchase cap; its dates (never inside a registered window); its data folder outside this repo.
 _tl = _sp.run([sys.executable, str(R / "lab/test_lab.py")], capture_output=True, text=True)
 _nlf = sum(1 for _ln in _tl.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _nlp = sum(1 for _ln in _tl.stdout.splitlines() if _ln.strip().startswith("PASS"))
-ok(_tl.returncode == 0 and _nlf == 0 and _nlp >= 49, f"lab/ tests pass ({_nlp} cases, {_nlf} failures)")
+ok(_tl.returncode == 0 and _nlf == 0 and _nlp >= 211, f"lab/ tests pass ({_nlp} cases, {_nlf} failures)")
 # Phone alerts and the recorders' guard (15 Oct 2026, Gabriel: Pushover; "many times we have skipped
 # over issues because of false positives"). The policy is in tools/guard.py; its tests are the proof.
 _tg = _sp.run([sys.executable, str(R / "tools/test_guard.py")], capture_output=True, text=True)
@@ -1201,13 +1210,15 @@ ok("migrate_header()" in msrc[msrc.find("def append"):msrc.find("def probe")],
    "migrate_header runs inside append(), i.e. only when rows exist")
 ok("already_recorded" in msrc, "idempotent: re-running the same day cannot duplicate")
 
-print("\n=== K. PUBLIC SITE (index.html, tools/monitor.html, tools/volrec.js) ===")
+print("\n=== K. PUBLIC SITE (index.html, tools/monitor.html, tools/lab.html, tools/volrec.js) ===")
 site = (R / "tools/volrec.js").read_text()
 mon = (R / "tools/monitor.html").read_text()
 idx = (R / "index.html").read_text()
+lab = (R / "tools/lab.html").read_text(encoding="utf-8")
 ok("h.forEach((k,i)=>o[k]=c[i])" in site, "parses by header NAME, not position")
 ok("split(/\\r?\\n/)" in site, "handles CRLF")
-ok('src="volrec.js"' in mon and 'src="tools/volrec.js"' in idx, "both pages load the shared runtime")
+ok('src="volrec.js"' in mon and 'src="tools/volrec.js"' in idx and 'src="volrec.js"' in lab,
+   "every page loads the shared runtime")
 _js = lambda name: re.findall(r'"([A-Z.]+)"', re.search(re.escape(name) + r"\s*=\s*\[(.*?)\]", site, re.S).group(1))
 ok(sorted(_js("V.WATCHLIST")) == sorted(syms) and len(_js("V.WATCHLIST")) == len(syms),
    "site watchlist matches record.py (a new ticker would otherwise show as absent)")
@@ -1225,7 +1236,7 @@ ok(f'V.SURFACE_START = "{int(_start[0]):04d}-{int(_start[1]):02d}-{int(_start[2]
 # Disclosure is the opposite of a violation, so only executable code is inspected.
 def _scripts(html):
     return " ".join(re.findall(r"<script\b[^>]*>(.*?)</script>", html, re.S | re.I))
-_code = site + _scripts(idx) + _scripts(mon)
+_code = site + _scripts(idx) + _scripts(mon) + _scripts(lab)
 ok(not re.search(r"bloomberg|omon|\bIVM\b|\.xlsx|surface_wide", _code, re.I),
    "the site's code loads no Bloomberg data (and not the unregistered wide file)")
 _fetches = set(re.findall(r"data/[A-Za-z0-9_.-]+\.(?:csv|json)", _code))
@@ -1249,7 +1260,7 @@ _uncited_sec = [m.group(1)[:40] for m in re.finditer(r"<section\b[^>]*>(.*?)</se
 ok(not _uncited_sec, f"no section of the page states a Bloomberg-related figure without the "
                      f"attribution ({_uncited_sec or 'none'})")
 _raw = re.findall(r"\b[A-Z]{1,5} \d{1,2}/\d{1,2}/\d{2} [CP]\d|\bIFwd\b|\bIVM\b|\bIBrw\b|\bOMON\b",
-                  idx + mon)
+                  idx + mon + lab)
 ok(not _raw, f"no raw Bloomberg data on the site: no terminal tickers, IVM, IFwd, IBrw or "
              f"OMON fields ({_raw[:3] or 'none'})")
 # 23 Sep 2026: the site also publishes OPRA-derived aggregates, under Databento's User
@@ -1271,10 +1282,138 @@ ok(not _uncredited, f"no section of the page states a Databento-derived figure w
                     f"credit ({_uncredited or 'none'})")
 ok(not re.search(r"databento|cbbo|\bopra\b", _code, re.I),
    "the site's code loads no OPRA data")
-_osi = re.findall(r"\b[A-Z]{1,6}\s*\d{6}[CP]\d{8}\b", idx + mon)
+_osi = re.findall(r"\b[A-Z]{1,6}\s*\d{6}[CP]\d{8}\b", idx + mon + lab)
 ok(not _osi, f"no raw OPRA data on the site: no option symbol ({_osi[:3] or 'none'})")
 ok("DGS1MO" in idx and "VIXCLS" in idx and "retrieved from FRED" in idx,
    "the site cites both FRED series in FRED's own form")
+# 4 Nov 2026: the Lab page publishes the lab/ side study's aggregates (OPRA via Databento), generated by
+# lab/report.py from the private summaries once Cboe had granted permission and Gabriel had said yes. The
+# OPRA section's rules hold for the whole page, every section and every figure; and the page is exactly
+# what the generator gives, so a hand edit or a stale render shows up here, not in public.
+_lab_text = lambda h: re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", h))
+_lab_parts = [m.group(1) for tag in ("section", "figure")
+              for m in re.finditer(rf"<{tag}\b[^>]*>(.*?)</{tag}>", lab, re.S)]
+# Every part, not only those with a decimal, a cent or a per cent sign: whole numbers are figures too (Astra,
+# 4 Nov 2026 - "127 months" or "2,000 resamples" passed the first version uncredited).
+_lab_bare = [_lab_text(p_)[:48] for p_ in _lab_parts if _DB not in p_]
+ok(len(_lab_parts) >= 12 and not _lab_bare,
+   f"every section and every figure of the Lab page credits Databento, whole numbers included "
+   f"({len(_lab_parts)} parts; uncredited: {_lab_bare or 'none'})")
+ok("Aggregates only" in lab and "Cboe index levels: Cboe Global Markets" in lab and "Alpaca Markets" in lab,
+   "the Lab page says aggregates only and credits Cboe and Alpaca")
+_lab_nav = {"index.html": '["Lab", "tools/lab.html", "lab"]', "tools/monitor.html": '["Lab", "lab.html", "lab"]',
+            "tools/lab.html": '["Lab", "lab.html", "lab"]'}
+ok(all(v in (R / k).read_text(encoding="utf-8") for k, v in _lab_nav.items()) and 'here: "lab"' in lab,
+   "every page's navigation reaches the Lab page, and the Lab page marks itself current")
+_lrs = _iu.spec_from_file_location("_lab_report", R / "lab/report.py")
+_lrm = _iu.module_from_spec(_lrs); _lrs.loader.exec_module(_lrm)
+# The page's figures come from the private summaries, which a fresh clone (or CI) does not have. What any clone
+# can do is hold each figure to the one lab/REGISTRATION.md logged for the SAME fund and the SAME measure: a figure
+# found anywhere in the registration proves nothing about the sentence it sits in (Astra, 4 Nov 2026). Each
+# extraction must find every fund it expects, so a pattern that stops matching fails rather than passes empty.
+_lreg = re.sub(r"\s+", " ", (R / "lab/REGISTRATION.md").read_text())
+_g1 = lambda pat, t: (re.search(pat, t) or [None, ""])[1]
+_lab_cut = lambda anchor: lab[lab.find(anchor):lab.find("</table>", lab.find(anchor))] if anchor in lab else ""
+_F4, _F5 = {"SPY", "QQQ", "IWM", "USO"}, {"SPY", "QQQ", "IWM", "GLD", "USO"}
+_rk = dict(re.findall(r"(SPY|QQQ|IWM|USO) ([\d.]+)", _g1(r"cents kept per \$1 of paper return:\*\* (.*?) \(", _lreg)))
+# A bar's value is read inside its own row (lm-k, then its lm-bar, then its lm-v): GLD's row has no bar, and a
+# looser pattern ran on into USO's row and read USO's figure as GLD's.
+_pk = dict(re.findall(r'<span class="lm-k">(\w+)</span><span class="lm-bar">.*?</span><span class="lm-v">([\d.]+)¢</span>', lab))
+_rg = _g1(r"GLD undefined \(paper -([\d.]+)%/mo\)", _lreg)
+ok(set(_rk) == _F4 and _pk == _rk and bool(_rg)
+   and f'<span class="lm-k">GLD</span><span class="lm-note">lost {float(_rg or 0):.2f}% of the account a month' in lab,
+   f"the Leak Map's cents kept are the registration's, fund by fund, and GLD is listed with its logged loss, "
+   f"never drawn ({_pk})")
+_rc = dict(re.findall(r"(SPY|QQQ|IWM|GLD|USO) -([\d.]+)%", _g1(r"COVID trade \(24 Feb -> 20 Mar 2020\): (.*?) of capital", _lreg)))
+_cm = re.search(r"the COVID trade \(([^)]*)\) cost (.*?) of the account", lab)
+_pc = dict(re.findall(r'(SPY|QQQ|IWM|GLD|USO) <span class="m">([\d.]+)%</span>', _cm.group(2))) if _cm else {}
+ok(set(_rc) == _F5 and _cm is not None and _cm.group(1) == "24 February to 20 March 2020"
+   and set(_pc) == set(sorted(_rc, key=lambda s_: -float(_rc[s_]))[:3]) and all(_pc[s_] == _rc[s_] for s_ in _pc),
+   f"the COVID sentence names the registration's three largest COVID losses, each with its own logged figure ({_pc})")
+_t3 = _lab_cut("Table 3")
+_st3 = {r_[0]: r_[1:] for r_ in re.findall(r'<tr><td>(SPY|QQQ|IWM|GLD|USO)</td><td class="r">([\d.]+)</td>'
+                                            r'<td class="r">([\d.]+)</td><td class="r">([\d.]+)</td>', _t3)}
+_rdd = dict(re.findall(r"(SPY|QQQ|IWM|GLD|USO) ([\d.]+)%", _g1(r"median max drawdown (.*?); P\(equity", _lreg)))
+_rru = dict(re.findall(r"(SPY|QQQ|IWM|GLD|USO) ([\d.]+)%",
+                       _g1(r"P\(equity < \$0\.50 within ten years\) (.*?) \(conditional", _lreg)))
+ok(set(_st3) == set(_rdd) == set(_rru) == _F5 and all(_st3[s_][0] == _rdd[s_] and _st3[s_][2] == _rru[s_] for s_ in _F5),
+   "Table 3's median drawdown and chance of falling below half are the registration's, fund by fund")
+_ra = re.search(r"GLD \(n=(\d+)\) median max drawdown ([\d.]+)% \(registered [\d.]+%\), p95 ([\d.]+)% \(([\d.]+)%\), "
+                r"P\(equity < \$0\.50\) ([\d.]+)% \([\d.]+%\); USO \(n=(\d+)\) ([\d.]+)% \([\d.]+%\), ([\d.]+)% \(([\d.]+)%\), "
+                r"([\d.]+)% \([\d.]+%\)", _lreg)
+_pa3 = {r_[0]: r_[1:] for r_ in re.findall(r'<tr class="ab"><td><span class="abl">(GLD|USO), all (\d+) months</span></td>'
+                                            r'<td class="r">([\d.]+)</td><td class="r">([\d.]+)</td><td class="r">([\d.]+)</td>', _t3)}
+ok(_ra is not None and set(_pa3) == {"GLD", "USO"}
+   and _pa3["GLD"] == (_ra[1], _ra[2], _ra[3], _ra[5]) and _pa3["USO"] == (_ra[6], _ra[7], _ra[8], _ra[10])
+   and _st3.get("GLD", ("", ""))[1] == _ra[4] and _st3.get("USO", ("", ""))[1] == _ra[9],
+   "Table 3's added-back GLD and USO rows are the registration's (months, drawdowns, chance), and so are their "
+   "registered 1-in-20 drawdowns")
+_t1 = _lab_cut("Table 1")
+_p20 = {r_[0]: r_[1:] for r_ in re.findall(r'<tr><td>(SPY|QQQ|IWM|GLD|USO)</td><td class="r">([^<]*)</td>'
+                                            r'<td class="k r">[^<]*</td><td class="r">(\d+) of (\d+)</td>', _t1)}
+_rcl = dict(re.findall(r"(SPY|QQQ|IWM|GLD|USO) (\d+)", _g1(r"Called months at 20%: (.*?) of ~", _lreg)))
+ok(set(_p20) == set(_rcl) == _F5 and all(_p20[s_][1] == _rcl[s_] for s_ in _F5)
+   and _p20["SPY"][0] == _g1(r"SPY paper ([+-][\d.]+) -> kept", _lreg),
+   f"Table 1's months with a margin call at 20% are the registration's, fund by fund, and so is SPY's paper return there "
+   f"({ {s_: v_[1] for s_, v_ in _p20.items()} })")
+# The key numbers: each value is read with the label in its own card, so a figure under another fund's or measure's
+# label fails. The first version found SPY's COVID loss anywhere in a value cell, and "QQQ's COVID month" above it
+# would have passed (Astra's follow-up, 4 Nov 2026).
+_kpi = re.findall(r'<div class="kpi-k">([^<]*)</div><div class="kpi-v">([^<]*)</div>', lab)
+_keq = [float(_rk.get(s_, "nan")) for s_ in ("SPY", "QQQ", "IWM")]
+_kru = [float(v_) for v_ in _rru.values()] or [float("nan")]
+_kwant = [("Kept on SPY, QQQ, IWM", f"{min(_keq):.0f}–{max(_keq):.0f}¢"), ("Kept on USO", f"{float(_rk.get('USO', 'nan')):.0f}¢"),
+          ("SPY at 20% of the account", f"{_rcl.get('SPY')} of {_p20.get('SPY', ('', '', ''))[2]}"),
+          ("SPY's COVID month", f"−{_rc.get('SPY')}%"), ("Chance of falling below half", f"{min(_kru):.1f}–{max(_kru):.1f}%")]
+ok(_kpi == _kwant, f"every key number at the top of the Lab page sits under its own label and is the registration's "
+   f"figure for that fund and measure ({_kpi})")
+_cap = {m_[0]: m_[1:] for m_ in re.findall(
+    r"<b>(\w+)</b> on (\w+) \([\d.]+ to [\d.]+ in the data\)\. Crosses zero at ([\d.]+)(, outside its own interval)?; "
+    r"90% interval ([\d.]+) to ([\d.]+); (\d+)% of resamples", lab)}
+_rx = {m_[0]: m_[1:] for m_ in re.findall(
+    r"(SPY|QQQ|IWM|GLD|USO) (?:crossing )?(VIX|VXN|RVX|GVZ|OVX) ([\d.]+) \((?:90% |interval )?([\d.]+)\.\.([\d.]+)"
+    r"( excludes it)?; (\d+)(?: of 2,000 resamples out of range| out)\)", _lreg)}
+ok(set(_cap) == set(_rx) == _F5 and all(
+       _cap[s_][:2] == _rx[s_][:2] and _cap[s_][3:5] == _rx[s_][2:4] and bool(_cap[s_][2]) == bool(_rx[s_][4])
+       and _cap[s_][5] == f"{100 * int(_rx[s_][5]) / 2000:.0f}" for s_ in _F5),
+   "every Break-Even caption has the registration's index, crossing, 90% interval and share of resamples outside, "
+   "and says so only where the interval excludes the crossing")
+_ru = re.search(r"added-back USO line: paper ([+-][\d.]+)%/mo, kept [+-][\d.]+%/mo, ([\d.]+) cents per \$1", _lreg)
+_pu = re.search(r'<span class="abl">USO, all \d+ months</span></td><td class="r">([+−-][\d.]+)</td><td class="k r">([\d.]+)</td>',
+                _lab_cut('id="fig1"'))
+ok(_ru is not None and _pu is not None and _pu.groups() == _ru.groups() and f"USO keeps {_ru[2]} cents." in lab,
+   "USO's added-back row and the Leak Map's caption carry the registration's corrected paper return and cents kept")
+_rcl5 = dict(re.findall(r"- (P\d): (.*?\.)(?= - P\d:|$)", _g1(r"## Predictions \(made before any lab data is bought\) (.*?) ## Log", _lreg)))
+_rv = dict(re.findall(r"(P\d) (fails|holds as written|holds)", _g1(r"Summary of the whole study:\*\* (.*?)\. For a retail", _lreg)))
+_pp = {m_[0]: m_[1:] for m_ in re.findall(r'<td class="hid">(P\d)</td><td class="claim">(.*?)</td><td><span class="hs" '
+                                          r'data-h="tested">Tested, (fails|holds as written|holds)</span>', lab)}
+ok(len(_rcl5) == len(_rv) == len(_pp) == 5 and all(
+       __import__("html").unescape(_pp[p_][0]) == _rcl5[p_][0].upper() + _rcl5[p_][1:] and _pp[p_][1] == _rv[p_]
+       and _lrm.CLAIMS[p_] == _rcl5[p_] and _lrm.LOGGED[p_] == (_rv[p_] != "fails") for p_ in _rcl5),
+   "the predictions table quotes each registered claim word for word beside its logged verdict, and the generator's "
+   "own copies of both are the registration's")
+_p3r = re.search(r"P3 still holds on 5 of 5;\*\* the range is ([\d.]+)-([\d.]+)x", _lreg)
+_p1r = _g1(r"no fund keeps under 50 cents per \$1 \((.*?); GLD undefined\)", _lreg)
+ok(_p3r is not None and f"5 of 5 funds, {_p3r[1]} to {_p3r[2]} times" in lab and _p1r and f"{_p1r}; GLD has no paper profit" in lab
+   and "rises with the index only on GLD" in _lreg and "Rises on 1 of 5 (GLD)" in lab,
+   "the predictions' evidence is the registration's: P1's cents per fund, P3's range, P4's one fund")
+_su = re.search(r"USO's straddle is ([+-][\d.]+) per \$1 at mid .*? the registered ([+-][\d.]+)", _lreg)
+_sg = re.search(r"GLD's sensitivity stands:\*\* ([+-][\d.]+) -> ([+-][\d.]+)", _lreg)
+_c1 = lambda v_: _lrm.num(100 * float(v_), 1, True)
+ok(_su is not None and _sg is not None
+   and f'from <span class="m">{_c1(_sg[1])}</span> to <span class="m">{_c1(_sg[2])}</span>' in lab
+   and f'USO earns <span class="m">{_c1(_su[1])}</span> instead of <span class="m">{_c1(_su[2])}</span>' in lab,
+   "the excluded-months limit carries the registration's GLD and USO sensitivity, in cents per dollar of premium")
+try:
+    _lab_now = _lrm.render()
+except SystemExit as _e:
+    _lab_now = _e
+if _lab_now is None:
+    print("  SKIP  the Lab page against the lab summaries (the private summaries are not on this machine)")
+elif isinstance(_lab_now, SystemExit):
+    ok(False, f"the Lab page is exactly what lab/report.py renders from the lab summaries (it refused to render: {_lab_now})")
+else:
+    ok(_lab_now == lab, "the Lab page is exactly what lab/report.py renders from the lab summaries")
 
 # The site's countdowns run off its own copy of when the recorders start. A stale copy is a public clock that
 # is quietly wrong, which is worse than no clock: moving the workflows on 16 Sep did exactly that until this

@@ -3213,6 +3213,199 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   mutant and day's wait are still to do before registration, and approvals, OSF freezes and the private seal
   are outside what it could check.
 
+**Wed 4 Nov (evening) - the Lab tab: the side study goes on the site**
+- *What (Gabriel: "yes to the lab tab"):* `tools/lab.html`, the `lab/` side study as a page of the site in its
+  own design (the live rail, Newsreader and Martian Mono, the paper's section and figure styles), reached
+  from every page's navigation ("Lab") and the paper's footer. `lab/report.py` now renders it from the
+  private summaries of 28 Oct (after the M02/M03 corrections) and `trades.csv`; re-render, never hand-edit.
+  The private 14 Oct `report.html` stays as it was.
+- *Corrected against the private 14 Oct report:* P3 reads 2.1-3.3x (was 3.4); the limits sentence now says
+  the added-back months make GLD worse (-3.8 -> -9.3 cents per dollar of premium at mid) but not USO (+6.9 ->
+  +7.6), both computed from `trades.csv`; "private until Cboe's reply" is gone. The 14 Oct Leak Map left
+  negative Shapley shares out of its bars, so its 20% bars did not add up to one paper dollar (SPY's margin
+  limits are -23.0 cents). The page draws the Leak Map at 5% only, where margin never binds and each bar is
+  exactly one paper dollar (the generator refuses to draw it otherwise), and gives 20% as Table 1: signed
+  shares with their range over the 24 orders.
+- *GLD's added-back figure:* PAPER-DRAFT and PAPER-OUTLINE said -9.4% of premium; the mean in `trades.csv`
+  is -0.09348, so -9.3% (a double rounding through -0.0935). Corrected in both, dated; the 28 Oct entry
+  above keeps its text.
+- *Charts (dataviz method):* kept in neutral grey (`--lab-kept`, pinned to #697785, the grey the palette was
+  validated with, when the site's `--ink-3` moved - below), spreads orange `#d95926`, commissions violet
+  `#9085e9`, dark steps validated on `--panel` (the pair: CVD 26.0, normal vision 27.0; grey against each at
+  least 12.6 and 16.4), clear of the channel and status colours. The break-even panels draw the net result in
+  `--read` and the spread cost dashed in the same orange, with the fitted crossing's 90% interval shaded.
+  Legends, table views, hover or tap tooltips through `V.hover`. Checked at 1280 and 375 wide: no sideways
+  scroll outside the tables.
+- *Astra's review (`.codex-reviews/20261104T213235Z-snjddknt`): twelve points, each verified and fixed.*
+  (1) The registration promised the added-back months beside every Plan 3 table, and the page showed them
+  only in prose: `report.py` now reads them from the private Plan 3 report (`lab-out/report-plan3.txt`),
+  strictly - its registered lines must match `leak_summary.json` or the render stops - and Fig. 1's table,
+  Table 1 and Table 3 carry "GLD, all 127 months" and "USO, all 127 months" rows beneath the registered ones.
+  The break-even analysis was never run on them; its caption says so, and PAPER-DRAFT and PAPER-OUTLINE no
+  longer say "every result both ways". (2) The heading no longer says no break-even exists, only that none is
+  reliable. (3) Entry at 2:30 p.m., 11:30 a.m. on half-days; the first and last entry and last expiry are read
+  from `trades.csv`. (4) "Chance of losing half" is now "chance equity falls below half its start", and the
+  caption says how that differs from a 50% drawdown. (5) The sentences that are not computed rest on facts
+  the generator checks first (`premises`, ten of them, each naming its sentence), and `predictions` re-judges
+  P1-P5 and stops if a verdict differs from the registration's logged one. (6) A caption reports a crossing
+  without an interval as such, and always the share of resamples outside the data. (7) The Leak Map refuses
+  any margin leak in any of the 24 orders, a margin call, a negative part, or parts that do not add up.
+  (8) `QUOTED` is gone: every figure is computed. (9) Every section and figure must credit Databento, whole
+  numbers included. (10) A half-copied summaries folder stops the render; only an empty one is a fresh
+  clone's SKIP. (11) Test fixtures add up by construction. (12) Each bar part is its true share of the
+  width; the separators are drawn inside it. Its thirteenth, the pressure test's failure, was the local
+  checkout missing 4 Nov's snapshot (since pulled); the test passes.
+- *Design review (a design agent, 4 Nov), ten recommendations, all done:* the answer in the subtitle and a
+  strip of five key numbers; each break-even panel gained the fitted line, its crossing, the interval's ends
+  (or the value written at the edge with an arrow), a caption and a zero line; five focusable columns per
+  panel with two-series tooltips and a table view; tooltips close on Escape and on scroll (WCAG 1.4.13, in the
+  shared `tools/volrec.js`); Table 1 reordered, its kept column emphasised, the fund column pinned on narrow
+  screens; Tables 2 and 3 compact, units in the headers; definitions beside the text; the predictions as a
+  ledger (Table 4); an author line; the instrument's footer links the Lab. Site-wide (`tools/volrec.css`):
+  `--ink-3` #697785 -> #6e7c8a, because the old grey read 4.35:1 on the panel, under WCAG AA (now 4.67:1;
+  4.50 on `--panel-2`); `.meta dt` and the tooltip's labels a step brighter; long links wrap; the stylesheet's
+  cache key moved to `?v=20261104` on all three pages.
+- *Checks:* pressure test K: every section and every figure credits Databento; aggregates only, Cboe and
+  Alpaca credited; no option symbol; the script fetches only the two registered panels and no OPRA; every
+  page's navigation reaches the Lab; eleven checks that hold each figure to the one `lab/REGISTRATION.md`
+  logged for the same fund and measure (Leak Map cents and GLD's loss, the COVID sentence's three funds,
+  Table 3's drawdowns and chances registered and added back, Table 1's margin calls and SPY's 20% paper
+  return, every break-even caption, USO's added-back row, the predictions' claims, verdicts and evidence, the
+  GLD and USO sensitivity), and since the follow-up a twelfth: each key number read under its own label;
+  and the page equals the render wherever the summaries exist (a refusal to render is a FAIL).
+  `lab/test_lab.py` 211 cases, +59 for the page: one fixture that keeps every premise and counts the same
+  months in every input, the Plan 3 parser on a report in the real file's line shapes and eleven ways it
+  refuses, three count disagreements the page refuses, the known answer, each guard by the message it stops
+  with, `render()` on a temporary folder. Seventeen bugs planted in a scratch copy of the generator (six, then
+  eleven after the follow-up) were each caught by their own test; one first crashed the test run instead, so
+  the page-level tests now report a crash as that check's FAIL. Auditor mutants `lab-page-uncredited`,
+  `lab-page-integer-uncredited`, `lab-page-fetches-opra`, `lab-page-unlinked`, `lab-page-claims-swapped` (the
+  generator and the page changed together, so the page still equals the render; the registration check
+  catches it, and so does `test_lab`'s COVID sentence on the fixture - this line said "only the registration
+  check" until the follow-up corrected it), `lab-page-kpi-mislabelled` (since the follow-up),
+  `lab-page-partial-skip`, `lab-page-margin-range-unchecked`, `lab-page-hand-edited` (only where the summaries
+  exist); all killed on a pre-check before the commit.
+- *Review:* first review above. The one follow-up (`.codex-reviews/20261104T223403Z-t572ks5i`,
+  needs_attention; pressure test and independent check PASS): of the twelve, 1-4 and 9-12 RESOLVED, 5-8
+  PARTLY; five new MEDIUM and two LOW findings. All fixed the same evening, as below. No further Lab review
+  (one follow-up per change set), so these fixes rest on tests, planted bugs and the auditor, not on Astra.
+  (a) *P4's evidence* (5, MEDIUM) said "elsewhere spreads widen in step with the premium", which a failed test
+  for a rising fraction does not show and a falling slope would contradict. It now states the registered
+  test ("the slope's 95% Newey-West interval lies wholly above zero only there") and, computed, "on the
+  others it includes zero" (true of SPY, QQQ, IWM and USO), else "the others do not pass it". PAPER-DRAFT's
+  "widen in proportion to the premium on four of five funds" is narrowed the same way, dated; the
+  registration's own 14 Oct log says the same and stays as logged. (b) *Six more premises* (5), each naming
+  its sentence: margin calls "often" (SPY in at least one month in ten at 20%), forced liquidation leads
+  somewhere at 20%, the margin shares "swing widely" (10+ cents across the orders), the COVID sentence's three
+  are losses, SPY's middle groups 2+ points apart ("several volatility points"), five groups per fund ("one
+  fifth"). (c) *Crossing and interval independent through the page* (6, MEDIUM): a caption with no crossing
+  still gives its interval; the premise and the paragraph count only the intervals there are and name a fund
+  without one; tested through `page()`. (d) *Fig. 1's caption checked on every sample it covers* (7, MEDIUM):
+  `margin_free` runs before GLD's branch and on the added-back rows of the figure's table - no margin leak in
+  any order, no call, and the spreads' and commissions' shares the same in every order ("every order gives
+  the same shares" was not checked). (e) *Key numbers bound to their labels* (8, MEDIUM): label and value
+  read from the same card, all five held to the registration's figure for that fund and measure; mutant
+  `lab-page-kpi-mislabelled`. (f) *Counts reconciled* (MEDIUM): `plan3` refuses a block or stress line printed
+  twice; `same_months` requires Plan 3's registered count, the break-even summary's and `trades.csv`'s
+  registered rows to agree, and the added-back sample to equal `trades.csv`'s tradeable rows (the
+  sensitivity's sample). The real files agree: SPY, QQQ, IWM 127; GLD 124 + 3; USO 123 + 4. (g) "stays under
+  0.14" -> "stays at or below" (LOW: the bound is rounded up and can equal the value). (h) PAPER-OUTLINE names
+  where the added-back rows are (Fig. 1's table, Table 1, Table 3) and that Table 2 and the break-even
+  curves are registered-only (LOW). (i) The claims-swapped line above, corrected. The page itself changed in
+  two sentences (P4's evidence; "at or below"); `report.py --check` matches.
+
+**Wed 4 Nov (evening) - H8's fixed-b equivalence test, built (decided earlier that day)**
+- *What:* `tools/h8_quotes.py`: `lag_for(T)`, the whole number nearest 1.3√T (8 at 41 trading days, 7 at
+  30); `tost()` now takes each one-sided p from the fixed-b null (`analyze.fixed_b_null`: Bartlett kernel,
+  seeded, memoised), with t(T-1)'s one-sided p beside each, never in its place; since the review (below), at
+  H8's own 200,000 draws (`H8_REPS`). H8 is not registered; this is the code its decision 2 asked for before
+  registration.
+- *Tests:* `tools/test_h8.py` 36 cases: the lag rule; at lag 0 the simulated p at 1.70477 (t(40)'s 5% point
+  times √(41/40)) is ~0.05 and t(40)'s p beside it 0.047997 (checked to 0.0001); at lag 8 the 5% point sits above t(40)'s
+  1.684; a gap 1.9 standard errors inside each bound is equivalent under t (p 0.032 each) and not under
+  fixed-b (0.064, 0.061); both tests one-sided (these tail checks run on 4,000 draws, for speed); and, on a
+  null fixed by hand, `tost` hands 200,000 to the shared null, a draw equal to the statistic counts as "at
+  or beyond", and a p of exactly 0.05 is not below 0.05. Auditor mutants `h8-tost-uses-t`,
+  `h8-fixedb-two-sided`, `h8-lag-rule`, then `h8-reps-shared`, `h8-reps-not-passed`, `h8-tie-excluded`,
+  `h8-tie-excluded-upper`, `h8-threshold-inclusive`, each killed on a pre-check.
+- *For registration (Vega's call, Gabriel's to veto), changed the same night:* at T = 41 and lag 8 the shared
+  seeded 4,000-draw null puts the one-sided 5% points at 2.03 and -2.06, against 2.09 and -2.11 from 200,000
+  draws (the fixed-b limit at b = 9/41, simulated at large T: about 2.10); at those points the 4,000-draw null gives p = 0.047 and 0.046,
+  light in both tails for this seed (about one simulation standard error each), the lenient direction for an
+  equivalence test. So H8 now uses 200,000 seeded draws of its own (simulation error of a p near 0.05: about
+  0.0005; about 8 s at T = 41); the shared 4,000 is unchanged for every registered figure. H8-DRAFT item 2
+  says so, with the old wording kept ("kept at 4,000 so every fixed-b figure comes from one null").
+- *Review:* Astra Ultra, first review of this and the reader below (`.codex-reviews/20261105T024605Z-lwiz74ix`):
+  INCOMPLETE, because the packets lacked `newey_west`, `record_verdict`'s markers and some reader helpers; no
+  check failed. On H8 it found the tails, the tie rule, T, the lag's rounding, the constant-series guard and
+  the return shape right, and one MEDIUM: 4,000 draws can flip a borderline decision, so fix a larger H8-only
+  count (it suggested 200,000) and add deterministic tie and threshold tests. Both done the same night (above).
+  Its note on the wording also held: the 4,000-draw gap had been measured on the upper tail only (0.0455 at
+  2.11); both tails are measured now. One follow-up review: see the reader's entry.
+
+**Wed 4 Nov - the index-timing reader, built and tested on synthetic files (the plan's step 1)**
+- *What:* `tools/index_timing.py` implements `docs/drafts/2026-11-04-index-timing-plan.md`: the sha256 check of
+  every file against the private seal before it is read, and every day file the seal lists present on disk;
+  OVX and GVZ only (other rows skipped before any field is converted); I(T) as the last one-second bar whose
+  second has ended by T, same New York day, from 09:31, at most 60 s old, otherwise the day is not measured;
+  the exact split E - C = (E - I(T)) + (I(T) - C); the 15-second "nearest bar" sensitivity, labelled; the
+  0.05 close flag; each day's quote-time spread around T, with its date; aggregates only. The rebuilt readings
+  use the frozen 3.910% rate or nothing runs (cache-only key, checked in-process and in modelfree's output),
+  and they must match modelfree's own H5e reading, whose run must exit cleanly. It refuses to open the files
+  until H5e FINAL and H7 are both recorded. `tools/test_index_timing.py`: 63 cases on SYNTHETIC files in
+  DBIX's recorded layout, made from the structure only, never a value; the CSV header is typed from
+  Databento's documented field order rather than taken from the reader. The pressure test needs all 63.
+- *Next (the plan's sequence):* at least a day, a cold re-read, Gabriel's approval, registration and OSF freeze
+  about Tue 10 Nov; the files stay sealed until both verdicts are recorded.
+- *Review:* the same first review as H8's (above), INCOMPLETE for missing helpers, no check failed. It found the
+  completed-second rule, New York dates, 09:31, the 60-second limit, the hash before decompression, the skip
+  before conversion, the split, the sensitivity and the close flag right, and five MEDIUM and one LOW, all
+  verified and fixed the same night: (a) a sealed day file missing from disk read as a day "before the data
+  begins" - now refused, and every uncovered day says where it sits (before, after, or a day with no file),
+  with its date; (b) the reference run's exit code was ignored and two empty sides passed as agreement - both
+  refused; (c) `setdefault` kept a real FRED key and the frozen rate was never checked - the key is now forced
+  to `use-cache` and the rate checked both ways (`record_verdict.rate_ok`); (d) a "widest day" pieced
+  together from two days, where the plan promises each day's spread - each day is printed instead; (e) the
+  verdict gate's AND was never run - now tested on the writer's own markers in all four states; (f, LOW) the
+  pressure test accepted 43 of 44 cases - now 63 of 63. Its fixture point (the header came from the reader's
+  own constant) is answered above. Seven new auditor mutants (`timing-gate-either`,
+  `timing-lost-file-unchecked`, `timing-reference-exit-ignored`, `timing-rate-unchecked`,
+  `timing-printed-rate-unchecked`, `timing-empty-agreement`, `timing-key-kept`), each killed on a pre-check.
+  The one follow-up review, of this entry and H8's (`.codex-reviews/20261105T035104Z-1aaz6u50`): CLEAR;
+  pressure test and independent check PASS. All seven findings resolved; no defect found in the fixes
+  (`day_files` against the seal's naming, the edge classifications, `frozen_r`'s units, the forced key, the
+  stubbed test of `main`). With the helpers supplied it established the three end-to-end claims: the statistic
+  and the simulated null share one normalization (Bartlett weights, T denominators, the lag clamp, the variance
+  floor); the gate reads the markers the writer writes; I(T)'s instants are UTC throughout, New York time only
+  for the session rules. It called the 200,000-draw choice defensible (simulation error near 0.05: 0.000487).
+  Its notes, recorded rather than changed: importing the reader sets `FRED_KEY` for the whole process
+  (intended; only its tests load it, in their own process, and the auditor and pressure test run it as a
+  file); `main`'s end-to-end test runs on stubs, so it shows the order of the steps and the refusals, not a
+  rebuild from registered inputs; nothing here has run on real data. Two corrections after it, unreviewed (one
+  follow-up is the rule): H8's test line said t(40)'s p was "exactly 0.04800" (it is 0.047997); and "Kiefer-
+  Vogelsang's limit about 2.14", which the review noted was unverified, came from their fitted polynomial as
+  recalled. Simulating the limit at b = 9/41 (T = 2,050 and 4,100; 200,000 and 100,000 draws) gives about 2.10
+  (2.11, 2.09), and the same polynomial sits above the simulation at b = 1 (3.80 against 3.76). H8's entry and
+  H8-DRAFT now say about 2.10; H8's 200,000-draw points (2.09, -2.11) sit at the limit.
+
+**Wed 4 Nov (night) - the 23-25 Nov Bloomberg list, SCCUR pitch notes, and why H10's loader waits**
+- *Bloomberg:* `BLOOMBERG-MONDAY.md` now opens with the next visit: two pulls, in order. (A) One-minute bars
+  of OVX, GVZ, VXN and RVX from Mon 14 Sep (H7's in-sample start) to the last full day - first, because the
+  history rolls off: on the shortest estimate (~50 business days), 14 Sep is 51 business days before Mon 23
+  Nov, so the 23rd is the day to go. The desk is asked how far back the bars go, what time zone the export
+  uses, and whether a bar stamped 14:30 starts or ends then; `TZDF` is read, not changed; the values are not
+  studied until the bars' short descriptive registration is written. (B) Daily `PX_LAST` closes of SPX, INDU,
+  NDX and RTY from 1 Jan 1986 (H10's decision 4), closes only, listed under H10's "Data already seen" once
+  pulled. The file's Timing section (16 Sep) got a dated correction: the snapshot has been at 14:30 New York
+  since 1 Oct, which is 11:30am Pacific since the 1 Nov clock change.
+- *SCCUR:* `SCCUR-PITCH.md`: a 30-second opener (with the variant for the headline the poster switches to by
+  itself if H7 fails), a 2-minute walk across the poster, likely questions with short answers, and two lines
+  marked [after 19 Nov] to fill from the hypothesis files. Every number is the poster's own.
+- *H10's loader:* not built yet, on purpose. H10's own order puts it after H8's registration and the Bloomberg
+  session; its specification is a draft the 20 Nov discussion may still change; and its noise floor compares
+  Compustat with the Bloomberg closes, which arrive 23-25 Nov. Built once, with both price sources in hand.
+  Target unchanged: registered mid-December.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
@@ -3222,4 +3415,5 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 > `tools/audit.py` reads N of N. Open work: H8 is being built under `PROTOCOL.md` (`H8-DRAFT.md`, not
 > registered; the cloud buys its OPRA daily), and `DESIGN-MEMO.md` is being revised with Gabriel. The
 > `lab/` side project (retail implementation audit) is COMPLETE (14 Oct; lab/REGISTRATION.md) - read its
-> 14 Oct entries above before touching it.
+> 14 Oct entries above before touching it. Its public page `tools/lab.html` (4 Nov) is rendered by
+> `lab/report.py` from the private summaries: re-render it, never edit it by hand.
