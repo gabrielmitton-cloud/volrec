@@ -3511,6 +3511,15 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 - *Backup (Gabriel's to set up; it is a system setting):* iCloud's Desktop & Documents is sync, not backup,
   and Time Machine has no disk. Recommended: a 2 TB portable hard drive with an encrypted Time Machine
   backup.
+- *Item 7's first reading, after `7cfacc9` committed its definition.* H8's report ran on every OPRA file on
+  disk: 14-18 Sep to 3 Nov, 32-34 fund-days per fund.
+  - The two orders agree within 0.001 points for every fund.
+  - On SPY, QQQ, IWM and GLD, about 60-70% of the gap sits with the puts. TSLA and NVDA are close to even;
+    AAPL leans to calls.
+  - Recorded in H8-DRAFT's pilot section as already seen.
+  - H8's existing report is unchanged line for line. Checked by running `3c0da27`'s report on the same files
+    in a worktree, with the FRED cache copied in, and diffing (21 lines identical). Without the cache the old
+    code priced at r = 0, the known trap.
 
 ### Prompt for the next session
 

@@ -142,6 +142,28 @@ Medians at the money only, on about three weeks: a mechanism to name in the regi
 secondary, descriptive reading, not a result.
 *Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
 
+**By side (item 7's first reading; pilot, 5 Nov 2026, already seen).** Computed for the first time after
+the commit that carries item 7's definition (`7cfacc9`), on every OPRA file then on disk: 14-18 Sep to
+3 Nov 2026, 32-34 fund-days per fund. Mean put part / call part of the snapshot gap, in points, puts
+swapped first (calls first gives the same to within 0.001 for every fund, so the interaction is negligible
+here), with the gap:
+
+| Fund | put part | call part | gap | days |
+|---|---|---|---|---|
+| SPY | +0.030 | +0.019 | +0.049 | 33 |
+| QQQ | +0.027 | +0.016 | +0.043 | 33 |
+| IWM | +0.048 | +0.030 | +0.078 | 33 |
+| GLD | +0.014 | +0.007 | +0.020 | 34 |
+| USO | -0.014 | +0.001 | -0.013 | 32 |
+| TSLA | +0.019 | +0.018 | +0.037 | 32 |
+| NVDA | +0.031 | +0.027 | +0.058 | 33 |
+| AAPL | +0.002 | +0.007 | +0.010 | 33 |
+
+Read plainly: on SPY, QQQ, IWM and GLD, about 60-70% of the gap sits with the puts; on TSLA and NVDA it is
+close to even; on AAPL more of it sits with the calls. In-sample pilot data, already seen, so it is not
+evidence for the window. The registration names item 7 as computed on these days.
+*Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
+
 ## Decided 4 Nov 2026 (was: still to decide with Gabriel after 19 Nov)
 Settled early by Vega, under Gabriel's go-ahead that day to settle now whatever can be settled now and is in
 the project's interest, and **approved by Gabriel the same day** ("I approve the decisions"). Nothing binds
