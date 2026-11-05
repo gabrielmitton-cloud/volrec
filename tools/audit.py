@@ -227,7 +227,8 @@ MUTANTS = [
      lambda w: _sub(w / "tools/h8_index.py", '        if not in_window(x["day"]):\n', "        if False:\n"),
      "H8's index reading's tests pass"),
     ("h8index-day-dropped", "H8's index reading drops a window day it has no fund-day for, instead of listing it",
-     lambda w: _sub(w / "tools/h8_index.py", """                g["missing"].append((day, "no fund-day from H8's files"))\n""",
+     lambda w: _sub(w / "tools/h8_index.py", """                g["missing"].append((day, "no fund-day from H8's files" if day in days else\n"""
+                    """                                     "neither a fund-day from H8's files nor an index file"))\n""",
                     "                pass\n"),
      "H8's index reading's tests pass"),
     ("h8index-reads-near", "H8's index reading takes the bar nearest T, which may be printed after it",
