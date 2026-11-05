@@ -127,6 +127,9 @@ check("a bar 60 s old is used", it.index_at([(T - 60 * S, 9.0)], T) == (9.0, Non
 check("a bar 61 s old is not: the day is not measured, never filled",
       it.index_at([(T - 61 * S, 9.0)], T) == (None, "the last bar is more than 60 s old"))
 check("no bar before T: not measured", it.index_at([(T, 12.0)], T)[0] is None)
+check("a last eligible close that is not a finite number is not measured, and no earlier bar stands in (5 Nov)",
+      it.index_at([(T - 16 * S, 10.0), (T - S, float("nan"))], T) == (None, "the last bar's close is not a finite number")
+      and it.index_at([(T - S, float("inf"))], T)[0] is None)
 prev = [(datetime(2026, 11, 2, 20, 59, 59, tzinfo=UTC), 8.0)]
 check("a value from the previous trading day is not used", it.index_at(prev, datetime(2026, 11, 3, 14, 31, 30, tzinfo=UTC))
       == (None, "the last bar is from another day"))

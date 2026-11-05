@@ -453,11 +453,12 @@ _n7f = sum(1 for _ln in _t7.stdout.splitlines() if _ln.strip().startswith("FAIL"
 _n7p = sum(1 for _ln in _t7.stdout.splitlines() if _ln.strip().startswith("PASS"))
 ok(_t7.returncode == 0 and _n7f == 0 and _n7p >= 22, f"H7's reader tests pass ({_n7p} cases, {_n7f} failures)")
 # H8's instrument (BUILDING, not registered; 10 Oct 2026): arithmetic against hand-computed answers,
-# the equivalence test both ways, and one fund-day from files in Databento's own blank-bid form.
+# the equivalence test both ways, one fund-day from files in Databento's own blank-bid form, and item 7's
+# split of the snapshot gap by side (5 Nov 2026: put-only and call-only moves, both orders, known answers).
 _t8 = _sp.run([sys.executable, str(R / "tools/test_h8.py")], capture_output=True, text=True)
 _n8f = sum(1 for _ln in _t8.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _n8p = sum(1 for _ln in _t8.stdout.splitlines() if _ln.strip().startswith("PASS"))
-ok(_t8.returncode == 0 and _n8f == 0 and _n8p >= 36, f"H8's instrument tests pass ({_n8p} cases, {_n8f} failures)")
+ok(_t8.returncode == 0 and _n8f == 0 and _n8p >= 49, f"H8's instrument tests pass ({_n8p} cases, {_n8f} failures)")
 # The index-timing reader (EXPLORATORY, 4 Nov 2026; docs/drafts/2026-11-04-index-timing-plan.md): the seal and
 # every sealed day file present, the ts_event + 1 s <= T rule, the same-day and 60-second rules, OVX and GVZ
 # only, the exact split, the frozen rate and the reference run's exit code, and the refusal before both
@@ -465,8 +466,17 @@ ok(_t8.returncode == 0 and _n8f == 0 and _n8p >= 36, f"H8's instrument tests pas
 _ti = _sp.run([sys.executable, str(R / "tools/test_index_timing.py")], capture_output=True, text=True)
 _ntif = sum(1 for _ln in _ti.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _ntip = sum(1 for _ln in _ti.stdout.splitlines() if _ln.strip().startswith("PASS"))
-ok(_ti.returncode == 0 and _ntif == 0 and _ntip >= 63,
+ok(_ti.returncode == 0 and _ntif == 0 and _ntip >= 64,
    f"the index-timing reader's tests pass ({_ntip} cases, {_ntif} failures)")
+# H8's choice 6 (DESCRIPTIVE, 5 Nov 2026; H8-DRAFT.md item 6): the six pairs and H8's window, the seal written
+# as files are bought and read back by the timing reader, never the timing plan's sealed folder, I(T) by the
+# timing reader's rule, both feeds on the same days, nothing filled, and no reading before the window closes,
+# on SYNTHETIC files. No index file is read here.
+_th = _sp.run([sys.executable, str(R / "tools/test_h8_index.py")], capture_output=True, text=True)
+_nthf = sum(1 for _ln in _th.stdout.splitlines() if _ln.strip().startswith("FAIL"))
+_nthp = sum(1 for _ln in _th.stdout.splitlines() if _ln.strip().startswith("PASS"))
+ok(_th.returncode == 0 and _nthf == 0 and _nthp >= 47,
+   f"H8's index reading's tests pass ({_nthp} cases, {_nthf} failures)")
 # lab/ (EXPLORATORY side project, 12 Oct 2026): known answers for costs, integrity and margin; its
 # own purchase cap; its dates (never inside a registered window); its data folder outside this repo.
 _tl = _sp.run([sys.executable, str(R / "lab/test_lab.py")], capture_output=True, text=True)
@@ -1625,6 +1635,80 @@ for _f in subprocess.run(["git", "ls-files", "*.csv"], cwd=R, capture_output=Tru
 ok(not _lseg_like, "no tracked CSV carries LSEG's field names (raw LSEG data stays outside the repo)"
    + (f" (found {', '.join(_lseg_like[:4])})" if _lseg_like else ""))
 _FRED_NOTICE = "This product uses the FRED® API but is not endorsed or certified by the Federal"
+# Link previews (5 Nov 2026): each public page names its own title, description, address and a 1200x630 PNG in
+# the repository (og/, drawn by tools/og_cards.py from fixed text - never a result), so a shared link shows a
+# card, not a bare address or a broken image.
+_OG_SITE = "https://gabrielmitton-cloud.github.io/volrec/"
+
+
+def _png_dims(b):
+    """(width, height) of a complete, well-formed, non-interlaced PNG - the signature, every chunk whole with
+    its CRC, IHDR first (13 bytes, a legal colour type and depth), IEND last and nothing after it, and the
+    image data inflating to exactly one filter byte (0-4) and one row of pixels per line - else None (Astra,
+    5 Nov: the first 24 bytes alone passed a truncated file; then an image with no pixels passed)."""
+    import zlib as _z
+    if b[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    i, kinds, idat = 8, [], b""
+    while i + 12 <= len(b):
+        n = int.from_bytes(b[i:i + 4], "big")
+        kind, data = b[i + 4:i + 8], b[i + 8:i + 8 + n]
+        if len(data) != n or i + 12 + n > len(b) or _z.crc32(kind + data) != int.from_bytes(b[i + 8 + n:i + 12 + n], "big"):
+            return None
+        kinds.append(kind)
+        idat += data if kind == b"IDAT" else b""
+        i += 12 + n
+    if i != len(b) or not kinds or kinds[0] != b"IHDR" or kinds[-1] != b"IEND" or not idat:
+        return None
+    try:
+        raw = _z.decompress(idat)
+    except _z.error:
+        return None
+    w, h, (depth, colour, comp, filt, lace) = int.from_bytes(b[16:20], "big"), int.from_bytes(b[20:24], "big"), b[24:29]
+    chans = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}.get(colour)
+    legal = {0: (1, 2, 4, 8, 16), 2: (8, 16), 3: (1, 2, 4, 8), 4: (8, 16), 6: (8, 16)}.get(colour, ())
+    if int.from_bytes(b[8:12], "big") != 13 or depth not in legal or (comp, filt, lace) != (0, 0, 0) or not (w and h) \
+            or (colour == 3 and b"PLTE" not in kinds):
+        return None
+    line = 1 + (w * chans * depth + 7) // 8
+    if len(raw) != h * line or any(raw[i] > 4 for i in range(0, len(raw), line)):
+        return None
+    return w, h
+
+
+_ogbad = []
+for _pg, _u, _img in (("index.html", "", "og/home.png"), ("tools/monitor.html", "tools/monitor.html", "og/monitor.png"),
+                      ("tools/lab.html", "tools/lab.html", "og/lab.png")):
+    _t = (R / _pg).read_text()
+    _m = lambda a, k: (re.search(rf'<meta {a}="{re.escape(k)}" content="([^"]*)">', _t) or [None, None])[1]
+    _tt = re.search(r"<title>([^<]*)</title>", _t)
+    for _k, _v in (("og:title", _tt and _tt.group(1)), ("og:description", _m("name", "description")),
+                   ("og:url", _OG_SITE + _u), ("og:image", _OG_SITE + _img), ("og:type", "website")):
+        if not _v or _m("property", _k) != _v:
+            _ogbad.append(f"{_pg} {_k}")
+    if _m("name", "twitter:card") != "summary_large_image":
+        _ogbad.append(f"{_pg} twitter:card")
+    if _png_dims((R / _img).read_bytes() if (R / _img).is_file() else b"") != (1200, 630):
+        _ogbad.append(f"{_img} is not a whole 1200x630 PNG")
+ok(not _ogbad, "each page's link preview names its own title, description, address and a 1200x630 image in the "
+   "repository" + (f" (wrong: {', '.join(_ogbad)})" if _ogbad else ""))
+_ogh = (R / "og/home.png").read_bytes() if (R / "og/home.png").is_file() else b""
+
+
+def _png_of(raw, w=1200, h=630):
+    """A whole RGB PNG around `raw` (the inflated image data), every CRC right - for the refusals below."""
+    import zlib as _z
+    ck = lambda k, d: len(d).to_bytes(4, "big") + k + d + _z.crc32(k + d).to_bytes(4, "big")
+    return (b"\x89PNG\r\n\x1a\n" + ck(b"IHDR", w.to_bytes(4, "big") + h.to_bytes(4, "big") + bytes([8, 2, 0, 0, 0]))
+            + ck(b"IDAT", _z.compress(raw)) + ck(b"IEND", b""))
+
+
+ok(_png_dims(_ogh) == (1200, 630) and _png_dims(_ogh[:24]) is None and _png_dims(_ogh[:-1]) is None
+   and _png_dims(_ogh[:-12] + _ogh[-12:-1] + b"\x00") is None and _png_dims(_png_of(bytes(630 * 3601))) == (1200, 630)
+   and _png_dims(_png_of(b"")) is None and _png_dims(_png_of(bytes(629 * 3601))) is None
+   and _png_dims(_png_of(b"\x05" + bytes(630 * 3601 - 1))) is None,
+   "the preview check refuses a truncated or damaged image (its first 24 bytes, one byte short, a bad CRC; and, "
+   "every CRC right, an image with no pixels, one row short, a bad filter byte)")
 ok(_FRED_NOTICE in (R / "README.md").read_text() and _FRED_NOTICE in (R / "index.html").read_text(),
    "README and the site carry the notice FRED's API terms require")
 

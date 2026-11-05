@@ -3421,6 +3421,97 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   H10-DRAFT decision 5 updated. The 23 Nov phone reminder (`trig_014FSkJSmGQqutozEtGxhSVq`) names the
   highs and lows and points to the list.
 
+**Thu 5 Nov (00:00-10:00 UTC) - Gabriel: "Do #2-4": H8's choices 6 and 7 built, link previews, the paper's sections 1, 2 and 6, harder judge questions**
+- *Pushed first:* `3c0da27` (the approvals) at about 05:30 UTC, after the auditor read 173 of 173 (2,132 s).
+  The pre-push pressure test was 0 fail, 3 warn (the known three).
+- *H8's choice 6 (H8-DRAFT item 6) is built, so it is not dropped at registration.*
+  - `tools/h8_index.py` reads H8's own fund-days from `h8_quotes.fund_days`, which `main` now reads too.
+    H8's report on the real calibration data was byte-for-byte the same before and after (diffed).
+  - It reads the index at the snapshot minute through the timing reader. `index_timing.bars` gained an
+    `indices` argument (default still OVX and GVZ), and its two seal messages no longer name the folder.
+    `day_pair` now returns `T`.
+  - It refuses the timing plan's sealed folder, and refuses anything before 30 Jan 2027.
+  - A fund-day counts only when both feeds and I(T) are there, all finite. Every window trading day (41,
+    from `panel_health`'s calendar) is accounted for once per fund, never filled.
+  - Tests: `tools/test_h8_index.py`, 47 synthetic cases, and the pressure test "H8's index reading's tests
+    pass". Eleven auditor mutants (nine h8index-*, timing-default-widened, timing-nonfinite-index), each
+    tried alone before it was added.
+- *Its purchases:* private `dbix-h8/buy.py` and a README with an empty seal. Nothing is bought yet.
+  - Commits: volrec-licensed `396c3c9`, then `f305f8b`, which takes the window's trading days from
+    `h8_index.window_days()` so there is one calendar.
+  - It buys each window trading day through yesterday that is not yet on disk. Each request is priced
+    first, against its own $1 cap (tag `-h8dbix`), and each file is sealed as it lands.
+  - `--plan`: 41 days (22 in December, 19 in January).
+  - **To do about 20-24 Nov, after both verdicts:** add its daily.yml step (the text is in
+    `dbix-h8/README.md`) outside trading hours, then check that the next scheduled run fired. The first
+    file is 1 Dec's, bought on 2 Dec.
+- *H8's choice 7 (new; H8-DRAFT item 7): the snapshot gap split by side.*
+  - Gabriel asked whether any metric besides volatility was worth bringing in, "i dont want u to be
+    grasping at straws". The answer: volatility is the right lens, and skew is the only real candidate. It
+    enters as a split of H8's own gap, not as a new measure.
+  - His reply: "if u think it could actually stand to help the project then sure go for it".
+  - The exact definition went into H8-DRAFT before any of it was computed. On the snapshot contracts, the
+    estimator runs on OPRA's puts with the free calls (MPs) and on OPRA's calls with the free puts (MCs).
+    The gap splits exactly, puts first and calls first, and both orders are reported. Per fund: the mean
+    and mean absolute of each part beside the mean gap. No bar; never part of the verdict.
+  - Built: `day_pair`'s MPs and MCs, `sides`, and one report line on the split's own sample, with its count
+    and no minimum.
+  - Tests: `tools/test_h8.py` now has 49 cases, twelve of them new:
+    - a move in OPRA's puts alone is all put part, in both orders, exactly;
+    - a move in its calls alone is all call part, exactly;
+    - each order adds up to the gap;
+    - the means match hand-computed answers;
+    - the line is printed, including for a fund with few quote-time pairs, with one eligible day, or none;
+    - in a fixture where the quote-time and snapshot quotes and contract sets differ, both mixes equal the
+      estimator on inputs assembled by hand, and the order matters.
+  - Mutants: seven h8-sides-* (swapped, one-order, nonfinite-kept, not-printed, minimum, quote-time-set,
+    quote-time-quotes). Each was tried alone first, and each is caught by a check, not by a crash.
+- *Link previews:*
+  - og/twitter tags on the three pages. The Lab's go through `lab/report.py`; it was re-rendered and
+    `--check` matches.
+  - Three 1200x630 images, `og/home.png`, `og/monitor.png` and `og/lab.png`, drawn by `tools/og_cards.py`
+    from fixed text (no result on them).
+  - Pressure checks: "each page's link preview names its own title, description, address and a 1200x630
+    image" and "the preview check refuses a truncated or damaged image".
+  - Mutants: site-preview-image-missing, site-preview-description-drifts, site-preview-png-unchecked,
+    site-preview-raster-unchecked.
+- *Paper:* PAPER-DRAFT v2 adds sections 1, 2 and 6. It is an AI-assisted first draft for Gabriel to
+  rewrite, citing only sources PAPER-OUTLINE documents. Every verdict-dependent line is a bracketed
+  placeholder.
+- *SCCUR:* SCCUR-PITCH.md gains ten harder judge questions and a scoring line. The mock session runs when
+  Gabriel says "judge me" (any day before Sat 21 Nov).
+- *Astra, two Ultra reviews.* The first (07:35 UTC) found five things, all fixed:
+  - A trading day missing from both of choice 6's sources vanished. It is now listed from the calendar.
+  - A non-finite estimate or index close would have been counted. Such a day is now not measured. The rule
+    sits in `index_at` itself, so the timing reader shares it (64 tests).
+  - The paper's introduction said every test was registered before its data existed, and its related
+    work said every comparison was aligned to the minute. Both are narrowed to what sections 3 and 6 say,
+    and the pitch too.
+  - The preview check read only the first 24 bytes of each image. It now checks the whole PNG, CRCs and
+    all.
+
+  Its INCOMPLETE status came from the bundle limits and from the review bridge's own uncommitted files.
+  The follow-up (the one allowed; 07:59 UTC, INCOMPLETE again for the same reasons) found five more, all
+  fixed. Each fix is proven by a test that fails without it:
+  - Item 7's line was skipped for a fund with fewer than three quote-time days, and it carried a minimum
+    its definition does not have. It now prints on its own sample, with its count and no minimum.
+  - The tests did not pin that the mixes use the snapshot contracts and the snapshot minute's quotes. A new
+    fixture, where those differ from the quote-time ones, assembles both mixes' inputs by hand.
+  - Two pitch answers still overclaimed: timing was "out" of the OPRA comparison, and H5's exception was
+    missing.
+  - A whole PNG with no pixels passed the preview check. The inflated data must now hold one filter byte
+    and one row of pixels per line.
+
+  Not addressed: a row typed neither C nor P. The recorder writes only C and P (47,968 and 47,966 rows,
+  counted), and the mix uses the estimator's own test. No third review, by the project's rule.
+- *Bridge tool (uncommitted, like the rest of the bridge):* `tools/codex_review.py`'s independent-check
+  caveat now matches how that check has counted since 28 Oct. 24 tests OK.
+- *Reminder:* phone routine `trig_01N8ZbM1FW4B1P4EWkJ8VCcq`, Tue 10 Nov 17:00 UTC: register the timing
+  plan (Gabriel's yes, and the OSF freeze in his browser).
+- *Backup (Gabriel's to set up; it is a system setting):* iCloud's Desktop & Documents is sync, not backup,
+  and Time Machine has no disk. Recommended: a 2 TB portable hard drive with an encrypted Time Machine
+  backup.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run

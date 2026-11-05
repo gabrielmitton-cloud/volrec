@@ -67,7 +67,7 @@ def seal(readme):
     """{file name: sha256} from the README's "## Seal (sha256)" block: indented lines, hash, two spaces, name."""
     parts = readme.split("## Seal (sha256)", 1)
     if len(parts) < 2:
-        raise SystemExit("dbix/README.md has no seal block: nothing is read")
+        raise SystemExit("README.md has no seal block: nothing is read")
     out = {}
     for ln in parts[1].splitlines():
         if ln.startswith("#"):
@@ -76,7 +76,7 @@ def seal(readme):
         if m:
             out[m.group(2).strip()] = m.group(1)
     if not out:
-        raise SystemExit("dbix/README.md's seal block lists no file: nothing is read")
+        raise SystemExit("README.md's seal block lists no file: nothing is read")
     return out
 
 
@@ -111,15 +111,16 @@ def day_files(folder, sealed):
     return {day: folder / name for day, name in sorted(want.items())}
 
 
-def bars(path, sealed):
-    """{index: [(ts_event, close)]} for OVX and GVZ, in time order, from one sealed ohlcv-1s file."""
+def bars(path, sealed, indices=INDICES):
+    """{index: [(ts_event, close)]} for OVX and GVZ, in time order, from one sealed ohlcv-1s file. Only
+    tools/h8_index.py passes other `indices`, for H8's own files (never this plan's sealed folder)."""
     text = gzip.decompress(sealed_bytes(path, sealed)).decode()
     rd = csv.DictReader(io.StringIO(text))
     if tuple(rd.fieldnames or ()) != COLUMNS:
         raise SystemExit(f"{Path(path).name}: columns {rd.fieldnames}, not DBIX's recorded {list(COLUMNS)}")
-    out = {s: [] for s in INDICES}
+    out = {s: [] for s in indices}
     for r in rd:
-        if r["symbol"] not in out:                  # the other fifteen: skipped before any field is read
+        if r["symbol"] not in out:                  # every other index: skipped before any field is read
             continue
         if r["rtype"] != RTYPE_1S:
             raise SystemExit(f"{Path(path).name}: a {r['symbol']} record of rtype {r['rtype']}, not a one-second bar")
@@ -147,6 +148,8 @@ def index_at(series, T):
         return None, "the last bar is before 09:31 New York"
     if T - ts > MAX_AGE:
         return None, "the last bar is more than 60 s old"
+    if not math.isfinite(close):                    # the last eligible bar, never an earlier one instead
+        return None, "the last bar's close is not a finite number"
     return close, None
 
 

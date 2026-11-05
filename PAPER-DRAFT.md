@@ -1,4 +1,4 @@
-# The February 2027 paper: draft prose (v1, 14 Oct 2026)
+# The February 2027 paper: draft prose (v1, 14 Oct 2026; v2, 5 Nov 2026)
 
 *What Does Free Options Data Cost? Measuring a Retail-Grade Feed Against Cboe's Volatility Indices*
 
@@ -6,7 +6,88 @@
 (Validating the method) and 5b (the retail implementation audit). Written before H5e's final and H7's
 readings exist, like the outline (PAPER-OUTLINE.md), which fixes the question and structure. Every
 number below is copied from the project's dated records (README, hypothesis files, lab/REGISTRATION.md)
-and must be re-checked against them before submission. Sections 1, 2, 5.1-5.3, 6 and 7 are not drafted.
+and must be re-checked against them before submission. Sections 1, 2 and 6 were added 5 Nov 2026 (v2), also
+before the verdicts: an AI-assisted first draft (Vega) for Gabriel to rewrite in his own words, citing only
+sources PAPER-OUTLINE.md already documents; every statement that depends on a verdict is a bracketed
+placeholder, never a guess. Sections 5.1-5.4 and 7 are not drafted.
+
+---
+
+## 1. Introduction
+
+Researchers, students and individual investors without a data budget work from free options quotes: feeds
+that brokers and data sites offer at no charge. The alternative - OPRA's consolidated feed, a Bloomberg
+terminal, OptionMetrics - is priced for institutions. Nobody has measured what the free route costs. If a
+free feed's quotes sit close to the market's, volatility measures built on them can be trusted; if they do
+not, every result built on them carries an error its author cannot see.
+
+This paper asks one question: how much precision does free, retail-grade options data lose against the
+authoritative reference, and where does the loss come from - the quotes themselves, or the choices made in
+turning quotes into a volatility measure? The references are Cboe's published volatility indices (VIX, VXN,
+RVX, OVX and GVZ), the consolidated market (OPRA's best bid and offer, bought by the minute from Databento)
+and Bloomberg terminal snapshots. The free feed is Alpaca's indicative options data, which Alpaca itself
+documents as a derivative of the OPRA feed whose quotes are not actual OPRA quotes.
+
+[THE ANSWER, three sentences, written after the 12-19 Nov readings from the recorded verdicts. As the
+evidence stood before them (PAPER-OUTLINE.md, to be confirmed or replaced): the quotes are not the main
+problem - at the same minute the free feed's prices sit a small fraction of a bid-ask spread from the
+consolidated market, and its empty bids are empty on the market too; most of the gap to Cboe's indices comes
+from estimator choices (how many strikes are integrated, which expiries are used, how empty bids are
+handled); the one feed-specific defect is stale one-sided quotes on far contracts the market no longer
+quotes.]
+
+The contribution is a measurement, not a method. Every estimator here is Cboe's or published work's, credited
+where it is used (section 2). What is new is the comparison and the way it was run: each hypothesis was
+committed to the public repository, with its pass/fail bar, before its test was run - for the forward-looking
+tests also before their data existed, with the exceptions section 3 states - and a test that fails is reported
+in the same place as one that holds. The later tests follow a protocol fixed in the repository (PROTOCOL.md);
+the earlier ones were registered before it existed (section 6). Section 5's table counts
+every test the project ran. The recorders, the analysis code, the registrations and every daily snapshot are
+public; licensed data enters the public record only as aggregates.
+
+Section 2 places the study against the closest work. Section 3 describes the free feed, the references and
+how each was recorded. Section 4 shows the method recovering known results before it is trusted on new
+data. Section 5 reports where the loss comes from: the quotes (5.1), strike coverage (5.2), empty bids in the
+wings (5.3) and Cboe's own rules (5.4). Section 5b is an exploratory side study of what the same costs mean
+for a retail options seller. Section 6 sets out the limitations, which belong in the main text, and section
+7 concludes with what a researcher with no budget can trust, and what to fix first.
+
+## 2. Related work
+
+**The reference being reproduced.** Cboe's VIX methodology and its mathematics document define the
+model-free variance computed here, including the strike-selection and zero-bid rules that section 5 tests
+one at a time. Andersen, Bondarenko and Gonzalez-Perez (2015) show how the zero-bid truncation rule shapes
+the index - the handling H5e tests - and their later work (2025) finds larger interpolation error in
+monthly-only indices such as OVX and GVZ, the two indices compared most closely here.
+
+**Why small price errors matter.** Hentschel (2003) shows that small errors in option prices become large
+errors in implied volatility, worst away from the money and at short maturities: the theory for where a
+free feed's error should show. Duarte, Jones and Wang (2024) show that noise in option prices biases
+inference about risk premia, so data quality is an economic question, not a cosmetic one. Jiang and Tian
+(2005, 2007) measure the truncation and discretization error of model-free volatility; section 5.2 measures
+their mechanism on free data.
+
+**The closest designs.** Osterrieder, Vetter and Röschli [year: confirm] replicate VIX from Cboe's own
+quotes to about 0.02 index points, with timestamp mismatch the main remaining error: the floor that
+authoritative data reaches, and the reason each OPRA comparison here matches the free quote's contract to
+OPRA's record within 120 seconds. Comparisons with closing values carry the snapshot-to-close move instead,
+measured in section 6, and the Bloomberg quotes their own capture times (section 3). Wallmeier (2024)
+shows that OptionMetrics' 3:59 p.m. snapshot alone manufactures implied-volatility variation, a reason to
+rule out timing before blaming a feed; section 6 measures the snapshot's distance from the close rather than
+assuming it.
+
+**Free against authoritative data.** Such comparisons exist for equities (Clayton and Schmidt 2017, Yahoo
+against Nasdaq), and vendors assert untested that options data quality "is the same across providers". To
+our knowledge, no study benchmarks a free retail options feed against OPRA or Cboe's indices; the dated
+search log behind that statement (searches of 9 October 2026) is Appendix D.
+
+**Validation and the side study.** Section 4 checks the method against results the literature already
+holds: the variance risk premium of Carr and Wu (2009), sized by Bondarenko (2014), and delta-hedged option
+gains (Bakshi and Kapadia 2003; appendix). The side study in section 5b builds on Santa-Clara and Saretto
+(2009) on the spreads and margin calls that erode option writing, Muravyev and Pearson (2020) on effective
+against quoted spreads, Goyal and Saretto (2009) on costs paid at entry, and Dew-Becker, Giglio, Le and
+Rodriguez (2017) on why one-month variance claims are the ones priced; Bogousslavsky and Muravyev (working
+paper, 2025) report retail execution costs against which section 5b's spread assumptions look pessimistic.
 
 ---
 
@@ -155,6 +236,51 @@ added-back figure read -9.4% until 4 Nov 2026, a double rounding of the mean, -0
 
 *Data provided by Databento (OPRA consolidated NBBO). Cboe index levels: Cboe Global Markets. Aggregates
 only. Nothing here is investment advice.*
+
+---
+
+## 6. Limitations
+
+These limitations bound every result above, and they belong in the main text rather than in footnotes.
+
+**Scope.** One free feed (Alpaca's), about two months of registered readings, and eight underlyings on the
+strike surface. Another free feed, a calmer or rougher market, or other underlyings could read differently:
+the study measures this feed, in this period.
+
+**Timing.** The free snapshot is taken about 80 minutes before the index's close, so every comparison with a
+closing value includes the market's move in between. That distance is measured, not assumed: on 25
+stress-month days per fund (lab/ OPRA data, 2016-2026) the estimator moved a median 0.53 volatility points
+between 14:30 and 15:55 (GLD 0.14), large beside H7's bars of 0.25-0.30. The snapshot's time of day also
+changed inside H5e's and H7's windows (GitHub's delayed scheduler until 30 September 2026, an outside 14:30
+New York trigger since), so a before/after split is reported beside each pooled figure. [If H8's choice 6 is
+registered and read: it compares both feeds with each index at the snapshot minute itself, which removes this
+move from that one comparison.]
+
+**Method.** American options are priced with European formulas. The decomposition in section 5.4 depends on
+the order of its steps; the orderings the data allows, and their range, are reported. This project's
+estimator (weekly expiries, a ±30% band, whole-day time) is not Cboe's, so a gap to Cboe's index mixes
+method with data; only the same-contract, same-minute comparison with OPRA (5.1 and H8) isolates the data.
+
+**Like for like.** VIX, VXN and RVX are built from index options (SPX, NDX, RUT) while the free feed records
+the funds' options (SPY, QQQ, IWM), so H3's gaps on those three pairs include the index-versus-fund
+difference. GVZ and OVX are built from GLD's and USO's own options, so H5e and H7 compare like with like.
+
+**Statistics.** Daily gaps are persistent, so there are fewer independent observations than days; every
+series reports its effective sample size, n_eff, beside its length. The bars of the tests registered before
+the protocol (PROTOCOL.md) existed were set without a measured noise floor, and H5e's sat near its floor. The
+intervals and n_eff printed beside each verdict were added after registration and are descriptive; each
+verdict is read only against its registered bar. [Section 5's table: the Holm-adjusted column, as
+disclosure.]
+
+**The reference itself.** Cboe's methodology changes inside the ten-year validation sample of section 4
+(PROTOCOL.md lists the breaks), so that section validates the method's recovery of a known result, not a
+fixed index.
+
+**Costs.** The free feed's quoted spreads are wider than OPRA's on the liquid funds (SPY about twice), so
+every trading-cost yardstick in this paper, section 5b's included, comes from OPRA, never from the free
+quotes.
+
+[Any limitation a verdict exposes is added here, beside the result it qualifies.]
 
 ---
 

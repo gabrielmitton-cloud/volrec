@@ -13,6 +13,8 @@ Per PROTOCOL.md this file exists BEFORE any registration: it measures, on data a
                      readings land when nothing is wrong but the clock
   - the arithmetic:  T, day-to-day autocorrelation, n_eff = T(1-rho)/(1+rho), and the smallest
                      effect found 80% of the time, about 2.8 sd/sqrt(n_eff)
+  - by side:         the snapshot gap S0s - S1s split into a put part and a call part, both orders
+                     (H8-DRAFT item 7, 5 Nov 2026: descriptive, no bar, never part of the verdict)
 and carries the equivalence test the registration will name (two one-sided tests against +/-bound,
 Newey-West standard error, fixed-b one-sided p-values with t(T-1)'s beside, lag by `lag_for`; the
 4 Nov 2026 decision, H8-DRAFT.md item 2). Nothing here is a verdict.
@@ -134,20 +136,74 @@ def day_pair(band, opra, r):
     at_s = priced(band, opra, at=when) if when else {}
     s = [x for x in band if x["option_symbol"] in at_s]
     v = lambda rows: (lambda g: g[0] if g else None)(modelfree.model_free_30d(rows, r) if rows else None)
+
+    def mixed(side):
+        """H8-DRAFT item 7: the snapshot contracts with OPRA's quotes on one side ("P" or "C") and the free
+        feed's on the other. A row's side is the estimator's own rule: "C" is a call, anything else a put."""
+        return v([at_s[x["option_symbol"]] if (x["type"] == "C") == (side == "C") else x for x in s])
     out = {"n_band": len(band), "n_match": len(a), "n_floor": len(b), "n_snap": len(s),
            "S0": v(band), "S0m": v(a), "S1": v([at_t[x["option_symbol"]] for x in a]),
            "S1b": v([at_t[x["option_symbol"]] for x in b]), "S1n": v([at_t1[x["option_symbol"]] for x in b]),
-           "S0s": v(s), "S1s": v([at_s[x["option_symbol"]] for x in s])}
+           "S0s": v(s), "S1s": v([at_s[x["option_symbol"]] for x in s]), "T": when,
+           "MPs": mixed("P"), "MCs": mixed("C")}
+    return out
+
+
+def fund_days(sym, r):
+    """[(day, day_pair reading)] for one fund, from every OPRA file on disk; days recorded after the close
+    are left out (the 23 Sep rule). main() and tools/h8_index.py both read H8's days from here."""
+    from panel_health import AFTER_CLOSE_DAYS
+    from datetime import date
+    out = []
+    for f in sorted(ore.DATA_DIR.glob(f"OPRA_{sym}_*.csv")):
+        day = f.stem.split("_")[-1]
+        if date.fromisoformat(day) in AFTER_CLOSE_DAYS:
+            continue
+        band = [x for x in ore.recorded(day, sym) if x["_file"] == "surface.csv"]
+        got = day_pair(band, ore.load_opra(f), r)
+        if got:
+            out.append((day, got))
     return out
 
 
 # ---------------- the report ----------------
+def sides(days):
+    """H8-DRAFT item 7 (descriptive; no bar, never part of the verdict): the snapshot gap split by side, over
+    the fund-days on which S0s, S1s, MPs and MCs all exist and are finite. Puts swapped first: put part
+    S0s - MPs, call part MPs - S1s. Calls swapped first: call part S0s - MCs, put part MCs - S1s. Each order
+    adds up to the gap exactly; the distance between the orders is the interaction, given to neither side.
+    -> {"n", "gap", "puts_first": {"put", "call"}, "calls_first": {"call", "put"}}, each (mean, mean absolute)."""
+    keep = [x for x in days if all(x.get(k) is not None and math.isfinite(x[k]) for k in ("S0s", "S1s", "MPs", "MCs"))]
+
+    def two(xs):
+        return (st.mean(xs), st.mean(abs(g) for g in xs)) if xs else (float("nan"), float("nan"))
+    return {"n": len(keep), "gap": two([x["S0s"] - x["S1s"] for x in keep]),
+            "puts_first": {"put": two([x["S0s"] - x["MPs"] for x in keep]),
+                           "call": two([x["MPs"] - x["S1s"] for x in keep])},
+            "calls_first": {"call": two([x["S0s"] - x["MCs"] for x in keep]),
+                            "put": two([x["MCs"] - x["S1s"] for x in keep])}}
+
+
+def side_line(days):
+    """Item 7's report line: its own sample (all four estimates finite), its own count, and no minimum - so a
+    fund with few quote-time pairs still shows its split (Astra, 5 Nov)."""
+    by = sides(days)
+    if not by["n"]:
+        return f"  {'':5s} by side (item 7, descriptive): no fund-day with all four estimates finite"
+    pf, cf = by["puts_first"], by["calls_first"]
+    return (f"  {'':5s} by side (item 7, descriptive): puts first - put {pf['put'][0]:+.3f} (|.| {pf['put'][1]:.3f}), "
+            f"call {pf['call'][0]:+.3f} (|.| {pf['call'][1]:.3f}); calls first - call {cf['call'][0]:+.3f} "
+            f"(|.| {cf['call'][1]:.3f}), put {cf['put'][0]:+.3f} (|.| {cf['put'][1]:.3f}); "
+            f"gap {by['gap'][0]:+.3f}  ({by['n']} days)")
+
+
 def summarise(sym, days, lag):
     gaps = [x["S0m"] - x["S1"] for x in days if x["S0m"] is not None and x["S1"] is not None]
     snap = [x["S0s"] - x["S1s"] for x in days if x.get("S0s") is not None and x.get("S1s") is not None]
     floor = [x["S1n"] - x["S1b"] for x in days if x["S1n"] is not None and x["S1b"] is not None]
     if len(gaps) < 3:
         print(f"  {sym:5s} {len(gaps):3d} days - too few to summarise")
+        print(side_line(days))
         return
     sd = st.stdev(gaps)
     rho = ar1(gaps)
@@ -161,11 +217,10 @@ def summarise(sym, days, lag):
     if len(snap) >= 3:
         print(f"  {'':5s} at the snapshot minute (stale quotes included): mean {st.mean(snap):+.3f}  "
               f"mean|gap| {st.mean(abs(g) for g in snap):.3f}  sd {st.stdev(snap):.3f}  ({len(snap)} days)")
+    print(side_line(days))
 
 
 def main():
-    from panel_health import AFTER_CLOSE_DAYS
-    from datetime import date
     lag = 3
     r = modelfree.risk_free()
     print(f"H8 instrument - BUILDING, NOT REGISTERED; nothing below is a verdict. r = {r:.3%} (DGS1MO). "
@@ -173,20 +228,10 @@ def main():
           "gap = free - OPRA on the same contracts (registered estimator, +/-30% band); "
           "floor = OPRA one minute later - OPRA now\n")
     for sym in FUNDS:
-        files = sorted(ore.DATA_DIR.glob(f"OPRA_{sym}_*.csv"))
-        days = []
-        for f in files:
-            day = f.stem.split("_")[-1]
-            if date.fromisoformat(day) in AFTER_CLOSE_DAYS:      # the 23 Sep rule: recorded after the close
-                continue
-            band = [x for x in ore.recorded(day, sym) if x["_file"] == "surface.csv"]
-            got = day_pair(band, ore.load_opra(f), r)
-            if got:
-                days.append(got)
-        if not files:
+        if not any(ore.DATA_DIR.glob(f"OPRA_{sym}_*.csv")):
             print(f"  {sym:5s}   0 days - no OPRA files yet")
             continue
-        summarise(sym, days, lag)
+        summarise(sym, [got for _, got in fund_days(sym, r)], lag)
     print(f"\n{ore.ATTRIBUTION}")
 
 

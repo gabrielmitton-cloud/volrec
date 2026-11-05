@@ -119,7 +119,7 @@ E1, E2 = date(2026, 10, 23), date(2026, 11, 20)
 S, SIG = 100.0, 0.30
 
 
-def rows_and_opra(shift_mid=0.0, blank_far_bids=True):
+def rows_and_opra(shift_mid=0.0, blank_far_bids=True, side="CP"):
     rows, lines = [], ["ts_recv,ts_event,rtype,publisher_id,instrument_id,side,price,size,flags,"
                        "bid_px_00,ask_px_00,bid_sz_00,ask_sz_00,bid_pb_00,ask_pb_00,symbol"]
     for e, dte in ((E1, 14), (E2, 42)):
@@ -132,7 +132,7 @@ def rows_and_opra(shift_mid=0.0, blank_far_bids=True):
                 rows.append({"date": D, "symbol": "XYZ", "spot": str(S), "quote_time": f"{D}T18:42:10Z",
                              "expiration": e.isoformat(), "dte": str(dte), "type": k, "strike": str(float(K)),
                              "option_symbol": osi, "bid": str(b), "ask": str(a), "mid": str((b + a) / 2)})
-                ob, oa = b + shift_mid, a + shift_mid
+                ob, oa = (b + shift_mid, a + shift_mid) if k in side else (b, a)   # `side`: which OPRA quotes move
                 bb = "" if (b == 0 and blank_far_bids) else f"{ob:.4f}"   # Databento: no bid -> BLANK
                 occ = f"XYZ   {e:%y%m%d}{k}{K * 1000:08d}"
                 for mm in ("41", "42", "43", "44"):
@@ -161,10 +161,125 @@ check(f"a free quote hours older than every OPRA record is excluded, not matched
       z["n_match"] == len(rows) - len(rows[::4]))
 check("excluded contracts leave the free-only estimate S0 on the full band", z["S0"] == x["S0"])
 check("an empty band gives no reading", h8.day_pair([], opra, 0.0) is None)
+check("the reading carries the snapshot minute it priced at (tools/h8_index.py reads the index there)",
+      x["T"] == h8.ore.snapshot_minute(rows) and x["T"] is not None)
 check("at the snapshot minute, identical quotes also give a gap of exactly 0",
       x["S0s"] is not None and abs(x["S0s"] - x["S1s"]) < 1e-12 and x["n_snap"] == x["n_band"])
 check("a stale free quote is KEPT at the snapshot minute (the user's view) though dropped by the quote-time match",
       z["n_snap"] == len(rows) and z["n_match"] < len(rows))
+
+print("\n=== item 7: the snapshot gap split by side (descriptive; H8-DRAFT, 5 Nov 2026) ===")
+check("identical quotes on both feeds give both mixed estimates equal to S0s and S1s",
+      all(abs(x[k] - x["S0s"]) < 1e-12 for k in ("MPs", "MCs", "S1s")))
+yp = h8.day_pair(*rows_and_opra(shift_mid=0.02, side="P")[:2], 0.0)
+gp = yp["S0s"] - yp["S1s"]
+check(f"OPRA's PUTS 2 cents higher, calls the same: the gap ({gp:+.4f}) is all put part in both orders "
+      f"(puts first {yp['S0s'] - yp['MPs']:+.4f}, calls first {yp['MCs'] - yp['S1s']:+.4f}), call part 0",
+      gp < 0 and abs((yp["S0s"] - yp["MPs"]) - gp) < 1e-12 and abs((yp["MCs"] - yp["S1s"]) - gp) < 1e-12
+      and abs(yp["MPs"] - yp["S1s"]) < 1e-12 and abs(yp["S0s"] - yp["MCs"]) < 1e-12)
+yc = h8.day_pair(*rows_and_opra(shift_mid=0.02, side="C")[:2], 0.0)
+gc = yc["S0s"] - yc["S1s"]
+check(f"OPRA's CALLS 2 cents higher, puts the same: the gap ({gc:+.4f}) is all call part in both orders, put part 0",
+      gc < 0 and abs((yc["S0s"] - yc["MCs"]) - gc) < 1e-12 and abs((yc["MPs"] - yc["S1s"]) - gc) < 1e-12
+      and abs(yc["MCs"] - yc["S1s"]) < 1e-12 and abs(yc["S0s"] - yc["MPs"]) < 1e-12)
+check(f"both sides 2 cents higher: each order's two parts add up to the gap ({y['S0s'] - y['S1s']:+.4f}), and "
+      "both sides carry some of it", all(abs((y["S0s"] - m) + (m - y["S1s"]) - (y["S0s"] - y["S1s"])) < 1e-12
+                                         for m in (y["MPs"], y["MCs"]))
+      and y["S0s"] - y["MPs"] < 0 and y["MPs"] - y["S1s"] < 0)
+fake = [{"S0s": 20.0, "S1s": 19.0, "MPs": 19.75, "MCs": 19.125},     # gap  1.0: puts first .25/.75, calls first .875/.125
+        {"S0s": 18.0, "S1s": 18.5, "MPs": 18.375, "MCs": 17.75},     # gap -0.5: -.375/-.125, .25/-.75
+        {"S0s": 21.0, "S1s": 20.0, "MPs": 20.0, "MCs": 21.0},        # gap  1.0: 1/0, 0/1
+        {"S0s": 20.0, "S1s": None, "MPs": 19.0, "MCs": 19.0},        # left out: an estimate missing
+        {"S0s": float("nan"), "S1s": 19.0, "MPs": 19.0, "MCs": 19.0},  # left out: not finite
+        {"S0s": 20.0, "S1s": 19.0, "MPs": float("inf"), "MCs": 19.0},
+        {"S0s": 20.0, "S1s": 19.0, "MPs": 19.5}]                      # left out: no MCs at all
+sd7 = h8.sides(fake)
+want = {"gap": (1.5 / 3, 2.5 / 3), ("puts_first", "put"): (0.875 / 3, 1.625 / 3),
+        ("puts_first", "call"): (0.625 / 3, 0.875 / 3), ("calls_first", "call"): (1.125 / 3, 1.125 / 3),
+        ("calls_first", "put"): (0.375 / 3, 1.875 / 3)}
+got7 = {k: (sd7[k] if k == "gap" else sd7[k[0]][k[1]]) for k in want}
+check("the split's means and mean absolutes match hand-computed answers, on the 3 of 7 days with all four "
+      "estimates finite", sd7["n"] == 3 and all(abs(a - b) < 1e-12 for k in want for a, b in zip(got7[k], want[k])))
+import contextlib, io
+days7 = [dict(f, n_match=10, n_band=10, S0m=f["S0s"], S1=f["S1s"], S1n=1.0, S1b=1.0) for f in fake[:3]]
+with contextlib.redirect_stdout(io.StringIO()) as out7:
+    h8.summarise("XYZ", days7, 1)
+line7 = [ln for ln in out7.getvalue().splitlines() if "by side" in ln]
+check("the report prints the split beside the gap, both orders, labelled descriptive",
+      len(line7) == 1 and "item 7, descriptive" in line7[0] and "puts first - put +0.292 (|.| 0.542), call +0.208 "
+      "(|.| 0.292); calls first - call +0.375 (|.| 0.375), put +0.125 (|.| 0.625); gap +0.500  (3 days)" in line7[0])
+
+
+def report_of(days):
+    with contextlib.redirect_stdout(io.StringIO()) as o:
+        h8.summarise("XYZ", days, 1)
+    return o.getvalue()
+
+
+sparse = [dict(d, n_match=0, S0m=None, S1=None, S1n=None, S1b=None) for d in days7]   # no quote-time pair at all
+r7 = report_of(sparse)
+check("the split is reported on its own sample even when the fund has too few quote-time pairs (Astra, 5 Nov)",
+      "too few to summarise" in r7 and "call +0.375 (|.| 0.375), put +0.125 (|.| 0.625); gap +0.500  (3 days)" in r7)
+check("...with no minimum of its own: one eligible fund-day is reported, as one day",
+      "puts first - put +0.250 (|.| 0.250), call +0.750 (|.| 0.750); calls first - call +0.875 (|.| 0.875), "
+      "put +0.125 (|.| 0.125); gap +1.000  (1 days)" in report_of(sparse[:1] + [dict(sparse[0], MCs=None)]))
+check("...and a fund with no eligible fund-day says so instead of printing numbers",
+      "by side (item 7, descriptive): no fund-day with all four estimates finite" in report_of([dict(sparse[0], MPs=None)]))
+
+
+def rows_and_opra_snap(put_snap, call_snap):
+    """Item 7's harder fixture (Astra, 5 Nov). Free quotes stamped 18:42:40, so the quote-time match takes OPRA's
+    18:43 record and the snapshot minute (18:42, the median quote time) its own. Only OPRA's 18:42 quotes move,
+    by side. Every 4th free quote is stale (15:02: matched only at the snapshot minute). The 125-strike contracts
+    are quoted by OPRA only at 18:44:30 - inside 120 s of their quote time, outside 120 s of the snapshot
+    minute - so they are in the quote-time set and not the snapshot set."""
+    rows, lines = [], ["ts_recv,ts_event,rtype,publisher_id,instrument_id,side,price,size,flags,"
+                       "bid_px_00,ask_px_00,bid_sz_00,ask_sz_00,bid_pb_00,ask_pb_00,symbol"]
+    snapq = {}
+    for e, dte in ((E1, 14), (E2, 42)):
+        for K in range(70, 131, 5):
+            for k in "CP":
+                p = black76(k, S, float(K), dte / 365.0, 0.0, SIG)
+                b, a = (round(p * 0.98, 4), round(p * 1.02, 4)) if p > 0.05 else (0.0, 0.05)
+                osi = f"XYZ{e:%y%m%d}{k}{K * 1000:08d}"
+                qt = f"{D}T15:02:00Z" if len(rows) % 4 == 0 else f"{D}T18:42:40Z"
+                rows.append({"date": D, "symbol": "XYZ", "spot": str(S), "quote_time": qt, "expiration": e.isoformat(),
+                             "dte": str(dte), "type": k, "strike": str(float(K)), "option_symbol": osi,
+                             "bid": str(b), "ask": str(a), "mid": str((b + a) / 2)})
+                occ = f"XYZ   {e:%y%m%d}{k}{K * 1000:08d}"
+                sh = put_snap if k == "P" else call_snap
+                at_min = {mm: (b + (sh if mm == "42" else 0.0), a + (sh if mm == "42" else 0.0))
+                          for mm in ("41", "42", "43", "44")} if K != 125 else {"44:30": (b, a)}
+                for mm, (ob, oa) in at_min.items():
+                    stamp = f"18:{mm}.000000000Z" if ":" in mm else f"18:{mm}:00.000000000Z"
+                    lines.append(f"{D}T{stamp},,193,30,1,N,,0,0,{'' if b == 0 else f'{ob:.4f}'},{oa:.4f},1,1,1,1,{occ}")
+                if K != 125:                       # OPRA's snapshot-minute quote, as the file will read back
+                    ob, oa = at_min["42"]
+                    bb = 0.0 if b == 0 else float(f"{ob:.4f}")
+                    snapq[osi] = dict(rows[-1], bid=str(bb), ask=str(float(f"{oa:.4f}")),
+                                      mid=str((bb + float(f"{oa:.4f}")) / 2.0))
+    tmp = Path(tempfile.mkdtemp()) / f"OPRA_XYZ_{D}.csv"
+    tmp.write_text("\n".join(lines) + "\n")
+    return rows, h8.ore.load_opra(tmp), snapq
+
+
+rs, os_, snapq = rows_and_opra_snap(0.02, 0.03)
+xs = h8.day_pair(rs, os_, 0.0)
+v7 = lambda rows: h8.modelfree.model_free_30d(rows, 0.0)[0]
+in_s = [r for r in rs if r["option_symbol"] in snapq]           # the snapshot set, assembled by hand
+check(f"the harder fixture's sets are as built: the quote-time set skips the stale quotes ({xs['n_match']}), the "
+      f"snapshot set skips the 125-strike contracts and keeps the stale ones ({xs['n_snap']})",
+      xs["T"].minute == 42 and xs["n_match"] == sum(r["quote_time"].endswith("18:42:40Z") for r in rs)
+      and xs["n_snap"] == len(in_s) == len(rs) - 4)
+check("both mixes equal the estimator on inputs assembled by hand: the snapshot set, OPRA's 18:42 quote on the "
+      "one side, the free quote on the other (so not the quote-time set, nor OPRA's 18:43 quotes)",
+      abs(xs["MPs"] - v7([snapq[r["option_symbol"]] if r["type"] != "C" else r for r in in_s])) < 1e-12
+      and abs(xs["MCs"] - v7([snapq[r["option_symbol"]] if r["type"] == "C" else r for r in in_s])) < 1e-12
+      and abs(xs["S1s"] - v7([snapq[r["option_symbol"]] for r in in_s])) < 1e-12 and abs(xs["S0s"] - v7(in_s)) < 1e-12)
+pf7, cf7 = xs["S0s"] - xs["MPs"], xs["MCs"] - xs["S1s"]
+check(f"with both sides moved, the order matters (put part {pf7:+.4f} puts first, {cf7:+.4f} calls first) and each "
+      "order still adds up to the gap", abs(pf7 - cf7) > 1e-6
+      and all(abs((xs["S0s"] - m) + (m - xs["S1s"]) - (xs["S0s"] - xs["S1s"])) < 1e-12 for m in (xs["MPs"], xs["MCs"])))
 
 print("\n=== the purchase trim keeps exactly what H8 reads ===")
 ore = h8.ore

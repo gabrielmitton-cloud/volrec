@@ -41,7 +41,7 @@ is how many of the eight show equivalence.
 ## Instrument readiness [required]
 - `tools/h8_quotes.py` (built 10 Oct; re-read cold the same day, which added the snapshot-minute
   reading). Estimator unchanged: `modelfree.model_free_30d`, the ±30% band.
-- Known-answer tests: `tools/test_h8.py`, 36 cases (26 until 4 Nov; 32 that evening; 36 after Astra's review the same night). Identical quotes give a gap of
+- Known-answer tests: `tools/test_h8.py`, 49 cases (26 until 4 Nov; 32 that evening; 36 after Astra's review the same night; 37 on 5 Nov, when `day_pair` began carrying the snapshot minute it priced at, for choice 6; 43 the same day with choice 7's split by side, and 49 after Astra's follow-up review of it). Identical quotes give a gap of
   exactly 0; a uniform 2-cent OPRA premium reads with the right sign; stale quotes are handled both ways;
   n_eff, the smallest detectable effect and the two one-sided tests are checked against hand-computed
   values; the purchase trim keeps exactly what is read. Since 4 Nov: the lag rule (8 at 41 days, 8 at 36,
@@ -58,6 +58,27 @@ is how many of the eight show equivalence.
   h8-tie-excluded, h8-tie-excluded-upper and h8-threshold-inclusive (each killed when checked alone before
   it was added).
 - Data: the cloud buys all eight funds daily from 9 Oct 2026 (`opra_reference.py --h8`, own $15 cap).
+- **Choice 6's reader, built 5 Nov 2026 (item 6 below; descriptive, never part of the verdict):**
+  `tools/h8_index.py`. It reads H8's own fund-days (`h8_quotes.fund_days`, which `main` now reads too; H8's
+  report on the real calibration data was byte-for-byte the same before and after that change) and the index
+  at the snapshot minute through the timing plan's reader (`index_timing`: seal, file inventory, bar parser,
+  `index_at`; its bar parser now takes the six indices for H8's folder only, its own default still OVX and GVZ).
+  A fund-day counts only when both feeds' estimates and I(T) are there and finite; every window trading day
+  (`panel_health`'s calendar, the project's one copy: 41 days) is accounted for once per fund, never filled.
+  It refuses the timing plan's sealed folder, and refuses to read anything until the window has closed
+  (30 Jan 2027). Tests: `tools/test_h8_index.py`, 47 cases on SYNTHETIC files in DBIX's recorded layout;
+  pressure test "H8's index reading's tests pass"; auditor mutants h8index-opens-before-window,
+  h8index-reads-timing-folder, h8index-one-feed-day, h8index-window-ignored, h8index-day-dropped,
+  h8index-reads-near, h8index-reseals, h8index-nonfinite-estimate, h8index-calendar-ignored,
+  timing-default-widened and timing-nonfinite-index (each made the tests fail when tried alone before it was
+  added). Astra's review the same morning found two gaps, both fixed: a trading day missing from both sources
+  vanished (now listed from the calendar), and a close that is not a finite number would have been counted
+  (now not measured, in `index_at` itself, so the timing reader has the same rule; its tests: 64). Purchases: the private `dbix-h8/buy.py` (committed 5 Nov, nothing bought) buys each
+  window trading day through yesterday not yet on disk, priced first, own $1 cap (tag `-h8dbix`), and seals
+  each file as it lands (`h8_index.sealed_readme`, read back by the timing reader's `seal`). It runs from a
+  daily.yml step to be added about 20-24 Nov, after the verdicts (daily.yml is not edited before them): every
+  scheduled weekday, so well inside the 10-day rule. Never run on real index data yet: there is none until
+  1 Dec.
 - **Was open, decided 4 Nov and built the same evening:** the Newey-West lag (`h8_quotes.lag_for`, the
   whole number nearest 1.3·√T) and fixed-b one-sided p-values (`h8_quotes.tost` reads
   `analyze.fixed_b_null`; t(T−1)'s p-values come back beside, never in place). Item 2 at the end.
@@ -154,7 +175,34 @@ registered about Tue 24 Nov, with an OSF freeze in Gabriel's browser, a week bef
 6. **Yes**, on its own $1 cap (ledger tag `-h8dbix`, inside the $120 lifetime cap): bought at least every 10
    calendar days through the window, because usage-based access reaches back only about 14 days. It reads
    the files with the timing plan's reader once that reader is built and tested; if it is not ready by
-   registration, choice 6 is dropped rather than registered on an untested path.
+   registration, choice 6 is dropped rather than registered on an untested path. *Built and tested 5 Nov
+   (Instrument readiness above): `tools/h8_index.py` through the timing plan's reader, 47 synthetic cases,
+   eleven auditor mutants; the purchases' daily.yml step is still to add, about 20-24 Nov.*
+7. **Yes - added 5 Nov 2026 (Vega's proposal; Gabriel: "if u think it could actually stand to help the
+   project then sure go for it"): the snapshot gap split by side,** a third secondary, descriptive reading,
+   and the way skew enters this study without a new measure or a new reference. On each fund-day, on the
+   contracts H8's snapshot reading already uses (`day_pair`'s S0s and S1s: the same contracts in both feeds,
+   OPRA within 120 s of the snapshot minute), the registered estimator (`modelfree.model_free_30d`, unchanged)
+   runs twice more on mixed quotes: OPRA's puts with the free feed's calls (M_P), and OPRA's calls with the
+   free feed's puts (M_C). The gap S0s - S1s then splits exactly, two ways: puts swapped first, put part
+   S0s - M_P and call part M_P - S1s; calls swapped first, call part S0s - M_C and put part M_C - S1s. Both
+   orders are reported, and the distance between them is the interaction (the forward and the strike K0 use
+   both sides), never assigned to either side. Per fund: the mean and the mean absolute of each part in each
+   order, beside the mean gap, over the fund-days on which all four estimates exist and are finite. No bar,
+   no test, never part of the H8 verdict. **Why:** Hentschel (2003) predicts that small price errors matter
+   most away from the money; a level test can hide wing errors that offset, and this says whether the free
+   feed's gap sits with the puts (the crash-protection side), the calls, or both. Defined here before any of
+   it was computed on any data; built and tested before registration, or dropped, like choice 6. *Built and
+   tested 5 Nov, after this definition was written: `day_pair`'s MPs and MCs and `sides` in
+   `tools/h8_quotes.py`, and one line in its report on the split's own sample, with its count and no minimum
+   (so a fund with few quote-time pairs still shows it). Twelve known-answer cases in `tools/test_h8.py`: a
+   move in OPRA's puts alone is all put part in both orders and a move in its calls alone all call part,
+   exactly; each order adds up to the gap; hand-computed means; the printed line, also for a fund with no
+   quote-time pair, one eligible day or none; and a fixture whose quote-time and snapshot quotes, and sets,
+   differ, where both mixes must equal the estimator on inputs assembled by hand and the order must matter.
+   Auditor mutants h8-sides-swapped, -one-order, -nonfinite-kept, -not-printed, -minimum, -quote-time-set and
+   -quote-time-quotes, each tried alone first. Not computed on any real data before the commit that carries
+   this definition.*
 
 *The six questions as drafted, kept for their reasons (and, for 6, its specification):*
 1. Δ (proposed 0.10; its trading-cost reason was corrected on 12 Oct and now holds only for the

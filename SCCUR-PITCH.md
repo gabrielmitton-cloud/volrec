@@ -54,7 +54,9 @@ do with a strike nobody bids on, how to count days. Cboe publishes its own; the 
 you follow it on free quotes.
 
 **What does pre-registered mean, and why bother?** I wrote down each test and its pass/fail bar, dated and
-public, before the data existed. It stops me from choosing the test after seeing the answer.
+public, before running it. For the forward-looking tests that was also before the data existed - H5 after
+one day of its wing data, which its file says - while the ten-year validation and one side study used history
+that already existed. It stops me from choosing the test after seeing the answer.
 
 **Did anything fail?** Yes, and it's on the poster: H6a (implied volatility did not beat a simple 14-day
 average at forecasting the next day's range: 0 of 9 pairs) and H2b (not supported). H5e's first reading failed too (0.90
@@ -92,3 +94,41 @@ first, Dec-Jan), and the paper in 2027, failures included.
 
 Say the 30-second opener until it fits in one breath-paced half minute. Then walk the poster with a friend
 (or a phone recording) and answer three random questions from the list without reading them.
+
+## Mock judging (added 5 Nov 2026): the harder questions
+
+Run it with Vega any day before 21 Nov: say **"judge me"**. Vega plays a judge who has read nothing: the
+30-second opener, the 2-minute walk, then six questions mixed from both lists, one at a time, with a score
+after each. No scripted answers below on purpose: each line says what a good answer must contain.
+
+1. **"The free feed is altered by design. Isn't the answer obviously 'it's worse'? By how much, in what
+   units?"** - the size at the same minute, in volatility points and as a fraction of the spread, from the
+   recorded readings (README's results table); "worse" is not the question, "where" is.
+2. **"Your snapshot is about 80 minutes before the close. How do you know the gap isn't just timing?"** -
+   measured, not assumed: a median 0.53 volatility points between 14:30 and 15:55 on stress days (GLD 0.14),
+   beside H7's 0.25-0.30 bars. The OPRA comparison takes the 80 minutes out, not all timing: each free quote is
+   matched to OPRA's record within two minutes, and the snapshot reading keeps the free feed's stale quotes on
+   purpose, as a user would see them.
+3. **"You designed and graded your own tests. Why should I trust them?"** - dated, public registrations
+   before each test was run, and before the data for the forward-looking ones (H5 after one day of it);
+   failures shown (H6a, H2b, H5e's first reading); an auditor proves every safeguard fails when broken.
+4. **"What is n_eff, and why do you report it?"** - daily gaps persist, so 40 days are not 40 independent
+   points; T(1 - rho)/(1 + rho); it sets how small an effect the data can see.
+5. **"How do you show two feeds are the same, not just 'not significantly different'?"** - an equivalence
+   test (two one-sided tests against +/-0.10 points) for H8; failing to find a difference is not evidence
+   of none; fixed-b critical values because the days are correlated.
+6. **"Isn't your +/-30% strike band a choice that drives the result?"** - yes, and that is the finding:
+   +/-10% reads oil 12 points light, +/-30% brings the mean gap to 0.59 (H3); truncation grows with
+   volatility (Jiang and Tian's mechanism).
+7. **"VIX is built on S&P 500 index options and you record SPY. Apples and oranges?"** - for VIX, VXN and
+   RVX, yes, and the poster says so; OVX and GVZ are built on USO's and GLD's own options, so the main tests
+   use those.
+8. **"What result would change your conclusion?"** - name it before being asked: a failed final reading
+   [after 19 Nov: say which held], or H8 finding the feeds not equivalent on most funds; either is reported.
+9. **"Who is this for?"** - anyone without a data budget: it says what to fix first (method choices) and
+   what the free quotes can carry.
+10. **"With $10,000, what would you buy?"** - the scope limits in order: a second free feed, a longer
+    window, more underlyings - not a fancier model.
+
+**Score per answer (Vega keeps the tally):** under 30 seconds; a number with its unit and source; the limit
+said before being asked; no H5e or H7 number before it is recorded; nothing that sounds like trading advice.
