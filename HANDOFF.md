@@ -3328,7 +3328,7 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   or beyond", and a p of exactly 0.05 is not below 0.05. Auditor mutants `h8-tost-uses-t`,
   `h8-fixedb-two-sided`, `h8-lag-rule`, then `h8-reps-shared`, `h8-reps-not-passed`, `h8-tie-excluded`,
   `h8-tie-excluded-upper`, `h8-threshold-inclusive`, each killed on a pre-check.
-- *For registration (Vega's call, Gabriel's to veto), changed the same night:* at T = 41 and lag 8 the shared
+- *For registration, changed the same night (Vega's call; Gabriel approved it after the push):* at T = 41 and lag 8 the shared
   seeded 4,000-draw null puts the one-sided 5% points at 2.03 and -2.06, against 2.09 and -2.11 from 200,000
   draws (the fixed-b limit at b = 9/41, simulated at large T: about 2.10); at those points the 4,000-draw null gives p = 0.047 and 0.046,
   light in both tails for this seed (about one simulation standard error each), the lenient direction for an
@@ -3405,6 +3405,21 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   session; its specification is a draft the 20 Nov discussion may still change; and its noise floor compares
   Compustat with the Bloomberg closes, which arrive 23-25 Nov. Built once, with both price sources in hand.
   Target unchanged: registered mid-December.
+
+**Wed 4 Nov (night, after the push) - live, and Gabriel's yes to both open decisions**
+- *Pushed:* `df6b68f` at 04:40 UTC 5 Nov (20:40 Pacific, 4 Nov), after the auditor read 173 of 173 (2,025 s)
+  and the pre-push pressure test 0 fail; Pages built at 04:41 UTC. Checked on the live site at desktop width
+  and at 375 px: the Lab page (the answer in the subtitle, five key numbers, the fitted line on all five
+  break-even panels, Databento credited in every section, the author line, no sideways scroll, no console
+  error), "Lab" in every page's rail, the paper's Tools list and the instrument's footer, `--ink-3` #6e7c8a.
+- *Gabriel:* "all the descions seem good to me". So (1) H8 keeps 200,000 fixed-b draws of its own
+  (`H8_REPS`; H8-DRAFT item 2 now says approved). (2) The 23-25 Nov Bloomberg pull B adds the four indices'
+  daily highs and lows (`PX_HIGH`, `PX_LOW`, from 1 Jan 1986) beside the closes, so H10's range-based D4 does
+  not depend on Marc's file: pulled, listed under H10's "Data already seen", not studied; whether D4 runs,
+  and on which source, is fixed in H10-DRAFT before registration, after a coverage check (dates, counts, and
+  low <= close <= high). `BLOOMBERG-MONDAY.md` (pull B; the file is now `INDEX_DAILY_2026-11-23.xlsx`) and
+  H10-DRAFT decision 5 updated. The 23 Nov phone reminder (`trig_014FSkJSmGQqutozEtGxhSVq`) names the
+  highs and lows and points to the list.
 
 ### Prompt for the next session
 

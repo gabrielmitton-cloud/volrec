@@ -40,24 +40,31 @@ that far, write down the first day they do reach and pull anyway.
    values.** Reading them waits for a short descriptive registration I write once I have seen the layout
    (column headers, timestamps and row counts are the layout; the numbers are not).
 
-### B. Daily closes of SPX, INDU, NDX and RTY - second, from 1986
+### B. Daily closes, highs and lows of SPX, INDU, NDX and RTY - second, from 1986
 
 **Why.** H10 (the 1990-2026 test; registration planned for mid-December) takes its index prices from
 Compustat, and checks them against a second source before it is registered. The Russell 2000 has no free
-second source. This is H10's decision 4, approved 4 Nov. The ~90-day limit above is for option quotes; index
-closes go back decades.
+second source. This is H10's decision 4, approved 4 Nov. The highs and lows were added that night, with
+Gabriel's yes, for H10's possible range-based measure (D4), so it does not depend on Marc's file; whether D4
+uses them is decided before H10 is registered. The ~90-day limit above is for option quotes; index prices go
+back decades.
 
-1. In Excel, one formula per index, each on its own sheet:
+1. In Excel, each index on its own sheet, three formulas side by side - closes in A1, highs in C1, lows in
+   E1 (each fills a date column and a value column):
    `=BDH("SPX Index","PX_LAST","1/1/1986","11/20/2026")`
+   `=BDH("SPX Index","PX_HIGH","1/1/1986","11/20/2026")`
+   `=BDH("SPX Index","PX_LOW","1/1/1986","11/20/2026")`
    then the same for `INDU Index`, `NDX Index` and `RTY Index`. (Or Spreadsheet Builder, historical table,
-   field `PX_LAST`, daily, the same dates.) The end date is the last full trading day before the visit -
-   Fri 20 Nov if you go on the 23rd. An index that starts after 1986 simply starts later; that is fine.
-2. For each sheet: the first date and the last, written down.
-3. Save as `INDEX_CLOSES_2026-11-23.xlsx`.
+   fields `PX_LAST`, `PX_HIGH` and `PX_LOW`, daily, the same dates.) The end date is the last full trading day
+   before the visit - Fri 20 Nov if you go on the 23rd. An index that starts after 1986 simply starts later;
+   that is fine.
+2. For each sheet: the first date and the last, written down, and the first date the high and low columns
+   have numbers (they can start later than the closes).
+3. Save as `INDEX_DAILY_2026-11-23.xlsx`.
 
-**One rule.** Closes only - no implied volatility (VXD, VXN or RVX daily) at this visit. Once pulled, the
-closes go on H10's "Data already seen" list, and nothing about the premium is computed from them before H10 is
-registered.
+**One rule.** Closes, highs and lows only - no implied volatility (VXD, VXN or RVX daily) at this visit. Once
+pulled, they go on H10's "Data already seen" list, and nothing about the premium is computed from them before
+H10 is registered.
 
 ### If time is left
 

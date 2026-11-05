@@ -142,8 +142,8 @@ registered about Tue 24 Nov, with an OSF freeze in Gabriel's browser, a week bef
    **Changed the same night, as Astra's review recommended:** H8 uses 200,000 seeded draws of its own
    (`h8_quotes.H8_REPS`, the same seed; about 8 seconds at T = 41); the shared default of 4,000 is
    unchanged for every registered figure. More draws make the simulation precise; they do not make the
-   iid-Gaussian fixed-b approximation exact at T of 30-41. Vega's call, Gabriel's to veto before
-   registration. (Until this change the note read: "Kept at 4,000 so every fixed-b number in the project
+   iid-Gaussian fixed-b approximation exact at T of 30-41. Vega's call, approved by Gabriel the same
+   night ("all the descions seem good to me"). (Until this change the note read: "Kept at 4,000 so every fixed-b number in the project
    comes from the same seeded null", and gave the gap as 0.0455 at 2.11, a point measured on the upper tail
    only.)*
 3. **Each fund reported; the headline is the count** of the eight that show equivalence: a tally of eight

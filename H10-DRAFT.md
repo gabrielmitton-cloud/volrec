@@ -202,7 +202,12 @@ tested and a day old.
    seen"; no premium is computed from them before registration.
 5. **If Marc's daily highs and lows arrive before registration**, a range-based realized volatility
    (Parkinson 1980) joins as a descriptive D4, specified here before any value is read. If they arrive
-   later, H10 does not use them.
+   later, H10 does not use them. *Added the night of 4 Nov, with Gabriel's yes ("all the descions seem good
+   to me"): the 23-25 Nov Bloomberg pull takes the four indices' daily highs and lows (`PX_HIGH`, `PX_LOW`,
+   from 1 Jan 1986) beside the closes, so D4 no longer depends on Marc's file. Once pulled they are listed
+   under "Data already seen" and not studied. Whether D4 runs, and on which source, is fixed here before
+   registration, after a check of coverage only: first and last dates, counts, and that each low is at or
+   below the close and each high at or above it.*
 6. **D2 goes in the paper.** Whether it also goes on the site waits for the post-verdict site discussion.
 
 *The six questions as drafted, kept for their reasons:*
