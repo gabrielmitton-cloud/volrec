@@ -75,6 +75,11 @@ Descriptive, no prediction, printed beside and never folded into H10a:
     differences in ln(H/L) between the two sources on common days, beside decision 4's comparison of
     their closes.
   - Nothing in D4 changes after its values are seen. It is printed beside H10a and never folded into it.
+  - *Coverage, checked 5 Nov after this was committed (`cbd8d03`):* in Compustat's files the S&P 500's and
+    DJIA's high equals the low on every day before 1 April 1998, and on 11 later days each (listed under
+    "Data already seen"). Under the rule above those days are unusable, so D4 measures those two indices
+    from April 1998, and their earlier windows are listed as not measured. The Nasdaq-100's highs and lows
+    are usable throughout. The rule and the sources stay as written.
 
 ## Specification (proposed; frozen at registration)
 - `IV(t)` = the Cboe index close on date t, divided by 100. **Only FRED's reprints reach the early years
@@ -200,7 +205,18 @@ failure is reported as a failure.
 - **Marc's daily highs and lows (Compustat `prchd`/`prcld`), received 5 Nov.** S&P 500 from 1990-01-02,
   DJIA from 1997-01-02 and Nasdaq-100 from 2001-01-02, each to 2026-11-04 (9,279, 7,507 and 6,499 days). No
   Russell 2000: Compustat has none. Before D4's specification was committed, only their structure was
-  read: the header, row counts, and first and last dates. The coverage check came after that commit.
+  read: the header, row counts, and first and last dates. The coverage check came after that commit
+  (`cbd8d03`), and read counts and dates only:
+  - There is no missing, non-numeric, non-positive, duplicate or weekend entry. The only gaps over four
+    calendar days are the closes' three closures (9/11, 2 Jan 2007, Hurricane Sandy).
+  - Every day with a close has low <= close <= high: 9,277, 7,505 and 6,497 days. 3-4 Nov 2026 have no
+    close yet.
+  - The S&P 500's and DJIA's high equals the low on every day from the file's start to 31 Mar 1998 (2,085
+    and 314 days), and on 11 later days each. S&P 500: 1999-11-09, 2006-05-15, 2007-03-05, 2008-03-20,
+    2008-12-05, 2012-10-31, 2012-11-01, 2017-11-24, 2018-02-22, 2021-09-29, 2021-10-01. DJIA: 2002-06-28,
+    2002-08-02, 2003-08-14, 2007-09-20, 2009-12-14, 2010-05-05, 2012-04-10, 2012-08-01, 2012-10-31,
+    2012-11-01, 2021-09-28. The Nasdaq-100's high is above its low on every day.
+  - Usable days under D4's rule: 7,181 of 9,279, 7,180 of 7,507, and 6,497 of 6,499.
 - **Dates only**, for the planning counts above.
 - **FRED's VIXCLS, 1990–2026, in the TimesFM benchmark (17 Sep) and its 17 Oct recheck:** VIX forecast
   against VIX itself (HAR fitted on all earlier days, forecasts from 2008). No realized volatility and no
@@ -246,7 +262,11 @@ tested and a day old.
    below the close and each high at or above it.* *5 Nov: Marc's file arrived before registration, so D4
    joins. It covers the S&P 500, DJIA and Nasdaq-100 to 4 Nov 2026; Compustat has no Russell 2000 highs
    and lows. D4 is specified in the D-list above, its sources included, before any value was read.
-   Settled by Vega under the 4 Nov go-ahead to settle what can be settled now; Gabriel's to veto.*
+   Settled by Vega under the 4 Nov go-ahead to settle what can be settled now; Gabriel's to veto.* *The
+   coverage check that followed found no distinct high and low before 1 April 1998 for the S&P 500 and
+   DJIA. D4 is not amended to fill those years from Bloomberg's pull: that would splice a second vendor
+   into one series, and the sources were fixed before the check. Those windows are listed as not
+   measured. Decided 5 Nov (Vega); Gabriel's to veto.*
 6. **D2 goes in the paper.** Whether it also goes on the site waits for the post-verdict site discussion.
 
 *The six questions as drafted, kept for their reasons:*

@@ -3521,6 +3521,34 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
     in a worktree, with the FRED cache copied in, and diffing (21 lines identical). Without the cache the old
     code priced at r = 0, the known trap.
 
+**Thu 5 Nov (17:30-19:00 UTC) - Marc Vinyard's highs and lows arrived: H10's D4 specified first, then a coverage check only**
+- *What came:* daily highs and lows from Compustat (`prchd`, `prcld`) for the S&P 500 (from 1990), DJIA
+  (from 1997) and Nasdaq-100 (from 2001), each to 4 Nov 2026. Compustat has none for the Russell 2000.
+  - Marc's credit format, now in H10-DRAFT: "Data were obtained from the Compustat database via Wharton
+    Research Data Services (WRDS)." Pepperdine University Libraries is thanked in the acknowledgments.
+  - Copied to `~/Documents/volrec-wrds`, whose private README now lists them with checksums. The Downloads
+    originals were left in place, as on 3 Nov. They never go into either repository or a review packet.
+- *D4 first (`cbd8d03`).* Decision 5 says D4 is "specified here before any value is read". So its
+  specification was committed after reading only each file's header, row count, and first and last dates.
+  - Parkinson range volatility on H10a's and D1's own windows.
+  - Reported: mean IV - RV_P with the fixed-b statistic beside it (no verdict), and mean RV_P - RV. Its
+    downward biases are stated in advance.
+  - A day is usable only if H and L are present and positive, H > L, and L <= close <= H. A window needs
+    all 21 of its days usable. Definition changes are method breaks, read from documentation only.
+  - Sources, fixed before the check: Compustat for the three indices; Bloomberg's 23-25 Nov RTY pull for
+    the Russell 2000; Bloomberg's other three as a cross-check.
+  - Decided by Vega under the 4 Nov go-ahead; Gabriel's to veto.
+- *The coverage check, after that commit (counts and dates only):*
+  - No missing, non-numeric, non-positive, duplicate or weekend entry.
+  - Every day with a close has low <= close <= high.
+  - **For the S&P 500 and DJIA, the high equals the low on every day before 1 April 1998** (2,085 and 314
+    days), and on 11 later days each. Under D4's rule those days are unusable, so D4 measures those two
+    from April 1998. The Nasdaq-100's are usable throughout.
+  - Usable days: 7,181 of 9,279, 7,180 of 7,507, and 6,497 of 6,499.
+  - D4 is not amended to fill 1990 to March 1998 from Bloomberg: that would splice a second vendor into
+    one series, and the sources were fixed before the check. Gabriel's to veto.
+- *Reply to Marc:* drafted for Gabriel in the session's report. Not sent.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
