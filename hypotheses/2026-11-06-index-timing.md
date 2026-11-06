@@ -5,6 +5,8 @@ opened; the commit that adds this file is the proof. Approved by Gabriel in chat
 register that day rather than on Sat 7 Nov: the reader was finished that day, so PROTOCOL step 2's wait of a
 calendar day was not kept (logged under "Instrument readiness" and in the adjustment log).
 **Status:** registered - DESCRIPTIVE: no test, no bar, no verdict.
+**Independently timestamped:** OSF registration https://osf.io/4mcgf (submitted 6 Nov 2026, 21:06 UTC; secondary-data
+template; discloses what was seen first and the wait not kept).
 **Sample:** B (own panel): the H5e- and H7-counted days that the sealed index files cover (21 Oct - 11 Nov 2026).
 
 Written 6 Nov 2026 by Vega from the plan of 4 Nov (`docs/drafts/2026-11-04-index-timing-plan.md`, committed

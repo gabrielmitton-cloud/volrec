@@ -179,7 +179,8 @@ not used. FRED's reprints (VIXCLS, VXNCLS, RVXCLS, GVZCLS, OVXCLS, VXVCLS - all 
 2026; FRED's values agreed with Cboe's files where compared, EVZ over 2,166 days) remain a replication route.
 
 **Appendix.**
-- A. The pre-registration record (OSF: https://osf.io/z5gfu for H5e and H7): every hypothesis, its bar, its verdict and its adjustment log,
+- A. The pre-registration record (OSF: https://osf.io/z5gfu for H5e and H7, https://osf.io/4mcgf for the
+  descriptive timing measurement): every hypothesis, its bar, its verdict and its adjustment log,
   failures included (H5e, H6a, TimesFM).
 - B. Side studies: H2 (variance vs volatility; H2a holds as recorded but is NOT robust - clustered on date, 28 Oct, the variance form is t 1.34, p 0.18), H4 (hedged gains), H6 (implied volatility against a
   trailing range).

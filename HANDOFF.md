@@ -1898,7 +1898,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | GitHub tokens (row added 3 Nov) | **Both renewed by Gabriel on 3 Nov; both expire Mon 1 Feb 2027** (they were 29 Dec and 23 Dec), after H8's last purchase (29 Jan). cron-job.org's `volrec-trigger` is in every job (a guard dispatch went through, 22:41 UTC); volrec-licensed's `PUBLIC_REPO_TOKEN` secret was replaced at 22:32 UTC (every nightly private run checks this repo out with it). The pressure test dates both: WARN from Mon 4 Jan, FAIL from Mon 25 Jan. Renew both by **Fri 22 Jan**; reminder Mon 11 Jan |
 | phone (Pushover) | four levels live; the nightly GREEN arrives (confirmed by Gabriel 16 Oct; 2 Nov's went out); RED comes only from the guard. From 3 Nov the nightly H5e figure is the record version (GitHub's runner now gets the frozen rate) |
 | cloud routines | one-off reminders 20 Nov, 23 Nov and **11 Jan 2027 (both token renewals; moved from 1 Dec on 3 Nov)**; the 13 Nov verdict check; the Monday auditor and the Wednesday watchdog - enabled; none of the 13 routines has a connector (3 Nov). The 3 Nov AAPL item is done (ex-date added that day). The 30 Oct Goukasian reminder was disabled 21 Oct (he declined; Marc is mentor) |
-| OSF | H5e and H7 registered and live, https://osf.io/z5gfu (10 Oct) |
+| OSF | H5e and H7 registered and live, https://osf.io/z5gfu (10 Oct); the timing measurement registered 6 Nov, https://osf.io/4mcgf (public once Gabriel approves OSF's email, or by itself after 48 h) |
 | pre-push hook | installed (`core.hooksPath tools/hooks`); every push runs the pressure test |
 | iMessage (launchd `com.volrec.daily`) | **retired 23 Oct** (a green Pushover alert every weekday 16-22 Oct, Gabriel); unloaded, plist kept at ~/Documents/volrec-retired/ |
 
@@ -3798,6 +3798,34 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 - *Push:* with the reader's commit, after the recorders' window, through the gated script (a fresh audit of
   this commit first). Neither file cites either commit's ID: the push rebases both onto the recorders' commits,
   which gives them new IDs (the reader's sha256 does not change). Their GitHub IDs go in with the OSF link.
+
+**Fri 6 Nov (20:22-22:10 UTC) - pushed; the timing plan frozen on OSF: https://osf.io/4mcgf**
+- *Pushed* at 20:22:34 UTC through the gated script: the auditor read 217 of 217 on the registration commit,
+  only the two recorder commits came in, and the pressure test read 0 fail, 2 warn. On GitHub the reader's
+  commit is `b7962ac` and the registration's `e02724e` (the rebase renamed `acd73af` and `b959069`). The
+  reader's sha256 there is the registered `e65b5270...afb46`.
+- *OSF:* Vega filled the "Secondary Data Preregistration" template in Gabriel's Chrome at his request (he
+  signed in himself), in the 10 Oct project (https://osf.io/n8y3z), and submitted on his yes. Registered at
+  21:06:58 UTC, no embargo, MIT licence; its description cites `e02724e`. The four files (the registration,
+  the 4 Nov plan, the reader, `PROTOCOL.md`) are in the project's folder `index-timing-registered-2026-11-06`,
+  and the registration's archive holds all four, each matching the repository's sha256. It waits for Gabriel
+  to approve OSF's email; OSF approves it by itself after 48 h.
+- *Choices made while filling:*
+  - data availability is "available through protected access": the index files and the OPRA quotes are
+    licensed. On 10 Oct it was "publicly available".
+  - the template's own fields differ from some of `OSF-REGISTRATION-TIMING.md`'s headings, and the answers
+    were fitted to them. The OSF page is the record.
+  - starting the draft asked to confirm it is a research plan; ticked.
+- *In the repository:* the link in the registration file's header (its only change; OSF holds the file
+  without it), the status table, SESSION-START and PAPER-OUTLINE appendix A. `OSF-REGISTRATION-TIMING.md`
+  stays as the paste sheet, as 10 Oct's did.
+- *Gabriel's call:* a link on the site. `index.html` links only H5e and H7's registration, and a new link
+  would show visitors an error until the registration is public.
+- *Still open:* the system-status table refresh, due by Tue 10 Nov.
+- *Reminder:* Mon 9 Nov 17:00 UTC (`trig_019zejFoiy1MfsdPD5J689LR`, no connector). It asks OSF's API whether
+  4mcgf is public (tested 6 Nov: the 10 Oct registration reads public; 4mcgf answers 401 until it is) and
+  whether the status table's heading still says "checked 3 Nov 2026". It stays silent only if both are done;
+  if OSF cannot be reached, it sends the OSF line anyway.
 
 ### Prompt for the next session
 
