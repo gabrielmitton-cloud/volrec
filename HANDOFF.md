@@ -3624,6 +3624,52 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
     All were cleared, so no routine has a connector. From now on, add a dated item's reminder the same day,
     and clear its connectors.
 
+**Fri 6 Nov (03:30 UTC, Thursday night in New York) - the nightly OPRA run failed on a new Databento answer; fixed**
+- *What failed:* the yellow Pushover message was the private run of 6 Nov 03:22 UTC (issue #3 in
+  volrec-licensed). Databento's OPRA data was running about ten hours late: its newest minute was 18:00 UTC
+  on 5 Nov when the run priced 5 Nov (19:38-19:43 UTC), and still 18:10 at 03:40 UTC. The price query came
+  back 422 `data_start_after_available_end`, not the 403 "needs a live licence" that `call()` already turns
+  into a skip (5 Nov's two runs met that 403 for 4 Nov and passed). `call()` stopped the run.
+- *What it cost:* the run had just bought 4 Nov for TSLA and USO ($0.0153 + $0.0177). The failed step
+  skipped the one that commits, so both files and their ledger rows were lost. The next run buys them again,
+  and the private ledger under-states the lifetime spend by $0.0330 (about $35 of the $120 cap is left).
+- *Fix (`5dc30cc`, then `7e72a9e` after Astra):* `call()` maps a 422 whose `case` is
+  `data_start_after_available_end` or `data_end_after_available_end` (a window that starts past Databento's
+  newest minute, or straddles it) to `NotYetHistorical`, reading that minute from the reply. `fetch()` and
+  `definitions()` catch it at the price query and print "not released yet (Databento has data up to ...);
+  nothing charged - run again tomorrow". Any other 422 still stops the run; the lab fetcher's symbol check
+  depends on that.
+  - The fixtures are Databento's real replies, captured with free price queries (nothing bought): both
+    "not released" cases and a symbol-lookup 422, plus that symbol-lookup reply with its message edited to
+    name the case (it must still stop the run).
+  - Pressure test: five new checks - the mapping, the lab still reading a symbol-lookup 422 as
+    unresolvable, the skip in all three nightly modes (daily, H7, H8), a real refusal still stopping
+    `fetch()`, and `definitions()`. The mapping, the skip and `definitions()` were seen failing before the
+    code changed; the other two are guards, proven by mutants. 0 fail, the usual two warnings.
+  - Auditor: seven new mutants (the mapping removed; widened to every 422; matched on any text; the
+    straddle case dropped; `fetch()`'s handler removed; `fetch()` swallowing every refusal;
+    `definitions()`'s handler removed). Each was applied by hand and seen to fail its own check for the
+    intended reason; 202 in all.
+- *Astra (Ultra):* `5dc30cc` CLEAR. Of its limitations, `7e72a9e` closed three: the match now reads the
+  reply's `case`, not any word in it; the skip is checked in all three modes, with a negative case; the
+  lab's wrapper is checked. Kept: the checks read the "nothing charged" log text. Open: a day Databento
+  never releases (or a wrongly dated window) would be skipped every night, as the 403 path always allowed -
+  a "still not released after N days" stop would be a new safeguard, Gabriel's call. Follow-up on
+  `7e72a9e`: CLEAR. What it still lists, none of it a defect it found: the match reads the whole reply rather
+  than parsing `detail.case`; a reply with spaces in its JSON would still be skipped but would log "its
+  newest data" instead of the minute; `main()`'s loop and a negative case for `definitions()` are not
+  tested directly. Left as they are - one follow-up review is the limit.
+- *Push:* these commits go out once the auditor reads 202 of 202, before the next scheduled run
+  (GitHub has been delivering the 03:05 UTC cron around 10:45 UTC). That run should read green: if
+  Databento is still behind, 5 Nov prints "not released yet" and is bought a night later, and 4 Nov's two
+  lost days are bought again.
+- *After the verdicts (the private daily.yml is frozen until then):*
+  - keep the purchased files and the ledger even when a fetch step fails;
+  - "Run page summary" exits 1 whenever `verdicts.txt` is absent, which happens only after another step
+    has failed (cosmetic);
+  - reconcile the $0.0330 ledger gap - Gabriel's call;
+  - close issue #3 once a run reads green (the workflow never closes its own failure issues).
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
