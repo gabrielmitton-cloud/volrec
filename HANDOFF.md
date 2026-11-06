@@ -3695,6 +3695,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   counts as bought when its file is on disk, not when the ledger has a row (`fetch()` checks `DATA_DIR`), so
   the next run still buys both again and logs that charge too. The ledger then holds both, as Databento's
   bill does.
+- *Checked live:* `74cd4ad` was pushed at 04:27 UTC (auditor 202 of 202). A price-only dispatch of the private
+  run right after it (run 42162653695) passed: all three modes printed "not released yet" for 5 Nov, nothing
+  charged. Databento's newest minute read 19:10, then 19:20 UTC on 5 Nov (at 04:31 and 04:42 UTC): moving
+  with the clock, still about 9 h 20 min behind.
 - *Issue #3:* the session's permission guard refused the comment-and-close, and it was not worked around.
   Gabriel closes it once a run reads green; the first chance is today's run, around 10:45 UTC.
 
