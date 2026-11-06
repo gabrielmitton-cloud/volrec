@@ -31,5 +31,6 @@ that it was pre-registered; that is the whole point of this directory.
 | H2 | Variance rather than volatility formulation, per Carr & Wu (2009) | 2026-09-09 | 2026-09-09 | H2a holds as recorded, but raw variance is weakest (t=2.1) and log variance strongest (t=16.3); **not robust: clustered on date (28 Oct companion), raw variance t 1.34, p 0.18**; H2b NOT supported; registered, still unadopted |
 | H6 | Implied vol forecasts next-day range better than a technical-levels rule (ATR 14) | 2026-10-08 | 2026-10-09 | **H6a FAILS** (ATR lower error in 9 of 9; IV overshoots the range's level 1.6-2.3x); **H6b HOLDS** (IV's gap shrinks after spikes); exploratory: IV's timing error is smaller in 8 of 9 |
 | H7 | The free feed through Cboe's own rules reproduces OVX/GVZ | 2026-10-08 | window 9 Oct - 11 Nov | registered before the first monthly-leg row, as an exception to the 11 Nov rule (Gabriel); ~$1 of OPRA approved |
+| timing | How much of H5e's and H7's gaps is OVX/GVZ moving after the snapshot - DESCRIPTIVE, no test or bar, so no H number | 2026-11-06 | after both verdicts, on the sealed index files | registered the day its reader was finished, at Gabriel's choice: PROTOCOL step 2's wait of a day not kept, and logged |
 
 *Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Aggregates only.*

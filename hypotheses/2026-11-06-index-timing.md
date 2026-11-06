@@ -1,8 +1,10 @@
 # The index-timing measurement: how much of H5e's and H7's gaps is the index moving after the snapshot (descriptive)
 
-**Registered:** not yet - this is the text for registration. Gabriel's dated approval, the commit to
-`hypotheses/` (under a name with "timing" in it) and his OSF freeze come first; the date goes here then.
-**Status:** draft for a DESCRIPTIVE registration - no test, no bar, no verdict.
+**Registered:** 2026-11-06 (Fri), before either verdict is recorded and before any value of the index files is
+opened; the commit that adds this file is the proof. Approved by Gabriel in chat the same day, choosing to
+register that day rather than on Sat 7 Nov: the reader was finished that day, so PROTOCOL step 2's wait of a
+calendar day was not kept (logged under "Instrument readiness" and in the adjustment log).
+**Status:** registered - DESCRIPTIVE: no test, no bar, no verdict.
 **Sample:** B (own panel): the H5e- and H7-counted days that the sealed index files cover (21 Oct - 11 Nov 2026).
 
 Written 6 Nov 2026 by Vega from the plan of 4 Nov (`docs/drafts/2026-11-04-index-timing-plan.md`, committed
@@ -89,7 +91,8 @@ either part.
   panel lost, `panel_health.ACCEPTED_GAPS`) is checked by those counts and means, not by its date: H7 can
   still count it, and the writer's own coverage check skips it. Every reading gets its lines in the report,
   even one with no counted day.
-- **The reader and the command:** `tools/index_timing.py`, sha256 `<filled in on the day>`, run as
+- **The reader and the command:** `tools/index_timing.py` as in the commit that adds this file (it last changed
+  in the commit before), sha256 `e65b52704d0b4a28be455a1dc4657ad5309133005526a194bf0dfc27bf4afb46`, run as
   `VOLREC_DATABENTO_DIR=~/Documents/volrec-licensed/opra python tools/index_timing.py` (the index folder
   defaults to `~/Documents/volrec-licensed/dbix`). Any later change to it is logged below with its date.
 
@@ -118,15 +121,17 @@ either part.
   its days, counts and four means, over 9 Oct - 5 Nov because H7's verdict was not yet written). With the OPRA
   folder left at its default, the reader refused, listing the days.
 - **Finished:** Fri 6 Nov 2026 (last change 19:01 UTC), when the record checks were added after the first
-  cold re-read found that H7's days could drop silently. At least one calendar day passes, and the code is
-  re-read cold, before registration.
+  cold re-read found that H7's days could drop silently. **Not kept: the wait of a calendar day.** Registered
+  the same day at Gabriel's choice; that day's changes were re-read line by line before registering, the same
+  day, so not cold. The re-read of 6 Nov that found the defect was cold (the reader had last changed on 5 Nov).
 - **Auditor:** 28 mutants break the reader's safeguards one at a time (`timing-*` in `tools/audit.py`): reads
   ahead, stale index, seal unchecked, opens before the verdicts, either verdict, lost file, reference exit,
   both rate checks, FRED key kept, default widened, non-finite index; empty agreement three ways (modelfree,
   the FINAL record, H7's record); the FINAL record unchecked, its gap unchecked, a non-finite gap passing it or
   modelfree's check, the FIRST verdict read instead of the FINAL; H7's record unchecked, its days, count or
   means unchecked, a non-finite mean, a later note read as the verdict's, an accepted-gap day refused; and a
-  reading dropped from the report. The audit read `<N of N on the day>`.
+  reading dropped from the report. The audit of the reader's commit (the one before this file's) read 217 of 217
+  (6 Nov 2026, 19:08-19:32 UTC).
 
 ## Noise floor
 
@@ -219,6 +224,11 @@ bars from the 23-25 Nov Bloomberg session, which need their own short registrati
   (rho -0.12 to +0.23, n_eff 7.5-12 at T = 11-12), so that sentence is replaced by the measured numbers. Also
   written out: the sensitivity's own day set, the age rule measured from the bar's stamp, C's FRED fallback,
   the persistence conventions, the run command, the record checks, and the top-up's seal.
+- **6 Nov 2026 - registered the day the reader was finished, a deviation from PROTOCOL step 2.** The step asks
+  for at least one calendar day between finishing an instrument and registering on it, then a cold re-read.
+  The reader last changed at 19:01 UTC; Vega proposed Sat 7 Nov, and Gabriel chose 6 Nov. Before registering,
+  that day's diff was re-read line by line (no defect found) and the auditor read 217 of 217 on the
+  reader's commit. No definition, rule or check changed.
 *Data provided by Databento. Index closes: Cboe Global Markets. Aggregates only.*
 
 ## Result

@@ -3780,6 +3780,25 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 
 *OPRA figures: Data provided by Databento. Index closes: Cboe Global Markets. Aggregates only.*
 
+**Fri 6 Nov (19:35-20:00 UTC) - Gabriel: register today; the timing plan is registered, the day's wait not kept and logged**
+- *Asked:* after the report above, Gabriel chose today over Saturday ("yeah lets do that today today"). The
+  Saturday date was Decided (his to veto); this is his veto.
+- *Done before registering:* today's diff re-read line by line (no defect found; the same day, so not cold).
+  The auditor read 217 of 217 on the reader's commit (19:08-19:32 UTC). The reader's sha256,
+  `e65b5270...afb46`, is in the file in full.
+- *Registered:* the draft moved (`git mv`) to `hypotheses/2026-11-06-index-timing.md`, with a row in
+  `hypotheses/README.md`. No H number: it is descriptive, and H9 stays reserved. The skipped wait is stated in
+  its header, its readiness section and its adjustment log.
+- *Still open:*
+  - the OSF freeze, on Gabriel's account. On 10 Oct Claude did it in his browser at his request; his call.
+    Its link then goes into the file's header.
+  - the system-status table refresh, due by Tue 10 Nov.
+- *Reminders:* Saturday's (`trig_01URGXVbkitS8yKiqBSxQtD5`) and the Tue 10 Nov fallback both look for a
+  "timing" file in `hypotheses/` on GitHub, so both stay silent once this is pushed.
+- *Push:* with the reader's commit, after the recorders' window, through the gated script (a fresh audit of
+  this commit first). Neither file cites either commit's ID: the push rebases both onto the recorders' commits,
+  which gives them new IDs (the reader's sha256 does not change). Their GitHub IDs go in with the OSF link.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
