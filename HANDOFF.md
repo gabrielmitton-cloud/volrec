@@ -3670,6 +3670,34 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   - reconcile the $0.0330 ledger gap - Gabriel's call;
   - close issue #3 once a run reads green (the workflow never closes its own failure issues).
 
+**Fri 6 Nov (04:55 UTC) - Gabriel: "do whatever is best for the decisions"; what was decided**
+- *Asked:* the open points of the entry above, left to Vega. Each is recorded as Decided (his to veto).
+- *The "still not released after N days" stop - Decided (his to veto): after the verdicts, and never as a
+  step that fails the run.* The roadmap allows no new monitors before 21 Nov. And in the private daily.yml a
+  failed fetch step skips every later step, "Keep the data" and "Verdicts that have come due" among them, so
+  a stop that fails the run would throw away what it guards. When built, it reports (a yellow Pushover, the
+  run page) and lets the run finish. Until then a day Databento never releases is skipped every night - the
+  risk the 403 path always carried.
+- *The private daily.yml edit - Decided (his to veto): Sun 22 Nov, after the verdicts and SCCUR, in one
+  sitting.* Four changes:
+  - keep the bought files and the ledger when a fetch step fails;
+  - stop "Run page summary" failing when `verdicts.txt` is absent;
+  - the stop above, as a step that never fails the run;
+  - H8 choice 6's buy step (its text is in `dbix-h8/README.md`; due 20-24 Nov; the first file is 1 Dec's,
+    bought on 2 Dec).
+
+  Sunday has no scheduled run, so a mistake cannot cost a night, and the frozen workflow is opened once.
+  Then check that the next scheduled run fired. Reminder: Sun 22 Nov 17:00 UTC
+  (`trig_01CynExVW2bFJLh7YXQdRR85`, no connector).
+- *The $0.0330 ledger gap - Decided (his to veto): reconciled.* The two lost purchases were real charges, so
+  they went back into the private ledger through `record_spend()`, its only writer: dated 4 Nov, TSLA
+  $0.015274 and USO $0.017677 (volrec-licensed `cec23bd`; lifetime total $84.740343 -> $84.773294). A day
+  counts as bought when its file is on disk, not when the ledger has a row (`fetch()` checks `DATA_DIR`), so
+  the next run still buys both again and logs that charge too. The ledger then holds both, as Databento's
+  bill does.
+- *Issue #3:* the session's permission guard refused the comment-and-close, and it was not worked around.
+  Gabriel closes it once a run reads green; the first chance is today's run, around 10:45 UTC.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
