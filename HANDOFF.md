@@ -3827,6 +3827,24 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   whether the status table's heading still says "checked 3 Nov 2026". It stays silent only if both are done;
   if OSF cannot be reached, it sends the OSF line anyway.
 
+**Fri 6 Nov (22:40-23:00 UTC) - the site links the timing registration; no backup disk; iCloud's stray copies cleared**
+- *Site (Gabriel: "u can add the link thats fine"):* `index.html` links https://osf.io/4mcgf in the ledger's
+  paragraph and in the footer's Hypotheses list, beside H5e and H7's. The link does not open for visitors until
+  OSF makes the registration public (his email approval, or by itself about Sun 8 Nov 21:07 UTC); he accepted
+  that. Checked in the preview: both links render, no console errors.
+- *Backup - decided by Gabriel, closed:* "im not getting the backup disk, and itll be fine". The Sat 7 Nov
+  reminder to buy one (`trig_01VEX1yP47cVFGk6sG6TbYyg`) is disabled. Not to be raised again.
+- *Clean-up (his go-ahead: "If u need to go through and clean up the volrec files then u can do that"):*
+  - the repository sits in iCloud's Desktop. iCloud had left 28 conflict copies of git's index in `.git`
+    (8 Oct - 5 Nov; git never reads them) and, on 6 Nov, one of the registration file (byte-identical to the
+    registered one). All are in the Trash.
+  - no other conflict copy in the repository or the `~/Documents/volrec-*` folders (compared by sha256 only;
+    no value read). `git fsck --full` reads clean here and on the private clone.
+  - iCloud has moved some files to the cloud (`.venv`'s library files, two papers, one comparison note); they
+    download when opened. The repository stays where it is.
+  - a stray untracked `name 2.ext` file is iCloud's, not new work: compare it with the original before acting.
+- *Checks:* pressure test 0 fail, 2 warn (the known two).
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
