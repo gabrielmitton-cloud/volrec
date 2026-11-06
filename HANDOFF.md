@@ -3594,6 +3594,36 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   and the OSF freeze (the reminder's "about 5 minutes" is his part only).
 - *Due by Tue 10 Nov:* refresh the system-status table above (checked 3 Nov); the auditor warns from 11 Nov.
 
+**Fri 6 Nov (00:40 UTC) - Gabriel: the timing plan on Friday, by the book; a reminder for every future item**
+- *Timing plan:* Gabriel asked to register it now instead of Tue 10 Nov. PROTOCOL step 2 requires at least
+  one calendar day between finishing an instrument and registering on it, and the reader last changed at
+  08:18 UTC on 5 Nov (03:18 New York, the same New York day). Offered tonight as a logged deviation or
+  Friday by the book, he chose **Friday, by the book**. The Friday session, in order:
+  - cold re-read of `docs/drafts/2026-11-04-index-timing-plan.md`, `tools/index_timing.py` and its tests;
+  - PROTOCOL step 2's checklist, and the three sections the pressure test requires of any `hypotheses/`
+    file registered from 10 Oct ("## Instrument readiness", "## Noise floor", "## Smallest detectable
+    effect"), which the draft does not have yet;
+  - Gabriel's dated yes, the commit to `hypotheses/`, and his OSF freeze;
+  - the system-status table refresh.
+  - **The registered file's name must contain "timing":** the 10 Nov fallback reminder looks for it and
+    stays silent if it is there.
+- *Gabriel's standing instruction (6 Nov): "things in the future just make sure there are reminders set".*
+  Every dated item now has a phone reminder: one-off cloud routines at 17:00 UTC (09:00 Pacific),
+  `claude-sonnet-5`, Bash and Read only, no connector.
+  - New: Fri 6 Nov, the timing plan (`trig_01XbJh1buX7gvZBbTLamY3Xr`); Sat 7 Nov, back up the Mac
+    (`trig_01VEX1yP47cVFGk6sG6TbYyg`); Mon 16 Nov, SCCUR poster time in Whova and the final poster to print
+    (`trig_01WeRHdAkoi1zrk7XcBMUfWT`); Thu 19 Nov, pitch practice, parking and badge
+    (`trig_01H71PLiyToiiee4Fn4JwbR8`); Tue 24 Nov, register H8 (`trig_015xUPeM6BmznpW1RCEmPfk3`); Fri 4 Dec,
+    H8's first days and H9/H10 planning (`trig_01THveZL4RJSkH4sFpDDDJAX`); Mon 4 Jan 2027, plan the February
+    write-up (`trig_01Wow8fv5oaPmS78HBHhXj41`).
+  - Rewritten: Tue 10 Nov is now the timing plan's fallback, silent if the plan is registered
+    (`trig_01N8ZbM1FW4B1P4EWkJ8VCcq`).
+  - Already set: 12 Nov DBIX top-up, 13 Nov verdict check, 20 Nov verdicts and next steps, 23 Nov
+    Bloomberg, 11 Jan tokens and the early-close cleanup; the Monday auditor and the Wednesday watchdog.
+  - Each new routine arrived with nine connectors attached by default (Gmail, Drive, Notion and others).
+    All were cleared, so no routine has a connector. From now on, add a dated item's reminder the same day,
+    and clear its connectors.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
