@@ -3702,6 +3702,22 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 - *Issue #3:* the session's permission guard refused the comment-and-close, and it was not worked around.
   Gabriel closes it once a run reads green; the first chance is today's run, around 10:45 UTC.
 
+**Fri 6 Nov (08:20 UTC) - healthchecks marked volrec-licensed down; a full run cleared it**
+- *Why:* healthchecks.io's `volrec-licensed` check expects a success ping within 9 h of each weekday 23:05 UTC
+  run. Thursday's 23:05 run is the one that failed at 03:22, and the 04:27 price-only check never pings, so
+  the check went DOWN at 08:05 UTC and told Gabriel. It is the failure above arriving late, not a new one.
+- *Done:* a full dispatch at 08:07 UTC (run 42185443188). Every step passed.
+  - It bought 4 Nov: TSLA and USO again, plus the H7 (GLD, USO) and H8 (AAPL, GLD, IWM, NVDA, QQQ, SPY)
+    files the failed run never reached. 10 files, $0.1938 (private `eff13e5`); the ledger reads $84.967119,
+    $35.03 of the cap left.
+  - 5 Nov was skipped in all three modes by the licence path ("data after 2026-11-05T14:30 UTC needs a live
+    licence"), nothing charged; the next runs buy it.
+  - No verdict due (H5e final and H7 are due 12 Nov). It pinged, so the check reads up again.
+- *Gabriel closed issue #3 at 05:43 UTC.*
+- *Next time:* a failed or missing 23:05 run turns the check DOWN at 08:05 UTC. A full dispatch
+  (`gh workflow run daily.yml -R gabrielmitton-cloud/volrec-licensed -f mode=full`) is a harmless second
+  pass - runs queue, and days on disk are never bought twice - and its ping clears the alarm.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
