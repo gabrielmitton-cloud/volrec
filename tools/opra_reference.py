@@ -323,7 +323,7 @@ def call(endpoint, data, key, method="post", _fn=None):
         raise NotYetHistorical(m.group(1) + " UTC" if m else "a recent cutoff")
     # 6 Nov 2026: Databento's data ran ten hours late and the newest day was refused with a 422
     # (case data_start_after_available_end; data_end_... when a window straddles the last minute).
-    if r.status_code == 422 and "_after_available_end" in r.text:
+    if r.status_code == 422 and re.search(r'"case"\s*:\s*"data_(?:start|end)_after_available_end"', r.text):
         m = re.search(r'"available_end":"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})', r.text)
         raise NotYetHistorical(m.group(1) + " UTC" if m else "its newest data")
     if r.status_code != 200:

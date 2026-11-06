@@ -1963,6 +1963,9 @@ ok(_stopped and _gave_up, "a non-transient error stops the run at once, and four
 _AE_START = r'''{"detail":{"case":"data_start_after_available_end","message":"`start` in query ('2026-11-07 03:37:00+00:00') was after the available end of dataset OPRA.PILLAR ('2026-11-05 18:10:00+00:00'). Try requesting with an earlier `start`.","status_code":422,"docs":"https://databento.com/docs/api-reference-historical/basics/datasets","payload":{"dataset":"OPRA.PILLAR","start":"2026-11-07T03:37:00.000000000Z","end":"2026-11-07T03:42:00.000000000Z","available_start":"2013-04-01T00:00:00.000000000Z","available_end":"2026-11-05T18:10:00.000000000Z"}}}'''
 _AE_END = r'''{"detail":{"case":"data_end_after_available_end","message":"The dataset OPRA.PILLAR has data available up to '2026-11-05 18:10:00+00:00'. The `end` in the query ('2026-11-05 18:15:00+00:00') is after the available range. Try requesting with an earlier `end`.","status_code":422,"docs":"https://databento.com/docs/api-reference-historical/basics/datasets","payload":{"dataset":"OPRA.PILLAR","start":"2026-11-05T18:05:00.000000000Z","end":"2026-11-05T18:15:00.000000000Z","available_start":"2013-04-01T00:00:00.000000000Z","available_end":"2026-11-05T18:10:00.000000000Z"}}}'''
 _AE_SYMBOL = r'''{"detail":{"case":"symbology_invalid_request","message":"None of the symbols could be resolved","status_code":422,"docs":"https://databento.com/docs/api-reference-historical/basics/symbology","payload":null}}'''
+# Astra (6 Nov): the reply's case decides, not a word anywhere in it - the same symbology reply,
+# its message mentioning the availability case, must still stop the run.
+_AE_ECHO = _AE_SYMBOL.replace("could be resolved", "could be resolved (data_start_after_available_end)")
 class _RT:
     def __init__(self, code, text="x", data=None): self.status_code, self.text, self._data = code, text, data
     def json(self): return self._data
@@ -1974,37 +1977,56 @@ def _answer(resp):
         return f"skipped ({e})"
     except SystemExit:
         return "stopped"
-_ae = [_answer(_RT(422, t)) for t in (_AE_START, _AE_END, _AE_SYMBOL)]
-ok(_ae == ["skipped (2026-11-05T18:10 UTC)"] * 2 + ["stopped"],
+_ae = [_answer(_RT(422, t)) for t in (_AE_START, _AE_END, _AE_SYMBOL, _AE_ECHO)]
+ok(_ae == ["skipped (2026-11-05T18:10 UTC)"] * 2 + ["stopped"] * 2,
    "Databento's 'not released yet' 422 (a window starting or ending past its newest data) skips the day like the "
-   f"licence refusal, and its other 422s still stop the run ({', '.join(_ae)})")
+   f"licence refusal, and its other 422s still stop the run, even one whose text names that case ({', '.join(_ae)})")
+_save_pp = _flm._post_patiently
+_flm._post_patiently = lambda url, **kw: _RT(422, _AE_SYMBOL)
+try:
+    _flm._call("metadata.get_cost", {}, "k")
+    _lab_said = "returned"
+except _flm.Unresolvable:
+    _lab_said = "unresolvable"
+except (SystemExit, Exception) as e:
+    _lab_said = f"raised {type(e).__name__}"
+finally:
+    _flm._post_patiently = _save_pp
+ok(_lab_said == "unresolvable",
+   f"the lab's fetcher still reads Databento's symbology 422 as an unresolvable symbol, skipped and reported ({_lab_said})")
 import contextlib as _ctxn, io as _ion
-def _skips(fn, *args):
-    """fetch() or definitions() on the 5 Nov day that failed, every price query answered with the
+def _skips(fn, *args, reply=_AE_START, **kw):
+    """fetch() or definitions() on the 5 Nov day that failed, every price query answered with a
     real 422: what it printed (or raised), the endpoints it asked, the ledger rows it wrote."""
-    asked, spent, saved = [], [], (_opm.call, _opm.recorded, _opm.record_spend, _opm.DATA_DIR)
+    asked, spent = [], []
+    saved = (_opm.call, _opm.recorded, _opm.monthly_recorded, _opm.record_spend, _opm.DATA_DIR)
     def fake_call(endpoint, data, key, method="post", _fn=None):
         asked.append(endpoint)
         resp = {"metadata.list_schemas": _RT(200, data=[_opm.SCHEMA]),
-                "metadata.get_cost": _RT(422, _AE_START)}.get(endpoint, _RT(200, data=0.0))
+                "metadata.get_cost": _RT(422, reply)}.get(endpoint, _RT(200, data=0.0))
         return saved[0](endpoint, data, key, method, _fn=lambda *a, **k: resp)
     with _tfl.TemporaryDirectory() as tdir:
         _opm.call, _opm.DATA_DIR = fake_call, Path(tdir)
-        _opm.recorded = lambda d, s: [{"quote_time": "2026-11-05T19:40:31Z"}]
+        _opm.recorded = _opm.monthly_recorded = lambda d, s: [{"quote_time": "2026-11-05T19:40:31Z"}]
         _opm.record_spend = lambda *a, **k: spent.append(a)
         try:
             with _ctxn.redirect_stdout(_ion.StringIO()) as buf:
-                fn(*args)
+                fn(*args, **kw)
             said = buf.getvalue().strip().splitlines()[-1].strip()
         except (SystemExit, Exception) as e:            # the run died here
             said = f"raised {type(e).__name__}"
         finally:
-            _opm.call, _opm.recorded, _opm.record_spend, _opm.DATA_DIR = saved
+            _opm.call, _opm.recorded, _opm.monthly_recorded, _opm.record_spend, _opm.DATA_DIR = saved
     return said, asked, spent
-_fs, _fa, _fsp = _skips(_opm.fetch, "2026-11-05", "TSLA", "k", 0.50, False)
-ok("nothing charged" in _fs and "metadata.get_cost" in _fa and "timeseries.get_range" not in _fa and not _fsp,
-   f"a day Databento has not released yet is skipped at the price query, and the run carries on: nothing bought, "
-   f"nothing in the ledger ({_fs})")
+_modes = {m: _skips(_opm.fetch, "2026-11-05", "TSLA", "k", 0.50, False, **kw)
+          for m, kw in (("daily", {}), ("H7", {"monthly": True}), ("H8", {"h8": True}))}
+ok(all("nothing charged" in s and "metadata.get_cost" in a and "timeseries.get_range" not in a and not sp
+       for s, a, sp in _modes.values()),
+   "a day Databento has not released yet is skipped at the price query in all three nightly modes, and the run "
+   f"carries on: nothing bought, nothing in the ledger ({'; '.join(f'{m}: {v[0]}' for m, v in _modes.items())})")
+_ns, _na, _nsp = _skips(_opm.fetch, "2026-11-05", "TSLA", "k", 0.50, False, reply=_AE_SYMBOL)
+ok(_ns == "raised SystemExit" and "timeseries.get_range" not in _na and not _nsp,
+   f"any other refusal at the price query still stops the run - fetch() does not swallow it ({_ns})")
 _ds, _da, _dsp = _skips(_opm.definitions, "2026-11-05", "TSLA", "k", 0.50, False)
 ok("nothing charged" in _ds and "metadata.get_cost" in _da and "timeseries.get_range" not in _da and not _dsp,
    f"the definitions lookup skips an unreleased day the same way ({_ds})")
