@@ -288,7 +288,8 @@ def api_key():
 class NotYetHistorical(Exception):
     """OPRA is served historically only after a delay; newer data needs a live
     licence. Found 23 Sep 2026: 22 Sep's session was refused with a 403 the
-    morning after. The day is skipped and becomes fetchable later."""
+    morning after. The day is skipped and becomes fetchable later. 6 Nov 2026:
+    Databento's own data can run hours late too - a 422 past its available end."""
 
 
 TRANSIENT = (502, 503, 504)            # Databento's gateway; 30 Sep 2026 a 504 failed a whole run
@@ -298,7 +299,8 @@ _sleep = __import__("time").sleep      # a seam, so the pressure test retries wi
 
 def call(endpoint, data, key, method="post", _fn=None):
     """One Databento request. A gateway timeout or overload is retried three times
-    with backoff before the run gives up; any other non-200 stops it at once."""
+    with backoff before the run gives up; a day not served historically yet raises
+    NotYetHistorical; any other non-200 stops it at once."""
     import requests
     fn = _fn or (requests.post if method == "post" else requests.get)
     kw = {"data": data} if method == "post" else {"params": data}
@@ -319,6 +321,11 @@ def call(endpoint, data, key, method="post", _fn=None):
     if r.status_code == 403 and "license" in r.text.lower():
         m = re.search(r"after (\d{4}-\d{2}-\d{2}T\d{2}:\d{2})", r.text)
         raise NotYetHistorical(m.group(1) + " UTC" if m else "a recent cutoff")
+    # 6 Nov 2026: Databento's data ran ten hours late and the newest day was refused with a 422
+    # (case data_start_after_available_end; data_end_... when a window straddles the last minute).
+    if r.status_code == 422 and "_after_available_end" in r.text:
+        m = re.search(r'"available_end":"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})', r.text)
+        raise NotYetHistorical(m.group(1) + " UTC" if m else "its newest data")
     if r.status_code != 200:
         sys.exit(f"Databento {endpoint} returned {r.status_code}: {r.text[:300]}")
     return r
@@ -345,7 +352,11 @@ def fetch(date, symbol, key, max_cost, dry, monthly=False, h8=False):
     schemas = call("metadata.list_schemas", {"dataset": DATASET}, key, "get").json()
     if SCHEMA not in schemas:
         sys.exit(f"{DATASET} does not offer {SCHEMA}; it offers {schemas}")
-    cost = float(call("metadata.get_cost", params, key).json())
+    try:
+        cost = float(call("metadata.get_cost", params, key).json())
+    except NotYetHistorical as e:          # 6 Nov 2026: refused at the price, before any charge
+        print(f"    not released yet (Databento has data up to {e}); nothing charged - run again tomorrow")
+        return
     spent = ledger_total()
     allowed, why = budget_ok(cost, max_cost, spent)
     if allowed and monthly:
@@ -393,7 +404,10 @@ def definitions(date, symbol, key, max_cost, dry):
     print(f"  {symbol} {date}: definitions for {symbol}.OPT over the whole day")
     if not key:
         print("    no key"); return
-    cost = float(call("metadata.get_cost", params, key).json())
+    try:
+        cost = float(call("metadata.get_cost", params, key).json())
+    except NotYetHistorical as e:
+        print(f"    not released yet (Databento has data up to {e}); nothing charged"); return
     spent = ledger_total()
     allowed, why = budget_ok(cost, max_cost, spent)
     print(f"    costs ${cost:.4f}; spent so far ${spent:.2f}: {why}")

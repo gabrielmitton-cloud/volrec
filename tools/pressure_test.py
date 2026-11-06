@@ -1955,6 +1955,59 @@ try:
 except SystemExit:
     _gave_up = True
 ok(_stopped and _gave_up, "a non-transient error stops the run at once, and four gateway errors give up loudly")
+# 6 Nov 2026: Databento's data ran ten hours late, and its price query answered the newest day
+# with a 422 ("start after the available end"), not the 403 licence refusal call() knew; the
+# nightly run stopped before saving the two days it had just bought. Databento's real replies
+# (free price queries, 6 Nov 2026): a window starting, or ending, past its newest data, and an
+# unresolvable symbol - a 422 that must still stop the run (the lab's fetcher relies on it).
+_AE_START = r'''{"detail":{"case":"data_start_after_available_end","message":"`start` in query ('2026-11-07 03:37:00+00:00') was after the available end of dataset OPRA.PILLAR ('2026-11-05 18:10:00+00:00'). Try requesting with an earlier `start`.","status_code":422,"docs":"https://databento.com/docs/api-reference-historical/basics/datasets","payload":{"dataset":"OPRA.PILLAR","start":"2026-11-07T03:37:00.000000000Z","end":"2026-11-07T03:42:00.000000000Z","available_start":"2013-04-01T00:00:00.000000000Z","available_end":"2026-11-05T18:10:00.000000000Z"}}}'''
+_AE_END = r'''{"detail":{"case":"data_end_after_available_end","message":"The dataset OPRA.PILLAR has data available up to '2026-11-05 18:10:00+00:00'. The `end` in the query ('2026-11-05 18:15:00+00:00') is after the available range. Try requesting with an earlier `end`.","status_code":422,"docs":"https://databento.com/docs/api-reference-historical/basics/datasets","payload":{"dataset":"OPRA.PILLAR","start":"2026-11-05T18:05:00.000000000Z","end":"2026-11-05T18:15:00.000000000Z","available_start":"2013-04-01T00:00:00.000000000Z","available_end":"2026-11-05T18:10:00.000000000Z"}}}'''
+_AE_SYMBOL = r'''{"detail":{"case":"symbology_invalid_request","message":"None of the symbols could be resolved","status_code":422,"docs":"https://databento.com/docs/api-reference-historical/basics/symbology","payload":null}}'''
+class _RT:
+    def __init__(self, code, text="x", data=None): self.status_code, self.text, self._data = code, text, data
+    def json(self): return self._data
+def _answer(resp):
+    try:
+        _opm.call("metadata.get_cost", {}, "k", _fn=lambda *a, **k: resp)
+        return "returned"
+    except _opm.NotYetHistorical as e:
+        return f"skipped ({e})"
+    except SystemExit:
+        return "stopped"
+_ae = [_answer(_RT(422, t)) for t in (_AE_START, _AE_END, _AE_SYMBOL)]
+ok(_ae == ["skipped (2026-11-05T18:10 UTC)"] * 2 + ["stopped"],
+   "Databento's 'not released yet' 422 (a window starting or ending past its newest data) skips the day like the "
+   f"licence refusal, and its other 422s still stop the run ({', '.join(_ae)})")
+import contextlib as _ctxn, io as _ion
+def _skips(fn, *args):
+    """fetch() or definitions() on the 5 Nov day that failed, every price query answered with the
+    real 422: what it printed (or raised), the endpoints it asked, the ledger rows it wrote."""
+    asked, spent, saved = [], [], (_opm.call, _opm.recorded, _opm.record_spend, _opm.DATA_DIR)
+    def fake_call(endpoint, data, key, method="post", _fn=None):
+        asked.append(endpoint)
+        resp = {"metadata.list_schemas": _RT(200, data=[_opm.SCHEMA]),
+                "metadata.get_cost": _RT(422, _AE_START)}.get(endpoint, _RT(200, data=0.0))
+        return saved[0](endpoint, data, key, method, _fn=lambda *a, **k: resp)
+    with _tfl.TemporaryDirectory() as tdir:
+        _opm.call, _opm.DATA_DIR = fake_call, Path(tdir)
+        _opm.recorded = lambda d, s: [{"quote_time": "2026-11-05T19:40:31Z"}]
+        _opm.record_spend = lambda *a, **k: spent.append(a)
+        try:
+            with _ctxn.redirect_stdout(_ion.StringIO()) as buf:
+                fn(*args)
+            said = buf.getvalue().strip().splitlines()[-1].strip()
+        except (SystemExit, Exception) as e:            # the run died here
+            said = f"raised {type(e).__name__}"
+        finally:
+            _opm.call, _opm.recorded, _opm.record_spend, _opm.DATA_DIR = saved
+    return said, asked, spent
+_fs, _fa, _fsp = _skips(_opm.fetch, "2026-11-05", "TSLA", "k", 0.50, False)
+ok("nothing charged" in _fs and "metadata.get_cost" in _fa and "timeseries.get_range" not in _fa and not _fsp,
+   f"a day Databento has not released yet is skipped at the price query, and the run carries on: nothing bought, "
+   f"nothing in the ledger ({_fs})")
+_ds, _da, _dsp = _skips(_opm.definitions, "2026-11-05", "TSLA", "k", 0.50, False)
+ok("nothing charged" in _ds and "metadata.get_cost" in _da and "timeseries.get_range" not in _da and not _dsp,
+   f"the definitions lookup skips an unreleased day the same way ({_ds})")
 # Databento's User Agreement §1.6 (read 23 Sep 2026): every redistribution, derived
 # aggregates included, credits Databento explicitly. A section publishes OPRA figures
 # when its heading names OPRA/Databento, or one line carries both the name and a
