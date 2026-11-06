@@ -128,7 +128,9 @@ check to fail. Every hypothesis was committed to the public repository, with its
 its test was run. For the forward-looking tests (H3, H5, H7) that was also before their data existed; the
 validation (H1) and the H6 side study ran on history that already existed, and H5 was registered after one
 day of wing data, which its file states. The two still open (H5e and H7) were also frozen on the Open
-Science Framework (osf.io/z5gfu) for an independent timestamp.
+Science Framework (osf.io/z5gfu) for an independent timestamp. A descriptive measurement that will split
+their gaps into the estimate's own error and the index's move after the snapshot was frozen there on
+6 November 2026, before either verdict and before its intraday index data was opened (osf.io/4mcgf).
 
 **Licensing.** Recorded free-feed data is published with Alpaca's agreement for personal, non-commercial
 use. Cboe's closes are read from Cboe's public files, with Cboe's permission (granted 4 November 2026),
