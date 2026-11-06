@@ -3581,6 +3581,19 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
     carries an IV.
   - No action: warnings pass, and the ticker universe is frozen.
 
+**Fri 6 Nov (00:00 UTC, Thursday evening in New York) - tidy-up, and what is due before Tuesday**
+- *Marc's originals:* the seven files from 3 and 5 Nov (four closes, three highs and lows) were moved from
+  Downloads to the Trash after `cmp` found each byte-identical to its copy in `~/Documents/volrec-wrds`.
+  Those copies are now the only ones on the Mac, and Marc's emails still hold the attachments. The private
+  README says so.
+- *Checked:* `daily.py` ALL CLEAR (5 Nov landed 19:31/19:40 UTC). The cloud reminders for 10, 12, 13, 20
+  and 23 Nov and 11 Jan are enabled with no connector, beside the Monday auditor and the Wednesday watchdog.
+- *Due before Tuesday's registration:* the timing plan's cold re-read. Its reader last changed on 5 Nov
+  (the shared `index_at`, in the 00:00-10:00 UTC entry), so the re-read waits until at least Fri 6 Nov
+  10:00 UTC. It is Vega's work: in any session from then, or first thing on Tuesday, before Gabriel's yes
+  and the OSF freeze (the reminder's "about 5 minutes" is his part only).
+- *Due by Tue 10 Nov:* refresh the system-status table above (checked 3 Nov); the auditor warns from 11 Nov.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
