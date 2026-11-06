@@ -461,12 +461,14 @@ _n8p = sum(1 for _ln in _t8.stdout.splitlines() if _ln.strip().startswith("PASS"
 ok(_t8.returncode == 0 and _n8f == 0 and _n8p >= 49, f"H8's instrument tests pass ({_n8p} cases, {_n8f} failures)")
 # The index-timing reader (EXPLORATORY, 4 Nov 2026; docs/drafts/2026-11-04-index-timing-plan.md): the seal and
 # every sealed day file present, the ts_event + 1 s <= T rule, the same-day and 60-second rules, OVX and GVZ
-# only, the exact split, the frozen rate and the reference run's exit code, and the refusal before both
-# verdicts, on SYNTHETIC files in DBIX's recorded layout. The sealed files are never read here.
+# only, the exact split, the frozen rate and the reference run's exit code, the refusal before both
+# verdicts, and (6 Nov 2026) the refusal unless H5e's and H7's days give the recorded verdicts' own numbers
+# (an accepted-gap date checked by H7's counts and means, not its date), on SYNTHETIC files in DBIX's
+# recorded layout. The sealed files are never read here.
 _ti = _sp.run([sys.executable, str(R / "tools/test_index_timing.py")], capture_output=True, text=True)
 _ntif = sum(1 for _ln in _ti.stdout.splitlines() if _ln.strip().startswith("FAIL"))
 _ntip = sum(1 for _ln in _ti.stdout.splitlines() if _ln.strip().startswith("PASS"))
-ok(_ti.returncode == 0 and _ntif == 0 and _ntip >= 64,
+ok(_ti.returncode == 0 and _ntif == 0 and _ntip >= 98,
    f"the index-timing reader's tests pass ({_ntip} cases, {_ntif} failures)")
 # H8's choice 6 (DESCRIPTIVE, 5 Nov 2026; H8-DRAFT.md item 6): the six pairs and H8's window, the seal written
 # as files are bought and read back by the timing reader, never the timing plan's sealed folder, I(T) by the

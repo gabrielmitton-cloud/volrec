@@ -3718,6 +3718,68 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   (`gh workflow run daily.yml -R gabrielmitton-cloud/volrec-licensed -f mode=full`) is a harmless second
   pass - runs queue, and days on disk are never bought twice - and its ping clears the alarm.
 
+**Fri 6 Nov (17:00-19:30 UTC) - the timing plan's cold re-read: one real defect, fixed; registration moves to Sat 7 Nov, by the book**
+- *Asked:* Gabriel at 17:00 UTC: "please check the code again" - the cold re-read due before registering
+  (the 00:40 UTC entry above).
+- *Found:* the reader could measure on the wrong days without a word.
+  - H7's two replicas are rebuilt from the OPRA folder that `VOLREC_DATABENTO_DIR` names. Pointed anywhere
+    but the private, pulled folder, `h7_reader` counts fewer days (or none), and the report measured what
+    was left.
+  - H5e was checked only against today's `modelfree` output. Both read the same closes, so a close Cboe
+    revised after the verdict would agree on both sides and still differ from the recorded verdict.
+- *Fixed (test first; code and tests only, no definition changed):* nothing is measured unless the rebuilt
+  readings give the recorded verdicts' own days and numbers.
+  - H5e: the FINAL reading's "Skip-only gap by day" line, day by day at its two decimals. The FIRST
+    verdict's line above it is never read.
+  - H7: its expected trading days less the ones its record names as missing or not counted, date by date;
+    the counts; the four means (H7a USO and GLD, H7b GLD, H7c USO) at three decimals. H7's record holds
+    aggregates only, so this is as close as a check can get.
+  - A value that is not a finite number is a disagreement (`nan > tolerance` is False, so it used to pass
+    every comparison, the older `modelfree` check included). Agreement on nothing is refused, and a reading
+    with no counted day keeps its lines in the report.
+- *Astra (Ultra):* `20261106T183239Z`, on the first fix: three findings, all verified and fixed - H7's days
+  were compared by count only (a swapped day passed at the same count and means), the NaN pass, and an
+  empty reading dropping out of the report. Follow-up `20261106T184500Z`: needs attention, one MEDIUM -
+  verified, and fixed after it. `panel_health.ACCEPTED_GAPS` is keyed by date, so a day the ATM panel lost
+  can still have its monthly legs; H7 counts it, and the writer's coverage check skips it. The rebuilt day
+  list left such a date out, so the check would have refused a record that agrees: a false refusal, after
+  registration. Such a date is now checked by the counts and means only. No gap falls in H7's window today
+  (the only one is 16 Sep). The fix was not re-reviewed (one follow-up is the limit); Saturday's cold
+  re-read covers it.
+- *Checked:*
+  - `tools/test_index_timing.py`: 98 cases (64 before), 0 failures. Pressure test: 0 fail, the usual two
+    warnings.
+  - 15 new auditor mutants, 217 in all (28 for the timing reader). Each was applied to a copy and seen to
+    fail its own check: it parsed, did not crash, and tripped the intended test.
+  - On real data, with the sealed folder never opened: H5e's 31 counted days agreed with `modelfree` and
+    with a FINAL block that `record_verdict` rendered from the day's output. H7's 19 days a fund agreed on
+    days, counts and all four means (9 Oct - 5 Nov, since H7's verdict is not written yet). With the OPRA
+    folder left at its default, the reader refused and listed every day.
+- *Registration - Decided (his to veto): Sat 7 Nov, from 20:00 UTC (noon Pacific), by the book.* The reader
+  changed today (last at 19:01 UTC). PROTOCOL step 2 wants a calendar day between finishing an instrument
+  and registering on it, then a cold re-read, and on 5 Nov Gabriel chose "by the book". Saturday is still
+  days before the verdicts (12-13 Nov). The alternative was today, as a logged deviation.
+  - Reminder: Sat 7 Nov 20:00 UTC (`trig_01URGXVbkitS8yKiqBSxQtD5`, no connector). It stays silent if a
+    "timing" file is already in `hypotheses/`. The Tue 10 Nov fallback stays as it is.
+- *The registration text:* `docs/drafts/2026-11-06-index-timing-registration.md`, with the three sections
+  the pressure test requires and every prior look listed (the secondary-data exception is not used). It
+  moves to `hypotheses/` only after Gabriel's dated yes: a "timing" file there silences the 10 Nov fallback.
+  - The plan expected the gaps on the covered days to be "strongly persistent, an n_eff of a few". Measured
+    over 21 Oct - 5 Nov, the registered gaps are barely persistent (rho -0.12 to +0.23, n_eff 7.5-12 at
+    T = 11-12). The text gives those numbers instead, in its adjustment log.
+- *Saturday, in order:*
+  - cold re-read of the reader and its tests;
+  - fill in the reader's sha256 and the audit's N of N;
+  - `git mv` the text to `hypotheses/2026-11-07-index-timing.md`, with the Registered date and a row in
+    `hypotheses/README.md`. No H number - Decided (his to veto): it is descriptive, and H9 stays reserved;
+  - Gabriel's dated yes and his OSF freeze;
+  - the pressure test, then the push.
+  - Also due by Tue 10 Nov: the system-status table refresh.
+- *Push:* these commits go out after the recorders' window, through the gated script, once the auditor reads
+  217 of 217.
+
+*OPRA figures: Data provided by Databento. Index closes: Cboe Global Markets. Aggregates only.*
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run

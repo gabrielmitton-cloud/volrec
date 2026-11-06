@@ -21,10 +21,13 @@ A day whose last DBIX value is more than 0.05 from C is flagged and kept.
 
 Reads OVX and GVZ only: every other index's row is skipped before any of its fields is converted. Every
 file's sha256 must match the seal in the private dbix/README.md before the file is read, and every day file
-the seal lists must be there. Prints aggregates only: dates (of days not covered, not measured or flagged)
+the seal lists must be there. Nothing is measured unless the readings rebuilt here give the recorded
+verdicts' own days and numbers (H5e's FINAL gap by day, H7's counts and means) and H5e's days match
+modelfree's registered output. Prints aggregates only: dates (of days not covered, not measured or flagged)
 and each day's spread of quote times around T in seconds, never an index value.
 
-  python tools/index_timing.py      # refuses until both verdicts are recorded
+  VOLREC_DATABENTO_DIR=~/Documents/volrec-licensed/opra python tools/index_timing.py
+      # refuses until both verdicts are recorded, and while H7's OPRA days are not the ones they used
 """
 import csv
 import gzip
@@ -214,15 +217,20 @@ def offsets(rows, T):
     return [(ore.parse_ts(r["quote_time"]) - T).total_seconds() for r in rows if r.get("quote_time")]
 
 
-def measure(readings, days):
+GROUPS = (("H5e skip-only", "OVX"), ("H5e registered", "OVX"), ("H7 OPRA replica", "OVX"),
+          ("H7 OPRA replica", "GVZ"), ("H7 free-feed replica", "OVX"), ("H7 free-feed replica", "GVZ"))
+FIELDS = ("rows", "near", "missing", "uncovered", "spread")
+
+
+def measure(readings, days, groups=()):
     """readings: [{"day", "reading", "index", "E", "C", "T", "offsets"}]; days: {day: {index: series}} from the
     sealed files. -> {(reading, index): {"rows", "near", "missing", "uncovered", "spread"}}; an uncovered day
-    carries where it sits against the data, a spread its day."""
-    out = {}
+    carries where it sits against the data, a spread its day. Every pair in `groups` is kept even with no
+    reading, so the report shows it."""
+    out = {key: {k: [] for k in FIELDS} for key in groups}
     first, last = (min(days), max(days)) if days else (None, None)
     for x in readings:
-        g = out.setdefault((x["reading"], x["index"]), {"rows": [], "near": [], "missing": [], "uncovered": [],
-                                                         "spread": []})
+        g = out.setdefault((x["reading"], x["index"]), {k: [] for k in FIELDS})
         if x["day"] not in days:
             g["uncovered"].append((x["day"], BEFORE if first is None or x["day"] < first else
                                    "after the data ends" if x["day"] > last else "no file for that day"))
@@ -313,10 +321,105 @@ def h5e_cross_check(readings, modelfree_out):
     bad = [f"{d}: counted by one and not the other" for d in sorted(set(printed) ^ set(mine))]
     for d in sorted(set(printed) & set(mine)):
         reg, skip = printed[d]
-        if (abs(round(mine[d]["H5e registered"], 2) - reg) > 0.0051
+        if not all(math.isfinite(v) for v in mine[d].values()):          # nan > 0.0051 is False: never a pass
+            bad.append(f"{d}: a gap here is not a finite number")
+        elif (abs(round(mine[d]["H5e registered"], 2) - reg) > 0.0051
                 or abs(round(mine[d]["H5e skip-only"], 2) - skip) > 0.0051):
             bad.append(f"{d}: the gaps differ from modelfree's")
     return bad
+
+
+def h5e_recorded_check(readings, recorded):
+    """H5e's skip-only days here must be the recorded FINAL reading's: the same days, each gap the one it prints
+    (to two decimals). modelfree's own run reads today's Cboe file, as this does, so only the record shows a close
+    revised or replaced since the verdict. -> a list of disagreements (empty when they agree)."""
+    import record_verdict as rv
+    i = recorded.find(rv.MARK_H5E_FINAL)
+    if i < 0:
+        return ["no recorded H5e FINAL reading to compare"]
+    line = re.search(r"^- Skip-only gap by day: (.*)\.$", recorded[i:], re.M)
+    if not line:
+        return ["the recorded H5e FINAL reading lacks its gap-by-day line"]
+    rec = {d: float(g) for d, g in re.findall(r"(\d{4}-\d{2}-\d{2}) ([+-]\d+\.\d+)", line.group(1))}
+    mine = {x["day"]: x["E"] - x["C"] for x in readings if x["reading"] == "H5e skip-only"}
+    if not rec and not mine:
+        return ["neither side counts an H5e day: nothing to compare"]
+    bad = [f"{d}: counted by one and not the other" for d in sorted(set(rec) ^ set(mine))]
+    for d in sorted(set(rec) & set(mine)):
+        if not math.isfinite(mine[d]):
+            bad.append(f"{d}: the skip-only gap here is not a finite number")
+        elif abs(round(mine[d], 2) - rec[d]) > 0.0051:
+            bad.append(f"{d}: the skip-only gap differs from the recorded one")
+    return bad
+
+
+def h7_recorded_check(readings, recorded):
+    """H7's days here must be the recorded H7 reading's and give every number it prints. Its days are H7's
+    expected trading days less those it names as missing or not counted (the writer refuses while an expected
+    day has no row); then each fund's day count and mean |free - OPRA| (H7a), GLD's mean |free - GVZ| (H7b) and
+    USO's mean free - OVX (H7c), to its three decimals. The record holds aggregates only, so agreement is on
+    days and those means, not day by day. An OPRA folder that is not the private, pulled one would otherwise
+    drop H7's days without a word. A date accepted as a gap (panel_health.ACCEPTED_GAPS: a day one panel lost)
+    is left out of the date comparison: H7 can still count it from the monthly legs, and the writer's coverage
+    check skips it, so its date proves nothing either way; the counts and means still cover it.
+    -> a list of disagreements (empty when they agree)."""
+    import h7_reader as h7
+    import panel_health as ph
+    import record_verdict as rv
+    i = recorded.find(rv.MARK_H7)
+    if i < 0:
+        return ["no recorded H7 reading to compare"]
+    j = recorded.find(rv.DB_CREDIT, i)
+    blk = recorded[i:j if j > 0 else len(recorded)]
+    num = r"([+-]?[\d.]+|n/a) "
+    a = re.search(r"at the same minute: USO " + num + r"over (\d+) days, GLD " + num + r"over (\d+) days", blk)
+    b = re.search(r"a mean absolute " + num + r"points from GVZ's close over (\d+) days", blk)
+    c = re.search(r"minus OVX's close averaged " + num + r"over (\d+) days", blk)
+    if not (a and b and c):
+        return ["the recorded H7 reading lacks its H7a, H7b or H7c line"]
+    rec = {("USO", "a"): a.group(1, 2), ("GLD", "a"): a.group(3, 4), ("GLD", "b"): b.group(1, 2),
+           ("USO", "c"): c.group(1, 2)}
+    named = set(re.findall(r"(\d{4}-\d{2}-\d{2}) (USO|GLD)\b", "\n".join(
+        ln for ln in blk.splitlines() if ln.startswith(("- Still missing at the", "- Also not counted")))))
+    want = {sym: {d for d in rv.expected_days(rv.H7_START_DAY, rv.H7_END_DAY) if (d, sym) not in named}
+            for sym in h7.INDEX}
+    pairs = {}
+    for x in readings:
+        if x["reading"] in ("H7 OPRA replica", "H7 free-feed replica"):
+            pairs.setdefault((x["index"], x["day"]), {})[x["reading"]] = x
+    days = {ix: {d: (p["H7 free-feed replica"], p["H7 OPRA replica"]) for (k, d), p in pairs.items()
+                 if k == ix and len(p) == 2} for ix in h7.INDEX.values()}
+    if not any(days.values()) and all(n == "0" for _m, n in rec.values()):
+        return ["neither side counts an H7 day: nothing to compare"]
+    bad, differ = [], set()
+    gaps = {d.isoformat() for d in ph.ACCEPTED_GAPS}                 # want leaves them out too (expected_days)
+    for sym, ix in h7.INDEX.items():
+        mine = set(days[ix]) - gaps
+        if mine != want[sym]:
+            differ.add(sym)
+            bad.append(f"{sym}: counted by one and not the other: {', '.join(sorted(mine ^ want[sym]))}")
+    what = {"a": ("mean |free - OPRA|", lambda f, o: abs(f["E"] - o["E"])),
+            "b": ("mean |free - GVZ|", lambda f, o: abs(f["E"] - f["C"])),
+            "c": ("mean free - OVX", lambda f, o: f["E"] - f["C"])}
+    for (sym, part), (m, n) in rec.items():
+        if sym in differ:
+            continue
+        got = list(days[h7.INDEX[sym]].values())
+        name, term = what[part]
+        val = sum(term(f, o) for f, o in got) / len(got) if got else None
+        if len(got) != int(n):
+            bad.append(f"{sym} H7{part}: {len(got)} days here, {n} in the recorded reading")
+        elif got and not math.isfinite(val):                        # nan > 0.00051 is False: never a pass
+            bad.append(f"{sym} H7{part}: the {name} here is not a finite number")
+        elif got and (m == "n/a" or abs(round(val, 3) - float(m)) > 0.00051):
+            bad.append(f"{sym} H7{part}: the {name} differs from the recorded one")
+    return bad
+
+
+def recorded():
+    """The text of H5's and H7's hypothesis files, where the two verdicts are recorded."""
+    import record_verdict as rv
+    return rv.H5.read_text(), rv.H7.read_text()
 
 
 def h7_days():
@@ -350,6 +453,9 @@ def report(groups, flags):
     f = lambda v, sign=True: "n/a" if not math.isfinite(v) else (f"{v:+.3f}" if sign else f"{v:.3f}")  # noqa: E731
     lines = []
     for (reading, idx), g in sorted(groups.items()):
+        if not (g["rows"] or g["missing"] or g["uncovered"]):
+            lines.append(f"== {reading}, against {idx}: no counted day to measure")
+            continue
         d = describe(g["rows"])
         covered = len(g["rows"]) + len(g["missing"])
         before = sorted(day for day, where in g["uncovered"] if where == BEFORE)
@@ -408,6 +514,14 @@ def main(argv=()):
     bad = h5e_cross_check(readings, out)
     if bad:
         raise SystemExit("index_timing: H5e's days here do not match modelfree's registered reading: " + "; ".join(bad))
+    h5_text, h7_text = recorded()
+    bad = h5e_recorded_check(readings, h5_text)
+    if bad:
+        raise SystemExit("index_timing: H5e's days here do not match its recorded FINAL reading: " + "; ".join(bad))
+    bad = h7_recorded_check(readings, h7_text)
+    if bad:
+        raise SystemExit("index_timing: H7's days here do not match its recorded reading: " + "; ".join(bad)
+                         + f" - is VOLREC_DATABENTO_DIR ({ore.DATA_DIR}) the private, pulled OPRA folder?")
     flags = []
     for day in sorted(days):
         for x in {(r["index"], r["C"]) for r in readings if r["day"] == day}:
@@ -415,7 +529,7 @@ def main(argv=()):
                 flags.append(f"{day} {x[0]}")
     print(f"Index timing - EXPLORATORY, descriptive; no test, no verdict. DBIX days: {min(days)} to {max(days)} "
           f"({len(days)} files).\n")
-    print(report(measure(readings, days), flags))
+    print(report(measure(readings, days, GROUPS), flags))
     return 0
 
 
