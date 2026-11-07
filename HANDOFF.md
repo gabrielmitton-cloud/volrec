@@ -1898,7 +1898,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | GitHub tokens | both renewed by Gabriel 3 Nov; both expire **Mon 1 Feb 2027**, after H8's last purchase (29 Jan). Both work (6 Nov): cron-job.org dispatches with `volrec-trigger` every day, and every green private run checks this repo out with volrec-licensed's `PUBLIC_REPO_TOKEN`. The pressure test dates both: WARN from Mon 4 Jan, FAIL from Mon 25 Jan. Renew both by **Fri 22 Jan**; reminder Mon 11 Jan |
 | phone (Pushover), 6 Nov | four levels live. The nightly GREEN went out for 3, 4 and 5 Nov ("all clear", each day landed 19:31 UTC). 6 Nov brought a YELLOW (the private run's failure at 03:22 UTC) and healthchecks.io's DOWN for volrec-licensed at 08:05 UTC (the same failure, arriving late; a full run at 08:07 cleared it). No RED: the guard never had to re-run a recorder. From 3 Nov the nightly H5e figure is the record version |
 | cloud routines, 6 Nov | 16 enabled, none with a connector: the Monday auditor (last ran 2 Nov, succeeded), the Wednesday watchdog (last 4 Nov, succeeded), the 13 Nov verdict check, and one-off reminders on 7, 9, 10, 12, 16, 19, 20, 22, 23 and 24 Nov, 4 Dec, 4 Jan and 11 Jan (the token renewals). Disabled: the 7 Nov backup reminder (no backup disk, Gabriel 6 Nov) and the 30 Oct Goukasian one. The tool lists 20 routines at a time and three more were read by id: none of the 23 has a connector. Two older ones (of the 13 counted 3 Nov) are out of its reach; they had none then, and connectors attach only when a routine is created |
-| OSF | H5e and H7 registered and live, https://osf.io/z5gfu (10 Oct); the timing measurement registered 6 Nov, https://osf.io/4mcgf - at 23:30 UTC still waiting (OSF's API answers 401) for Gabriel to approve OSF's email, or public by itself about Sun 8 Nov 21:07 UTC. The site links both |
+| OSF | H5e and H7 registered and live, https://osf.io/z5gfu (10 Oct); the timing measurement, https://osf.io/4mcgf, live too: registered 6 Nov 21:06:58 UTC, public by 01:57 UTC on Sat 7 Nov after Gabriel approved OSF's email (its date stays 6 Nov; its four files match the registered commit). The site links both |
 | pre-push hook | installed (`core.hooksPath tools/hooks`, checked 6 Nov); every push runs the pressure test |
 | iMessage (launchd `com.volrec.daily`) | **retired 23 Oct**; still unloaded (6 Nov: no volrec job in `launchctl list`); plist kept at ~/Documents/volrec-retired/ |
 
@@ -3869,6 +3869,22 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   verdicts, adding the measurement, if it has read by then, is a choice for that day.
 - *Checks:* pressure test 0 fail, 2 warn (the known two); the poster's tests 19 OK. Docs only, so no Astra
   review.
+
+**Sat 7 Nov (01:54-02:05 UTC) - the timing registration is public**
+- *OSF's approval email reached Gabriel late.* He had none at 00:05 UTC and pasted it at 01:54 UTC; its title
+  is the registration's, word for word. Without a click it would have gone through "48 hours from midnight
+  tonight (EDT)", about Mon 9 Nov 04:00-05:00 UTC, later than the Sun 8 Nov 21:07 UTC worked out from OSF's
+  help page. Its cancel link would have sent the registration back to draft for good, and a resubmission
+  would carry a new date.
+- *Approved.* Gabriel clicked the approve link. OSF's API answered 401 at 01:54 UTC and 200 at 01:57 UTC:
+  public, not pending, not withdrawn, no embargo, and `date_registered` still 2026-11-06T21:06:58 UTC.
+- *Its files, read as any visitor would:* the folder `index-timing-registered-2026-11-06` holds the four
+  registered files, and each sha256 matches the file at `e02724e` (the reader's is e65b5270...afb46, the
+  hash the registration states). The archive also carries the 10 Oct registration's files, because OSF
+  archives the project's whole storage.
+- *Records:* the status table's OSF row and `OSF-REGISTRATION-TIMING.md`'s header. The Mon 9 Nov reminder
+  now has nothing to report (the table is refreshed and OSF reads public), so it should stay silent.
+- *Checks:* pressure test 0 fail, 2 warn (the known two). Docs only, so no Astra review.
 
 ### Prompt for the next session
 

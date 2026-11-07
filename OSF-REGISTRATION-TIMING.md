@@ -1,7 +1,7 @@
 # OSF registration of the index-timing measurement: what to paste (prepared 6 Nov 2026)
 
 **DONE 6 Nov 2026: registered at https://osf.io/4mcgf** (21:06:58 UTC; Secondary Data Preregistration; no
-embargo, MIT; public once Gabriel approves OSF's email, or by itself after 48 h). Claude filled it in Gabriel's
+embargo, MIT; public by 01:57 UTC on 7 Nov, when Gabriel approved OSF's email). Claude filled it in Gabriel's
 browser at his request and submitted on his yes. The template's own fields differ from some headings below,
 so the answers were fitted to them while filling (for example, data availability: "available through
 protected access"). The OSF page, not this file, is the record of what was submitted.
