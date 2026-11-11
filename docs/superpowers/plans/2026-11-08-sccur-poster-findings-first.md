@@ -1155,3 +1155,6 @@ anything. Full list: HANDOFF, the Sat 7 - Wed 11 Nov entry.
 - **Checks:** poster 57 and charts 27 tests; 43 mutants, all caught by their intended tests; four broken pages
   refused in real Chrome; five states pass (today, both fallback headlines, a worst and a best case after the
   verdicts).
+- **11 Nov: Gabriel delegated the open questions** ("do whats best and move on"): the fallback headlines
+  reworded to claim only what their results show, the calibration day printed as SPY's 0.01-point gap (no
+  index level on the poster), the fuller AI line; the histograms and sips stay. HANDOFF, the 11 Nov entry.

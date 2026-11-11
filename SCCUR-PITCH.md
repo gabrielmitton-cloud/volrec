@@ -5,6 +5,11 @@ copies each from a dated record). Two lines wait for the H5e and H7 readings (12
 **[after 19 Nov]**; fill them from the hypothesis files, never from memory. Read aloud, the walk ran about two
 minutes on 4 Nov; the 8 Nov rewrite, with its caveats, runs about two and a half (about 350 spoken words).*
 
+**Where and when (SCCUR's email, read 11 Nov):** Sat 21 Nov, Session 2, 9:30-11:00 am, Montezuma Hall in the
+Conrad Prebys Aztec Student Union, San Diego State; poster board 12, under the poster's own title. Ten minutes to
+set up (double-sided tape on the supply tables in the room), the whole 75 minutes at the poster, five minutes to
+take it down at the end. No schedule changes are possible.
+
 The session is 75 minutes standing at the poster, with people arriving one or two at a time. So the talk is
 not a speech: a 30-second opener for everyone, the 2-minute walk for anyone who stays, then questions.
 
@@ -16,11 +21,12 @@ not a speech: a 30-second opener for everyone, the 2-minute walk for anyone who 
 > and checked it against Cboe's indices, the consolidated market and Bloomberg. Short answer: the free quotes
 > are close. Most of the error is in the recipe.
 
-*If H7 fails, the poster's headline changes by itself (Gabriel's rule of 21 Oct), and which way depends on H3.
-If H3 holds, it reads "Widen the strikes, and free data lands within a point of Cboe's index." Then the opener's
-last two sentences become: "Short answer: widen the strikes, and free data lands within a point of Cboe's index.
-Whether the rest of the gap is the quotes or the recipe is still open." If H3 fails too, it reads "So far, free
-data loses more to the method than to the quotes." and the opener ends on that sentence instead; never say
+*If H7 fails, the poster's headline changes by itself (Gabriel's rule of 21 Oct, worded 11 Nov), and which way
+depends on H3. If H3 holds, it reads "Widen the strikes, and free data averages within a point of Cboe's index."
+Then the opener's last two sentences become: "Short answer: widen the strikes, and free data averages within a
+point of Cboe's index. Whether the rest of the gap is the quotes or the recipe is still open." If H3 fails too, it
+reads "Free data misses Cboe's index by a point or more, on average." Then the opener ends: "Short answer: free
+data misses Cboe's index by a point or more on average, and where that loss comes from is still open." Never say
 "within a point" then, because H3's bar failed. Look at the printed headline and say what it says.*
 
 ## The 2-minute walk (the poster's numbered sections, left to right)
@@ -43,9 +49,9 @@ until its reading of record (the one after 11 Nov): read them off the printed ti
    from the full market's, at or under the bar. The caveat: where both feeds bid, the hollow dots, it is 0.67,
    over the bar, though only a tick or two.
 5. **5 The recipe (right).** A fixed 10% band of strikes sees 97% of a calm fund's likely moves but only 45%
-   of oil's. Widen it to 30% and the average gap falls from 3.97 to 0.59 points on one calibration day; SPY
-   read 15.83 against a VIX of 15.84. That shows coverage matters; it does not by itself rule out the feed,
-   the timing or the index-versus-fund difference.
+   of oil's. Widen it to 30% and the average gap falls from 3.97 to 0.59 points on one calibration day; SPY's
+   estimate read 0.01 points under the VIX. That shows coverage matters; it does not by itself rule out the
+   feed, the timing or the index-versus-fund difference.
 6. **How it stays honest (left).** Every bar was dated in a public repository before its test ran. On 17 Oct
    a second program sharing no code recomputed every result and caught one bug, fixed; no verdict changed.
 7. **The strip (bottom).** Every registered test is a chip: a tick, a cross, or due. Point at a cross on
@@ -91,11 +97,13 @@ and OPRA data are licensed, so only aggregates appear, with credit lines (bottom
 
 **Why does the chart count days instead of drawing the VIX?** My request to Cboe, approved on 4 Nov, said
 only aggregate statistics would appear, "for example, average differences between my estimates and the index".
-Counts of days by gap are that; a dated line of the index, or of each day's gap, is not. An index level
-appears only where a result depends on it (SPY's 15.83 against the VIX's 15.84).
+Counts of days by gap are that; a dated line of the index, or of each day's gap, is not. No index level is
+printed anywhere on the poster: even the calibration day appears as a difference (SPY's estimate 0.01 points
+under the VIX).
 
-**Did you use AI?** Yes, and the poster says so: the code was written with an AI coding assistant (Claude Code);
-the question, decisions and interpretation are mine. *(SCCUR's policy: acknowledge it and be able to explain
+**Did you use AI?** Yes, and the poster says so: the code, the charts and draft wording were produced with AI
+assistants (Claude Code), and a second AI model reviewed the work; the question, decisions and interpretation
+are mine. *(SCCUR's policy: acknowledge it and be able to explain
 every method without AI - which is what this page is for.)*
 
 **What's next?** Final readings of H5e and H7 (12-19 Nov), a confirmatory test on eight funds and stocks

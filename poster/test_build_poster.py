@@ -524,6 +524,15 @@ class Headline(unittest.TestCase):
     def test_below_minimum_is_not_a_failure(self):
         self.assertEqual(bp.headline({"verdict": "HOLDS"}, self.h7(0.10, None, 0.20, n=6)), bp.HEADLINE)
 
+    def test_each_fallback_claims_only_what_its_results_show(self):
+        # Worded 11 Nov 2026 under Gabriel's delegation ("do whats best"), after Astra's follow-up: "within a point"
+        # is the five-pair average (USO alone read 1.77), and the both-fail line claimed a quotes-versus-method
+        # split that no failed test establishes. H3's verdict here is H3a's: pooled mean |gap| under 1.0.
+        h7_fails, both = " ".join(bp.HEADLINE_IF_H7_FAILS), " ".join(bp.HEADLINE_IF_H7_AND_H3_FAIL)
+        self.assertIn("averages within a point of Cboe's index", h7_fails)
+        self.assertIn("by a point or more, on average", both)
+        self.assertNotRegex(both, r"(?i)quote|method|recipe|within a point")
+
 
 class H3Box(unittest.TestCase):
     def report(self):
@@ -741,6 +750,27 @@ class Page(unittest.TestCase):
         self.assertNotIn("every trading day", page)                           # 16 and 28 Sep have no reading
         self.assertIn("recomputed every recorded result on 17 Oct", page)    # docs/recheck-2026-10-17, dated
         self.assertNotIn("every recorded number", page)                      # results after 17 Oct were not in it
+
+    def test_the_calibration_day_shows_a_difference_not_a_level(self):
+        # Decided 11 Nov 2026 under Gabriel's delegation: Cboe's approval (4 Nov) covers aggregate statistics such
+        # as "average differences", so section 5 prints SPY's gap to the VIX on 11 Sep (H3 file: -0.01), never the
+        # VIX or the estimate that would give it back; nor any other pair's level from that day.
+        page, _ = self.build(trading_days("2026-11-02", "2026-11-13"), date(2026, 11, 13))
+        txt = self.text(page)
+        self.assertIn("SPY's estimate read 0.01 points under the VIX", txt)
+        for level in ("15.83", "15.84", "20.79", "21.02", "20.51", "19.98", "25.36", "25.68", "57.08", "58.92"):
+            self.assertNotIn(level, txt)
+        self.assertNotIn("an index level is quoted", txt)
+        self.assertIn("Derived figures only.", txt)
+
+    def test_the_ai_line_names_every_use(self):
+        # Worded 11 Nov 2026 under Gabriel's delegation: AI wrote the code (which draws the charts) and drafted
+        # wording, and a second AI model reviewed; SCCUR asks for AI use to be acknowledged.
+        page, _ = self.build(trading_days("2026-11-02", "2026-11-13"), date(2026, 11, 13))
+        txt = " ".join(self.text(page).split())
+        self.assertIn("Code, charts and draft wording produced with AI assistants (Claude Code; a second AI model "
+                      "reviewed); the research question, decisions and interpretation are the author's.", txt)
+        self.assertNotIn("DRAFT, for Gabriel to approve", txt)
 
 
 class Recipe(unittest.TestCase):

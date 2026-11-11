@@ -11,8 +11,9 @@ the project's own readers, never typed by hand:
   - H5e FINAL and H7: the blocks tools/record_verdict.py writes into the hypothesis files.
     Until a block exists its box says when the reading is due; it never shows a preview.
     A block that is present but not recognised stops the build (the poster never guesses).
-Derived figures only, with each source's credit line: no licensed raw data, and no index series (the main chart
-draws each day's gap, never Cboe's values: Cboe approved aggregates only, 4 Nov 2026).
+Derived figures only, with each source's credit line: no licensed raw data, no index series and no quoted index
+level (the main chart counts days by gap; the calibration day shows SPY's gap to the VIX: Cboe approved aggregates
+only, 4 Nov 2026).
 The --pdf render also checks the page: smallest text >= 32 CSS px (24 pt at 48 x 36 in), no
 column overflowing, the QR code drawn as vector SVG, one 3456 x 2592 pt page.
 """
@@ -41,15 +42,18 @@ HEADLINE = ("The free quotes are close.", "Most of the error is in the recipe.")
 
 # The fallback, decided by Gabriel on 21 Oct 2026, BEFORE H7's verdict: if H7 is written and either part
 # FAILS, the headline no longer claims the split and says only what H3 supports. If H3 had failed too
-# (it reads 0.45 against 1.0 on 21 Oct), the most cautious option of the research report is used.
-HEADLINE_IF_H7_FAILS = ("Widen the strikes,", "and free data lands within a point of Cboe's index.")
-HEADLINE_IF_H7_AND_H3_FAIL = ("So far, free data loses more", "to the method than to the quotes.")
+# (it reads 0.45 against 1.0 on 21 Oct), the most cautious option of the research report is used. H3's verdict
+# here is H3a's (pooled mean |gap| under 1.0). Worded 11 Nov 2026 under his delegation ("do whats best"), after
+# Astra's follow-up: "averages", because the point is the five-pair average (USO alone read 1.77); and the
+# both-fail line states only H3a's failure, claiming no quotes-versus-method split, which no failed test shows.
+HEADLINE_IF_H7_FAILS = ("Widen the strikes,", "and free data averages within a point of Cboe's index.")
+HEADLINE_IF_H7_AND_H3_FAIL = ("Free data misses Cboe's index", "by a point or more, on average.")
 HEADLINES = (HEADLINE, HEADLINE_IF_H7_FAILS, HEADLINE_IF_H7_AND_H3_FAIL)     # --headline N previews each
 
 # Gabriel: set True once you approve the AI-use sentence below; until then it prints marked DRAFT.
-AI_LINE_APPROVED = True   # approved by Gabriel, 21 Oct 2026
-AI_LINE = ("Code written with the help of an AI coding assistant (Claude Code); the research question, "
-           "decisions and interpretation are the author's.")
+AI_LINE_APPROVED = True   # approved by Gabriel 21 Oct 2026; reworded 11 Nov under his delegation ("do whats best")
+AI_LINE = ("Code, charts and draft wording produced with AI assistants (Claude Code; a second AI model reviewed); "
+           "the research question, decisions and interpretation are the author's.")
 
 H3_FILE = ROOT / "hypotheses/2026-09-12-h3-free-data-model-free.md"
 H5_FILE = ROOT / "hypotheses/2026-09-19-h5-wing-quote-quality.md"
@@ -70,7 +74,9 @@ PAIRS = (("SPY", "VIX", "S&P 500"), ("QQQ", "VXN", "Nasdaq-100"), ("IWM", "RVX",
 # measured") and at +/-30% (H3 file: "USO 57.08 against 58.92 (-1.84)"). The +/-20% row's pair is not
 # recorded anywhere in the repo, so it is not named.
 BANDS = [("±10%", 20, 3.97, -12.37, "USO"), ("±20%", 30, 1.31, -4.39, None), ("±30%", 40, 0.59, -1.84, "USO")]
-SPY_VS_VIX = ("15.83", "15.84")  # README.md, same calibration day ("SPY comes in at 15.83 against ... 15.84")
+# The same day at +/-30% (H3 file: "SPY 15.83 against 15.84 (**-0.01**)"), printed as the gap alone: Cboe approved
+# aggregates such as differences, so neither level is printed (decided 11 Nov 2026 under Gabriel's delegation).
+SPY_GAP_AT_30 = "0.01"   # points under the VIX
 # README.md, under the calibration table (wording kept): why a fixed band misses oil.
 TRUNCATION_WHY = ("A fixed ±10% band spans about 2.2 standard deviations on a 16-vol name but only 0.6 on "
                   "59-vol crude oil, which is why USO read twelve points light.")
@@ -498,9 +504,9 @@ def build(today=None, force_headline=None, out_dir=OUT):
       <p class="lead">Widen the band: the average gap falls from {BANDS[0][2]:.2f} to {BANDS[-1][2]:.2f} points</p>
       {charts.band_bars(BANDS)}
       <p class="cap">Mean absolute gap to Cboe's index, five fund–index pairs, one calibration day (11 Sep 2026);
-      worst: the pair furthest off (minus: reads low). At ±30%, SPY read {SPY_VS_VIX[0]} against a VIX of
-      {SPY_VS_VIX[1]}. This shows a coverage effect; it does not by itself rule out the feed's own error, the
-      snapshot's timing or the index-versus-fund difference.</p></div>
+      worst: the pair furthest off (minus: reads low). At ±30%, SPY's estimate read {SPY_GAP_AT_30} points under
+      the VIX. This shows a coverage effect; it does not by itself rule out the feed's own error, the snapshot's
+      timing or the index-versus-fund difference.</p></div>
   </section>
 </main>
 <footer class="bottom">
@@ -514,7 +520,7 @@ def build(today=None, force_headline=None, out_dir=OUT):
     <p>Data provided by Databento (OPRA consolidated NBBO). Bloomberg figures: Source: Bloomberg Finance L.P.
     Index values © Cboe Global Markets. This product uses the FRED® API but is not endorsed or certified by the
     Federal Reserve Bank of St. Louis. Options quotes: Alpaca indicative feed, personal, non-commercial use.
-    Derived figures only; an index level is quoted only where a result depends on it. Registration:
+    Derived figures only. Registration:
     <span class="nw">{OSF.removeprefix("https://")}</span> · <span class="nw">{SITE.removeprefix("https://")}</span></p>
   </div>
 </footer>

@@ -3985,6 +3985,47 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   once his answers are recorded in this section under a line of their own beginning
   `#### Poster questions: his answers` (then the date).
 
+**Wed 11 Nov (UTC) - Gabriel delegated the poster's open questions; SCCUR's session details**
+- *His words (11 Nov):* "for the things that need me just do whats best and move on", with SCCUR's email pasted.
+- *SCCUR (the email):* Sat 21 Nov, Session 2, 9:30-11:00 am, Montezuma Hall (Conrad Prebys Aztec Student Union,
+  San Diego State), poster board 12, under the poster's own title. Ten minutes to set up (double-sided tape on the
+  supply tables), the whole 75 minutes at the poster, five minutes to take it down; no schedule changes. Also at
+  the top of `SCCUR-PITCH.md`.
+- *Reminders:* 16 Nov (`trig_01WeRHdAkoi1zrk7XcBMUfWT`) and 19 Nov (`trig_01H71PLiyToiiee4Fn4JwbR8`) rewritten
+  with the session, room and board (the 16 Nov text had said Whova would post them that day). New: Fri 20 Nov
+  18:00 Pacific (Sat 02:00 UTC), "SCCUR tomorrow" with the room, board and timings
+  (`trig_01SLqhP41Hs5H2mDoAwb4NrB`, Bash and Read only, connectors cleared). The 13 Nov poster-questions reminder
+  (`trig_01728s5J95kLRL1ti2NG74bG`) is switched off: the questions are answered below.
+
+#### Poster questions: his answers (11 Nov 2026, delegated: decided by Vega)
+1. *The headline rule:* his 21 Oct structure stands: the headline changes by itself only when an H7 verdict is
+   written and fails. Kept: an unread H7 keeps "The free quotes are close. Most of the error is in the recipe."
+   under "On the evidence so far" (the far quotes sit within half a spread of both professional feeds; one
+   recipe change moved the calibration day's mean gap from 3.97 to 0.59 points; H7's chips say "due").
+   Reworded: H7 fails and H3 holds, "Widen the strikes, and free data averages within a point of Cboe's index."
+   (the point is the five-pair average; USO alone read 1.77); both fail, "Free data misses Cboe's index by a
+   point or more, on average." (H3's verdict there is H3a's, so the line states only that failure and claims no
+   quotes-versus-method split). Both render on one line and pass the page check.
+2. *Cboe:* the poster now prints no index level. Section 5's caption gives the calibration day as a difference,
+   "SPY's estimate read 0.01 points under the VIX" (the H3 file's -0.01), not "15.83 against a VIX of 15.84";
+   the credit line ends "Derived figures only."; a page test fails if any of that day's ten levels (five
+   estimates, five indices) reaches the page. Kept as they are: the worst-pair gaps (differences, the approval's
+   own example); the bell curves' 16 and 59 (whole-point inputs to a curve labelled a simple model); the frozen
+   H3 file's calibration table and the H5 file's per-day OVX gaps (registered records, never edited; H5e's final
+   block, written by the frozen writer about 12 Nov, adds its own line); and the README and site, the older
+   public record since September, whose table the registered H3 file shows anyway.
+3. *The AI line:* "Code, charts and draft wording produced with AI assistants (Claude Code; a second AI model
+   reviewed); the research question, decisions and interpretation are the author's." The pitch's answer follows.
+4. *Vetoes:* none; the histograms and the sips preview stay.
+5. *Marc:* no interim draft; he gets the final poster to print, as planned for 16 Nov.
+6. *The Gmail connector:* not needed; emails can be pasted.
+- *Checks (11 Nov):* `poster/test_build_poster.py` 60 OK (three new: the fallback wording, no calibration-day
+  level, the AI line; each failed first on the old code) and `poster/test_charts.py` 27 OK; the 43 planted bugs
+  all caught; five states pass the page check (today, both fallbacks, a worst and a best case after the
+  verdicts): smallest text 24 pt, nothing overflowing, clipped or overlapping, the preview drawn from the checked
+  PDF (3456 x 2592). These answers close the follow-up review's open points, so under the one-follow-up rule they
+  are verified by tests, planted bugs and real renders, not re-reviewed by Astra.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
@@ -3997,6 +4038,6 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 > 14 Oct entries above before touching it. Its public page `tools/lab.html` (4 Nov) is rendered by
 > `lab/report.py` from the private summaries: re-render it, never edit it by hand.
 > The SCCUR poster was redesigned 7-11 Nov (the entry above): run `poster/test_build_poster.py` and
-> `poster/test_charts.py` by hand before any rebuild; its open questions are Gabriel's. Record his answers
-> under a line of their own beginning `#### Poster questions: his answers` (then the date); the 13 Nov
-> reminder looks for it.
+> `poster/test_charts.py` by hand before any rebuild. Its open questions were answered on 11 Nov under
+> Gabriel's delegation (the entry above, "Poster questions: his answers"); SCCUR is Sat 21 Nov, Session 2,
+> 9:30 am, Montezuma Hall, board 12.
