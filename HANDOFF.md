@@ -1880,7 +1880,7 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 
 ---
 
-## 18. Current state — opened 23 September 2026, updated to 6 November 2026; the reading every session starts from
+## 18. Current state — opened 23 September 2026, updated to 11 November 2026; the reading every session starts from
 
 **Section 17 is now history:** dated notes from 16-23 Sep, with the reasoning behind
 every decision. This section is the only one guaranteed current. Read it, run
@@ -3886,6 +3886,101 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   now has nothing to report (the table is refreshed and OSF reads public), so it should stay silent.
 - *Checks:* pressure test 0 fail, 2 warn (the known two). Docs only, so no Astra review.
 
+**Sat 7 - Wed 11 Nov (UTC) - the SCCUR poster redesigned: graphs and findings first (Gabriel chose layout A)**
+- *Gabriel's ask (7 Nov):* no side table of hypotheses; "graphs and ... actual findings", like other posters, with
+  the tests shrunk to a strip. He chose layout A (headline + evidence): "make sure graphs are easy to understand
+  and interpret but informative", verdicts smaller ("a side note for me to point to during talks"), the classic
+  research-poster look but mostly A, "do ur thing". Design:
+  `docs/superpowers/specs/2026-11-08-sccur-poster-findings-first-design.md`; plan and its amendments:
+  `docs/superpowers/plans/2026-11-08-sccur-poster-findings-first.md`.
+- *What the poster shows now:* the headline (unchanged, with its 21 Oct fallbacks); left: 1 the question, 2 what
+  I did (a flow: free quotes, the VIX formula with strikes and expiries I chose, the references), how it stays
+  honest, what's next, limits; centre: 3 "Free data tracks Cboe's index", five histograms (SPY, QQQ, IWM, GLD and
+  USO against VIX, VXN, RVX, GVZ and OVX), each counting the days at each half-point gap (free estimate minus
+  Cboe's published index), one gap axis and one day axis for all five, a blue line at zero for Cboe's index and
+  a band for within one point, no dates; beside them the H3 tile (the average gap against the 1.0 bar set before
+  the data); right: 4 the quotes (a dot scale in bid-ask spreads, both feeds, both readings), 5 the recipe (two
+  bell curves under a +/-10% band; the mean gap by strike band on the 11 Sep calibration day); bottom: every
+  registered hypothesis, H1-H7, as a small chip beside the QR code. The charts are pure functions in the new
+  `poster/charts.py`.
+- *Licensing - Decided (his to veto): the main chart counts days; it draws no index level and no day.* Cboe's
+  4 Nov approval answers the request as sent (10 Oct, repeated 21 Oct), whose words are: "No Cboe data files are
+  republished. Only aggregate statistics appear (for example, average differences between my estimates and the
+  index), credited to Cboe Global Markets." The first build drew the five indices as lines; the second drew
+  each day's gap as a bar; Astra's 8 Nov review read those dated gaps as per-day data (HIGH), so each panel is
+  now a histogram. Page tests fail if an index value or a day reaches the page, and `charts.gap_histogram`
+  refuses dated rows. The pitch quotes the request ("Why does the chart count days instead of drawing the
+  VIX?"). Two older exceptions are put to Gabriel, not changed: the calibration day's level (11 Sep: SPY 15.83
+  against a VIX of 15.84) and worst single-pair gaps, in section 5's caption and public in the README and site
+  since September; and the H5 file's line 488, written by the frozen writer on 8 Oct, which lists each counted
+  day's gap to OVX (H5e's final block, about 12 Nov, will add the same line).
+- *Three independent reviews of the rendered poster (8 Nov; Claude agents: design, the claims against the
+  records, the code); each finding checked against the records before it was fixed, code fixes tests first:*
+  figures rounded once, from full precision (double rounding had shifted the tile's mean and GLD by 0.01); the
+  tile's colour follows each part's verdict (it was always green); "of record" needs the 11 Nov data in every
+  pair, not the date alone; wording matched to the records (the flow's arrow, "recorded daily", "H5e and H7 were
+  also frozen on OSF", "eight funds and stocks", H2a and H6a's chips, a section 5 caveat: one calibration day
+  shows a coverage effect and does not by itself rule out the feed, the timing or index-versus-fund); a final
+  H5e chip keeps the recorded 8 Oct failure beside it; an H7 part below its minimum shows a grey "-" (never
+  scored), not the amber "..." of a reading still due; a comparison ("p < 0.01") never breaks across lines; the
+  quote scale shows both readings for both feeds.
+- *Astra Ultra, 8 Nov (`.codex-reviews/20261108T174846Z-m75ku9g0`): INCOMPLETE,* because the Cboe request, the
+  frozen verdict writers and the scorer's exit contract were not in its bundle; ten findings (2 HIGH, 7 MEDIUM,
+  1 LOW), each verified. Fixed: the per-day gaps (the histograms above); "recomputed every recorded number"
+  (now "recomputed every recorded result on 17 Oct", the re-check's own scope); the H5e lines are matched exactly
+  as the frozen writer prints them, bars word for word; a scorer refusal (nonzero exit) stops the build; Chrome's
+  output counts only if that run wrote it, and `poster.pdf` / `preview.png` exist only after a render that
+  passed (`*.FAILED-CHECK.*` otherwise); the page check now runs after the fonts load, fails on chart text that
+  leaves its chart or meets another label, and writes its result into the page title, which Chrome carries into
+  the PDF, so the printed file is judged by the run that printed it; chart tests with known coordinates. Moot:
+  per-panel date ranges (no date axis now). Put to Gabriel: the headline rule (his of 21 Oct).
+- *Follow-up Astra Ultra review (11 Nov, `.codex-reviews/20261111T070947Z-hqkxc6wa`): INCOMPLETE.* It found
+  the histogram, the H5e parser, the scorer's exit and the dated re-check resolved, but could not compare every
+  claim with its record: the timing study's 0.53-point figure and the full H1, H2 and H6 results were not in its
+  bundle. Checked here instead, each matches its file: 0.53 (OSF-REGISTRATION-TIMING.md, "a median 0.53 points
+  between 14:30 and 15:55"), H1 9 of 11, H2a p 0.18 by date (companion run 40720872275), H2b 3 of 11, H6a 0 of 9,
+  H6b +0.33 against +0.42 (p < 0.01). Four new points, each verified and fixed tests first: (1) the preview came
+  from a Chrome run of its own whose page check nothing read - it is now drawn from the checked PDF itself by
+  macOS's own `sips` (*Decided, his to veto:* a tool every Mac has, nothing installed), so it shows exactly what
+  was checked; (2) the PDF was judged by text searches a file cut short could pass - it must now end in its
+  cross-reference table and %%EOF, `sips` must be able to draw it, and the drawing must decode whole as one 4:3
+  page; (3) the smallest size was rounded before the 24 pt comparison (31.996 px passed) and labels could cross
+  by up to a pixel - now compared unrounded, with only numerical error allowed (0.01 px), and boundary tests in
+  real Chrome (half a pixel caught, touching not, 31.996 px caught); (4) the pitch said the "within a point"
+  headline follows any H7 failure - it now follows both branches of his rule (that one only if H3 holds). Under
+  the review rules there is no third review: these four fixes are verified by tests, mutants and real renders,
+  not re-reviewed by Astra.
+- *Lost and rebuilt:* the Mac rebooted between 8 and 11 Nov and cleared the session scratchpad (`/private/tmp`).
+  The check scripts and drafts were rebuilt from the session record; a 6 Nov review packet set aside there was
+  recovered word for word from that day's review logs and put back in `review-packet/` (untracked; it can be
+  deleted). Anything held now goes in `.codex-reviews/held/` (git-ignored, never bundled into a review).
+- *Checks (11 Nov, data to 10 Nov, after the follow-up fixes):* `poster/test_build_poster.py` 57 OK and
+  `poster/test_charts.py` 27 OK (19 before the redesign). Both stay standalone - the pressure test does not run
+  them - so run them by hand before any rebuild. 43 mutants, each parsed and caught by its intended test with an
+  assertion (one first "caught" by a crash was not counted until its test was reordered to fail on an
+  assertion). Four deliberately broken posters in real Chrome (a label past its chart's edge, a label over a
+  title, the web fonts' address broken, the check delayed past the print): all refused, none left a
+  `poster.pdf`. Five states pass (today, fallback headlines 1 and 2, and after the verdicts a worst and a best
+  case written by `record_verdict.py`'s own writers into temporary copies): smallest text exactly 24 pt, no
+  overflow, fonts loaded, no chart text clipped or overlapping, one 48 x 36 in page written to its end, the
+  preview drawn from it (3456 x 2592), the PDF's own check passed. Live: H3 0.71 over 200 readings (40 of the 42
+  weekdays, 14 Sep - 10 Nov, five pairs), mean -0.44, H3a-c hold so far; by fund SPY 0.44, QQQ 0.50, IWM 0.46,
+  GLD 0.37, USO 1.77, within one point on 37, 36, 39, 40 and 13 of 40 days.
+- *SCCUR-PITCH.md* follows the new poster: the walk, the histogram's reading, the re-check dated 17 Oct, the
+  headline's two fallback branches, and the new question above.
+- *Needs Gabriel:* (1) the headline rule (his of 21 Oct) in three outcomes Astra questioned: a NOT READ H7
+  keeps "Most of the error is in the recipe"; the H7-fails fallback's "within a point of Cboe's index" is H3's
+  pooled mean across five pairs, while USO alone is 1.77; and the fallback for H7 and H3 both failing ("loses
+  more to the method than to the quotes") claims a split those results do not establish. His rule stands until
+  he says. (2) The two older Cboe exceptions above. (3) The AI line reads "Code written with the help of an AI
+  coding assistant (Claude Code); ..." (approved 21 Oct), but AI also drafted chart and caption wording and a
+  second AI model reviewed; suggested: "Code, charts and draft wording produced with AI assistants (Claude Code;
+  a second AI model reviewed); the research question, decisions and interpretation are the author's." The
+  switch is `AI_LINE` in `poster/build_poster.py`. (4) Any veto of the Decided items, the histogram first. (5) Marc saw the 21 Oct
+  draft; sending him this one is his call. (6) Unchanged: the verdict rebuild (about 13-19 Nov) and the print
+  (reminder Mon 16 Nov). (7) The Gmail connector failed twice on 11 Nov and needs reconnecting in claude.ai's
+  connector settings; the request's wording above is from the 8 Nov reading of the 21 Oct email.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
@@ -3897,3 +3992,5 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 > `lab/` side project (retail implementation audit) is COMPLETE (14 Oct; lab/REGISTRATION.md) - read its
 > 14 Oct entries above before touching it. Its public page `tools/lab.html` (4 Nov) is rendered by
 > `lab/report.py` from the private summaries: re-render it, never edit it by hand.
+> The SCCUR poster was redesigned 7-11 Nov (the entry above): run `poster/test_build_poster.py` and
+> `poster/test_charts.py` by hand before any rebuild; its open questions are Gabriel's.

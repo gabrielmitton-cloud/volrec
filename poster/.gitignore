@@ -1,3 +1,5 @@
 poster.pdf
 preview.png
 poster.html
+*.FAILED-CHECK.*
+*.unchecked.*

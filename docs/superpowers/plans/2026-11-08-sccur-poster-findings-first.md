@@ -1112,3 +1112,46 @@ Each gets `poster/preview.png`, `poster/poster.html`, the spec, the source files
   final blocks exist.
 - **Sizes to fit:** the bell curves at 440 px high and the bars at 116 px a row. The page check now also prints
   the room left at the foot of each column.
+
+## Amendments after the reviews (8-11 Nov 2026, Decided, Gabriel's to veto)
+
+Three independent reviews of the rendered poster (design, the claims against the records, the code), then Astra
+Ultra on 8 Nov and its one follow-up on 11 Nov; each finding was checked against the records before it changed
+anything. Full list: HANDOFF, the Sat 7 - Wed 11 Nov entry.
+
+- **The main chart counts days; it draws no index level and no day.** Task 3's five panels drew Cboe's index and
+  the free estimate as two lines. The request Cboe approved on 4 Nov promised "Only aggregate statistics", so on
+  8 Nov they became each day's gap as a bar; Astra read those dated gaps as per-day data, so they are now
+  histograms (`charts.gap_histogram`): days counted in half-point gap bins (`charts.bin_counts`), one gap axis
+  and one day axis for all five (`charts.shared_scale` over every bin's far edge, `charts.count_scale`), a blue
+  line at zero (Cboe's index), a band for within one point, no dates. `gap_histogram` refuses dated rows, and
+  page tests fail if an index value or a day reaches the page.
+- **Figures are rounded once, from full precision.** `check_series` recomputes every pooled and per-pair figure
+  from the run and checks it against the scorer's three-decimal print; the page rounds the full-precision values.
+- **"Of record" needs the 11 Nov data in every pair**, not the date alone.
+- **The H3 tile's colour follows each part's verdict** (it was always green).
+- **The quote scale shows both readings for both feeds:** four dots on two tracks (filled: all far strikes;
+  hollow: only those both feeds bid), the bar's tick drawn over them.
+- **A final H5e chip keeps the recorded 8 Oct failure beside it**; an H7 part below its minimum shows a grey "-"
+  (never scored), not the amber "..." of a reading still due.
+- **A comparison never breaks across lines** (no-break spaces beside <, >, =, <= and >=).
+- **Wording matched to the records:** the flow's arrow ("the VIX formula, with strikes and expiries I chose");
+  "recorded daily"; "H5e and H7 were also frozen on OSF"; "eight funds and stocks"; the H2a, H2b, H5c-d and H6a
+  chips; the snapshot-timing limit; a section 5 caveat (a coverage effect, which by itself does not rule out the
+  feed, the timing or index-versus-fund); the re-check "recomputed every recorded result on 17 Oct".
+- **The build refuses what it cannot vouch for:** the H5e lines are matched exactly as the frozen writer prints
+  them; a scorer refusal (nonzero exit) stops the build; Chrome's output counts only if that run wrote it; the page
+  check (`CHECK_JS`, after `document.fonts.ready`) measures the smallest text, overflow, the fonts, chart text that
+  leaves its chart or meets another label, and the room left, and appends its result to the page title, which
+  Chrome writes into the PDF's /Title; `render()` reads it back (`pdf_check`) and names the files `poster.pdf` /
+  `preview.png` only on a pass (`*.FAILED-CHECK.*` otherwise).
+- **After the follow-up review (11 Nov):** the preview is drawn from the checked PDF by macOS's own sips
+  (`raster`), never from a Chrome run of its own; the PDF must be written to its end (`pdf_whole`: startxref
+  pointing at the cross-reference table, then %%EOF) and the preview must decode whole (`png_size`) as one 4:3
+  page; the page check reports the smallest size unrounded and lets a label cross its chart's edge or another
+  label only by numerical error (0.01 px); the pitch follows both fallback branches of the headline rule.
+- **Sizes to fit:** histograms 940 x 560 px with a 64 px foot; the bell curves 380 px high; the band bars 112 px
+  a row.
+- **Checks:** poster 57 and charts 27 tests; 43 mutants, all caught by their intended tests; four broken pages
+  refused in real Chrome; five states pass (today, both fallback headlines, a worst and a best case after the
+  verdicts).

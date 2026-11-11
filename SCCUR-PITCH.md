@@ -2,8 +2,8 @@
 
 *Drafted 4 Nov 2026 by Vega for practice before 21 Nov. Every number is the poster's own (`poster/build_poster.py`
 copies each from a dated record). Two lines wait for the H5e and H7 readings (12-19 Nov) and are marked
-**[after 19 Nov]**; fill them from the hypothesis files, never from memory. Read aloud, the 2-minute version
-runs about two minutes.*
+**[after 19 Nov]**; fill them from the hypothesis files, never from memory. Read aloud, the walk ran about two
+minutes on 4 Nov; the 8 Nov rewrite, with its caveats, runs about two and a half (about 350 spoken words).*
 
 The session is 75 minutes standing at the poster, with people arriving one or two at a time. So the talk is
 not a speech: a 30-second opener for everyone, the 2-minute walk for anyone who stays, then questions.
@@ -12,33 +12,46 @@ not a speech: a 30-second opener for everyone, the 2-minute walk for anyone who 
 
 > Students and small researchers price options with free quotes, because the full market feed costs thousands
 > of dollars a year. I asked what that free data gives up, and where the loss is: in the quotes themselves, or
-> in the recipe that turns quotes into a volatility number. Since September I've recorded a free feed every
-> trading day and checked it against Cboe's indices, the consolidated market and Bloomberg. Short answer: the
-> free quotes are close. Most of the error is in the recipe.
+> in the recipe that turns quotes into a volatility number. Since September I've recorded a free feed daily
+> and checked it against Cboe's indices, the consolidated market and Bloomberg. Short answer: the free quotes
+> are close. Most of the error is in the recipe.
 
-*If H7 fails, the poster's headline changes by itself, to "Widen the strikes, and free data lands within a point
-of Cboe's index." Then the opener's last two sentences become: "Short answer: widen the strikes, and free data
-lands within a point of Cboe's index. Whether the rest of the gap is the quotes or the recipe is still open."*
+*If H7 fails, the poster's headline changes by itself (Gabriel's rule of 21 Oct), and which way depends on H3.
+If H3 holds, it reads "Widen the strikes, and free data lands within a point of Cboe's index." Then the opener's
+last two sentences become: "Short answer: widen the strikes, and free data lands within a point of Cboe's index.
+Whether the rest of the gap is the quotes or the recipe is still open." If H3 fails too, it reads "So far, free
+data loses more to the method than to the quotes." and the opener ends on that sentence instead; never say
+"within a point" then, because H3's bar failed. Look at the printed headline and say what it says.*
 
-## The 2-minute walk (left to right across the poster)
+## The 2-minute walk (the poster's numbered sections, left to right)
 
-1. **The question (left column).** Free quotes versus the paid feed: what precision is lost, and where.
-2. **What I did.** Code records Alpaca's free feed every trading day: 109 tickers, plus full strike ranges for
-   eight funds and stocks. Three references: Cboe's published indices, OPRA (the consolidated market) and
-   Bloomberg.
-3. **The quotes (centre, top).** Point at the three numbers. Far-strike free quotes sit a median of a third of
-   a bid-ask spread from Bloomberg's, and half a spread from the consolidated market at the same minute. And
-   when the free feed shows no bid, the professional feed has no bid either: 64 of 64.
-4. **The recipe (centre, chart).** Cboe's formula integrates across strikes. With only strikes within 10% of
-   the price, the estimate misses Cboe's index by about 4 points on average, and oil by 12. Widen to 30% and
-   the average gap is 0.6. On that day SPY came out at 15.83 against a VIX of 15.84. The reason is in the
-   chart's note: a fixed 10% band covers 2.2 standard deviations of a calm fund but only 0.6 of crude oil.
-5. **How it stays honest (left).** Every pass/fail bar was written and dated in a public repository before
-   its test ran, and the two open tests were also frozen on OSF. A second program sharing no code recomputed
-   every recorded number. Failures stay in the same table as successes.
-6. **Every registered test (right).** Point at a FAILS row on purpose: H6a (0 of 9) is the clearest.
-   **[after 19 Nov]** Then H5e's and H7's final readings, one sentence each, read off the table.
-7. **Limits.** One free feed, about two months, one snapshot a day before the close, European formulas on
+*Rewritten 8 Nov 2026 for the redesigned poster (graphs first, the tests as a strip of chips; the main chart
+counts the days at each size of gap, with no dates and never Cboe's index itself, because the request Cboe
+approved on 4 Nov promised aggregate statistics only). H3's numbers are live
+until its reading of record (the one after 11 Nov): read them off the printed tile, not from this page.*
+
+1. **The headline, then 1 (left).** Free quotes versus the paid feed: what precision is lost, and where. If
+   the loss is in the method, anyone without a data budget can fix most of it for free.
+2. **2 What I did (left, the flow).** Alpaca's free feed, recorded daily since September. The VIX formula, with
+   strikes and expiries I chose, turns each fund's quotes into one volatility number a day, checked against
+   Cboe's indices, the full market feed and Bloomberg.
+3. **3 The main chart (centre).** The blue line is Cboe's index; each bar counts the days free data landed
+   that far from it, and the band is within a point. Left of the line reads low. The tile: the average gap,
+   against a bar of 1.0 set beforehand. Then oil: the widest spread, mostly low.
+4. **4 The quotes (right, top).** 64 of 64: when the free feed shows no bid on a far strike, neither does the
+   full market. The filled dots: the free price sits a third of a spread from Bloomberg's and half a spread
+   from the full market's, at or under the bar. The caveat: where both feeds bid, the hollow dots, it is 0.67,
+   over the bar, though only a tick or two.
+5. **5 The recipe (right).** A fixed 10% band of strikes sees 97% of a calm fund's likely moves but only 45%
+   of oil's. Widen it to 30% and the average gap falls from 3.97 to 0.59 points on one calibration day; SPY
+   read 15.83 against a VIX of 15.84. That shows coverage matters; it does not by itself rule out the feed,
+   the timing or the index-versus-fund difference.
+6. **How it stays honest (left).** Every bar was dated in a public repository before its test ran. On 17 Oct
+   a second program sharing no code recomputed every result and caught one bug, fixed; no verdict changed.
+7. **The strip (bottom).** Every registered test is a chip: a tick, a cross, or due. Point at a cross on
+   purpose: H6a, 0 of 9. **[after 19 Nov]** Then H5e's and H7's final readings, one sentence each, off their
+   chips.
+8. **Limits (left, bottom).** One free feed, about two months, one snapshot a day, European formulas on
    American options.
 
 ## Questions you are likely to get, with short answers
@@ -58,8 +71,8 @@ public, before running it. For the forward-looking tests that was also before th
 one day of its wing data, which its file says - while the ten-year validation and one side study used history
 that already existed. It stops me from choosing the test after seeing the answer.
 
-**Did anything fail?** Yes, and it's on the poster: H6a (implied volatility did not beat a simple 14-day
-average at forecasting the next day's range: 0 of 9 pairs) and H2b (not supported). H5e's first reading failed too (0.90
+**Did anything fail?** Yes, and it's on the poster, in the strip of chips: H6a (implied volatility did not beat the 14-day
+average range at forecasting the next day's range: 0 of 9 pairs) and H2b (not supported). H5e's first reading failed too (0.90
 against a bar of 0.5). **[after 19 Nov]** Add the final readings.
 
 **Isn't two months too short?** For a long-run claim, yes; the poster says so under Limits. Each test fixed its
@@ -73,15 +86,20 @@ option sellers are paid for carrying the risk. It is well documented, so finding
 what a person without a data budget gets.
 
 **Is the free feed allowed to be published?** Alpaca agreed in writing (10 Oct) to personal, non-commercial use.
-Cboe approved the use of its files on 4 Nov. Bloomberg and OPRA data are licensed, so only aggregates appear,
-with credit lines (bottom right).
+Cboe approved the use of its files on 4 Nov, for non-commercial research, aggregates only, credited. Bloomberg
+and OPRA data are licensed, so only aggregates appear, with credit lines (bottom right).
+
+**Why does the chart count days instead of drawing the VIX?** My request to Cboe, approved on 4 Nov, said
+only aggregate statistics would appear, "for example, average differences between my estimates and the index".
+Counts of days by gap are that; a dated line of the index, or of each day's gap, is not. An index level
+appears only where a result depends on it (SPY's 15.83 against the VIX's 15.84).
 
 **Did you use AI?** Yes, and the poster says so: the code was written with an AI coding assistant (Claude Code);
 the question, decisions and interpretation are mine. *(SCCUR's policy: acknowledge it and be able to explain
 every method without AI - which is what this page is for.)*
 
-**What's next?** Final readings of H5e and H7 (12-19 Nov), a confirmatory test on all eight funds (registered
-first, Dec-Jan), and the paper in 2027, failures included.
+**What's next?** Final readings of H5e and H7 (12-19 Nov), a confirmatory test on eight funds and stocks
+(registered first, Dec-Jan), and the paper in 2027, failures included.
 
 ## Things not to say
 
