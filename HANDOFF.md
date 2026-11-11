@@ -3980,6 +3980,10 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   draft; sending him this one is his call. (6) Unchanged: the verdict rebuild (about 13-19 Nov) and the print
   (reminder Mon 16 Nov). (7) The Gmail connector failed twice on 11 Nov and needs reconnecting in claude.ai's
   connector settings; the request's wording above is from the 8 Nov reading of the 21 Oct email.
+  *Reminder (set 11 Nov, his rule of 6 Nov):* Fri 13 Nov 17:00 UTC (09:00 Pacific), half an hour after the
+  verdict check, `trig_01728s5J95kLRL1ti2NG74bG` (Bash and Read only, connectors cleared). It stays silent
+  once his answers are recorded in this section under a line of their own beginning
+  `#### Poster questions: his answers` (then the date).
 
 ### Prompt for the next session
 
@@ -3993,4 +3997,6 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 > 14 Oct entries above before touching it. Its public page `tools/lab.html` (4 Nov) is rendered by
 > `lab/report.py` from the private summaries: re-render it, never edit it by hand.
 > The SCCUR poster was redesigned 7-11 Nov (the entry above): run `poster/test_build_poster.py` and
-> `poster/test_charts.py` by hand before any rebuild; its open questions are Gabriel's.
+> `poster/test_charts.py` by hand before any rebuild; its open questions are Gabriel's. Record his answers
+> under a line of their own beginning `#### Poster questions: his answers` (then the date); the 13 Nov
+> reminder looks for it.
