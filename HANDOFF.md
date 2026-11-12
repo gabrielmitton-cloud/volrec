@@ -1890,14 +1890,14 @@ every decision. This section is the only one guaranteed current. Read it, run
 
 | check | result |
 |---|---|
-| diagnostic, 12 Nov | `daily.py` **ALL CLEAR** on 11 Nov's data, the windows' last day (landed 19:31/19:40 UTC = 14:31/14:40 New York). **H5e's FINAL reading is recorded** (the workflow, 12 Nov 03:55 UTC, `e0b36c9`): FAILS, 0.91 against 0.5, closer than registered on 26 of 35 days. H3 over the complete window, the frozen scorer at full precision: H3a 0.708 over 205 readings and 41 days (bar 1.0), H3b -0.444, H3c p 0.0104, BH 4 of 5 and 3 of 5 (USO alone 1.767); it enters the record beside the verdicts, with the companions. Pressure test **0 fail, 3 warn** (325 checks; the warns: the known one-sided FXE quotes, the late GitHub backup, and from 12 Nov the backup cron's margin again: Gabriel's 23 Sep acceptance of it ran to 11 Nov, `CRON_MARGIN_ACCEPTED`, so it warns until he renews it or the cron moves). Auditor **217 of 217** three times on 11 Nov (the last on `5e9031a`) and on the verdict-night rehearsal; the commit of this table adds twelve mutants (229) and, like every push, goes out only at N of N. Fifteen suites **0 failures**: the eleven unit suites, the poster's two (60 and 27 cases), the new page-against-reader suite (45) and the review bridge's (24); `samples/long/test_h2_variance.py` is H2's analysis script, not a suite, and needs Alpaca's keys. (6 Nov: H3a 0.685 over 185; H5e 0.98, 22 of 31.) |
+| diagnostic, 12 Nov | `daily.py` **ALL CLEAR** on 11 Nov's data, the windows' last day (landed 19:31/19:40 UTC = 14:31/14:40 New York). **H5e's FINAL reading is recorded** (the workflow, 12 Nov 03:55 UTC, `e0b36c9`): FAILS, 0.91 against 0.5, closer than registered on 26 of 35 days. H3 over the complete window, the frozen scorer at full precision: H3a 0.708 over 205 readings and 41 days (bar 1.0), H3b -0.444, H3c p 0.0104, BH 4 of 5 and 3 of 5 (USO alone 1.767); it enters the record beside the verdicts, with the companions. Pressure test **0 fail, 2 warn** after Gabriel's renewal later on 12 Nov (325 checks; the warns: the known one-sided FXE quotes and the late GitHub backup; the backup cron's margin is accepted again through 29 Jan 2027, `CRON_MARGIN_ACCEPTED`, after his 23 Sep acceptance ran out on 11 Nov). Auditor **217 of 217** three times on 11 Nov (the last on `5e9031a`) and on the verdict-night rehearsal; the commit of this table adds twelve mutants (229) and, like every push, goes out only at N of N. Fifteen suites **0 failures**: the eleven unit suites, the poster's two (60 and 27 cases), the new page-against-reader suite (45) and the review bridge's (24); `samples/long/test_h2_variance.py` is H2's analysis script, not a suite, and needs Alpaca's keys. (6 Nov: H3a 0.685 over 185; H5e 0.98, 22 of 31.) |
 | independent re-implementation, 12 Nov | `tools/independent_check.py`: **1206 of 1206** values agree over the complete window (largest gap 0.00088). `--opra` not rerun since 6 Nov (1184 of 1184); the workflow runs the check once more, with the companions, after both finals |
 | Databento, 12 Nov | lifetime **$85.75** (the private ledger, to the 12 Nov 03:52 UTC purchase of 10 Nov's data; 6 Nov: $84.97), about $0.19 a night. Left: $14.25 of the $100 free credit, $34.25 under the $120 cap. Databento serves a day's snapshot minute only once the next session has opened (14:30 UTC), so 11 Nov's files are bought by the run scheduled Thu 12 Nov 23:05 UTC and **H7 is written then at the earliest** (GitHub starts that run about 03:00-05:00 UTC on Fri 13 Nov). The sealed index top-up for 4-11 Nov (about $0.20) is due by 18 Nov; reminder 12 Nov |
 | workflows, 7-12 Nov | record and surface dispatched at 19:30 and 19:40 UTC on 9, 10 and 11 Nov, green, their GitHub-cron backups standing aside (3 of 3 each; GitHub started the backups 6 to 9 hours after their slot). guard: 21 runs, 20 green and **one `startup_failure`**: the 15:20 New York dispatch of 11 Nov (20:20 UTC), inside GitHub's own incident (Webhooks from 20:22 UTC, Actions from 20:48 UTC), the first non-success in its last 300 runs; the day had landed and the 15:00 run had passed. freshness and health green on every run. volrec-licensed `daily.yml` green on every run since 7 Nov; the run of 12 Nov 03:45 UTC wrote and pushed H5e's FINAL reading |
 | cron-job.org, 12 Nov | record and surface triggers on time on 9, 10 and 11 Nov (19:30:06-07 and 19:40:04 UTC); guard at 15:00 and 15:20 New York. The one-off 12:00 guard copy for Fri 27 Nov still fires at 12:00 New York on every November weekday (17:00 UTC on 9, 10 and 11 Nov), harmless as before: the guard waits and does nothing. Token `volrec-trigger` expires **Mon 1 Feb 2027** |
 | GitHub tokens | both renewed by Gabriel 3 Nov; both expire **Mon 1 Feb 2027**, after H8's last purchase (29 Jan). Both work (12 Nov): cron-job.org dispatched every day with `volrec-trigger`, and the private run of 12 Nov checked this repo out and pushed the verdict with `PUBLIC_REPO_TOKEN`. The pressure test dates both: WARN from Mon 4 Jan, FAIL from Mon 25 Jan. Renew both by **Fri 22 Jan**; reminder Mon 11 Jan |
 | phone (Pushover), 12 Nov | four levels live. The nightly GREEN step ran on every green health run, and the workflow's NOTICE step for H5e's verdict ran at 03:56 UTC on 12 Nov; whether each push arrived cannot be read from here. No RED: the guard never had to re-run a recorder |
-| cloud routines, 12 Nov | 11 enabled in the tool's 20-item view and none of the 20 with a connector; read by id, the 13 Nov verdict check (enabled, no connector). Out of the tool's reach, as on 6 Nov: the Monday auditor and the Wednesday watchdog. One-off reminders ahead: 12 Nov (index top-up), 16 Nov (print) and 19 Nov (pitch, parking, badge), both reworded on 11 Nov with the session, room and board; 20 Nov (verdicts and next steps); 20 Nov evening (SCCUR tomorrow, new on 11 Nov); 22, 23 and 24 Nov; 4 Dec; 4 Jan; 11 Jan. Disabled: the 13 Nov poster-questions reminder (answered 11 Nov), the 7 Nov backup one and the 30 Oct Goukasian one |
+| cloud routines, 12 Nov | 11 enabled in the tool's 20-item view and none of the 20 with a connector; read by id, the 13 Nov verdict check (enabled, no connector). Out of the tool's reach, as on 6 Nov: the Monday auditor and the Wednesday watchdog. One-off reminders ahead: 13 Nov verdict check (its push ends "Open Claude and say: H7 is in" since 12 Nov); 16 Nov (has the final poster gone to Marc) and 19 Nov (pitch, parking, badge); 20 Nov (printed poster in hand, post-verdict steps done); 20 Nov evening (SCCUR tomorrow); 22 Nov (nightly-run edit and the `requests` pin), 23 and 24 Nov; 4 Dec; 4 Jan; 11 Jan; the 13, 16, 20 and 22 Nov texts reworded on 12 Nov after the H7 discussion. Disabled: the 12 Nov top-up reminder (done before it fired), the 13 Nov poster-questions reminder (answered 11 Nov), the 7 Nov backup one and the 30 Oct Goukasian one |
 | OSF | both registrations public, read from OSF's API on 12 Nov: https://osf.io/z5gfu (H5e and H7, registered 10 Oct) and https://osf.io/4mcgf (the timing measurement, 6 Nov); neither withdrawn nor pending. The site links both |
 | pre-push hook | installed (`core.hooksPath tools/hooks`, checked 12 Nov); every push runs the pressure test |
 | iMessage (launchd `com.volrec.daily`) | **retired 23 Oct**; still unloaded (12 Nov: no volrec job in `launchctl list`); plist kept at ~/Documents/volrec-retired/ |
@@ -4124,6 +4124,56 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 
 *Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Aggregates only.*
 
+**Thu 12 Nov (later, UTC) - Gabriel's answers: the cron margin renewed, the 4-11 Nov index data bought and sealed, the H7 discussion held, Marc's email drafted, the suggestions on his calendar**
+- *Gabriel (12 Nov, about 17:35 UTC):* "yes renew it, and buy the sealed index data for 4-11 Nov, make the email i
+  can send to Marc, lets have the discussion for H7, and give me the steps for the cron margin, then add the
+  suggestions to the calendar".
+- *The cron margin, renewed:* `CRON_MARGIN_ACCEPTED` now runs to 29 Jan 2027, the end of H8's window (his 23 Sep
+  acceptance ran out with the 40-day window on 11 Nov). The reasons stand: the outside trigger at 14:30 New York
+  does the recording, the guard turns a post-close landing into a missed day, and the one day lost so far (16 Sep)
+  came from editing a cron. No cron time meets the rule: at the worst delay seen (5h14m, 28 Sep), 30 minutes
+  before the earlier (summer) close needs the cron at 14:16 UTC or earlier, and it must be at 14:30 or later so it
+  never fires before the winter open. All of H8's window is on winter time, where the worst landing (20:01 UTC)
+  sits 59 minutes before the 21:00 UTC close; only the half-days (27 Nov, 24 Dec, when cron-job.org's copies run
+  the recorder at 11:30) leave the backup no room. Pressure test 0 fail, 2 warn (was 3).
+- *The index top-up (the step the registration names):* 17 indices, one-second and daily bars, 4-11 Nov (6 trading
+  days), priced first by `get_cost` at $0.197694, the item and total confirmed by Gabriel, bought 17:41-17:43 UTC
+  (private `d03c511`, `ea9ce9e`): ledger $85.949143, DBIX $0.527557 of its $1 cap. The twelve sha256 went into the
+  private README's seal before any value was read (`11aa734`), and all 36 were re-checked against the files with
+  the reader's own `seal()` and `day_files()`: 16 one-second days, 21 Oct - 11 Nov, nothing missing, nothing extra.
+  Read: `buy.py --check` only (17 symbols in every file). The 12 Nov top-up reminder was switched off at 17:47 UTC,
+  13 minutes before it would have fired.
+- *The H7 discussion (held before the verdict, at his request). His answers, both as recommended:* (1) **the
+  site** is updated once H7 lands: its results table built from the hypothesis files (one number in one place,
+  suggestion 2), a plain-words results line worded like the poster's headline, the companion readings beside the
+  verdicts; pushed outside the recorders' window, with a screenshot to him. (2) **The sealed timing data**
+  (`hypotheses/2026-11-06-index-timing.md`, OSF 4mcgf) is read once H7 is recorded: the registered command, once,
+  reported as a description beside the verdicts (it never changes them), on the site and in the paper's notes, not
+  on the poster, which carries only registered verdicts. The registration asks for both readings recorded, not a
+  date, so this moves nothing it fixed. Unchanged, not reopened: the poster's headline rule (21 Oct, worded 11 Nov),
+  H8's registration about 24 Nov, the Bloomberg pull 23-25 Nov (it covers the days before 21 Oct that DBIX cannot),
+  H9 and H10 in December only if they meet every condition, the paper first.
+- *What "H7 is in" now means, in order:* pull the private repository (the run that writes H7 also buys 11 Nov's
+  OPRA); the companion readings beside the verdicts; the final poster built, checked and sent to Marc; the site;
+  the timing reading (the reader refuses unless both marks exist and its rebuild matches H7's recorded days and four
+  means). Each push before 13:45 or after 16:10 New York.
+- *Marc:* the email asking how long printing takes, which file he needs and when to collect the poster was drafted
+  for Gabriel to send (the Gmail connector needs reconnecting; pasting works). The 16 Nov reminder now asks whether
+  the final poster has gone to Marc.
+- *The calendar:* Notion Calendar has no calendar connected, so the six suggestions went into an .ics file opened in
+  the Mac's Calendar, where Gabriel picks the calendar; each event alerts at its start (Pacific): Fri 13 Nov 9:30,
+  H7 is in (site, timing reading, final poster; suggestion 2 joins it); Sun 22 Nov 10:00, pin `requests`
+  (suggestion 1, beside the nightly-run edit; that day's push now says so); Wed 2 Dec, the faster auditor (5);
+  Mon 14 Dec, the linter (6); Tue 5 Jan 2027, the paper's build script (3); Mon 1 Feb 2027, the citation file and
+  Zenodo (4). The file stays out of git (`.git/info/exclude`).
+- *Routines:* the 13 Nov check's push ends "Open Claude and say: H7 is in"; the 16, 20 and 22 Nov texts match the
+  decisions; none has a connector.
+- *Not sent to Astra:* a one-line date renewal and records; nothing from the private repository goes in a packet.
+- *Needs Gabriel:* (1) send Marc's email; (2) click OK in Calendar's import dialog; (3) when Friday's push arrives,
+  open Claude and say "H7 is in".
+
+*OPRA and index figures: Data provided by Databento. Aggregates only.*
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
@@ -4139,7 +4189,9 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 > `poster/test_charts.py` by hand before any rebuild. Its open questions were answered on 11 Nov under
 > Gabriel's delegation (the entry above, "Poster questions: his answers"); SCCUR is Sat 21 Nov, Session 2,
 > 9:30 am, Montezuma Hall, board 12.
-> H5e's FINAL reading was recorded on 12 Nov (FAILS, 0.91); H7 follows on about Fri 13 Nov. Once both are
-> in: build the final poster, then the discussion with Gabriel (site, next step) before any site change.
+> H5e's FINAL reading was recorded on 12 Nov (FAILS, 0.91); H7 follows on about Fri 13 Nov. The H7 discussion
+> was held on 12 Nov, before the verdict (the entry above): when Gabriel says "H7 is in", do its steps in
+> order - companions, the final poster to Marc, the site from the hypothesis files, the registered timing
+> reading.
 > `tools/site_bloomberg.py` holds the page's Bloomberg figures to the reader's output on every push from
 > this Mac: after any change to that reader or that section, read its lines, never edit around them.

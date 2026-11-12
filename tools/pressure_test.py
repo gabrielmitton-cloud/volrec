@@ -969,7 +969,11 @@ warn(_lk_left > 28,
 # move every remaining snapshot, while a post-close landing costs one day, which
 # panel_health FAILS on (and emails) so it is dropped rather than silently kept. The
 # acceptance expires on its own, like ACCEPTED_GAPS: after the date it warns again.
-CRON_MARGIN_ACCEPTED = ("2026-11-11", "hold the cron to the end of the 40-day window")
+# 12 Nov 2026: that acceptance ran out with the 40-day window (11 Nov). Gabriel renewed it the same day ("yes
+# renew it") through H8's window, which ends 29 Jan 2027: the reasons stand (the outside trigger at 14:30 New
+# York does the recording, the guard turns a post-close landing into a missed day, and the one day lost so far,
+# 16 Sep, came from editing a cron). After 29 Jan it warns again.
+CRON_MARGIN_ACCEPTED = ("2027-01-29", "hold the cron through H8's window (renewed by Gabriel, 12 Nov 2026)")
 _margin_ok = _land + DELAY_MARGIN_MIN <= US_CLOSE_UTC_MIN
 if not _margin_ok and date.today().isoformat() <= CRON_MARGIN_ACCEPTED[0]:
     print(f"  INFO  cron margin {US_CLOSE_UTC_MIN - _land} min at the worst delay seen, under "
