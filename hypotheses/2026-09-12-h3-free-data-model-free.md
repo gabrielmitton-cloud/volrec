@@ -259,6 +259,12 @@ maturities; anything that drifts with maturity is not the explanation.
 Gaps are medians in volatility points, ours minus Bloomberg's IVM, out-of-the-money
 contracts only.
 
+*Corrected 11 Nov 2026, beside the original: this table was read by the comparison tool that left out some put
+rows of an export (found and fixed 17 Oct; H5's Result has the details). With every row read, one block changes -
+USO 20-Nov: n 33 (not 40), IVM 53.7, gap +0.97 at 365 and -0.42 at 252 (-0.28 with the parity forward), divisors
+352.0 and 256.0. So the business divisor spans 247.9 to 256.0, and USO's gap falls from +2.21 to +0.97. The other
+five blocks and every conclusion are unchanged. Source: Bloomberg Finance L.P.*
+
 **The business-day divisor holds and the calendar-day divisor does not.** Across six
 blocks the business divisor sits between 247.9 and 255.9 with no maturity trend,
 while the calendar divisor climbs from 336 at one month to 352 at two. No fixed
@@ -341,6 +347,12 @@ artefact:
 The calendar divisor drifts significantly with maturity and lands 23 points away
 from 365. The business divisor is flat within noise and lands 1.2 points from 252.
 That is as clean a separation as this data can produce.
+
+*Corrected 11 Nov 2026, beside the original (the same fix): USO 16-Oct is n 76, IVM 53.7, +1.89 at 365; the
+table's other columns for it are unchanged (its gap at 252 with the parity forward, which this table does not
+show, is +0.20, not +0.21). Pooled over both days: 10 blocks, **542** contracts; median gap **+1.14** on the
+calendar clock, +0.07 on the business clock. Calendar divisor: slope +0.2315 a day, t +3.09 (unchanged).
+Business divisor: slope +0.0567, t +1.20. The separation is the same. Source: Bloomberg Finance L.P.*
 
 **What it does not settle.** Every block is still 30 to 66 days. The two clocks
 converge as maturity grows, so the long-dated pull remains the test that could
@@ -436,6 +448,10 @@ the observed gap on that prediction across all ten blocks:
 | intercept | +0.08 |
 | R-squared | **0.881** |
 | mean absolute residual | **0.13** volatility points |
+
+*Corrected 11 Nov 2026, beside the original (the same fix): slope **1.008** (se 0.138), t against 1.000 +0.05,
+intercept +0.09, R-squared **0.870**, mean absolute residual 0.14 points. The clock alone explains 87% of the
+variation, and the slope is still indistinguishable from one. Source: Bloomberg Finance L.P.*
 
 Ten blocks, three symbols, two days, implied volatility from 13.5 to 54.8, maturity
 30 to 66 days. The clock alone explains 88% of the variation in the gap with no
@@ -828,6 +844,12 @@ expiries, `tools/model_gap.py` (out-of-the-money contracts, gaps ours minus IVM)
 
 (USO on the two October expiries agrees: -0.43 and -0.07 on 252.)
 
+*Corrected 11 Nov 2026, beside the original (the same fix; the rows left out were puts): 23 Oct is n 74 and +1.59
+on 365 (+0.08 and 251.2 unchanged); 30 Oct is unchanged; 16 Jun 2028 is n **109**, +0.95 on 365, **+0.96** on 252,
+business-day divisor 241.4 (a solved time of about 455 business days against 436), American +0.90 unchanged; USO's
+23 Oct expiry reads -0.48 on 252. The clocks still converge (+0.95 against +0.96) and about one point remains.
+Source: Bloomberg Finance L.P.*
+
 **Read as the rule written before the pull said to** (`BLOOMBERG-MONDAY.md`, ask 1:
 at long maturity the two clocks converge, so the gap "should nearly vanish. If it
 does not, the day count is not the whole story"): **at 21 months it does not vanish.**
@@ -890,6 +912,11 @@ forward error moves calls and puts in OPPOSITE directions and a clock error move
 the same way. At 21 months, on 252: **calls +0.92 (n=58), puts +1.47 (n=36) - the same
 sign.** Moving the forward to cancel the median makes the split worse (calls -0.24, puts
 +2.25). At one month both types sit near zero (23 Oct +0.04 / +0.15; 30 Oct +0.31 / -0.17).
+
+*Corrected 11 Nov 2026, beside the original (the same fix): on the 109 contracts, calls +0.92 (n=58) and puts
+**+1.33** (n=51) - still the same sign; moving the forward to cancel the median still makes the split worse (calls
+about -0.27, puts about +1.91); the one-month figures are unchanged (23 Oct's puts on n=32). "About 0.5 more on
+puts" below is therefore about 0.4. The conclusion is unchanged. Source: Bloomberg Finance L.P.*
 
 **Conclusion, after the fact and bounded:** the long-maturity residual is not the
 forward and not the rate (both confirmed to be Bloomberg's own); it acts like a time or

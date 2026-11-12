@@ -1880,27 +1880,27 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 
 ---
 
-## 18. Current state — opened 23 September 2026, updated to 11 November 2026; the reading every session starts from
+## 18. Current state — opened 23 September 2026, updated to 12 November 2026; the reading every session starts from
 
 **Section 17 is now history:** dated notes from 16-23 Sep, with the reasoning behind
 every decision. This section is the only one guaranteed current. Read it, run
 `tools/daily.py`, and open section 17 only when a task needs the why.
 
-### System status, checked 6 Nov 2026 (Fri, after the timing registration)
+### System status, checked 12 Nov 2026 (Thu, after H5e's final reading)
 
 | check | result |
 |---|---|
-| diagnostic, 6 Nov | `daily.py` **ALL CLEAR** (6 Nov landed 19:31/19:40 UTC = 14:31/14:40 New York); H3 scorer to 5 Nov at full precision: H3a 0.685 over 185 readings (bar 1.0), H3b -0.411, H3c p 0.0109, BH 4 of 5 and 3 of 5; H5e (the record version) 0.98, closer than registered on 22 of 31 days (to 5 Nov); pressure test **0 fail, 2 warn** (the known one-sided FXE quotes, now 7 Oct and 4 Nov, and the late GitHub backup); auditor **217 of 217** each of the four times it ran on 6 Nov, the last on the site commit `8995135`; all twelve test suites **0 failures** (eleven unit suites, among them the index-timing reader's 98 and H8's index reading's 47, and the poster's 19). (3 Nov: auditor 145 of 145; H3a 0.616 over 170; H5e 0.98, 19 of 28.) |
-| independent re-implementation, 6 Nov | `tools/independent_check.py`: **1104 of 1104** values agree (largest gap 0.00088); with `--opra` on the private clone's 315 OPRA files, **1184 of 1184**, H7's free replica (42) and OPRA replica (38) exactly. 3 Nov: 971 of 971; 28 Oct, `--opra`: 883 of 883. 17 Oct: 110 Cboe closes = FRED's copies exactly |
-| Databento, 6 Nov | lifetime **$84.97** (the private ledger, to the 6 Nov 08:14 UTC purchase; 3 Nov: $84.04): lab/ $79.00 (finished 14 Oct), the nightly purchases $5.64 (the USO and TSLA days, the monthly legs, H8's pilot, definition files), the sealed index files $0.33. Left: $15.03 of the $100 free credit, $35.03 under the $120 cap. About $0.17-$0.23 a night lately: ~$86 once the windows' last day (11 Nov) is bought, plus the ~$0.20 index top-up on 12 Nov; H8's nightly files go on after that |
-| workflows, 6 Nov | 3-6 Nov: record and surface dispatched at 19:30 and 19:40 UTC (14:30/14:40 New York), green every day, their GitHub-cron backups standing aside (4 of 4 each); guard 13 dispatches and 16 follow-on runs, all green; freshness 6 of 6; health 3 of 3. volrec-licensed `daily.yml` green every night except the scheduled run that started at 03:22 UTC on 6 Nov and stopped on a new Databento answer (a 422); fixed that night (`5dc30cc`, `7e72a9e`; see 6 Nov 03:30), and the runs at 04:27, 08:07 and 10:42 UTC are green. GitHub started that night's scheduled runs hours late |
-| cron-job.org, 6 Nov | record and surface triggers on time every day; guard 15:00 and 15:20 New York. **The one-off 12:00 guard copy for Fri 27 Nov still fires at 12:00 New York on every November weekday:** 3, 4, 5 and 6 Nov at 17:00 UTC, after the 3 Nov change to single dates (the 24 Dec copy will likely do the same on December weekdays). Harmless: the guard waits each time ("before the 14:30 New York trigger slot - never re-run early") and does nothing. Likely cause, not confirmed for cron-job.org: cron runs a job when its day of the month OR its weekday matches. Optional fix in Gabriel's account: set both copies' weekdays to every day. Token `volrec-trigger` expires **Mon 1 Feb 2027** |
-| GitHub tokens | both renewed by Gabriel 3 Nov; both expire **Mon 1 Feb 2027**, after H8's last purchase (29 Jan). Both work (6 Nov): cron-job.org dispatches with `volrec-trigger` every day, and every green private run checks this repo out with volrec-licensed's `PUBLIC_REPO_TOKEN`. The pressure test dates both: WARN from Mon 4 Jan, FAIL from Mon 25 Jan. Renew both by **Fri 22 Jan**; reminder Mon 11 Jan |
-| phone (Pushover), 6 Nov | four levels live. The nightly GREEN went out for 3, 4 and 5 Nov ("all clear", each day landed 19:31 UTC). 6 Nov brought a YELLOW (the private run's failure at 03:22 UTC) and healthchecks.io's DOWN for volrec-licensed at 08:05 UTC (the same failure, arriving late; a full run at 08:07 cleared it). No RED: the guard never had to re-run a recorder. From 3 Nov the nightly H5e figure is the record version |
-| cloud routines, 6 Nov | 16 enabled, none with a connector: the Monday auditor (last ran 2 Nov, succeeded), the Wednesday watchdog (last 4 Nov, succeeded), the 13 Nov verdict check, and one-off reminders on 7, 9, 10, 12, 16, 19, 20, 22, 23 and 24 Nov, 4 Dec, 4 Jan and 11 Jan (the token renewals). Disabled: the 7 Nov backup reminder (no backup disk, Gabriel 6 Nov) and the 30 Oct Goukasian one. The tool lists 20 routines at a time and three more were read by id: none of the 23 has a connector. Two older ones (of the 13 counted 3 Nov) are out of its reach; they had none then, and connectors attach only when a routine is created |
-| OSF | H5e and H7 registered and live, https://osf.io/z5gfu (10 Oct); the timing measurement, https://osf.io/4mcgf, live too: registered 6 Nov 21:06:58 UTC, public by 01:57 UTC on Sat 7 Nov after Gabriel approved OSF's email (its date stays 6 Nov; its four files match the registered commit). The site links both |
-| pre-push hook | installed (`core.hooksPath tools/hooks`, checked 6 Nov); every push runs the pressure test |
-| iMessage (launchd `com.volrec.daily`) | **retired 23 Oct**; still unloaded (6 Nov: no volrec job in `launchctl list`); plist kept at ~/Documents/volrec-retired/ |
+| diagnostic, 12 Nov | `daily.py` **ALL CLEAR** on 11 Nov's data, the windows' last day (landed 19:31/19:40 UTC = 14:31/14:40 New York). **H5e's FINAL reading is recorded** (the workflow, 12 Nov 03:55 UTC, `e0b36c9`): FAILS, 0.91 against 0.5, closer than registered on 26 of 35 days. H3 over the complete window, the frozen scorer at full precision: H3a 0.708 over 205 readings and 41 days (bar 1.0), H3b -0.444, H3c p 0.0104, BH 4 of 5 and 3 of 5 (USO alone 1.767); it enters the record beside the verdicts, with the companions. Pressure test **0 fail, 3 warn** (325 checks; the warns: the known one-sided FXE quotes, the late GitHub backup, and from 12 Nov the backup cron's margin again: Gabriel's 23 Sep acceptance of it ran to 11 Nov, `CRON_MARGIN_ACCEPTED`, so it warns until he renews it or the cron moves). Auditor **217 of 217** three times on 11 Nov (the last on `5e9031a`) and on the verdict-night rehearsal; the commit of this table adds twelve mutants (229) and, like every push, goes out only at N of N. Fifteen suites **0 failures**: the eleven unit suites, the poster's two (60 and 27 cases), the new page-against-reader suite (45) and the review bridge's (24); `samples/long/test_h2_variance.py` is H2's analysis script, not a suite, and needs Alpaca's keys. (6 Nov: H3a 0.685 over 185; H5e 0.98, 22 of 31.) |
+| independent re-implementation, 12 Nov | `tools/independent_check.py`: **1206 of 1206** values agree over the complete window (largest gap 0.00088). `--opra` not rerun since 6 Nov (1184 of 1184); the workflow runs the check once more, with the companions, after both finals |
+| Databento, 12 Nov | lifetime **$85.75** (the private ledger, to the 12 Nov 03:52 UTC purchase of 10 Nov's data; 6 Nov: $84.97), about $0.19 a night. Left: $14.25 of the $100 free credit, $34.25 under the $120 cap. Databento serves a day's snapshot minute only once the next session has opened (14:30 UTC), so 11 Nov's files are bought by the run scheduled Thu 12 Nov 23:05 UTC and **H7 is written then at the earliest** (GitHub starts that run about 03:00-05:00 UTC on Fri 13 Nov). The sealed index top-up for 4-11 Nov (about $0.20) is due by 18 Nov; reminder 12 Nov |
+| workflows, 7-12 Nov | record and surface dispatched at 19:30 and 19:40 UTC on 9, 10 and 11 Nov, green, their GitHub-cron backups standing aside (3 of 3 each; GitHub started the backups 6 to 9 hours after their slot). guard: 21 runs, 20 green and **one `startup_failure`**: the 15:20 New York dispatch of 11 Nov (20:20 UTC), inside GitHub's own incident (Webhooks from 20:22 UTC, Actions from 20:48 UTC), the first non-success in its last 300 runs; the day had landed and the 15:00 run had passed. freshness and health green on every run. volrec-licensed `daily.yml` green on every run since 7 Nov; the run of 12 Nov 03:45 UTC wrote and pushed H5e's FINAL reading |
+| cron-job.org, 12 Nov | record and surface triggers on time on 9, 10 and 11 Nov (19:30:06-07 and 19:40:04 UTC); guard at 15:00 and 15:20 New York. The one-off 12:00 guard copy for Fri 27 Nov still fires at 12:00 New York on every November weekday (17:00 UTC on 9, 10 and 11 Nov), harmless as before: the guard waits and does nothing. Token `volrec-trigger` expires **Mon 1 Feb 2027** |
+| GitHub tokens | both renewed by Gabriel 3 Nov; both expire **Mon 1 Feb 2027**, after H8's last purchase (29 Jan). Both work (12 Nov): cron-job.org dispatched every day with `volrec-trigger`, and the private run of 12 Nov checked this repo out and pushed the verdict with `PUBLIC_REPO_TOKEN`. The pressure test dates both: WARN from Mon 4 Jan, FAIL from Mon 25 Jan. Renew both by **Fri 22 Jan**; reminder Mon 11 Jan |
+| phone (Pushover), 12 Nov | four levels live. The nightly GREEN step ran on every green health run, and the workflow's NOTICE step for H5e's verdict ran at 03:56 UTC on 12 Nov; whether each push arrived cannot be read from here. No RED: the guard never had to re-run a recorder |
+| cloud routines, 12 Nov | 11 enabled in the tool's 20-item view and none of the 20 with a connector; read by id, the 13 Nov verdict check (enabled, no connector). Out of the tool's reach, as on 6 Nov: the Monday auditor and the Wednesday watchdog. One-off reminders ahead: 12 Nov (index top-up), 16 Nov (print) and 19 Nov (pitch, parking, badge), both reworded on 11 Nov with the session, room and board; 20 Nov (verdicts and next steps); 20 Nov evening (SCCUR tomorrow, new on 11 Nov); 22, 23 and 24 Nov; 4 Dec; 4 Jan; 11 Jan. Disabled: the 13 Nov poster-questions reminder (answered 11 Nov), the 7 Nov backup one and the 30 Oct Goukasian one |
+| OSF | both registrations public, read from OSF's API on 12 Nov: https://osf.io/z5gfu (H5e and H7, registered 10 Oct) and https://osf.io/4mcgf (the timing measurement, 6 Nov); neither withdrawn nor pending. The site links both |
+| pre-push hook | installed (`core.hooksPath tools/hooks`, checked 12 Nov); every push runs the pressure test |
+| iMessage (launchd `com.volrec.daily`) | **retired 23 Oct**; still unloaded (12 Nov: no volrec job in `launchctl list`); plist kept at ~/Documents/volrec-retired/ |
 
 ### What runs unattended (UTC; weekdays unless noted) - SESSION-START.md carries the same table
 
@@ -1923,11 +1923,11 @@ every decision. This section is the only one guaranteed current. Read it, run
 |---|---|---|
 | H1 | tested, holds | 9 of 11 Cboe pairs survive FDR control |
 | H2 | tested, not adopted | log variance strongest (t=16.26) |
-| H3 | series running | H3a mean abs gap **0.685 over 185 readings to 5 Nov (frozen scorer; bar 1.0; reading of record 11 Nov; USO alone 1.732, oil volatility's rise since late October)**; 30 Oct: 0.598 over 165; 8 Oct: 0.40 over 80; 23 Sep: 0.53 over 30 (bar 1.0). First registered wide reading **OUTSIDE** 1.4-3.2 (+9.41; +10.71 with 23 Sep): quote contamination, as the grid anticipated. **IWM reads positive on all six days**, against H3b's sign - watch. **Day count: Bloomberg stated ACT/252 in writing (23 Sep); at 21 months ~1 point remains, not the forward or rate, unidentified and closed (24 Sep).** H3c's mechanism is Jiang & Tian (2007)'s, credited |
+| H3 | **window complete 11 Nov; the reading of record is recorded beside the verdicts** | H3a mean abs gap **0.708 over 205 readings and 41 days, the complete window to 11 Nov (frozen scorer; bar 1.0; H3b -0.444; H3c p 0.0104; USO alone 1.767, oil volatility's rise since late October)**; 5 Nov: 0.685 over 185; 30 Oct: 0.598 over 165; 8 Oct: 0.40 over 80; 23 Sep: 0.53 over 30 (bar 1.0). First registered wide reading **OUTSIDE** 1.4-3.2 (+9.41; +10.71 with 23 Sep): quote contamination, as the grid anticipated. **IWM reads positive on all six days**, against H3b's sign - watch. **Day count: Bloomberg stated ACT/252 in writing (23 Sep); at 21 months ~1 point remains, not the forward or rate, unidentified and closed (24 Sep).** H3c's mechanism is Jiang & Tian (2007)'s, credited |
 | H4 | descriptive, **strike 2 of 3** (8 Oct) | strike 2: calendar-day carry + Bakshi-Kapadia dividend-adjusted price (strike 1, 23 Sep: runs break on a missed trading day). Data to 7 Oct: date level -5.23bp (t -2.50) vs -5.22bp under strike 1; no conclusion moved. One strike left |
 | H5a | **tested 23 Sep, holds weakly** | pooled median 0.40 of a spread over 169 wing contracts on 3 days (bar 0.5); **0.67 on the 132 both feeds bid** - the two readings of "quoted" are logged, nothing adjusted. **Corrected 17 Oct (reader bug, verdict unchanged): 0.33 over 179; 0.67 on 134** |
 | H5b | **tested 23 Sep, holds** | 36 of 36 free-feed missing bids are missing on Bloomberg (bar 80%). **Corrected 17 Oct: 44 of 44** |
-| H5c | descriptive | Bloomberg reproduces USO's inflation within 0.5% and 10.4% on 23 Sep (6.5% and 30% before); needs 10 underlying-days |
+| H5c | descriptive | Bloomberg reproduces USO's inflation within 0.2% and 1.0% on 23 Sep (9.0% and 2.6% before): re-read 11 Nov with the reader fixed on 17 Oct (first read as 0.5% and 10.4%; 6.5% and 30%, the 30% being the reader bug); needs 10 underlying-days |
 | H5d | descriptive | 12 underlying-days on 3 dates; the date-clustered test needs more dates |
 | H5e | **final: FAILS** (12 Nov) | mean abs gap 0.91 (bar under 0.5); closer on 26 of 35 days; 23 Sep - 11 Nov |
 | H5f | **read 25 Sep at 5 days: a, b, c hold** (a ON the bar) | H5f-a **0.500** of OPRA's spread (bar 0.5); H5f-b **64 of 64** no-bid (bar 80%); H5f-c inflation gap **0.6%** per day, 0.4% on medians (bar 25%); stale quotes excluded by the rule |
@@ -4026,6 +4026,104 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
   PDF (3456 x 2592). These answers close the follow-up review's open points, so under the one-follow-up rule they
   are verified by tests, planted bugs and real renders, not re-reviewed by Astra.
 
+**Wed 11 - Thu 12 Nov (UTC) - the whole-project review; H5e's FINAL reading recorded; the site's Bloomberg figures corrected**
+- *Gabriel (11 Nov, on switching the session's model to Fable 5.2):* "read through my research project, make
+  improvments, make suggestions on new technology to add, anything that might need to be refined or optimized ...
+  make sure that everything is right and tip top shape".
+- *H5e's FINAL reading (the workflow, 12 Nov 03:55 UTC, `e0b36c9`):* **FAILS**, mean absolute gap 0.91 against 0.5,
+  closer than the registered estimate on 26 of 35 counted days; it agrees with the first verdict. Written by the
+  frozen writer, in fixed wording; nothing in this entry touches it. H7 waits for 11 Nov's OPRA files (the status
+  table has the timing): the run GitHub starts about 03:00-05:00 UTC on Fri 13 Nov is the first that can write it,
+  and the 13 Nov 16:30 UTC check reports both. **By his rule of 4 Oct what the site says about the verdicts, and
+  the next step, are a discussion once both are in; neither is changed here** (the page's corrections below
+  concern September's Bloomberg figures only).
+- *Verdict night was rehearsed first (11 Nov).* In a scratch clone with no remote, the real writer's `main()` wrote
+  both final blocks from SYNTHETIC reader output (never a real H7 number) and replaced HANDOFF's two rows. In that
+  state: the pressure test read 0 fail (the gate before the workflow's push), the poster built and switched its
+  headline by itself, `daily.py` read ALL CLEAR, thirteen suites passed and the full auditor read 217 of 217. The
+  H5e final path also passed every one of the writer's refusals on the real, complete window. The real run then
+  pushed as rehearsed.
+- *Read-only sweep, clean:* `daily.py`; every suite; the independent check (1206 of 1206); a stdlib lint over all
+  93 Python files (no undefined name in maintained code; its only hits are the 17 Oct re-check scripts, which
+  `exec` a shared prelude); the nine workflows (scoped permissions, inputs passed through the environment, no
+  injection path); the holiday and early-close calendar, right to January 2029; H8's two one-sided tests (the
+  tails and the fixed-b null are right; its cold re-read stays on about 24 Nov).
+- *Found: the 17 Oct fix of the Bloomberg-export reader had not reached everything.* Both readers were run on the
+  same exports (`VOLREC_BBG_POSITIONAL=1` is the old one). The public page still carried the old reader's figures
+  in three table rows (22 Sep USO 107 contracts and 0.09 on far puts, now 113 and 0.06; 23 Sep USO 0.01, now 0.00;
+  23 Sep TSLA 86 and 0.33, now 87 and 0.50), in the day-count sentence (546 contracts, +1.15, standard error 0.13,
+  R-squared 0.88; now 542, +1.14, 0.14, 0.87), in the 21-month sentence (+0.95 on 94 contracts; now +0.96 on 109)
+  and in one narrative sentence (36 of 36 and 0.40, where the record and the page's own table say 44 of 44 and
+  0.33). The same old figures stood in the after-data sections of the H3 and H5 files. **Corrected beside the
+  originals, dated** (his rule; "yes fix the site too", 17 Oct): the page; seven notes in the two hypothesis files,
+  in the form of the 17 Oct ones; three in `BLOOMBERG-MONDAY.md`; a row in `TEST-INVENTORY.md`. No registration
+  text, bar, window, verdict or log entry is touched, and no conclusion changes.
+- *One descriptive reading does change:* H5c's 22 Sep figure, "a 30% difference, outside H5c's 25%", was the reader
+  bug. With every row read, Bloomberg's inflation that day is 5.14 against the free feed's 5.01 (2.6%), and all
+  four matched expiry-days sit inside 25% (9.0%, 2.6%, 0.2%, 1.0%). H5c is still descriptive: never tested.
+- *So it cannot recur:* `tools/site_bloomberg.py` compares 47 figures of the page with what the two tools print from
+  the exports, each under its own day, underlying and expiry, always with the fixed reader. It runs on this Mac,
+  where the licensed exports are (a SKIP elsewhere; a FAIL when the folder is half there), inside the pressure test,
+  so the push hook refuses a page that has drifted. Before the page was fixed it reported exactly the eleven stale
+  figures; now VERIFIED, 47 of 47. H5a's and H5b's pooled figures, which no maintained tool prints, are checked
+  everywhere against the H5 file's corrected reading, in the narrative and in the hypothesis table. Four pressure
+  checks, a suite of 45 cases, twelve auditor mutants (229 in all), each tried alone first: the mutated file parses
+  and its own check fails by assertion.
+- *Astra Ultra.* First review (12 Nov 03:27 UTC, `.codex-reviews/20261112T032744Z-hjxxncvu`): INCOMPLETE (bundle
+  limits), three MEDIUM and one LOW, each verified against the code and fixed, tests first. (1) The checker's tools
+  inherited the shell's environment, so the old-reader switch could have made it compare the page with the old
+  reader: the switch is now never passed on (on the real exports the corrected page verifies with the switch set,
+  and the old page still shows its eleven differences). (2) The H5a/H5b check compared two passages of one page:
+  it now reads the record. (3) Figures were taken without checking which block they came from: every row, lift,
+  note and block now carries its day, underlying and expiry, and a report for another expiry with the same numbers
+  is a difference. (4) Three stale figures in `BLOOMBERG-MONDAY.md`: corrected.
+- *Astra's follow-up, the one the rules allow.* Its first attempt (08:17 UTC) never reached the model: the ChatGPT
+  account behind Astra had hit its usage limit, and no other model was substituted; a second was stopped with the
+  session; the third ran (08:41 UTC, `.codex-reviews/20261112T084100Z-13p2lo5t`). INCOMPLETE again (the bundle
+  cannot hold the page, both hypothesis files and both harnesses whole). It found the four fixes implemented and
+  supported by their tests, the page's changed figures and H5c's percentages equal to the fixed reader's output,
+  the mutants aimed at real assertions, and no registered verdict, bar, band or window touched. Four new points,
+  each verified and fixed, tests first: the table's headings were not checked, so swapping "Far puts" and "Far
+  calls" would have passed (the six headings are now required, in order); the pooled day-count run was checked by
+  date only (it must now print exactly the ten blocks the H3 file names); a gap in the reader itself (next item);
+  and one note's "unchanged" was too wide (narrowed). Under the one-follow-up rule these last fixes are verified
+  by tests, mutants and identical outputs, not re-reviewed.
+- *Also corrected:* README (the pressure test's count was "247", now dated; the "matching the published VIX to 0.01"
+  status line now says one calibration day; the 40-day line is ticked); the page's "about four weeks" (H3's series
+  is two months, closed 11 Nov).
+- *The reader itself (from the follow-up).* The 17 Oct fix filled a row only as far as its last stored cell, so a
+  row whose LAST cells the file left out (the put's volume, or its IVM too) would still have lost its put. Counted
+  on all 18 exports: every one of the 1,917 strike rows carries its 14 cells, so it has never happened and no
+  figure moves. Closed anyway in the fixed reading only (`ROW_CELLS`; the positional reading is untouched), with
+  two such rows in the pressure test's synthetic sheet (the check failed first) and a mutant. Every Bloomberg
+  tool's output on every export, in both reader modes, is byte-identical before and after (648 lines compared).
+- *Noted, not changed.* (a) The guard's one `startup_failure` (status table). (b) `analyze.fetch_market_vol` keeps
+  each index's file for the LOCAL day, so a run before the close hides that evening's Cboe closes until the next
+  local day: an evening "n/a" on this Mac is the cache (CI fetches fresh). (c) The auditor costs about 85
+  CPU-minutes (229 runs of about 22 s); the new export check adds about 3 s of that per run on this Mac.
+  (d) Gabriel was using Codex in the ChatGPT app the same night, and the two share one allowance.
+- *Suggested for after SCCUR (none done; each is his call):* (1) pin the recorders' one dependency before H8's window
+  opens on 1 Dec (`pip install requests` resolves afresh on every run: 2.34.2 with urllib3 2.8.0 on 11 Nov), on an
+  evening after the close, checking the next run fired; (2) generate the page's hypothesis table and the README's
+  status from the hypothesis files, as the poster already does, so one figure lives in one place (today's defect
+  was three places carrying one number; the table's H3 row still reads "to 9 Oct"); (3) a build script for the
+  paper that takes every number from the record and refuses a mismatch, like the poster's; (4) a `CITATION.cff`,
+  with Zenodo at the tagged release; (5) the auditor run only on the mutants whose files changed, with the full run
+  weekly in the cloud; (6) a linter in CI, as a development tool only.
+- *Needs Gabriel:* (1) ask Marc how long printing takes: the final poster is built once H7 is in (Fri 13 Nov at the
+  earliest), and the 16 Nov reminder assumes a few days are enough; (2) the discussion once both verdicts are in
+  (site, next step); (3) the 12 Nov reminder: say "buy the sealed index data for 4-11 Nov"; (4) the backup cron's
+  margin: his 23 Sep acceptance ran to 11 Nov, and the pressure test warns again from 12 Nov (a WARN stops nothing).
+  Recommended: renew it through H8's window, to 29 Jan 2027 (one line, `CRON_MARGIN_ACCEPTED`), not move a
+  schedule - the outside trigger and the guard do the recording, and the one lost day (16 Sep) came from editing
+  a cron. His yes or no.
+- *Checks:* pressure test 0 fail, 3 warn (325 checks); the page-against-reader suite 45 cases, also under
+  Python 3.9 and 3.13 (CI runs 3.12); the poster's 60 and 27, and the poster built on the real state (H5e's chip
+  reads the workflow's own block: fails, final, 0.91; H3 reads "The reading of record, to 11 Nov 2026"; the page
+  check passes); the independent check 1206 of 1206; twelve new mutants each caught alone.
+
+*Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Aggregates only.*
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
@@ -4041,3 +4139,7 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 > `poster/test_charts.py` by hand before any rebuild. Its open questions were answered on 11 Nov under
 > Gabriel's delegation (the entry above, "Poster questions: his answers"); SCCUR is Sat 21 Nov, Session 2,
 > 9:30 am, Montezuma Hall, board 12.
+> H5e's FINAL reading was recorded on 12 Nov (FAILS, 0.91); H7 follows on about Fri 13 Nov. Once both are
+> in: build the final poster, then the discussion with Gabriel (site, next step) before any site change.
+> `tools/site_bloomberg.py` holds the page's Bloomberg figures to the reader's output on every push from
+> this Mac: after any change to that reader or that section, read its lines, never edit around them.

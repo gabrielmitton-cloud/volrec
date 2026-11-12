@@ -284,9 +284,10 @@ tools/h7_reader.py         H7's reading, on that replica
 tools/h8_quotes.py         H8's instrument (building): the same contracts, free vs OPRA
 tools/alpaca_opra_probe.py does Alpaca's free plan serve OPRA? (answered no, 10 Oct)
 tools/record_verdict.py    writes due verdicts in fixed wording, unattended
-tools/pressure_test.py     247 read-only integrity and known-answer checks
+tools/pressure_test.py     read-only integrity and known-answer checks (325 on 12 Nov 2026)
 tools/audit.py             breaks each safeguard on purpose; each check must fail
 tools/calibrate.py         every instrument against a known reference truth
+tools/site_bloomberg.py    the page's Bloomberg figures against the reader's own output
 tools/seed_frozen_rate.py  gives a fresh clone the frozen rate the registered numbers use
 tools/test_hedged.py, test_h6.py, test_h7.py, test_h8.py   hand-computed unit tests
 ```
@@ -330,10 +331,12 @@ so the numbers move slightly; that is the frozen input missing, not a different 
 - [x] Schema migrated 17 -> 32 columns, first full 109-ticker run 2026-09-08
 - [x] Sample A built and H1 tested, 9 of 11 pairs significant
 - [x] Strike surface recording, with volume and open interest, from 2026-09-14
-- [x] Model-free estimator matching the published VIX to 0.01 vol points
+- [x] Model-free estimator calibrated against Cboe's indices (SPY within 0.01 vol points of
+      the VIX on the one calibration day, 11 Sep; the running series is H3)
 - [x] Delta-hedged P&L estimator, 30 hand-computed unit tests
 - [x] H5 (quote quality in the wings) and H6 (implied volatility against a trailing
       range) tested; H7 (the free feed through Cboe's own rules) collecting from 9 Oct
-- [ ] ~40 trading days accumulated (Wed 11 Nov 2026), H5e's final reading and H7
+- [x] ~40 trading days accumulated: the H3, H5e and H7 windows closed on Wed 11 Nov 2026
+- [ ] H5e's final reading and H7, read once by the unattended workflow (12-19 Nov)
 - [ ] Realized-vs-implied analysis on the live panel
 - [ ] Write-up (February 2027)

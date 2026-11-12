@@ -177,6 +177,14 @@ pulled), 18:46 UTC against the recorder's 18:22 snapshot, a 24-minute gap.
 | USO | 107 | 0.39 | 0.09 (n=12) | 0.00 (n=9) | 7 / 0 |
 | TSLA | 98 | **0.87 - FAILS the 0.5 gate** | 1.00 (n=18) | 1.00 (n=15) | 0 / 0 |
 
+*Corrected 11 Nov 2026, beside the original: this table and the H5c figures below were read by the comparison tool
+that left out some put rows (found and fixed 17 Oct; see the corrected reading under Result). With every row read,
+USO matches **113** contracts in the band (not 107); its put wing is **0.06** (n=18), with no bid on either feed for
+**13** (not 7). TSLA is unchanged. **H5c on this day changes:** Bloomberg's inflation is **5.14**, not 3.51 (as
+registered +5.93, not +4.30), which is **2.6%** from the free feed's 5.01 - inside H5c's 25%, not 30% and outside
+it. The same reading of 18 Sep is 9.0% (4.34 against 3.95), not 6.5%. H5c is still descriptive.
+Source: Bloomberg Finance L.P.*
+
 - **TSLA's failure is stated as a failure.** The diagnosis: TSLA's parity forward was
   380.80 on the free feed and 380.28 on Bloomberg's prices, a 0.14% move in 24
   minutes, and the signature is a move rather than a bad feed (calls +$0.155 on the
@@ -305,6 +313,13 @@ in `bloomberg_compare.py` passes.
 | USO | 30 Oct | 54 | 0.20 | 0.01 (n=8) | 0.66 (n=6) | 8 / 0 / 0 |
 | TSLA | 23 Oct | 86 | 0.28 | 0.33 (n=12) | 0.83 (n=19) | 0 / 0 / 0 |
 | TSLA | 30 Oct | 75 | 0.20 | 0.33 (n=13) | 0.67 (n=16) | 0 / 0 / 0 |
+
+*Corrected 11 Nov 2026, beside the original (the same fix): USO's put wings are **0.00** (n=9) on 23 Oct and 0.01
+(n=9) on 30 Oct; no bid on either feed for **9** contracts on each expiry (8 puts and 1 call; first read as 7 and
+1, so 8). TSLA's 23 Oct expiry matches **87** contracts and its put wing is **0.50** (n=13); TSLA's 30 Oct row is
+unchanged. **H5c on this day:** Bloomberg's inflation is **13.54** for 23 Oct (0.2% from the free feed's 13.51, not
+0.5%) and **12.34** for 30 Oct (1.0% from 12.22, not 10.4%). Both stay inside H5c's 25%.
+Source: Bloomberg Finance L.P.*
 
 - **H5c on this day, descriptive:** USO's inflation (as registered minus Cboe rule) is
   13.51 on the free feed and 13.58 on Bloomberg for 23 Oct (0.5% apart), 12.22 and

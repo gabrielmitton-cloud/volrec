@@ -826,6 +826,53 @@ MUTANTS = [
     ("lab-page-margin-range-unchecked", "the Leak Map checks only the margin leaks' mean, not their range over the orders",
      lambda w: _sub(w / "lab/report.py", 'if any(v != 0.0 for v in d["leaks"][k]):', 'if d["leaks"][k][0] != 0.0:'),
      "lab/ tests pass"),
+    # 11 Nov 2026: the page kept Bloomberg figures from before the 17 Oct reader fix; tools/site_bloomberg.py.
+    ("site-h5-narrative-stale", "the page's Bloomberg narrative goes back to the count read before the 17 Oct reader fix",
+     lambda w: _sub(w / "index.html", 'either (<span class="m">44</span> of <span class="m">44</span>)',
+                    'either (<span class="m">36</span> of <span class="m">36</span>)'),
+     "the page states H5a and H5b as the H5 file's corrected reading does"),
+    ("site-h5-both-passages-stale", "the narrative AND the hypothesis table go back to the first reading together",
+     lambda w: (_sub(w / "index.html", 'either (<span class="m">44</span> of <span class="m">44</span>); the wing mids '
+                                       'pass the half-spread test at the median (<span class="m">0.33</span>)',
+                     'either (<span class="m">36</span> of <span class="m">36</span>); the wing mids pass the '
+                     'half-spread test at the median (<span class="m">0.40</span>)'),
+                _sub(w / "index.html", "H5b holds (44 of 44); H5a holds weakly (0.33 of a spread",
+                     "H5b holds (36 of 36); H5a holds weakly (0.40 of a spread")),
+     "the page states H5a and H5b as the H5 file's corrected reading does"),
+    ("site-bloomberg-comparator-blind", "the page-against-reader comparison calls any two figures of equal precision the same",
+     lambda w: _sub(w / "tools/site_bloomberg.py", "        return p == r\n", "        return True\n"),
+     "the site-Bloomberg checker's tests pass"),
+    ("site-bloomberg-missing-figure-passes", "a figure the reader did not print counts as agreeing with the page",
+     lambda w: _sub(w / "tools/site_bloomberg.py",
+                    "        if on_page and printed and same(page_figures[label], reader[label]):\n",
+                    "        if not printed or (on_page and same(page_figures[label], reader[label])):\n"),
+     "the site-Bloomberg checker's tests pass"),
+    ("site-bloomberg-half-folder-skips", "an exports folder missing files is read as far as it goes instead of failing",
+     lambda w: _sub(w / "tools/site_bloomberg.py", "    if gone:\n", "    if False:\n"),
+     "the site-Bloomberg checker's tests pass"),
+    ("site-bloomberg-old-reader-inherited", "the checker's tools inherit the switch that selects the pre-17-Oct reader",
+     lambda w: _sub(w / "tools/site_bloomberg.py", 'if k != "VOLREC_BBG_POSITIONAL"}', "}"),
+     "the site-Bloomberg checker's tests pass"),
+    ("site-bloomberg-expiry-unchecked", "a report for another expiry is read under the page's label",
+     lambda w: _sub(w / "tools/site_bloomberg.py", '        return None if c["expiry"] == want else ',
+                    '        return None if True else '),
+     "the site-Bloomberg checker's tests pass"),
+    ("site-bloomberg-long-block-unchecked", "the 21-month figures are taken from whichever single block the folder holds",
+     lambda w: _sub(w / "tools/site_bloomberg.py",
+                    "    if set(far) == {(None,) + LONG_BLOCK}:\n        n, _, g252 = far[(None,) + LONG_BLOCK]\n",
+                    "    if len(far) == 1:\n        n, _, g252 = next(iter(far.values()))\n"),
+     "the site-Bloomberg checker's tests pass"),
+    ("site-bloomberg-pool-blocks-unchecked", "the day-count figures are accepted from whatever blocks the pooled run read",
+     lambda w: _sub(w / "tools/site_bloomberg.py", "    if blocks != POOL_BLOCKS:\n", "    if False:\n"),
+     "the site-Bloomberg checker's tests pass"),
+    ("site-bloomberg-headings-unchecked", "the page's table is read by column position whatever its headings say",
+     lambda w: _sub(w / "tools/site_bloomberg.py", "    if got != HEADERS:\n", "    if False:\n"),
+     "the site-Bloomberg checker's tests pass"),
+    # 12 Nov 2026 (Astra's follow-up): the 17 Oct fix stopped at a row's last stored cell.
+    ("bloomberg-trailing-cells-drop-put", "a Bloomberg row whose last cells the file left out loses its put again",
+     lambda w: _sub(w / "tools/bloomberg_compare.py", "                if ROW_CELLS // 2 < len(vals) < ROW_CELLS:\n",
+                    "                if False:\n"),
+     "a Bloomberg row whose LAST cells the file left out keeps its put"),
 ]
 # The pressure test runs the site's countdown in node; where node is missing that check is only a WARN, so
 # its mutant would be INCONCLUSIVE rather than KILLED. It runs wherever the check can.
@@ -843,6 +890,15 @@ if shutil.which("node"):
                                    'h < 48 ? Math.floor(h) + "h " + p2(Math.round((h % 1) * 60)) + "m ago" : '
                                    'Math.floor(h / 24) + "d ago";'),
                     "the site's 'ago' never reads 60m"))
+
+
+# The page's Bloomberg figures are compared with the reader only where the licensed exports are (this Mac);
+# elsewhere the check is a SKIP, so its mutant would be INCONCLUSIVE rather than KILLED. It runs wherever the check can.
+if (Path.home() / "Documents" / "volrec-bloomberg").is_dir():
+    MUTANTS.append(("site-bloomberg-figure-stale", "a figure in the page's Bloomberg table goes back to the old reader's",
+                    lambda w: _sub(w / "index.html", "<td>22 Sep</td><td>USO</td><td>113</td>",
+                                   "<td>22 Sep</td><td>USO</td><td>107</td>"),
+                    "the page's Bloomberg figures are exactly what the fixed reader prints from the exports"))
 
 
 # The Lab page is compared with the private lab summaries only where they exist (this Mac); elsewhere the

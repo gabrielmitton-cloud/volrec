@@ -130,6 +130,8 @@ the 252 clock and +0.94 on 365, so the clocks converge as predicted but about on
 point remains that is not the day count (early exercise +0.90). The day count is the
 whole story at 21-45 days, not at 21 months. H3 has it. Follow-up is ask 3's second
 question, below.
+*(Corrected 11 Nov 2026: with every row of the export read - the reader fix of 17 Oct - the block is +0.96
+on the 252 clock and +0.95 on 365, over 109 contracts; not +0.95 and +0.94 over 94. Source: Bloomberg Finance L.P.)*
 
 *Bloomberg figures: Source: Bloomberg Finance L.P.*
 
@@ -166,7 +168,8 @@ longer binding.
 
 **22 Sep: USO and TSLA pulled, 16 Oct only again.** USO matched cleanly (0.39 of a
 spread; wings 0.09 and 0.00). TSLA FAILED the price gate at 0.87 because it moved
-0.14% in the 24 minutes between snapshots. **Before the next session run
+0.14% in the 24 minutes between snapshots. *(Corrected 11 Nov 2026: with every row read, USO's put wing that
+day is 0.06 on 113 matched contracts, not 0.09 on 107. Source: Bloomberg Finance L.P.)* **Before the next session run
 `python3 tools/bloomberg_prep.py --date YYYY-MM-DD`**: it names both expiries, the
 strike range and the landing window. Pull BOTH expiries, and pull TSLA first,
 within 10 minutes of the snapshot.
@@ -270,6 +273,8 @@ forward. The residual is recorded as an open reconciliation item at long maturit
 **not pursued further** - nothing registered depends on it. No more terminal asks on the
 day count. If ever reopened, the one fair question for the desk is why GIV's printed
 inputs for that contract do not reproduce its printed volatility.
+*(Corrected 11 Nov 2026: with every row read the split is over 109 contracts - calls +0.92 (n=58), puts +1.33
+(n=51), not +1.47 on 36 - and still rules out the forward. Source: Bloomberg Finance L.P.)*
 
 **18 Sep: asked, not answered.** The reply described the `GV` template (60-day
 classical historical volatility against 3-month at-the-money implied volatility)

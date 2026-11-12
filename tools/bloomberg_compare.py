@@ -91,9 +91,13 @@ def _col(ref):
     return n - 1
 
 
+ROW_CELLS = 14      # an OMON strike row: seven cells for the call, seven for the put (strike_cells)
+
+
 def read_sheet(path, positional=None):
     """Rows of an .xlsx, without a third-party library. Each cell lands in its own column (by its 'r'
-    reference); a cell the file omits reads as "". positional=True is the pre-17-Oct reading."""
+    reference); a cell the file omits reads as "", at the end of a row as inside it. positional=True is the
+    pre-17-Oct reading."""
     positional = POSITIONAL if positional is None else positional
     z = zipfile.ZipFile(path)
     shared = []
@@ -114,6 +118,14 @@ def read_sheet(path, positional=None):
                     cells[_col(c.get("r"))] = x or ""
             if not positional and cells and len(cells) == len(vals):
                 vals = [cells.get(i, "") for i in range(max(cells) + 1)]
+                # 12 Nov 2026 (Astra's follow-up review): the line above fills a row only as far as its last
+                # STORED cell. A row whose LAST cells the file leaves out (the put's volume, or its IVM too)
+                # came back 13 or 12 cells long, and strike_cells, which needs all 14, dropped the put: the
+                # 17 Oct bug again, at the row's end. No export on disk has such a row (every strike row
+                # carries 14 cells), so no figure moves; a row that reaches into the put's half is now filled
+                # to the layout's width. The positional reading is left exactly as it was.
+                if ROW_CELLS // 2 < len(vals) < ROW_CELLS:
+                    vals += [""] * (ROW_CELLS - len(vals))
             rows.append(vals)
     return rows
 
