@@ -3,7 +3,7 @@
 **Registered:** 2026-09-19, after ONE day of wing data (18 Sep, USO, one expiry) and
 before the series that tests it. What was already seen on that day is stated in full
 below, so nothing here can be mistaken for a prediction made blind.
-**Status:** registered. **H5a and H5b tested 23 Sep 2026** - H5b holds, H5a holds weakly (see Result). H5f read 25 Sep 2026 (see Result). H5e first verdict read 8 Oct 2026 (see Result).
+**Status:** registered. **H5a and H5b tested 23 Sep 2026** - H5b holds, H5a holds weakly (see Result). H5f read 25 Sep 2026 (see Result). H5e first verdict read 8 Oct 2026 (see Result). H5e FINAL reading read 12 Nov 2026 (see Result).
 **Independently timestamped:** OSF registration https://osf.io/z5gfu (H5e and H7, submitted 10 Oct 2026; secondary-data template; discloses what was seen first).
 **Sample:** `data/surface_wide.csv` from 18 Sep 2026 onward, and the matched Bloomberg
 OMON wing exports in `~/Documents/volrec-bloomberg`. Never `data/iv_history.csv`.
@@ -489,4 +489,15 @@ Bloomberg wing days (18, 22 and 23 Sep), seven symbol-expiry blocks, 169 wing co
 - Risk-free rate as the reading of record uses it (FRED cache): 3.910%.
 - Dropped as recorded after the close, under Gabriel's 23 Sep rule (applied 30 Sep, before this verdict): 2026-09-28.
 - This is the verdict at the registered minimum; H5e is registered through Wed 11 Nov 2026, and the reading then is the one written up.
+- The estimator is Andersen, Bondarenko & Gonzalez-Perez (2015)'s RX*, credited above; what is this project's is its application to a free retail-grade feed on USO.
+
+**H5e, FINAL reading over 23 Sep - 11 Nov 2026, read 12 November 2026** - the reading the write-up uses; written by the cloud workflow (`tools/record_verdict.py`), numbers from `modelfree.py --wide`, wording fixed in advance.
+
+- **FAILS**: the mean gap is not under 0.5.
+- Mean absolute gap of the skip-only estimate to OVX: 0.91 volatility points (bar: under 0.5).
+- Closer to OVX than the registered estimate on 26 of 35 counted days (bar: a majority).
+- Skip-only gap by day: 2026-09-23 +1.31; 2026-09-24 +1.31; 2026-09-25 +0.88; 2026-09-29 +0.27; 2026-09-30 +1.06; 2026-10-01 +1.04; 2026-10-02 +1.19; 2026-10-05 +1.02; 2026-10-06 +0.84; 2026-10-07 +0.02; 2026-10-08 +0.24; 2026-10-09 -0.48; 2026-10-12 -0.25; 2026-10-13 -0.94; 2026-10-14 -0.75; 2026-10-15 -0.07; 2026-10-16 +0.63; 2026-10-19 +0.01; 2026-10-20 -0.11; 2026-10-21 -1.98; 2026-10-22 -0.52; 2026-10-23 -0.79; 2026-10-26 -1.30; 2026-10-27 -0.89; 2026-10-28 -4.23; 2026-10-29 -3.00; 2026-10-30 -1.02; 2026-11-02 -1.16; 2026-11-03 -0.94; 2026-11-04 -0.85; 2026-11-05 -1.41; 2026-11-06 -0.18; 2026-11-09 -0.67; 2026-11-10 -0.21; 2026-11-11 -0.09.
+- Risk-free rate as the reading of record uses it (FRED cache): 3.910%.
+- Dropped as recorded after the close, under Gabriel's 23 Sep rule (applied 30 Sep, before this verdict): 2026-09-28.
+- The first verdict (the block above) was FAILS; this reading agrees.
 - The estimator is Andersen, Bondarenko & Gonzalez-Perez (2015)'s RX*, credited above; what is this project's is its application to a free retail-grade feed on USO.

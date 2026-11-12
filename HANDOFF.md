@@ -1929,7 +1929,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | H5b | **tested 23 Sep, holds** | 36 of 36 free-feed missing bids are missing on Bloomberg (bar 80%). **Corrected 17 Oct: 44 of 44** |
 | H5c | descriptive | Bloomberg reproduces USO's inflation within 0.5% and 10.4% on 23 Sep (6.5% and 30% before); needs 10 underlying-days |
 | H5d | descriptive | 12 underlying-days on 3 dates; the date-clustered test needs more dates |
-| H5e | **first verdict: FAILS** (8 Oct) | mean abs gap 0.90 (bar under 0.5); closer on 2 of 10 days; final reading 11 Nov |
+| H5e | **final: FAILS** (12 Nov) | mean abs gap 0.91 (bar under 0.5); closer on 26 of 35 days; 23 Sep - 11 Nov |
 | H5f | **read 25 Sep at 5 days: a, b, c hold** (a ON the bar) | H5f-a **0.500** of OPRA's spread (bar 0.5); H5f-b **64 of 64** no-bid (bar 80%); H5f-c inflation gap **0.6%** per day, 0.4% on medians (bar 25%); stale quotes excluded by the rule |
 | H6 | **tested 9 Oct: H6a FAILS, H6b HOLDS** | ATR(14) beats implied vol on the next day's range in 9 of 9 pairs (IV overshoots the level 1.6-2.3x: close-to-close risk plus the premium); IV's disadvantage shrinks after spikes (Welch t -7.95; with Newey-West errors t -3.80 at lag 21, -3.12 at lag 63 - still holds); exploratory: with the level removed IV's timing error is smaller in 8 of 9 |
 | H7 | **registered 8 Oct (exception to the 11 Nov rule, Gabriel); collecting from 9 Oct** | free feed through Cboe's rules vs OVX/GVZ on the monthly legs (first rows 9 Oct, 1,066 contracts); read once over 9 Oct - 11 Nov, min 10 days, written when the window's data is complete (by 19 Nov at the latest); reader corrected before any data (blank OPRA bid = zero bid, H7 log 1); GLD OPRA in the cloud fetch (~$1 approved) |
