@@ -2,7 +2,7 @@
 
 **Registered:** 2026-10-08, before the first monthly-leg row exists (it lands Fri 9 Oct); the
 commit date is proof. Approved by Gabriel 8 Oct.
-**Status:** registered
+**Status:** registered H7 read 13 Nov 2026 (see Result).
 **Independently timestamped:** OSF registration https://osf.io/z5gfu (H5e and H7, submitted 10 Oct 2026; secondary-data template; discloses what was seen first).
 **Sample:** B (own panel), from 9 Oct 2026
 
@@ -70,6 +70,15 @@ surface or estimator, USO-vs-OVX claims (H7c is descriptive), intraday index val
 ## Result
 
 Not read yet: due 12 Nov 2026 (`tools/record_verdict.py`, from `tools/h7_reader.py`).
+
+**H7, reading over 9 Oct - 11 Nov 2026, read 13 November 2026** - written by the cloud workflow (`tools/record_verdict.py`) from `tools/h7_reader.py`; numbers copied from its output, wording fixed in advance.
+
+- **H7a FAILS:** mean absolute difference between the free-feed and OPRA Cboe replicas at the same minute: USO 0.316 over 24 days, GLD 0.034 over 24 days (bar: 0.25 or less, each).
+- **H7b HOLDS:** the free-feed replica for GLD lies a mean absolute 0.172 points from GVZ's close over 24 days (bar: 0.30 or less).
+- H7c (descriptive): the free-feed replica for USO minus OVX's close averaged -0.244 over 24 days.
+- The method is Cboe's own (Volatility Index Mathematics Methodology v5.0; ETF index methodology v9.0), applied to the monthly legs recorded from 9 Oct; after-close days dropped.
+
+*Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
 
 ## Adjustment log
 

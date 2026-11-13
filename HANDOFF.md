@@ -1932,7 +1932,7 @@ every decision. This section is the only one guaranteed current. Read it, run
 | H5e | **final: FAILS** (12 Nov) | mean abs gap 0.91 (bar under 0.5); closer on 26 of 35 days; 23 Sep - 11 Nov |
 | H5f | **read 25 Sep at 5 days: a, b, c hold** (a ON the bar) | H5f-a **0.500** of OPRA's spread (bar 0.5); H5f-b **64 of 64** no-bid (bar 80%); H5f-c inflation gap **0.6%** per day, 0.4% on medians (bar 25%); stale quotes excluded by the rule |
 | H6 | **tested 9 Oct: H6a FAILS, H6b HOLDS** | ATR(14) beats implied vol on the next day's range in 9 of 9 pairs (IV overshoots the level 1.6-2.3x: close-to-close risk plus the premium); IV's disadvantage shrinks after spikes (Welch t -7.95; with Newey-West errors t -3.80 at lag 21, -3.12 at lag 63 - still holds); exploratory: with the level removed IV's timing error is smaller in 8 of 9 |
-| H7 | **registered 8 Oct (exception to the 11 Nov rule, Gabriel); collecting from 9 Oct** | free feed through Cboe's rules vs OVX/GVZ on the monthly legs (first rows 9 Oct, 1,066 contracts); read once over 9 Oct - 11 Nov, min 10 days, written when the window's data is complete (by 19 Nov at the latest); reader corrected before any data (blank OPRA bid = zero bid, H7 log 1); GLD OPRA in the cloud fetch (~$1 approved) |
+| H7 | **read 13 Nov: H7a FAILS, H7b HOLDS** | free vs OPRA replica: USO 0.316, GLD 0.034 (bar 0.25); GLD vs GVZ 0.172 (bar 0.30); USO vs OVX -0.244, descriptive |
 
 *Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Aggregates only.*
 
