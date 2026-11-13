@@ -4,7 +4,7 @@
 opened; the commit that adds this file is the proof. Approved by Gabriel in chat the same day, choosing to
 register that day rather than on Sat 7 Nov: the reader was finished that day, so PROTOCOL step 2's wait of a
 calendar day was not kept (logged under "Instrument readiness" and in the adjustment log).
-**Status:** registered - DESCRIPTIVE: no test, no bar, no verdict.
+**Status:** registered - DESCRIPTIVE: no test, no bar, no verdict. Read once, 13 Nov 2026 (see Result).
 **Independently timestamped:** OSF registration https://osf.io/4mcgf (submitted 6 Nov 2026, 21:06 UTC; secondary-data
 template; discloses what was seen first and the wait not kept).
 **Sample:** B (own panel): the H5e- and H7-counted days that the sealed index files cover (21 Oct - 11 Nov 2026).
@@ -236,3 +236,81 @@ bars from the 23-25 Nov Bloomberg session, which need their own short registrati
 ## Result
 
 Filled in after the run, which waits for both verdicts.
+
+**Read once, 13 November 2026, 16:34 UTC** - by Vega, with the registered command (`VOLREC_DATABENTO_DIR=~/Documents/volrec-licensed/opra python tools/index_timing.py`, the framework Python), on the reader whose sha256 is the registered `e65b5270...` (checked before the run), after H5e's FINAL reading (12 Nov) and H7's reading (13 Nov) were both recorded (Gabriel's go-ahead, 12 Nov: read once H7 is recorded). Exit 0: every refusal passed (the seal and its files, the frozen rate, `modelfree`, the recorded days and means). Its output, whole:
+
+```
+Index timing - EXPLORATORY, descriptive; no test, no verdict. DBIX days: 2026-10-21 to 2026-11-11 (16 files).
+
+== H5e registered, against OVX: 16 of 16 covered days measured; 19 counted days before the data begins (2026-09-23 to 2026-10-20)
+   signed means, points: E - C -2.896 = (E - I(T)) -2.810 + (I(T) - C) -0.087   [adds up to 0.0e+00]
+   mean absolute: |E - C| 2.896, |E - I(T)| 2.810, |I(T) - C| 0.634; corr(E - I(T), I(T) - C) -0.057
+   persistence (days, rho, n_eff): E - C 16, +0.017, 15.5; E - I(T) 16, +0.389, 7.0; I(T) - C 16, -0.092, 16.0
+   sensitivity, the bar nearest T within 15 s (may use a value printed after T), 16 days: E - I -2.821, I - C -0.076
+   quote times around T, seconds: each day's median (earliest to latest); the median of the daily medians +30
+      2026-10-21 +27 (-774 to +32); 2026-10-22 +30 (-463 to +37); 2026-10-23 +23 (-16 to +31); 2026-10-26 +29 (-366 to +40)
+      2026-10-27 +33 (-165 to +35); 2026-10-28 +31 (-595 to +35); 2026-10-29 +28 (-222 to +30); 2026-10-30 +30 (-82 to +32)
+      2026-11-02 +32 (+7 to +33); 2026-11-03 +40 (+8 to +45); 2026-11-04 +32 (+20 to +34); 2026-11-05 +48 (+26 to +52)
+      2026-11-06 +33 (-33 to +36); 2026-11-09 +23 (-6 to +92); 2026-11-10 +27 (-106 to +34); 2026-11-11 +25 (-117 to +32)
+== H5e skip-only, against OVX: 16 of 16 covered days measured; 19 counted days before the data begins (2026-09-23 to 2026-10-20)
+   signed means, points: E - C -1.203 = (E - I(T)) -1.116 + (I(T) - C) -0.087   [adds up to 0.0e+00]
+   mean absolute: |E - C| 1.203, |E - I(T)| 1.117, |I(T) - C| 0.634; corr(E - I(T), I(T) - C) -0.181
+   persistence (days, rho, n_eff): E - C 16, +0.332, 8.0; E - I(T) 16, +0.625, 3.7; I(T) - C 16, -0.092, 16.0
+   sensitivity, the bar nearest T within 15 s (may use a value printed after T), 16 days: E - I -1.127, I - C -0.076
+   quote times around T, seconds: each day's median (earliest to latest); the median of the daily medians +30
+      2026-10-21 +27 (-774 to +58); 2026-10-22 +30 (-463 to +66); 2026-10-23 +24 (-16 to +63); 2026-10-26 +29 (-366 to +68)
+      2026-10-27 +33 (-165 to +63); 2026-10-28 +31 (-595 to +63); 2026-10-29 +28 (-9815 to +56); 2026-10-30 +30 (-16416 to +56)
+      2026-11-02 +32 (-2386 to +63); 2026-11-03 +40 (-14185 to +71); 2026-11-04 +32 (+20 to +65); 2026-11-05 +48 (+26 to +84)
+      2026-11-06 +36 (-33 to +71); 2026-11-09 +23 (-6 to +103); 2026-11-10 +26 (-113 to +62); 2026-11-11 +25 (-117 to +62)
+== H7 OPRA replica, against GVZ: 16 of 16 covered days measured; 8 counted days before the data begins (2026-10-09 to 2026-10-20)
+   signed means, points: E - C +0.040 = (E - I(T)) +0.002 + (I(T) - C) +0.038   [adds up to 0.0e+00]
+   mean absolute: |E - C| 0.198, |E - I(T)| 0.010, |I(T) - C| 0.207; corr(E - I(T), I(T) - C) -0.675
+   persistence (days, rho, n_eff): E - C 16, -0.105, 16.0; E - I(T) 16, -0.256, 16.0; I(T) - C 16, -0.130, 16.0
+   sensitivity, the bar nearest T within 15 s (may use a value printed after T), 16 days: E - I -0.002, I - C +0.043
+   quote times around T, seconds: each day's median (earliest to latest); the median of the daily medians +11
+      2026-10-21 +1 (-688 to +8); 2026-10-22 +13 (-814 to +16); 2026-10-23 +9 (-74 to +13); 2026-10-26 +12 (-3229 to +17)
+      2026-10-27 +8 (-904 to +13); 2026-10-28 +11 (-7 to +13); 2026-10-29 +59 (-154 to +66); 2026-10-30 +6 (-9081 to +11)
+      2026-11-02 +9 (-229 to +12); 2026-11-03 +19 (-31 to +26); 2026-11-04 +10 (-496 to +16); 2026-11-05 +30 (-49 to +35)
+      2026-11-06 +15 (-55 to +20); 2026-11-09 +42 (-22 to +123); 2026-11-10 +12 (-2597 to +16); 2026-11-11 +8 (-932 to +11)
+== H7 OPRA replica, against OVX: 16 of 16 covered days measured; 8 counted days before the data begins (2026-10-09 to 2026-10-20)
+   signed means, points: E - C -0.083 = (E - I(T)) -0.017 + (I(T) - C) -0.066   [adds up to 0.0e+00]
+   mean absolute: |E - C| 0.639, |E - I(T)| 0.021, |I(T) - C| 0.630; corr(E - I(T), I(T) - C) -0.060
+   persistence (days, rho, n_eff): E - C 16, -0.031, 16.0; E - I(T) 16, -0.182, 16.0; I(T) - C 16, -0.064, 16.0
+   sensitivity, the bar nearest T within 15 s (may use a value printed after T), 16 days: E - I -0.016, I - C -0.067
+   quote times around T, seconds: each day's median (earliest to latest); the median of the daily medians +14
+      2026-10-21 +59 (-234 to +63); 2026-10-22 +51 (-463 to +70); 2026-10-23 +3 (-35 to +8); 2026-10-26 +10 (-426 to +13)
+      2026-10-27 +3 (-225 to +9); 2026-10-28 +4 (-655 to +8); 2026-10-29 +50 (-261 to +61); 2026-10-30 +0 (-179 to +6)
+      2026-11-02 +4 (-561 to +7); 2026-11-03 +18 (-57 to +21); 2026-11-04 +4 (-48 to +11); 2026-11-05 +27 (-7 to +30)
+      2026-11-06 +10 (-16860 to +15); 2026-11-09 +43 (-12889 to +49); 2026-11-10 +51 (-11332 to +71); 2026-11-11 +52 (-2720 to +66)
+== H7 free-feed replica, against GVZ: 16 of 16 covered days measured; 8 counted days before the data begins (2026-10-09 to 2026-10-20)
+   signed means, points: E - C +0.039 = (E - I(T)) +0.001 + (I(T) - C) +0.038   [adds up to 0.0e+00]
+   mean absolute: |E - C| 0.192, |E - I(T)| 0.037, |I(T) - C| 0.207; corr(E - I(T), I(T) - C) -0.483
+   persistence (days, rho, n_eff): E - C 16, -0.124, 16.0; E - I(T) 16, +0.131, 12.3; I(T) - C 16, -0.130, 16.0
+   sensitivity, the bar nearest T within 15 s (may use a value printed after T), 16 days: E - I -0.004, I - C +0.043
+   quote times around T, seconds: each day's median (earliest to latest); the median of the daily medians +11
+      2026-10-21 +1 (-688 to +8); 2026-10-22 +13 (-814 to +16); 2026-10-23 +9 (-74 to +13); 2026-10-26 +12 (-3229 to +17)
+      2026-10-27 +8 (-904 to +13); 2026-10-28 +11 (-7 to +13); 2026-10-29 +59 (-154 to +66); 2026-10-30 +6 (-9081 to +11)
+      2026-11-02 +9 (-229 to +12); 2026-11-03 +19 (-31 to +26); 2026-11-04 +10 (-496 to +16); 2026-11-05 +30 (-49 to +35)
+      2026-11-06 +15 (-55 to +20); 2026-11-09 +42 (-22 to +123); 2026-11-10 +12 (-2597 to +16); 2026-11-11 +8 (-932 to +11)
+== H7 free-feed replica, against OVX: 16 of 16 covered days measured; 8 counted days before the data begins (2026-10-09 to 2026-10-20)
+   signed means, points: E - C -0.435 = (E - I(T)) -0.369 + (I(T) - C) -0.066   [adds up to 0.0e+00]
+   mean absolute: |E - C| 0.699, |E - I(T)| 0.369, |I(T) - C| 0.630; corr(E - I(T), I(T) - C) -0.264
+   persistence (days, rho, n_eff): E - C 16, -0.094, 16.0; E - I(T) 16, +0.532, 4.9; I(T) - C 16, -0.064, 16.0
+   sensitivity, the bar nearest T within 15 s (may use a value printed after T), 16 days: E - I -0.368, I - C -0.067
+   quote times around T, seconds: each day's median (earliest to latest); the median of the daily medians +14
+      2026-10-21 +59 (-234 to +63); 2026-10-22 +51 (-463 to +70); 2026-10-23 +3 (-35 to +8); 2026-10-26 +10 (-426 to +13)
+      2026-10-27 +3 (-225 to +9); 2026-10-28 +4 (-655 to +8); 2026-10-29 +50 (-261 to +61); 2026-10-30 +0 (-179 to +6)
+      2026-11-02 +4 (-561 to +7); 2026-11-03 +18 (-57 to +21); 2026-11-04 +4 (-48 to +11); 2026-11-05 +27 (-7 to +30)
+      2026-11-06 +10 (-16860 to +15); 2026-11-09 +43 (-12889 to +49); 2026-11-10 +51 (-11332 to +71); 2026-11-11 +52 (-2720 to +66)
+close check (|last DBIX value - Cboe close| > 0.05, kept): no day flagged
+Data provided by Databento. Index closes: Cboe Global Markets. Aggregates only.
+```
+
+In plain words (descriptive; it changes no verdict, and it does not divide absolute error between causes):
+- **At the snapshot minute, Cboe's method on OPRA's quotes sits on the index.** The OPRA replica was a mean absolute 0.021 points from OVX and 0.010 from GVZ at the same minute, over the 16 covered days. At the close its gap is larger (0.639 and 0.198), and the index's own move after the snapshot is about as large (0.630 and 0.207 in size); the index at the snapshot minus its close averaged near zero (-0.066 and +0.038).
+- **The free feed's replica is close on GLD and off on USO at the same minute:** 0.037 points from GVZ, 0.369 from OVX (signed -0.369, persistent: rho +0.53, n_eff 4.9).
+- **H5e's two estimates are off at the same minute, not only at the close:** the skip-only estimate a mean absolute 1.117 points from OVX at the snapshot minute (signed -1.116), the registered estimate 2.810; OVX's move after the snapshot was 0.634 in size, and OVX at the snapshot minus its close averaged -0.087, the same days for both.
+- The 15-second sensitivity moves no signed mean by more than 0.011 points; no day's last index value is more than 0.05 from Cboe's close (no day flagged).
+- These are the windows' last 16 days, when OVX rose (see "Stated in advance"); they describe those days only.
+
+*Data provided by Databento. Index closes: Cboe Global Markets. Aggregates only.*

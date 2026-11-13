@@ -56,7 +56,8 @@ session's job is to read results, answer a question, or do one bounded thing.
 - **Never adjust a registered threshold, bucket, bar, band or window.** Post-output
   changes to a hypothesis are logged; three of them and it is abandoned.
 - **Never edit record.yml or surface.yml's `schedule:` on a day whose run is
-  needed.** The cron is held as-is until Wed 11 Nov 2026 (Gabriel, 23 Sep).
+  needed.** The cron is held as-is through H8's window, to Fri 29 Jan 2027 (Gabriel, 23 Sep; renewed
+  12 Nov 2026, `CRON_MARGIN_ACCEPTED`).
 - **Phone alerts are Pushover (tools/alert.py), four levels.** RED (repeats every 2 min for 1 h until
   acknowledged) only from the guard, only while a day can still be saved; YELLOW = look today; NOTICE =
   news (a verdict, a recovered day); GREEN = the quiet daily all-clear - a weekday without one means the

@@ -335,8 +335,12 @@ so the numbers move slightly; that is the frozen input missing, not a different 
       the VIX on the one calibration day, 11 Sep; the running series is H3)
 - [x] Delta-hedged P&L estimator, 30 hand-computed unit tests
 - [x] H5 (quote quality in the wings) and H6 (implied volatility against a trailing
-      range) tested; H7 (the free feed through Cboe's own rules) collecting from 9 Oct
+      range) tested; H7 (the free feed through Cboe's own rules) collected from 9 Oct
 - [x] ~40 trading days accumulated: the H3, H5e and H7 windows closed on Wed 11 Nov 2026
-- [ ] H5e's final reading and H7, read once by the unattended workflow (12-19 Nov)
+- [x] H5e's final reading (12 Nov: fails, 0.91 against 0.5) and H7 (13 Nov: H7a fails on oil, 0.316 against
+      0.25; H7b holds on gold, 0.172 against 0.30), read once by the unattended workflow; H3's reading of
+      record holds (0.708 over 205 readings, against 1.0); the timing measurement read once, 13 Nov
+      (`hypotheses/README.md` has every outcome; OPRA figures: Data provided by Databento; index closes: Cboe
+      Global Markets)
 - [ ] Realized-vs-implied analysis on the live panel
 - [ ] Write-up (February 2027)

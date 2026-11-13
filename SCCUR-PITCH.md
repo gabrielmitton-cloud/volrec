@@ -5,6 +5,10 @@ copies each from a dated record). Two lines wait for the H5e and H7 readings (12
 **[after 19 Nov]**; fill them from the hypothesis files, never from memory. Read aloud, the walk ran about two
 minutes on 4 Nov; the 8 Nov rewrite, with its caveats, runs about two and a half (about 350 spoken words).*
 
+*Filled 13 Nov 2026 by Vega, from the hypothesis files, after the readings: H5e's FINAL (12 Nov) fails, H7a fails
+and H7b holds (13 Nov), H3's reading of record holds (13 Nov). So the printed headline is the pre-decided fallback,
+and the lines marked **[after 19 Nov]** below now carry the recorded numbers (the mark is kept to show where).*
+
 **Where and when (SCCUR's email, read 11 Nov):** Sat 21 Nov, Session 2, 9:30-11:00 am, Montezuma Hall in the
 Conrad Prebys Aztec Student Union, San Diego State; poster board 12, under the poster's own title. Ten minutes to
 set up (double-sided tape on the supply tables in the room), the whole 75 minutes at the poster, five minutes to
@@ -18,8 +22,13 @@ not a speech: a 30-second opener for everyone, the 2-minute walk for anyone who 
 > Students and small researchers price options with free quotes, because the full market feed costs thousands
 > of dollars a year. I asked what that free data gives up, and where the loss is: in the quotes themselves, or
 > in the recipe that turns quotes into a volatility number. Since September I've recorded a free feed daily
-> and checked it against Cboe's indices, the consolidated market and Bloomberg. Short answer: the free quotes
-> are close. Most of the error is in the recipe.
+> and checked it against Cboe's indices, the consolidated market and Bloomberg. Short answer: widen the strikes,
+> and free data averages within a point of Cboe's index. Whether the rest of the gap is the quotes or the recipe
+> is still open.
+
+*Updated 13 Nov: H7a failed and H3 held, so the poster prints the fallback headline and the opener ends as above.
+The 4 Nov draft ended "Short answer: the free quotes are close. Most of the error is in the recipe." Do not say
+that now: on oil, the free and full-market rebuilds differed by more than their bar.*
 
 *If H7 fails, the poster's headline changes by itself (Gabriel's rule of 21 Oct, worded 11 Nov), and which way
 depends on H3. If H3 holds, it reads "Widen the strikes, and free data averages within a point of Cboe's index."
@@ -35,6 +44,7 @@ data misses Cboe's index by a point or more on average, and where that loss come
 counts the days at each size of gap, with no dates and never Cboe's index itself, because the request Cboe
 approved on 4 Nov promised aggregate statistics only). H3's numbers are live
 until its reading of record (the one after 11 Nov): read them off the printed tile, not from this page.*
+*13 Nov: the reading of record is in, and the printed tile carries it: 0.71 over 205 readings, against 1.0.*
 
 1. **The headline, then 1 (left).** Free quotes versus the paid feed: what precision is lost, and where. If
    the loss is in the method, anyone without a data budget can fix most of it for free.
@@ -56,7 +66,9 @@ until its reading of record (the one after 11 Nov): read them off the printed ti
    a second program sharing no code recomputed every result and caught one bug, fixed; no verdict changed.
 7. **The strip (bottom).** Every registered test is a chip: a tick, a cross, or due. Point at a cross on
    purpose: H6a, 0 of 9. **[after 19 Nov]** Then H5e's and H7's final readings, one sentence each, off their
-   chips.
+   chips: "Dropping empty bids did not fix oil: 0.91 against a bar of 0.5, though it was closer on 26 of 35
+   days." "Through Cboe's own rules, gold's free estimate matched GVZ, 0.172 against 0.30, but on oil the free
+   and full-market rebuilds were 0.316 apart, over their 0.25 bar, so H7a fails."
 8. **Limits (left, bottom).** One free feed, about two months, one snapshot a day, European formulas on
    American options.
 
@@ -79,7 +91,13 @@ that already existed. It stops me from choosing the test after seeing the answer
 
 **Did anything fail?** Yes, and it's on the poster, in the strip of chips: H6a (implied volatility did not beat the 14-day
 average range at forecasting the next day's range: 0 of 9 pairs) and H2b (not supported). H5e's first reading failed too (0.90
-against a bar of 0.5). **[after 19 Nov]** Add the final readings.
+against a bar of 0.5). **[after 19 Nov]** Add the final readings: H5e's final failed (0.91 against 0.5, 12 Nov), and
+so did H7a (oil's free and full-market rebuilds 0.316 apart, bar 0.25, 13 Nov). H7b held (gold, 0.172 against 0.30).
+
+**Why did H7a fail?** On oil, Cboe's rules keep walking out to strikes beyond the free file's edge (+/-60% of the
+price): they did on 24 of 24 days, and the full market carries those strikes. On the strikes both feeds carry,
+the two rebuilds differ by 0.132 instead of 0.316. I wrote that comparison down on 17 Oct, before any reading, as
+a description beside the test, never in its place: the test failed as registered, and the poster says so.
 
 **Isn't two months too short?** For a long-run claim, yes; the poster says so under Limits. Each test fixed its
 window and minimum number of days in advance, and the validation used ten years of Cboe's own data, where the method found the known result:
@@ -106,12 +124,14 @@ assistants (Claude Code), and a second AI model reviewed the work; the question,
 are mine. *(SCCUR's policy: acknowledge it and be able to explain
 every method without AI - which is what this page is for.)*
 
-**What's next?** Final readings of H5e and H7 (12-19 Nov), a confirmatory test on eight funds and stocks
-(registered first, Dec-Jan), and the paper in 2027, failures included.
+**What's next?** H5e and H7 were read on 12 and 13 Nov, as written in advance. Next: a confirmatory test on eight
+funds and stocks (registered first, Dec-Jan), and the paper in 2027, failures included.
 
 ## Things not to say
 
 - Any H5e or H7 number before its reading is recorded in the hypothesis file.
+- "The free quotes are close; most of the error is in the recipe" (the headline before H7a failed), or that the
+  free feed matched the full market on oil. It did on gold; on oil H7a failed.
 - "Free data is as good as Bloomberg." The poster's claim is narrower: the quotes are close, on the funds and
   days measured.
 - Anything that sounds like trading advice.
@@ -134,7 +154,10 @@ after each. No scripted answers below on purpose: each line says what a good ans
    measured, not assumed: a median 0.53 volatility points between 14:30 and 15:55 on stress days (GLD 0.14),
    beside H7's 0.25-0.30 bars. The OPRA comparison takes the 80 minutes out, not all timing: each free quote is
    matched to OPRA's record within two minutes, and the snapshot reading keeps the free feed's stale quotes on
-   purpose, as a user would see them.
+   purpose, as a user would see them. *Since 13 Nov, also the registered timing measurement (read once, 16 days,
+   21 Oct - 11 Nov): at the snapshot minute the full-market rebuild sat a mean absolute 0.021 points from OVX and
+   0.010 from GVZ, and the indices then moved a mean absolute 0.630 and 0.207 before the close; the free feed sat 0.369 from OVX
+   at the minute. It describes the gaps; the verdicts stand.*
 3. **"You designed and graded your own tests. Why should I trust them?"** - dated, public registrations
    before each test was run, and before the data for the forward-looking ones (H5 after one day of it);
    failures shown (H6a, H2b, H5e's first reading); an auditor proves every safeguard fails when broken.
@@ -150,7 +173,8 @@ after each. No scripted answers below on purpose: each line says what a good ans
    RVX, yes, and the poster says so; OVX and GVZ are built on USO's and GLD's own options, so the main tests
    use those.
 8. **"What result would change your conclusion?"** - name it before being asked: a failed final reading
-   [after 19 Nov: say which held], or H8 finding the feeds not equivalent on most funds; either is reported.
+   [after 19 Nov: say which held] (13 Nov: H3 and H7b held; H5e's final and H7a failed, and both are on the
+   poster), or H8 finding the feeds not equivalent on most funds; either is reported.
 9. **"Who is this for?"** - anyone without a data budget: it says what to fix first (method choices) and
    what the free quotes can carry.
 10. **"With $10,000, what would you buy?"** - the scope limits in order: a second free feed, a longer
@@ -158,3 +182,6 @@ after each. No scripted answers below on purpose: each line says what a good ans
 
 **Score per answer (Vega keeps the tally):** under 30 seconds; a number with its unit and source; the limit
 said before being asked; no H5e or H7 number before it is recorded; nothing that sounds like trading advice.
+
+*OPRA and intraday index figures: Data provided by Databento. Bloomberg figures: Source: Bloomberg Finance L.P.
+Index closes: Cboe Global Markets. Aggregates only.*

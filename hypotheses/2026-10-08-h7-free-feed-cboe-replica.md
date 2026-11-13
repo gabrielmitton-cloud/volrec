@@ -80,6 +80,25 @@ Not read yet: due 12 Nov 2026 (`tools/record_verdict.py`, from `tools/h7_reader.
 
 *Data provided by Databento (OPRA consolidated NBBO). Aggregates only.*
 
+**Companion readings, added 13 Nov 2026 beside the verdict above, never in place of it.** Descriptive: none is a
+registered test, and none changes the verdict. Copied from the cloud workflow's companion step (13 Nov 2026, 03:28
+UTC), which ran once, after both final readings were recorded.
+- *Intervals* (`tools/describe.py`, on exactly the registered days; Newey-West, lag 6, fixed-b critical value
+  2.80): H7a USO mean 0.316 points, 95% interval 0.150 to 0.482 (rho 0.41, n_eff 10.1), so the interval spans the
+  0.25 bar (one-sided p of a mean under it, 0.808); H7a GLD 0.035, 0.020 to 0.050 (n_eff 21.7); H7b 0.172, 0.117 to
+  0.228 (n_eff 21.3); H7c -0.244, -0.588 to 0.099 (n_eff 21.7).
+- *H7a on matched strikes* (`tools/h7_reader.py --matched`, log entry 3): with OPRA cut to the strikes the free
+  file holds, the two replicas differ by a mean absolute 0.132 points for USO and 0.061 for GLD, over 24 days each,
+  against the registered 0.316 and 0.034 on every strike OPRA lists. The two readings differ only in that strike
+  set. Cboe's walk ran past the free file's edge (+/-60% of spot) on 24 of 24 days for both.
+- *The second implementation* (`tools/independent_check.py`, same step): 1302 of 1302 values agree within 0.01
+  points, H7's 48 free-feed and 48 OPRA replica values among them (largest difference anywhere 0.00088).
+- *Timing* (`hypotheses/2026-11-06-index-timing.md`, registered 6 Nov, read once 13 Nov; descriptive): on the 16
+  covered days (21 Oct - 11 Nov), the OPRA replica sat a mean absolute 0.021 points from OVX and 0.010 from GVZ at
+  the snapshot minute; the free-feed replica 0.369 and 0.037.
+
+*Data provided by Databento (OPRA consolidated NBBO). Index closes: Cboe Global Markets. Aggregates only.*
+
 ## Adjustment log
 
 **1. 9 Oct 2026, ~18:00 UTC - BEFORE any H7 data (the first monthly row lands 18:40 UTC today, its

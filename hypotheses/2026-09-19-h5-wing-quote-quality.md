@@ -516,3 +516,20 @@ Bloomberg wing days (18, 22 and 23 Sep), seven symbol-expiry blocks, 169 wing co
 - Dropped as recorded after the close, under Gabriel's 23 Sep rule (applied 30 Sep, before this verdict): 2026-09-28.
 - The first verdict (the block above) was FAILS; this reading agrees.
 - The estimator is Andersen, Bondarenko & Gonzalez-Perez (2015)'s RX*, credited above; what is this project's is its application to a free retail-grade feed on USO.
+
+**Companion readings, added 13 Nov 2026 beside the FINAL reading above, never in place of it.** Descriptive: no
+bar is re-tested and the verdict stands as written. The intervals are copied from the cloud workflow's companion
+step (13 Nov 2026, 03:28 UTC; `tools/describe.py` on the registered days; Newey-West, lag 7, fixed-b critical value
+2.59).
+- Mean absolute gap of the skip-only estimate to OVX: 0.905 points over 35 days, 95% interval 0.385 to 1.425 (rho
+  0.38, n_eff 15.7). No evidence of a mean under the 0.5 bar: one-sided p 0.948.
+- Share of days closer than the registered estimate: 0.743 (26 of 35), 95% interval 0.372 to 1.114 (rho 0.58, n_eff
+  9.3); with the days' persistence allowed for, a true majority is weakly supported (one-sided p 0.082). The
+  registered criterion is the count, which the reading meets.
+- *Timing* (`hypotheses/2026-11-06-index-timing.md`, registered 6 Nov, read once 13 Nov; descriptive): on the 16
+  covered days (21 Oct - 11 Nov), the skip-only estimate's gap to OVX's close averaged -1.203 points; its gap to OVX
+  at the snapshot minute averaged -1.116 (mean absolute 1.117); OVX moved a mean absolute 0.634 after the snapshot,
+  and OVX at the snapshot minus its close averaged -0.087. The registration does not divide absolute error between
+  the two.
+
+*Data provided by Databento. Index closes: Cboe Global Markets. Aggregates only.*

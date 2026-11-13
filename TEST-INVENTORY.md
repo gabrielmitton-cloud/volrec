@@ -13,20 +13,21 @@ question.
 
 | test | role | file | verdict (as recorded) | p / interval | Holm (confirmatory) |
 |---|---|---|---|---|---|
-| H3a | confirmatory | hypotheses/2026-09-12-h3-free-data-model-free.md | series running | | |
-| H3b | confirmatory | same | series running | | |
-| H3c | confirmatory | same | series running | | |
+| H3a | confirmatory | hypotheses/2026-09-12-h3-free-data-model-free.md | holds (reading of record, 13 Nov): 0.708 over 205 readings on 41 days, bar 1.0; BH 4 of 5 (USO over) | | |
+| H3b | confirmatory | same | holds (13 Nov): mean gap -0.444, registered negative | | |
+| H3c | confirmatory | same | holds (13 Nov): slope +0.0455, one-sided p 0.0104 (wild cluster bootstrap); BH 3 of 5 | | |
 | H5a | confirmatory | hypotheses/2026-09-19-h5-wing-quote-quality.md | holds, weakly (23 Sep); registered after one wing day | | |
 | H5b | confirmatory | same | holds (23 Sep) | | |
 | H5c | descriptive | same | descriptive | - | - |
 | H5d | confirmatory | same | see file | | |
-| H5e | confirmatory | same | first verdict FAILS (8 Oct); final due 12 Nov | | |
+| H5e | confirmatory | same | FAILS: first verdict 8 Oct; FINAL 12 Nov, 0.91 against 0.5, closer on 26 of 35 days | | |
 | H5f-a | confirmatory | same | see file (sat exactly on its bar, 0.500) | | |
 | H5f-b | confirmatory | same | see file | | |
 | H5f-c | confirmatory | same | see file | | |
-| H7a | confirmatory | hypotheses/2026-10-08-h7-free-feed-cboe-replica.md | due 12 Nov | | |
-| H7b | confirmatory | same | due 12 Nov | | |
-| H7c | descriptive | same | descriptive, as registered | - | - |
+| H7a | confirmatory | hypotheses/2026-10-08-h7-free-feed-cboe-replica.md | FAILS (13 Nov): USO 0.316, GLD 0.034, bar 0.25 each | | |
+| H7b | confirmatory | same | holds (13 Nov): 0.172, bar 0.30 | | |
+| H7c | descriptive | same | descriptive, as registered: -0.244 over 24 days | - | - |
+| timing | descriptive (registered 6 Nov) | hypotheses/2026-11-06-index-timing.md | read once 13 Nov; describes H5e's and H7's gaps, no test | - | - |
 | H1a | validation (11 pairs, BH and BY inside) | hypotheses/2026-09-06-h1-vrp-long-sample.md | holds, 9 of 11 | | - |
 | H1b | validation | same | holds on the stated test, picture mixed | | - |
 | H1c | validation | same | holds | | - |
@@ -47,7 +48,8 @@ sharing no code with the reader that produced it:
 
 | test | how | result |
 |---|---|---|
-| H3, H5e, H7 | `tools/independent_replica.py` vs modelfree / h7_reader, same data | 661 of 661 values agree (largest gap 0.0009, one exact strike tie) |
+| H3, H5e, H7 | `tools/independent_replica.py` vs modelfree / h7_reader, same data | 661 of 661 values agree (largest gap 0.0009, one exact strike tie); over the complete windows, the workflow's companion step of 13 Nov 2026: 1302 of 1302 |
+| the page's results (13 Nov 2026) | the headline, the ledger's H3, H5, H7 and timing rows and the out-of-sample OPRA notes are generated from the hypothesis files by `tools/site_results.py`; the pressure test compares page and files on every push, and holds where the passages sit: their place in the page, the in-sample paragraph above the H7 note, the ledger function (pinned by its fingerprint), no verdict of theirs stated elsewhere, no style that hides them (159 known-answer cases) | the ledger had still read H3 "0.41 ... to 9 Oct" and H7 "Collecting"; generated since, so a recorded number and the page cannot part. Two Astra reviews (13 Nov) made sixteen findings, a test fixture copying a licensed per-day line among them and the rest ways a wrong, hidden or contradicted figure could still pass; all were fixed (HANDOFF 18, 13 Nov) |
 | H5f | exact fractions on the same OPRA files | every figure identical; H5f-a's median is exactly 1/2 (226 below, 34 on, 206 above) |
 | H5a, H5b | a second Bloomberg-export reader | **found a reader bug** (an omitted cell dropped the put; fixed 17 Oct). Corrected: H5a 0.33 over 179 (was 0.40 over 169), H5b 44 of 44 (was 36 of 36); both verdicts unchanged |
 | the same reader bug, everywhere else (11 Nov 2026) | every Bloomberg figure on the public page and in H3's and H5's after-data sections re-read with the fixed reader; `tools/site_bloomberg.py` now compares the page with the reader on every push | the page had kept 11 old figures (three table rows, the day count, the 21-month block) and one narrative sentence; corrected beside the originals. H5c's descriptive readings move inside its 25% on every matched day (22 Sep: 2.6%, not 30%); the day count's pooled figures move in the second decimal (542 contracts, +1.14, R-squared 0.870); the 21-month block is +0.96 on 109 contracts. No verdict and no conclusion changes |
@@ -62,3 +64,5 @@ sharing no code with the reader that produced it:
 confirmatory (H3 x3, H5 x7, H7 x2), 3 validation, 9 side (H2 x3, H4 x3, H6 x2, TimesFM) - plus 2 descriptive
 rows (H5c, H7c), the 11 pairs inside H1a (already corrected there), and 5 exploratory lab predictions.
 Recount at write-up. Every "see file" cell is filled from the file at that time, not from memory.
+*13 Nov 2026:* one descriptive row added (the timing measurement, registered 6 Nov, read once 13 Nov); the counts
+above are otherwise unchanged.

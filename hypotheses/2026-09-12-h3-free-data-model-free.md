@@ -3,7 +3,8 @@
 **Registered:** 2026-09-12, after the estimator was built and before any series
 exists to test it on. The single-day calibration below is reported honestly as
 calibration, not as a test of the hypothesis.
-**Status:** registered. Calibrated on one day. **The series began 14 Sep and has
+**Status:** registered. **The reading of record (to 11 Nov 2026), scored 13 Nov: H3a, H3b and H3c
+hold - see "Result".** Calibrated on one day. **The series began 14 Sep and has
 3 days as of 17 Sep** - see "The series so far". Not yet long enough to test H3a.
 Cross-checked against Bloomberg 15-16 Sep; the volatility gap is identified
 as a day-count convention and does not touch the estimator. **Bloomberg stated
@@ -962,6 +963,26 @@ The same check that corrected the day count applies here, and it lands the same 
 **What remains this project's:** the measurement - a free, indicative feed against the
 published index, per underlying, day by day - and H3c as a test of their mechanism on
 that data, not as a discovery. H3c stays registered exactly as written.
+
+## Result: the reading of record, to 11 Nov 2026 (scored 13 Nov 2026)
+
+**H3, the reading of record over the series to Wed 11 Nov 2026** - scored by the frozen scorer
+(`tools/h3_scorer.py`, specified 17 Oct; see the adjustment log) on `modelfree.py`'s registered output (not
+`--wide`), at full precision and the frozen risk-free rate (3.910%). Run by Vega on 13 Nov 2026; its output is
+identical, line for line, to the cloud workflow's companion step of 13 Nov 2026, 03:28 UTC. Numbers copied from
+that output; nothing re-cut. The running readings in the sections above (23 Sep - 6 Nov) were readings to date.
+
+- **H3a HOLDS:** pooled mean absolute gap 0.708 volatility points over 205 readings on 41 days (bar: under 1.0).
+- **H3b HOLDS:** pooled mean gap -0.444 (registered: negative; the free estimate reads low on average).
+- **H3c HOLDS:** pooled slope of the absolute gap on the index level +0.0455 per point, t 20.51, one-sided p
+  0.0104 (wild cluster bootstrap, Webb weights, all 7,776 weight vectors; registered: positive and significant).
+- **Benjamini-Hochberg at q 0.05, across the five registered underlyings (all five testable):** H3a holds on 4
+  of 5, and H3c's slope is positive and significant on 3 of 5.
+- Per underlying, 41 days each (Newey-West, fixed-b): mean absolute gap, H3a's p; slope, H3c's p.
+  GLD 0.363, 0.0000; +0.0177, 0.3287. IWM 0.461, 0.0000; +0.0113, 0.2495. QQQ 0.504, 0.0070; +0.1039, 0.0003.
+  SPY 0.443, 0.0092; +0.2040, 0.0000. USO 1.767, 0.9155; +0.1979, 0.0000. USO is the one fund over the bar.
+
+*Index closes: Cboe Global Markets. Derived aggregates only.*
 
 ## Adjustment log
 

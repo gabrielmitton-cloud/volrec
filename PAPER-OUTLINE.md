@@ -21,6 +21,16 @@ market too. Almost all of the gap to Cboe's published index comes from estimator
 strikes are integrated, which expiries are used, and how empty bids are handled. The one
 feed-specific defect is stale one-sided quotes on far contracts the market no longer quotes.
 
+*Corrected 13 Nov 2026, beside the original: the final readings did not confirm the paragraph above as written.
+H7a FAILS: run through Cboe's own rules, the free and full-market rebuilds differ by 0.316 on oil, over the 0.25
+bar (gold 0.034; and H7b holds, gold's free rebuild 0.172 from GVZ against 0.30). H3 holds (0.708 over 205
+readings, bar 1.0); H5e's final fails (0.91, bar 0.5). So the answer now leads as the poster and the site do,
+under Gabriel's pre-decided rule (21 Oct, worded 11 Nov): "Widen the strikes, and free data averages within a
+point of Cboe's index", with whether the rest of the gap is the quotes or the recipe left open. Beside the test,
+never in its place: on the strikes both feeds carry, oil's rebuilds differ by 0.132 (a companion reading written
+down on 17 Oct, before any reading), and Cboe's walk ran past the free file's +/-60% strike edge on 24 of 24 days.
+OPRA figures: Data provided by Databento. Index closes: Cboe Global Markets. Aggregates only.*
+
 ## Sections
 
 **1. Introduction (1.5 pages).** The problem: researchers without a data budget use free quotes, and
@@ -154,7 +164,13 @@ validation sample (PROTOCOL.md lists them); the snapshot's time of day changed i
 H7's windows (GitHub's delayed cron until 30 Sep, the 14:30 New York trigger since), so a
 before/after split is reported beside the pooled figure; the snapshot's distance from the close is
 measured, not assumed: on 25 stress-month days per fund (lab/ OPRA, 2016-2026) the estimator moved a
-median 0.53 volatility points between 14:30 and 15:55 (GLD 0.14) - large beside H7's 0.25-0.30 bars; VIX, VXN and RVX are built from index
+median 0.53 volatility points between 14:30 and 15:55 (GLD 0.14) - large beside H7's 0.25-0.30 bars - and, on
+this project's own days, by the registered timing measurement (read once 13 Nov 2026; descriptive, no bar,
+`hypotheses/2026-11-06-index-timing.md`): on 16 days, 21 Oct - 11 Nov, the full-market rebuild sat a mean absolute
+0.021 points from OVX and 0.010 from GVZ at the snapshot minute, the free feed's 0.369 and 0.037, and the indices
+then moved a mean absolute 0.630 and 0.207 before the close; H5e's skip-only estimate was already 1.117 from OVX at
+its minute. It describes the verdicts' gaps and changes neither (one-second index values and OPRA quotes: Data
+provided by Databento; closes: Cboe Global Markets; aggregates only); VIX, VXN and RVX are built from index
 options (SPX, NDX, RUT) while the free feed records the funds' options (SPY, QQQ, IWM), so H3's gaps
 on those three pairs include the index-versus-fund difference (GVZ and OVX are built from GLD's and
 USO's own options, so H5e and H7 are like for like); the free feed's quoted spreads are wider than
@@ -181,14 +197,15 @@ not used. FRED's reprints (VIXCLS, VXNCLS, RVXCLS, GVZCLS, OVXCLS, VXVCLS - all 
 **Appendix.**
 - A. The pre-registration record (OSF: https://osf.io/z5gfu for H5e and H7, https://osf.io/4mcgf for the
   descriptive timing measurement): every hypothesis, its bar, its verdict and its adjustment log,
-  failures included (H5e, H6a, TimesFM).
+  failures included (H5e, H6a, TimesFM; H7a since 13 Nov 2026).
 - B. Side studies: H2 (variance vs volatility; H2a holds as recorded but is NOT robust - clustered on date, 28 Oct, the variance form is t 1.34, p 0.18), H4 (hedged gains), H6 (implied volatility against a
   trailing range).
 - C. Reproducing every number: the scripts and commands (a fresh clone reproduces the registered
   readings byte-for-byte after `tools/seed_frozen_rate.py`, checked 10 Oct 2026); an INDEPENDENT second
   implementation written from the method text alone (`tools/independent_replica.py`, standard library only)
   agrees with the readers on every value - 661 of 661 on 17 Oct 2026, largest gap 0.0009 points, from one exact
-  strike tie (`tools/independent_check.py`; rerun at verdict time) - and a Data Availability statement per
+  strike tie (`tools/independent_check.py`; rerun at verdict time: 1302 of 1302 on 13 Nov 2026, over the
+  complete windows) - and a Data Availability statement per
   source (Social Science Data Editors' template README): what each licence allows, and that the
   raw licensed data is not in the package.
 - D. The literature search log: what was searched, when, and what was found (9 Oct 2026 reports).
