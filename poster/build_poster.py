@@ -49,6 +49,12 @@ HEADLINE = ("The free quotes are close.", "Most of the error is in the recipe.")
 HEADLINE_IF_H7_FAILS = ("Widen the strikes,", "and free data averages within a point of Cboe's index.")
 HEADLINE_IF_H7_AND_H3_FAIL = ("Free data misses Cboe's index", "by a point or more, on average.")
 HEADLINES = (HEADLINE, HEADLINE_IF_H7_FAILS, HEADLINE_IF_H7_AND_H3_FAIL)     # --headline N previews each
+# The poster's own words for a decided headline. Marc Vinyard's review, 14 Nov 2026: SCCUR's audience is mostly not in
+# finance, and "Widen the strikes" is jargon to them. The same claim, still an average, claiming no quotes-versus-recipe
+# split. The decided wording itself is unchanged, because tools/site_results.py prints it on the site. Decided 14 Nov
+# 2026 (Vega, under Gabriel's go-ahead; his to veto).
+POSTER_WORDS = {HEADLINE_IF_H7_FAILS: ("Use a wider range of strike prices,",
+                                       "and free data averages within 1 point of Cboe's index.")}
 
 # Gabriel: set True once you approve the AI-use sentence below; until then it prints marked DRAFT.
 AI_LINE_APPROVED = True   # approved by Gabriel 21 Oct 2026; reworded 11 Nov under his delegation ("do whats best")
@@ -77,9 +83,12 @@ BANDS = [("±10%", 20, 3.97, -12.37, "USO"), ("±20%", 30, 1.31, -4.39, None), (
 # The same day at +/-30% (H3 file: "SPY 15.83 against 15.84 (**-0.01**)"), printed as the gap alone: Cboe approved
 # aggregates such as differences, so neither level is printed (decided 11 Nov 2026 under Gabriel's delegation).
 SPY_GAP_AT_30 = "0.01"   # points under the VIX
-# README.md, under the calibration table (wording kept): why a fixed band misses oil.
-TRUNCATION_WHY = ("A fixed ±10% band spans about 2.2 standard deviations on a 16-vol name but only 0.6 on "
-                  "59-vol crude oil, which is why USO read twelve points light.")
+# README.md, under the calibration table: why a fixed band misses oil. The README's numbers, in plain words for the
+# poster (Marc Vinyard's review, 14 Nov 2026: "a 16-vol name" is jargon); test_build_poster.py binds them to the README.
+# "To each side", not the README's "spans": charts.band_sd measures from the price to one edge; and each volatility
+# with its unit, a percentage a year, as the VIX is (14 Nov 2026 review).
+TRUNCATION_WHY = ("A ±10% band reaches about 2.2 standard deviations of a 30-day move to each side at volatility 16%, "
+                  "but only 0.6 for crude oil at volatility 59%: that is why USO's estimate read twelve points low.")
 
 # The right column, one track per feed: (all far strikes, only those both feeds bid). H5 file, Result (corrected
 # 17 Oct): H5a's pooled median, 0.33 of Bloomberg's spread over 179 wing contracts, and 0.67 on the 134 both feeds
@@ -87,9 +96,12 @@ TRUNCATION_WHY = ("A fixed ±10% band spans about 2.2 standard deviations on a 1
 # read plainly, the two-sided wing quotes are "within a tick or two, not within half a spread"). "H5f, read 25
 # September 2026": H5f-a 0.500 of OPRA's spread over 466 (ON the bar; TEST-INVENTORY.md: exactly 1/2), and,
 # descriptive, "where both feeds bid, n=402, median 0.667". The bar, 0.5 of a spread, is H5a's and H5f-a's ("fails
-# if the pooled wing mid gap exceeds half a spread"). Scope (H5 file): USO and TSLA, Sep 2026.
-QUOTE_FEEDS = [("Bloomberg (179 far strikes; 134 bid on both feeds)", (0.33, "0.33"), (0.67, "0.67")),
-               ("Full market, OPRA (466 far strikes; 402 bid on both feeds)", (0.500, "0.500"), (0.667, "0.667"))]
+# if the pooled wing mid gap exceeds half a spread"). Scope (H5 file): USO and TSLA, Sep 2026. Worded for a general
+# audience 14 Nov 2026 (Marc Vinyard's review): a wing contract is a "far option", and a bid is a buy offer. Not
+# "a buyer": a feed showing no buy offer does not show that no buyer exists (14 Nov 2026 review).
+QUOTE_FEEDS = [("Bloomberg (179 far options; 134 with a buy offer on both)", (0.33, "0.33"), (0.67, "0.67")),
+               ("Full market, OPRA (466 far options; 402 with a buy offer on both)", (0.500, "0.500"),
+                (0.667, "0.667"))]
 QUOTE_BAR = 0.5
 # H5f-b 64 of 64 ("H5f, read 25 September 2026"); H5b 44 of 44 (Result, corrected 17 Oct).
 EMPTY_BIDS = ("64 of 64", "44 of 44")
@@ -247,6 +259,12 @@ def headline(h3, h7):
     return HEADLINE_IF_H7_FAILS if h3["verdict"] == "HOLDS" else HEADLINE_IF_H7_AND_H3_FAIL
 
 
+def poster_headline(head):
+    """A decided headline as the poster prints it: in its plain words where it has them (POSTER_WORDS), else as
+    decided."""
+    return POSTER_WORDS.get(head, head)
+
+
 # ---------------- the chips: every registered test, a side note to point at ----------------
 def esc(s):
     return html.escape(str(s), quote=False)
@@ -254,6 +272,8 @@ def esc(s):
 
 KIND = {"HOLDS": "ok", "FAILS": "bad"}
 ICON = {"ok": "✓", "bad": "✗", "due": "…", "na": "–"}     # a verdict is an icon and a word, never colour alone
+# The strip's key, one word per symbol (Marc Vinyard's review, 14 Nov 2026: the symbols were never named).
+KEY_WORDS = {"ok": "met its bar", "bad": "missed it", "due": "reading due", "na": "not yet tested"}
 
 
 def chip(hid, claim, kind, verdict, number):
@@ -282,7 +302,7 @@ def h3_tile(h3, record):
 def h5e_chip(h5e):
     """H5e: the recorded first verdict (8 Oct: FAILS, 0.90) until the FINAL block exists; then the final, with the
     first beside it, so a final HOLDS never hides the recorded failure (8 Nov review)."""
-    claim = "Dropping empty bids fixes oil"
+    claim = "Skipping quotes with no buy offer fixes oil"
     if h5e is None:
         # H5 file, Result: first verdict FAILS, 0.90, closer on 2 of 10 days.
         return chip("H5e", claim, "bad", "fails (first, 8 Oct)", f"0.90 (bar < 0.5); final {DUE}")
@@ -307,9 +327,10 @@ def scorecard(h3, h5e, h7, record):
         # H3 file, "The hypothesis": H3a bar under 1.0 vol points; H3b negative; H3c positive slope. Live: h3_scorer.py.
         h3_chip(h3, record),
         # H5 file, Result (corrected 17 Oct): 0.33 over 179 (bar 0.5); 0.67 on the 134 both feeds bid; "holds weakly".
-        chip("H5a", "Far quotes near Bloomberg's", "ok", "holds, weakly", "0.33 of a spread (bar 0.5)"),
+        # 14 Nov 2026 (Marc Vinyard's review): the claims in section 4's plain words, a bid being a buy offer.
+        chip("H5a", "Far-option prices near Bloomberg's", "ok", "holds, weakly", "0.33 of a spread (bar 0.5)"),
         # H5 file, Result (corrected 17 Oct): 44 of 44 (bar 80%).
-        chip("H5b", "Empty bids are empty there too", "ok", "holds", "44 of 44 (bar 80%)"),
+        chip("H5b", "No buy offer on Bloomberg either", "ok", "holds", "44 of 44 (bar 80%)"),
         # H5 file, "H5f, read 25 September 2026": a 0.500 (bar 0.5, ON the bar), b 64 of 64 (bar 80%),
         # c 0.6% median per-day gap (bar 25%).
         chip("H5f", "The same, on the full market", "ok", "holds", "0.500 (on the bar); 64 of 64"),
@@ -317,7 +338,7 @@ def scorecard(h3, h5e, h7, record):
         # HANDOFF 18: H5d "12 underlying-days on 3 dates; the date-clustered test needs more dates". H5c: Bloomberg's
         # prices reproduce the inflation (the estimate's overshoot, as registered minus Cboe's rule); H5d: it grows
         # with the share of zero-bid wing contracts. "Overshoot", not "inflation", which reads as prices (8 Nov).
-        chip("H5c–d", "Same overshoot on Bloomberg; more with empty bids", "na", "not yet tested", "too few dates"),
+        chip("H5c–d", "Same overshoot on Bloomberg; more with no buy offers", "na", "not yet tested", "too few dates"),
         # H5 file, H5e: mean absolute gap under 0.5 AND closer than the registered estimate on a majority of days.
         h5e_chip(h5e),
         # H7 file: H7a free vs OPRA replica, 0.25 or less for USO and GLD; H7b GLD vs GVZ, 0.30 or less;
@@ -354,6 +375,12 @@ def together(s):
     return re.sub(r" ([<>=≤≥]) ", " \\1 ", s)
 
 
+def strip_key(chips):
+    """The strip's key: each symbol the chips show, with its word, in ICON's order, never one the strip lacks."""
+    kinds = {c["kind"] for c in chips}
+    return " ".join(f'<span class="{k}">{ICON[k]} {KEY_WORDS[k]}</span>' for k in ICON if k in kinds)
+
+
 def chip_html(c):
     return (f'<div class="chip {c["kind"]}"><div class="ch"><b>{esc(c["id"])}</b>'
             f'<span class="vd">{ICON[c["kind"]]} {esc(together(c["verdict"]))}</span></div>'
@@ -362,6 +389,14 @@ def chip_html(c):
 
 
 # ---------------- the page ----------------
+# The method flow's arrows (Marc Vinyard's review, 14 Nov 2026: connect the steps visually), drawn as vector shapes in
+# the poster's orange; decorative, so hidden from screen readers (the steps say what they connect).
+ARROW = ('<svg class="arw" viewBox="0 0 66 40" aria-hidden="true"><path d="M4 20 H44" stroke="#e35205" '
+         'stroke-width="8" stroke-linecap="round"/><path d="M40 4 L64 20 L40 36 Z" fill="#e35205"/></svg>')
+DOWN = ('<svg class="arw down" viewBox="0 0 40 66" aria-hidden="true"><path d="M20 4 V44" stroke="#e35205" '
+        'stroke-width="8" stroke-linecap="round"/><path d="M4 40 L20 64 L36 40 Z" fill="#e35205"/></svg>')
+
+
 def short_date(d):
     return f"{int(d[8:])} {charts.MONTHS[int(d[5:7]) - 1]}"
 
@@ -411,13 +446,12 @@ def build(today=None, force_headline=None, out_dir=OUT):
     h7 = h7_reading(H7_FILE.read_text())
     record = of_record(series, today)
     conf, side = scorecard(h3, h5e, h7, record)
-    head = headline(h3, h7) if force_headline is None else HEADLINES[force_headline]
+    head = poster_headline(headline(h3, h7) if force_headline is None else HEADLINES[force_headline])
     long = " long" if len(" ".join(head)) > 64 else ""
     ai = (f'<p class="ai">{esc(AI_LINE)}</p>' if AI_LINE_APPROVED else
           f'<p class="ai draft"><span class="tag">DRAFT, for Gabriel to approve</span> {esc(AI_LINE)}</p>')
     panels = main_chart(series, h3)
-    finals = ("The final readings of H5e and H7 are in the strip below." if h5e and h7 else
-              "12–19 Nov: the final readings of H5e and H7, as registered.")
+    finals = ("" if h5e and h7 else "<li>12–19 Nov: the final readings of H5e and H7, as registered.</li>")
 
     def chips(cs):
         return "".join(chip_html(c) for c in cs)
@@ -441,78 +475,91 @@ def build(today=None, force_headline=None, out_dir=OUT):
 <main class="body">
   <section class="col left">
     <div><h2><span class="n">1</span>The question</h2>
-      <p>Students and small researchers price options with <b>free quotes</b>, because the full market feed costs
-      thousands of dollars a year. What precision does free data give up, and <b>where</b> is the loss: in the
-      quotes, or in the recipe that turns them into a volatility number?</p>
+      <p>An <b>option</b> is the right to buy or sell a stock or fund at a set price, the <b>strike price</b>, by
+      a set date. Option prices show how big a swing traders are pricing in: the <b>implied volatility</b>.
+      Cboe, which publishes the VIX (Wall Street's “fear gauge”), turns option prices into official volatility
+      indices.</p>
+      <p>Students and small researchers use <b>free quotes</b>; the full market feed costs thousands of dollars a
+      year. How much precision does free data lose, and <b>where</b>: in the quotes, or in the recipe that turns
+      them into a volatility number?</p>
       <p class="why"><b>Why it matters:</b> if the error lies in the method rather than the data, anyone without a
       data budget can remove most of it for free.</p></div>
     <div><h2><span class="n">2</span>What I did</h2>
       <div class="flow">
-        <div class="box"><b>Free quotes</b> from a retail brokerage (Alpaca), recorded daily since September
+        <div class="step"><b>Record</b> free option quotes from a retail brokerage (Alpaca), daily since September
         2026: 109 tickers</div>
-        <div class="arrow">↓ the VIX formula, with strikes and expiries I chose</div>
-        <div class="box"><b>A volatility number</b> per fund per day: the swing the market expects over the next
+        {ARROW}
+        <div class="check"><span>Check the quotes against the full market (OPRA) and Bloomberg</span>
+        <span class="see">4</span></div>
+        <div class="via">{DOWN}<p>Cboe's VIX formula, with my choice of strikes and expiry dates: <b>the
+        recipe</b> <span class="see">5</span></p></div>
+        <div class="step"><b>Compute</b> a volatility number per fund per day: the swing priced in for the next
         30 days</div>
-        <div class="arrow">↓ checked against</div>
-        <div class="refs"><div>Cboe's published indices</div><div>The full market feed (OPRA)</div>
-        <div>Bloomberg</div></div>
+        {ARROW}
+        <div class="check"><span>Check the number against Cboe's official index</span> <span class="see">3</span></div>
       </div></div>
     <div><h2>How it stays honest</h2>
       <ul>
         <li>Every pass/fail bar was <b>written before its test ran</b>, dated in a public repository; H5e and H7
-            were also frozen on <b>OSF</b>.</li>
+            were also frozen on <b>OSF</b>, the Open Science Framework.</li>
         <li>A <b>second program sharing no code</b> recomputed every recorded result on 17 Oct, catching one
             spreadsheet-reading bug (fixed; no verdict changed).</li>
         <li>Failures are reported beside successes: see the strip below.</li>
       </ul></div>
     <div><h2>What's next</h2>
       <ul>
-        <li>{finals}</li>
+        {finals}
         <li>Dec–Jan: a confirmatory test on eight funds and stocks, registered first.</li>
         <li>2027: the paper, failures included.</li>
       </ul></div>
     <div class="limits"><h2>Limits</h2>
       <p>One free feed; about two months of data; one snapshot a day, since October about 80 minutes before the
-      close (in stress months the estimate drifts a median 0.53 points between 14:30 and 15:55); American options
-      priced with European formulas; far contracts nobody quotes can carry hours-old free quotes.</p></div>
+      close (in market-stress months the estimate moves a median 0.53 points between 2:30 and 3:55 pm); the formulas
+      treat options as exercised only at expiry, though these can be exercised any day; options nobody is
+      quoting can show hours-old free prices.</p></div>
   </section>
   <section class="col center">
-    <h2><span class="n">3</span>Free data tracks Cboe's index</h2>
-    <div class="legend"><span><i class="sw up"></i>Cboe's published index (zero gap)</span>
+    <h2><span class="n">3</span>Free data tracks Cboe's official indices</h2>
+    <p class="lead">Each panel compares my estimate from one fund's free quotes with Cboe's official index for that
+    market.</p>
+    <div class="legend"><span><i class="sw up"></i>Cboe's official index (zero gap)</span>
       <span><i class="sw bar"></i>Days at each gap</span><span><i class="sw band"></i>Within 1 point</span></div>
     <div class="grid">{panels}{tile_html(h3_tile(h3, record))}</div>
-    <p class="cap">Bars count the days at each gap: the free-data estimate minus Cboe's published index, in
-    volatility points (a VIX of 20 means swings of about 20% a year); left of zero, free data reads low. One scale
-    for all five;
-    {span_label(series, record)}. The estimate uses a ±30% strike band (see 5).</p>
+    <p class="cap">Gap = the free estimate minus Cboe's index, in volatility points (a VIX of 20 means S&amp;P 500
+    options price in swings of about 20% a year, one standard deviation, over the next 30 days); left of zero, free data reads low. Same
+    axes in all five panels; {span_label(series, record)}. The estimate uses strikes within ±30% of the price (see 5).</p>
   </section>
   <section class="col right">
     <div><h2><span class="n">4</span>The quotes: close to the professional feeds</h2>
-      <div class="kpi"><b>{EMPTY_BIDS[0]}</b><span>far-out options with no bid (no buyer) on the free feed had
-      no bid on the full market either (Bloomberg: {EMPTY_BIDS[1]})</span></div>
-      <p class="cap">How far the free price sits from the professional one, in bid-ask spreads (the gap between
-      the buy and sell quotes; medians), far strikes on USO and TSLA, Sep 2026:</p>
+      <div class="kpi"><b>{EMPTY_BIDS[0]}</b><span>far options (strike prices far from today's price) with no buy offer
+      on the free feed had none on the full market (Bloomberg: {EMPTY_BIDS[1]})</span></div>
+      <p class="cap">How far the free price sits from the professional one, in spreads (the gap between the highest
+      price a buyer offers and the lowest a seller asks); medians, USO and TSLA, Sep 2026:</p>
       {charts.quote_scale(QUOTE_FEEDS, QUOTE_BAR)}
-      <p class="cap">Filled: all far strikes; hollow: only those both feeds bid. Both passes rest on strikes one
-      feed left unbid; where both bid, the gap is over the bar, though only a tick or two. Source: Bloomberg
-      Finance L.P. Data provided by Databento (OPRA).</p></div>
-    <div><h2><span class="n">5</span>The recipe: widen the strikes, and the gap shrinks</h2>
-      <p class="lead">A fixed ±10% band of strikes sees almost all of a calm fund's likely moves, but under half
-      of oil's:</p>
+      <p class="cap">Both passes depend on the options with no buy offer on one feed or both: with a buy offer on
+      both feeds, the gap is over the bar, mostly on TSLA, where one cent can be a whole spread. Only options both
+      feeds quoted were compared, so the free feed's hours-old prices on far options nobody else quoted are not
+      tested here. Source: Bloomberg Finance L.P. Data provided by Databento (OPRA).</p></div>
+    <div><h2><span class="n">5</span>The recipe: a wider strike range shrinks the gap</h2>
+      <p class="lead">Strikes within ±10% of the price cover almost all of a calm market's likely moves, but under
+      half of oil's:</p>
       {charts.coverage_curves(CALM, WILD)}
       <p class="cap">30-day price moves under a simple model. {esc(TRUNCATION_WHY)}</p>
-      <p class="lead">Widen the band: the average gap falls from {BANDS[0][2]:.2f} to {BANDS[-1][2]:.2f} points</p>
+      <p class="lead">Widen the range: the average gap falls from {BANDS[0][2]:.2f} to {BANDS[-1][2]:.2f} points</p>
       {charts.band_bars(BANDS)}
-      <p class="cap">Mean absolute gap to Cboe's index, five fund–index pairs, one calibration day (11 Sep 2026);
-      worst: the pair furthest off (minus: reads low). At ±30%, SPY's estimate read {SPY_GAP_AT_30} points under
-      the VIX. This shows a coverage effect; it does not by itself rule out the feed's own error, the snapshot's
-      timing or the index-versus-fund difference.</p></div>
+      <p class="cap">Average size of the gap to Cboe's index, five fund–index pairs, one test day (11 Sep 2026); worst: the pair
+      furthest off (minus: reads low). At ±30%, SPY's estimate read {SPY_GAP_AT_30} points under the VIX. The range
+      matters; this alone does not rule out the feed's error, the snapshot's timing or fund-versus-index
+      differences.</p></div>
   </section>
 </main>
 <footer class="bottom">
-  <div class="tests"><h3>Every registered hypothesis, H1–H7, scored against a bar set before its test ran</h3>
+  <div class="tests"><h3><span>Every registered hypothesis, H1–H7, scored against a bar set before its test ran</span>
+    <span class="ik">{strip_key(conf + side)}</span></h3>
     <div class="row"><div class="rl">The free-data question</div>{chips(conf)}</div>
-    <div class="row"><div class="rl">Side studies (H1 checks the method)</div>{chips(side)}</div></div>
+    <div class="row"><div class="rl">Side studies: other questions about volatility</div>{chips(side)}
+      <div class="key"><p><b>Risk premium:</b> implied minus later realized volatility, usually positive.</p><p><b>Hedged gain:</b> an option's profit with its stock-price risk offset.</p>
+      <p>H1 tests the method on a known result.</p></div></div></div>
   <div class="qr"><div id="qr"></div>Data, code and every registration: scan me</div>
   <div class="credits">
     <p><b>Acknowledgments.</b> I thank Marc Vinyard for mentoring this project and for library data access.</p>
@@ -540,34 +587,43 @@ CSS = """
                font-size:40px; line-height:1.35; -webkit-print-color-adjust:exact; print-color-adjust:exact;
                overflow:hidden; }
   .poster { display:grid; grid-template-rows:auto auto minmax(0, 1fr) auto; width:48in; height:36in; overflow:hidden; }
-  .banner { background:var(--navy); color:#fff; padding:0.42in 0.8in 0.4in; display:flex;
+  .banner { background:var(--navy); color:#fff; padding:0.34in 0.8in 0.32in; display:flex;
             justify-content:space-between; align-items:flex-end; gap:1in; }
   h1 { font:800 120px/1.0 'Inter Tight'; letter-spacing:-0.01em; }
   .subtitle { font:600 56px/1.15 'Inter Tight'; color:#c9d5e8; margin-top:0.14in; }
   .who { text-align:right; font-size:37px; line-height:1.32; color:#dbe4f3; flex:none; }
   .who .name { font:700 56px/1.15 'Inter Tight'; color:#fff; margin-bottom:0.04in; }
-  .headline { padding:0.3in 0.8in 0.28in; border-bottom:4px solid var(--rule); }
+  .headline { padding:0.24in 0.8in 0.22in; border-bottom:4px solid var(--rule); }
   .kicker { font:700 36px/1.2 'Inter Tight'; letter-spacing:0.12em; text-transform:uppercase; color:var(--orange); }
   .big { font:800 112px/1.05 'Inter Tight'; color:var(--navy); letter-spacing:-0.015em; margin-top:0.05in; }
   .big.long { font-size:96px; }
   .big em { font-style:normal; color:var(--orange); }
-  .body { display:grid; grid-template-columns:10.4in minmax(0, 1fr) 14.4in; gap:0.6in;
-          padding:0.36in 0.8in 0.3in; min-height:0; }
+  .body { display:grid; grid-template-columns:11.2in minmax(0, 1fr) 13.6in; gap:0.6in;
+          padding:0.3in 0.8in 0.24in; min-height:0; }
   .col { display:flex; flex-direction:column; gap:0.26in; min-height:0; overflow:hidden; }
   h2 { font:700 48px/1.12 'Inter Tight'; color:var(--navy); padding-bottom:0.08in; border-bottom:6px solid var(--orange);
        margin-bottom:0.14in; display:flex; align-items:center; gap:0.18in; }
   h2 .n { flex:none; width:0.64in; height:0.64in; border-radius:50%; background:var(--navy); color:#fff;
           display:inline-flex; align-items:center; justify-content:center; font-size:40px; }
-  .left { font-size:36px; }
+  .left { font-size:34px; }
   .left p, .left li { line-height:1.32; text-wrap:pretty; }
+  .left p + p { margin-top:0.1in; }
   .nw { white-space:nowrap; }
   ul { padding-left:0.4in; } li + li { margin-top:0.06in; }
-  .flow { display:flex; flex-direction:column; gap:0.06in; }
-  .flow .box { background:var(--tint); border-left:10px solid var(--navy); padding:0.1in 0.18in; font-size:35px; line-height:1.28; }
-  .flow .arrow { font:700 35px/1.2 'Inter Tight'; color:var(--orange); padding-left:0.24in; }
-  .flow .refs { display:grid; grid-template-columns:repeat(3, 1fr); gap:0.1in; }
-  .flow .refs div { background:var(--navy); color:#fff; padding:0.1in 0.12in; font:700 33px/1.18 'Inter Tight';
-                    text-align:center; border-radius:8px; display:flex; align-items:center; justify-content:center; }
+  .flow { display:grid; grid-template-columns:minmax(0, 1.55fr) 0.66in minmax(0, 1fr); align-items:center;
+          row-gap:0.04in; }
+  .flow .step { align-self:stretch; background:var(--tint); border-left:10px solid var(--navy); padding:0.08in 0.16in;
+                font-size:34px; line-height:1.26; }
+  .flow .step b { color:var(--navy); }
+  .flow .arw { display:block; width:0.62in; height:auto; justify-self:center; }
+  .flow .arw.down { width:0.38in; flex:none; }
+  .flow .check { align-self:stretch; display:flex; align-items:center; gap:0.12in; border:4px solid var(--navy);
+                 border-radius:10px; padding:0.08in 0.14in; font:700 33px/1.2 'Inter Tight'; color:var(--navy); }
+  .flow .via { grid-column:1 / -1; display:flex; align-items:center; gap:0.18in; padding-left:0.3in; }
+  .flow .via p { font:700 33px/1.22 'Inter Tight'; color:var(--ink); }
+  .flow .via p b { color:var(--orange); }
+  .see { display:inline-flex; flex:none; align-items:center; justify-content:center; width:0.46in; height:0.46in;
+         border-radius:50%; background:var(--navy); color:#fff; font:700 32px/1 'Inter Tight'; vertical-align:middle; }
   .limits p { font-size:33px; color:var(--mute); line-height:1.3; }
   .legend { display:flex; gap:0.6in; font-size:35px; color:var(--mute); margin:-0.04in 0 0.04in; }
   .sw { display:inline-block; width:0.6in; height:0; border-top:6px solid var(--cboe); vertical-align:middle; margin-right:0.14in; }
@@ -589,6 +645,7 @@ CSS = """
   .tile .tl .ok b { color:var(--ok); } .tile .tl .bad b { color:var(--bad); }
   .cap { font-size:33px; color:var(--mute); line-height:1.28; }
   .lead { font:700 38px/1.24 'Inter Tight'; color:var(--ink); }
+  .center .lead { font:600 35px/1.25 Inter; margin-top:-0.08in; }
   .right > div { display:flex; flex-direction:column; gap:0.1in; }
   .right svg.chart { width:100%; height:auto; display:block; }
   .kpi { display:flex; align-items:center; gap:0.3in; }
@@ -597,8 +654,15 @@ CSS = """
   .why { margin-top:0.12in; padding-left:0.2in; border-left:8px solid var(--orange); }
   .why b { color:var(--navy); }
   .bottom { display:grid; grid-template-columns:minmax(0, 1fr) 3.2in 11.2in; gap:0.45in; align-items:start;
-            padding:0.26in 0.8in 0.36in; background:var(--tint); border-top:4px solid var(--rule); }
-  .tests h3 { font:700 38px/1.2 'Inter Tight'; color:var(--navy); margin-bottom:0.12in; }
+            padding:0.22in 0.8in 0.3in; background:var(--tint); border-top:4px solid var(--rule); }
+  .tests h3 { font:700 38px/1.2 'Inter Tight'; color:var(--navy); margin-bottom:0.12in; display:flex;
+              justify-content:space-between; align-items:baseline; gap:0.4in; }
+  .tests h3 .ik { font-size:34px; white-space:nowrap; }
+  .ik .ok { color:var(--ok); } .ik .bad { color:var(--bad); } .ik .due { color:var(--due); } .ik .na { color:var(--na); }
+  .ik span + span { margin-left:0.3in; }
+  .tests .key { grid-column:span 2; font-size:32px; line-height:1.17; color:var(--mute); padding:0.02in 0.04in; }
+  .tests .key p + p { margin-top:0.05in; }
+  .tests .key b { color:var(--ink); }
   .tests .row { display:grid; grid-template-columns:2.2in repeat(8, minmax(0, 1fr)); gap:0.1in; }
   .tests .row + .row { margin-top:0.1in; }
   .tests .rl { font:700 32px/1.2 'Inter Tight'; color:var(--mute); align-self:center; }

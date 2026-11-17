@@ -68,8 +68,8 @@ DAYS38 = [d for d in weekdays("2026-09-14", "2026-11-06") if d not in ("2026-09-
 GAPS38 = [(d, round(-1.6 + 1.8 * ((i * 7) % 11 - 5) / 5, 2)) for i, d in enumerate(DAYS38)]
 SCALE = (-6, 4, 2)
 BANDS = [("±10%", 20, 3.97, -12.37, "USO"), ("±20%", 30, 1.31, -4.39, None), ("±30%", 40, 0.59, -1.84, "USO")]
-FEEDS = [("Bloomberg (179 far strikes; 134 bid on both feeds)", (0.33, "0.33"), (0.67, "0.67")),
-         ("Full market, OPRA (466 far strikes; 402 bid on both feeds)", (0.5, "0.500"), (0.667, "0.667"))]
+FEEDS = [("Bloomberg (179 far options; 134 with a buy offer on both)", (0.33, "0.33"), (0.67, "0.67")),
+         ("Full market, OPRA (466 far options; 402 with a buy offer on both)", (0.5, "0.500"), (0.667, "0.667"))]
 
 
 class Steps(unittest.TestCase):
@@ -134,9 +134,24 @@ class Histogram(unittest.TestCase):
         s = charts.gap_histogram("USO", "OVX", "crude oil", G38, 1.7388, SCALE, (20, 5))
         check_svg(self, s)
         self.assertEqual(len(bars(s)), len(charts.bin_counts(G38)))
-        self.assertIn("USO vs OVX", s)
-        self.assertIn("crude oil · off by 1.74 on average", s)
+        # Marc Vinyard, 14 Nov 2026: "USO vs OVX" did not say which ticker is which. The market first, then the
+        # fund whose free quotes make the estimate and Cboe's official index for that market.
+        self.assertIn(">Crude oil</text>", s)
+        self.assertIn("free estimate (USO) vs official index (OVX)", s)
+        self.assertIn("off by 1.74 on average", s)
         self.assertIn(f"{charts.within_one(G38)} of 38 days within 1 point", s)
+        self.assertNotIn("USO vs OVX", s)
+        # A screen reader hears the subtraction's order too (14 Nov 2026 review: the new name had dropped it).
+        name = html.unescape(re.search(r'aria-label="([^"]*)"', s)[1])
+        self.assertEqual(name, "Crude oil: days by gap, the free estimate (USO) minus Cboe's official index (OVX), in "
+                               "half-point bins; off by 1.74 points on average")
+
+    def test_the_market_is_named_as_written(self):
+        # Only the first letter is raised: "S&P 500" must not become "S&p 500" (str.capitalize would).
+        s = charts.gap_histogram("SPY", "VIX", "S&P 500", G38, 0.4458, SCALE, (20, 5))
+        self.assertIn(">S&amp;P 500</text>", s)
+        self.assertIn("free estimate (SPY) vs official index (VIX)", s)
+        self.assertIn(">Gold</text>", charts.gap_histogram("GLD", "GVZ", "gold", [0.1, -0.2], 0.15, SCALE, (10, 5)))
 
     def test_no_day_can_be_read_back(self):
         s = charts.gap_histogram("SPY", "VIX", "S&P 500", G38, 0.4458, SCALE, (20, 5))
@@ -263,9 +278,11 @@ class Coverage(unittest.TestCase):
     def test_chart(self):
         s = charts.coverage_curves(("S&P 500", 0.16), ("Crude oil", 0.59))
         check_svg(self, s)
-        for t in ("S&amp;P 500 (volatility 16)", "Crude oil (volatility 59)", "band sees 97% of moves",
+        # 14 Nov 2026 review: a bare "volatility 16" gave no unit; it is a percentage a year, as the VIX is.
+        for t in ("S&amp;P 500 (volatility 16%)", "Crude oil (volatility 59%)", "band sees 97% of moves",
                   "band sees 45% of moves", "±10% strike band", "−40%", "+40%"):
             self.assertIn(t, s)
+        self.assertNotRegex(s, r"volatility \d+\)")
         self.assertEqual(s.count('fill-opacity="0.3"'), 2)               # oil's two tails beyond the band
         self.assertNotIn("stroke-dasharray", s)                           # both curves solid, labelled on the plot
         edges = [m for m in LINE.finditer(s) if m[1] == m[2]]
@@ -324,6 +341,76 @@ class QuoteScale(unittest.TestCase):
         self.assertGreater(min(m.start() for m in ticks), s.rindex("<circle"))   # the bar drawn over the dots
         for t in ("½ spread = the bar, set first", "at or under it passes", "0 (same price)", "1 spread"):
             self.assertIn(t, s)
+
+    def dots_bound(self, s):
+        # Each data dot is bound to its value, row by row, whatever the drawing order (14 Nov 2026 review: a set of
+        # fills alone would pass with the meanings swapped). FEEDS: filled = all far options, hollow = those with a
+        # buy offer on both feeds. One spread is 1220 px from x = 20.
+        rows = {}
+        for cx, cy, fill in re.findall(r'<circle cx="([\d.]+)" cy="([\d.]+)" r="[\d.]+" fill="([^"]+)"', s):
+            rows.setdefault(float(cy), {})[fill] = float(cx)
+        want = [{charts.ORANGE: 0.33, "#fff": 0.67}, {charts.ORANGE: 0.5, "#fff": 0.667}]
+        self.assertEqual(len(rows), len(want))
+        for (_, got), exp in zip(sorted(rows.items()), want, strict=True):
+            self.assertEqual(set(got), set(exp))
+            for fill, v in exp.items():
+                self.assertAlmostEqual(got[fill], 20 + v * 1220, delta=0.05)
+
+    def test_swapped_dot_meanings_are_caught(self):
+        # A known answer for the binding: the data dots' fills swapped, the key left as it is.
+        s = charts.quote_scale(FEEDS, 0.5)
+        swapped = re.sub(r'(<circle cx="[\d.]+" cy="[\d.]+" r="[\d.]+" fill=")([^"]+)"',
+                         lambda m: m[1] + ("#fff" if m[2] == charts.ORANGE else charts.ORANGE) + '"', s)
+        self.assertNotEqual(swapped, s)
+        self.assertEqual(swapped.count('class="key"'), s.count('class="key"'))
+        with self.assertRaises(AssertionError):
+            self.dots_bound(swapped)
+
+    def key_bound(self, s):
+        # Each key label is bound to the key dot just left of it, on its line (follow-up review, 14 Nov 2026: both
+        # labels present anywhere would pass with the two swapped). A label starts 33 px right of its dot's centre.
+        dots = [(float(cx), float(cy), fill) for cx, cy, fill in
+                re.findall(r'<circle class="key" cx="([\d.]+)" cy="([\d.]+)" r="[\d.]+" fill="([^"]+)"', s)]
+        labels = [(float(x), float(y), html.unescape(t)) for x, y, t in
+                  re.findall(r'<text x="([\d.]+)" y="([\d.]+)"[^>]*>([^<]*)</text>', s)]
+        self.assertEqual(len(dots), 2)
+        got = {}
+        for cx, cy, fill in dots:
+            beside = [t for x, y, t in labels if 0 < x - cx <= 60 and abs(y - cy) <= 20]
+            self.assertEqual(len(beside), 1, "each key dot has one label beside it")
+            got[fill] = beside[0]
+        self.assertEqual(got, {charts.ORANGE: charts.KEY_ALL, "#fff": charts.KEY_BOTH})
+
+    def test_swapped_key_labels_are_caught(self):
+        # A known answer for the binding: the key's two labels swapped; the dots and the spoken name left as they are.
+        s = charts.quote_scale(FEEDS, 0.5)
+        a, b = f">{charts.KEY_ALL}</text>", f">{charts.KEY_BOTH}</text>"
+        swapped = s.replace(a, "\0").replace(b, a).replace("\0", b)
+        self.assertNotEqual(swapped, s)
+        self.dots_bound(swapped)
+        with self.assertRaises(AssertionError):
+            self.key_bound(swapped)
+
+    def test_a_key_names_both_dots(self):
+        # Marc Vinyard, 14 Nov 2026: the filled and hollow dots were explained only in a caption below the chart.
+        # The chart now carries its own key, above the tracks, each key dot drawn like the dots it names.
+        s = charts.quote_scale(FEEDS, 0.5)
+        check_svg(self, s)
+        keys = re.findall(r'<circle class="key" cx="[\d.]+" cy="([\d.]+)" r="[\d.]+" fill="([^"]+)" '
+                          r'stroke="([^"]+)"', s)
+        self.assertEqual([(fill, stroke) for _, fill, stroke in keys], [(charts.ORANGE, charts.ORANGE),
+                                                                         ("#fff", charts.ORANGE)])
+        data = re.findall(r'<circle cx="([\d.]+)" cy="([\d.]+)" r="[\d.]+" fill="([^"]+)"', s)
+        self.assertEqual({fill for _, _, fill in data}, {charts.ORANGE, "#fff"})   # the same two looks as the data
+        self.assertLess(max(float(y) for y, _, _ in keys), min(float(y) for _, y, _ in data))
+        self.dots_bound(s)
+        self.key_bound(s)
+        # Plain words (Marc, 14 Nov): "no bid" became a buy offer, not "a buyer": a feed showing no buy offer does
+        # not show that no buyer exists (14 Nov 2026 review).
+        self.assertEqual((charts.KEY_ALL, charts.KEY_BOTH), ("all far options", "only those with a buy offer on both feeds"))
+        # The key's meanings reach a screen reader too, not only the eye.
+        name = html.unescape(re.search(r'aria-label="([^"]*)"', s)[1])
+        self.assertIn(f"filled dots: {charts.KEY_ALL}; hollow dots: {charts.KEY_BOTH}", name)
 
 
 if __name__ == "__main__":

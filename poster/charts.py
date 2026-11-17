@@ -107,12 +107,14 @@ def count_scale(most):
     return max(step, math.ceil(most / step) * step), step
 
 
-def gap_histogram(sym, index, what, gaps, mae, scale, counts, w=940, h=560):
+def gap_histogram(sym, index, what, gaps, mae, scale, counts, w=940, h=598):
     """One fund: on how many days the free estimate landed at each distance from Cboe's published index, in
     half-point bins of the gap (free data minus the index). Counts only: no date and no single day's value is
     drawn, so no day's index level can be read back (the request to Cboe of 10 and 21 Oct, approved 4 Nov 2026:
     "Only aggregate statistics appear"). The blue upright line at zero is the index itself; the light band is
-    within 1 point of it; left of zero, free data read low.
+    within 1 point of it; left of zero, free data read low. Titled by the market first, then which ticker is the
+    fund (the free estimate) and which is Cboe's official index (Marc Vinyard's review, 14 Nov 2026: "SPY vs VIX"
+    did not say which was which).
 
     gaps: the fund's daily gaps (numbers, no dates). mae: the frozen scorer's mean |gap| for this fund (the build
     has checked it against these gaps). scale: (lo, hi, step) of the gap axis and counts: (top, step) of the
@@ -129,7 +131,10 @@ def gap_histogram(sym, index, what, gaps, mae, scale, counts, w=940, h=560):
         raise ValueError(f"{sym}: a bin runs off the shared gap axis {scale}")
     if max(bins.values()) > top:
         raise ValueError(f"{sym}: {max(bins.values())} days in one bin, above the shared day axis's {top}")
-    L, R, T, B = 70, 24, 172, 64
+    # Four title lines, each label's box clear of the next by a pixel or more (Inter's ascent and descent are 0.97
+    # and 0.24 em: 44 px between the 46 px title and a 34 px line touched, 14 Nov 2026) and of the day axis's top
+    # label, whose box starts 20 px above the plot's top edge T.
+    L, R, T, B = 70, 24, 210, 64
 
     def x(v):
         return L + (v - lo) * (w - L - R) / (hi - lo)
@@ -138,9 +143,11 @@ def gap_histogram(sym, index, what, gaps, mae, scale, counts, w=940, h=560):
         return h - B - n * (h - T - B) / top
 
     n = len(gaps)
-    out = [text(0, 46, f"{sym} vs {index}", 46, weight=700, family=HEAD),
-           text(0, 94, f"{what} · off by {mae:.2f} on average", 34, fill=MUTE),
-           text(0, 140, f"{within_one(gaps)} of {n} days within 1 point", 34, fill=MUTE),
+    market = what[:1].upper() + what[1:]                 # "gold" -> "Gold"; "S&P 500" stays (str.capitalize would not)
+    out = [text(0, 46, market, 46, weight=700, family=HEAD),
+           text(0, 93, f"free estimate ({sym}) vs official index ({index})", 34),
+           text(0, 136, f"off by {mae:.2f} on average", 34, fill=MUTE),
+           text(0, 179, f"{within_one(gaps)} of {n} days within 1 point", 34, fill=MUTE),
            f'<rect x="{x(max(-1.0, lo)):.1f}" y="{T}" width="{x(min(1.0, hi)) - x(max(-1.0, lo)):.1f}" '
            f'height="{h - T - B}" fill="{BAND}"/>']
     c = 0
@@ -156,8 +163,9 @@ def gap_histogram(sym, index, what, gaps, mae, scale, counts, w=940, h=560):
         k += 1
     out += [rounded_bar(x(b * BIN) + 1, x((b + 1) * BIN) - x(b * BIN) - 2, y(0), y(m)) for b, m in sorted(bins.items())]
     out.append(f'<line x1="{x(0):.1f}" x2="{x(0):.1f}" y1="{T}" y2="{h - B}" stroke="{CBOE}" stroke-width="5"/>')
-    return svg(w, h, f"{sym} against {index}: days by gap, free data minus Cboe's index, in half-point bins; "
-                     f"off by {mae:.2f} points on average", "".join(out))
+    # The subtraction's order, as the caption gives it, for a screen reader too (14 Nov 2026 review).
+    return svg(w, h, f"{market}: days by gap, the free estimate ({sym}) minus Cboe's official index ({index}), in "
+                     f"half-point bins; off by {mae:.2f} points on average", "".join(out))
 
 
 def band_sd(band, vol, days=30):
@@ -184,12 +192,13 @@ def band_coverage(band, vol, days=30):
     return cdf((math.log1p(band) + s * s / 2) / s) - cdf((math.log1p(-band) + s * s / 2) / s)
 
 
-def coverage_curves(calm, wild, band=0.10, w=1300, h=380):
+def coverage_curves(calm, wild, band=0.10, w=1300, h=306):
     """Two 30-day price-move curves on one scale with the same ±band of strikes shaded and its edges drawn; the
     wild curve's tails beyond the band (what a fixed band leaves out) filled orange. Both curves solid, each
     labelled on the plot beside it (no legend). A model, not market data.
     calm, wild: (name, annual vol), e.g. ("S&P 500", 0.16), ("Crude oil", 0.59)."""
-    L, R, T, B, span = 20, 20, 70, 66, 0.5
+    # Margins trimmed 14 Nov 2026 (the H5 caveat beside section 4's verdicts needed a line); the plot keeps 188 px.
+    L, R, T, B, span = 20, 20, 62, 56, 0.5
     xs = [-span + i * 2 * span / 400 for i in range(401)]
     top = max(lognormal_pdf(r, calm[1]) for r in xs) * 1.04
 
@@ -221,10 +230,10 @@ def coverage_curves(calm, wild, band=0.10, w=1300, h=380):
     # curve has fallen to nothing.
     (cn, cv), (wn, wv) = calm, wild
     wy = Y(lognormal_pdf(band + 0.02, wv))                        # the wild curve falls to the right of here
-    out += [text(X(-band) - 14, T + 40, f"{cn} (volatility {cv * 100:.0f})", 34, weight=700, anchor="end"),
+    out += [text(X(-band) - 14, T + 40, f"{cn} (volatility {cv * 100:.0f}%)", 34, weight=700, anchor="end"),
             text(X(-band) - 14, T + 84, f"band sees {band_coverage(band, cv):.0%} of moves", 34, fill=MUTE,
                  anchor="end"),
-            text(X(band + 0.02), wy - 68, f"{wn} (volatility {wv * 100:.0f})", 34, weight=700),
+            text(X(band + 0.02), wy - 68, f"{wn} (volatility {wv * 100:.0f}%)", 34, weight=700),
             text(X(band + 0.02), wy - 24, f"band sees {band_coverage(band, wv):.0%} of moves", 34, fill=MUTE)]
     return svg(w, h, f"30-day price-move curves for {calm[0]} and {wild[0]} with a ±{band:.0%} strike band",
                "".join(out))
@@ -252,32 +261,47 @@ def band_bars(bands, w=1300, row=112, bar=56):
     return svg(w, 6 + len(bands) * row, "Mean absolute gap to Cboe by strike band", "".join(out))
 
 
-def quote_scale(feeds, bar, w=1300, row=128):
-    """How far the free feed's mid sits from a professional feed's mid, in bid-ask spreads (medians), on a 0-1
-    spread scale: one track per feed, a filled dot for all far strikes and a hollow one for only the strikes both
-    feeds bid (a subset). The registered bar's tick is drawn last, over the dots, so a dot ON the bar still shows
-    it. feeds: [(label, (all_value, shown), (both_bid_value, shown))] top to bottom."""
+KEY_ALL, KEY_BOTH = "all far options", "only those with a buy offer on both feeds"
+
+
+def dot(cx, cy, hollow, key=False):
+    """The quote chart's dot: filled for all far options, hollow (white inside) for those with a buy offer on both
+    feeds."""
+    cls, fill = (' class="key"' if key else ""), ("#fff" if hollow else ORANGE)
+    return f'<circle{cls} cx="{cx:.1f}" cy="{cy}" r="17" fill="{fill}" stroke="{ORANGE}" stroke-width="6"/>'
+
+
+def quote_scale(feeds, bar, w=1300, row=108, top=60):
+    """How far the free feed's mid sits from a professional feed's mid, in spreads (medians), on a 0-1 spread
+    scale: one track per feed, a filled dot for all far options and a hollow one for only those both feeds bid (a
+    subset). A key above the tracks names both dots, each drawn like the dots it names (Marc Vinyard's review, 14
+    Nov 2026: the caption below was the only place that said which was which). The registered bar's tick is drawn
+    last, over the dots, so a dot ON the bar still shows it. feeds: [(label, (all_value, shown), (both_bid_value,
+    shown))] top to bottom."""
     L, R = 20, 60
 
     def X(v):
         return L + v * (w - L - R)
 
-    out, ticks = [], []
+    out = [dot(L + 17, 30, False, key=True), text(L + 50, 42, KEY_ALL, 34),
+           dot(L + 400, 30, True, key=True), text(L + 433, 42, KEY_BOTH, 34)]
+    ticks = []
     for k, (label, (va, sa), (vb, sb)) in enumerate(feeds):
-        y0 = k * row
+        y0 = top + k * row
         ty = y0 + 84
         out += [text(L, y0 + 36, label, 34),
                 f'<line x1="{X(0):.1f}" x2="{X(1):.1f}" y1="{ty}" y2="{ty}" stroke="{RULE}" stroke-width="4"/>',
-                f'<circle cx="{X(va):.1f}" cy="{ty}" r="17" fill="{ORANGE}" stroke="{ORANGE}" stroke-width="6"/>',
-                f'<circle cx="{X(vb):.1f}" cy="{ty}" r="17" fill="#fff" stroke="{ORANGE}" stroke-width="6"/>',
+                dot(X(va), ty, False), dot(X(vb), ty, True),
                 text(X(va) + 30, ty + 13, sa, 36, weight=700),
                 text(X(vb) + 30, ty + 13, sb, 36, weight=700)]
         ticks.append(f'<line x1="{X(bar):.1f}" x2="{X(bar):.1f}" y1="{ty - 28}" y2="{ty + 28}" stroke="{INK}" '
                      'stroke-width="5"/>')
-    axis = len(feeds) * row + 8
+    axis = top + len(feeds) * row + 8
     out += ticks + [text(X(0), axis + 34, "0 (same price)", 32, fill=MUTE),
                     text(X(bar), axis + 34, "½ spread = the bar, set first", 32, weight=700, anchor="middle"),
                     text(X(bar), axis + 76, "at or under it passes", 32, fill=MUTE, anchor="middle"),
                     text(X(1), axis + 34, "1 spread", 32, fill=MUTE, anchor="end")]
-    return svg(w, axis + 92, "Distance of the free quote from the professional quote, in bid-ask spreads",
-               "".join(out))
+    # The key's meanings reach a screen reader too (14 Nov 2026 review: the caption that said them is gone).
+    return svg(w, axis + 92, "How far the free price sits from the professional one, in spreads (the gap between the "
+                             "highest price a buyer offers and the lowest a seller asks); filled dots: "
+                             f"{KEY_ALL}; hollow dots: {KEY_BOTH}", "".join(out))

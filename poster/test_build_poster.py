@@ -533,6 +533,19 @@ class Headline(unittest.TestCase):
         self.assertIn("by a point or more, on average", both)
         self.assertNotRegex(both, r"(?i)quote|method|recipe|within a point")
 
+    def test_the_poster_says_the_decided_headline_in_plain_words(self):
+        # Marc Vinyard, 14 Nov 2026: "Widen the strikes" is jargon to SCCUR's mostly non-finance audience. The decided
+        # wording stays as it is (tools/site_results.py prints it on the site); the poster says the same claim
+        # plainly, still an average, still claiming no quotes-versus-recipe split.
+        plain = bp.poster_headline(bp.HEADLINE_IF_H7_FAILS)
+        self.assertEqual(plain, ("Use a wider range of strike prices,",
+                                 "and free data averages within 1 point of Cboe's index."))
+        self.assertNotRegex(" ".join(plain), r"(?i)quote|method|recipe|match")
+        self.assertEqual(" ".join(bp.HEADLINE_IF_H7_FAILS),
+                         "Widen the strikes, and free data averages within a point of Cboe's index.")
+        for other in (bp.HEADLINE, bp.HEADLINE_IF_H7_AND_H3_FAIL):
+            self.assertEqual(bp.poster_headline(other), other)                # already plain: unchanged
+
 
 class H3Box(unittest.TestCase):
     def report(self):
@@ -611,6 +624,19 @@ class Scorecard(unittest.TestCase):
             html_ = bp.chip_html(c)
             self.assertIn(bp.ICON[c["kind"]], html_)                   # an icon and a word, not colour alone
             self.assertIn(c["verdict"], html_)
+
+    def test_the_key_names_only_the_kinds_shown(self):
+        # The strip's key is made from the chips themselves, so it can never list a symbol the strip lacks.
+        conf, side = bp.scorecard(self.H3, None, None, False)          # no H5e final and no H7: both still due
+        key = bp.strip_key(conf + side)
+        for kind in ("ok", "bad", "due", "na"):
+            self.assertIn(f"{bp.ICON[kind]} {bp.KEY_WORDS[kind]}", key)
+        only = bp.strip_key([c for c in conf + side if c["kind"] == "ok"])
+        self.assertEqual(only, '<span class="ok">✓ met its bar</span>')     # exactly what is shown, nothing else
+        two = bp.strip_key([c for c in conf + side if c["kind"] in ("na", "ok")])
+        self.assertEqual(two, '<span class="ok">✓ met its bar</span> <span class="na">– not yet tested</span>')
+        self.assertEqual(bp.KEY_WORDS, {"ok": "met its bar", "bad": "missed it", "due": "reading due",
+                                        "na": "not yet tested"})
 
     def test_comparisons_never_break_across_lines(self):
         # 8 Nov review: H6b broke "p <" from "0.01". Every comparison is held together with no-break spaces.
@@ -763,6 +789,217 @@ class Page(unittest.TestCase):
         self.assertNotIn("an index level is quoted", txt)
         self.assertIn("Derived figures only.", txt)
 
+    def test_the_headline_is_the_plain_one(self):
+        # The real H7 block is in (H7a fails) and the stand-in H3 holds: the decided fallback, in plain words.
+        page, _ = self.build(trading_days("2026-11-02", "2026-11-13"), date(2026, 11, 13))
+        big = re.search(r'<div class="big[^"]*">(.*?)</div>', page)[1]
+        self.assertEqual(html.unescape(re.sub(r"<[^>]+>", "", big)),
+                         "Use a wider range of strike prices, and free data averages within 1 point of Cboe's index.")
+
+    # (term, the words that define it): each term's first use below the headline is its definition.
+    DEFINED = (("option", "An option is the right to buy or sell"), ("strike price", "at a set price, the strike price"),
+               ("implied volatility", "Option prices show how big a swing traders are pricing in: the implied "
+                                      "volatility"),
+               ("VIX", "the VIX (Wall Street's “fear gauge”)"),
+               ("spread", "in spreads (the gap between the highest price a buyer offers and the lowest a seller asks)"),
+               ("far option", "far options (strike prices far from today's price)"))
+
+    def defined_first(self, page):
+        txt = " ".join(self.text(page[:page.index('<div class="credits">')]).split())
+        body = txt[txt.index("1 The question"):]
+        self.assertTrue(body.startswith("1 The question An option is the right to buy or sell"))
+        for term, words in self.DEFINED:
+            self.assertIn(words, body, term)
+            # A whole word, singular or plural, in any case: "spreadsheet" is not a use of "spread".
+            first = re.search(rf"(?i)\b{re.escape(term)}s?\b", body).start()
+            self.assertEqual(first, body.index(words) + words.index(term), f"{term} used before defined")
+        for term in ("option", "strike price", "implied volatility", "VIX"):          # section 1, before section 2
+            self.assertLess(body.index(dict(self.DEFINED)[term]), body.index("2 What I did"), term)
+        self.assertNotIn("contract to buy or sell", txt)
+        self.assertNotRegex(txt, r"(?i)expects? the price to swing|the market expects")
+        self.assertIn("(a VIX of 20 means S&P 500 options price in swings of about 20% a year, one standard "
+                      "deviation, over the next 30 days)", txt)
+
+    def test_the_terms_are_defined_before_they_are_used(self):
+        # Marc Vinyard, 14 Nov 2026: define options, strikes and the VIX for a general audience. 14 Nov 2026 review:
+        # check where each definition sits, not only the first one. An option is a right, not an obligation ("a
+        # contract to buy or sell" describes a forward), and its price carries a premium for risk, so implied
+        # volatility is the swing priced in, not a plain forecast; the VIX's 30-day horizon is said.
+        page, _ = self.build(trading_days("2026-11-02", "2026-11-13"), date(2026, 11, 13))
+        self.defined_first(page)
+
+    def test_the_definition_check_sees_a_term_used_too_early(self):
+        # The check above on a known answer: "spread" used in section 1, before section 4 defines it.
+        page, _ = self.build(trading_days("2026-11-02", "2026-11-13"), date(2026, 11, 13))
+        early = page.replace("turns option prices into official volatility indices.",
+                             "turns option prices into official volatility indices, spread by spread.", 1)
+        self.assertNotEqual(early, page)
+        with self.assertRaisesRegex(AssertionError, "spread used before defined"):
+            self.defined_first(early)
+
+    # Marc Vinyard, 14 Nov 2026: far-out options, no bid, bid-ask spreads, unbid, "a tick or two". Matched in any case
+    # and in the plural (14 Nov 2026 review). "No buyer" is out too: a feed showing no buy offer does not show that
+    # no buyer exists (the same review), so the poster says "no buy offer".
+    JARGON = (r"\bfar-out\b", r"\bunbid\b", r"\bticks?\b", r"\bbid-ask\b", r"\bfar strikes?\b", r"\b\d+-vol\b",
+              r"\bEuropean formulas?\b", r"\bwiden the strikes\b", r"\bno bids?\b", r"\bbids? on\b",
+              r"\bempty bids?\b", r"\bpoints light\b", r"\bno[- ]buyers?\b", r"\ba buyer on both\b")
+
+    def jargon(self, txt):
+        return [w for w in self.JARGON if re.search(w, txt, flags=re.I)]
+
+    def test_no_trading_jargon_is_left(self):
+        # The credit lines keep their providers' own words (Databento's "consolidated NBBO"), so they are left out.
+        page, _ = self.build(trading_days("2026-11-02", "2026-11-13"), date(2026, 11, 13))
+        txt = " ".join(self.text(page[:page.index('<div class="credits">')]).split())
+        self.assertEqual(self.jargon(txt), [])
+        for plain in ("no buy offer", "a buy offer on both", "where one cent can be a whole spread"):
+            self.assertIn(plain, txt)
+
+    def test_the_jargon_scan_catches_its_variants(self):
+        # Known answers: each variant is caught, and ordinary words that contain a banned one are not.
+        for bad in ("Unbid options", "two Ticks", "no bids", "Bid-Ask spreads", "Far-Out strikes", "a 16-vol name",
+                    "far strike", "Empty bid", "No-buyer quotes", "with a buyer on both feeds", "Widen the strikes"):
+            self.assertNotEqual(self.jargon(bad), [], bad)
+        for fine in ("109 tickers", "one cent can be a whole spread", "no buy offer", "a buy offer on both", "bidder",
+                     "buyers'"):
+            self.assertEqual(self.jargon(fine), [], fine)
+
+    def test_the_quote_caption_says_what_the_record_says(self):
+        # 14 Nov 2026 review: "one cent is a whole spread" is true only of a one-cent spread. Follow-up review, 14 Nov:
+        # "so the gap is small almost by construction" asserted a mechanism the medians do not show (with no bid on
+        # either feed the gap is |ask - ask'| / (2 ask'), which need not be small), so the caption says what was seen;
+        # and H5 requires beside any verdict that its rule compares only contracts both feeds quote (H5, 23 Sep).
+        # Each sentence is bound to the H5 file's own words (Result, corrected 17 Oct; "H5f, read 25 September
+        # 2026"; its "Stated beside any verdict"), registered text that is never edited, and must sit in section 4.
+        record = " ".join((ROOT / "hypotheses" / "2026-09-19-h5-wing-quote-quality.md").read_text().split())
+        for words in ("But the pass rests on the 37 contracts with no bid on at least one feed",
+                      "Most of that is TSLA, whose wing markets are a tick or two wide",
+                      "TSLA's one-tick markets, where a one-cent difference is a whole spread",
+                      "Stated beside any verdict: the rule excludes unmatched contracts, so it cannot see the free "
+                      "feed's hours-old one-sided quotes on far contracts OPRA did not quote"):
+            self.assertIn(words, record)
+        page, _ = self.build(trading_days("2026-11-02", "2026-11-13"), date(2026, 11, 13))
+        sec4 = " ".join(self.text(page[page.index('<span class="n">4</span>'):page.index('<span class="n">5</span>')])
+                        .split())
+        self.assertIn("Both passes depend on the options with no buy offer on one feed or both: with a buy offer on "
+                      "both feeds, the gap is over the bar, mostly on TSLA, where one cent can be a whole spread.", sec4)
+        self.assertIn("Only options both feeds quoted were compared, so the free feed's hours-old prices on far options "
+                      "nobody else quoted are not tested here.", sec4)
+        txt = " ".join(self.text(page).split())
+        self.assertNotIn("by construction", txt)
+        self.assertNotIn("one cent is a whole spread", txt)
+
+    def flow_checks(self, page):
+        flow = page[page.index('<div class="flow">'):page.index("How it stays honest")]
+        self.assertEqual(re.findall(r'<span class="see">(\d)</span>', flow), ["4", "5", "3"])
+        # 14 Nov 2026 review: counts and phrases alone pass with empty arrows or reordered steps. Each arrow is a
+        # drawn shaft and head, and the steps, arrows and section badges come in this order.
+        arrows = re.findall(r'<svg class="arw( down)?" viewBox="0 0 (\d+) (\d+)"[^>]*>(.*?)</svg>', flow)
+        self.assertEqual([bool(a[0]) for a in arrows], [False, True, False])     # across, down, across
+        for _, w, h, body in arrows:
+            self.assertGreater(int(w) * int(h), 0)
+            paths = re.findall(r'<path d="([^"]+)"([^>]*)>', body)
+            self.assertEqual(len(paths), 2, "an arrow is a shaft and a head")
+            (shaft, shaft_paint), (head, head_paint) = paths
+            self.assertRegex(shaft, r"^M\d+ \d+ [HV]\d+$")
+            self.assertRegex(head, r"^M\d+ \d+ L\d+ \d+ L\d+ \d+ Z$")
+            # Painted, not only shaped (follow-up review, 14 Nov 2026): the shaft stroked, the head filled, in colour.
+            self.assertRegex(shaft_paint, r'\bstroke="#[0-9a-fA-F]{6}"')
+            self.assertRegex(shaft_paint, r'\bstroke-width="[1-9]\d*"')
+            self.assertRegex(head_paint, r'\bfill="#[0-9a-fA-F]{6}"')
+            self.assertNotRegex(body, r'opacity="0(\.0*)?"|visibility="hidden"|display="none"')
+        css = re.findall(r"\.arw[^{]*\{([^}]*)\}", page)
+        self.assertTrue(css)
+        self.assertNotRegex(" ".join(css), r"display:\s*none|visibility:\s*hidden|opacity:\s*0(\.0*)?\s*(;|$)")
+        marks = ["<b>Record</b> free option quotes", '<svg class="arw"',
+                 "Check the quotes against the full market (OPRA) and Bloomberg", '<span class="see">4</span>',
+                 '<svg class="arw down"', "Cboe's VIX formula, with my choice of strikes and expiry dates",
+                 '<span class="see">5</span>', "<b>Compute</b> a volatility number per fund per day",
+                 '<svg class="arw"', "Check the number against Cboe's official index", '<span class="see">3</span>']
+        at = 0
+        for m in marks:
+            i = flow.find(m, at)
+            self.assertNotEqual(i, -1, f"missing or out of order: {m}")
+            at = i + 1
+        txt = " ".join(self.text(flow).split())
+        self.assertIn("daily since September 2026", txt)
+        self.assertIn("the swing priced in for the next 30 days", txt)
+
+    def test_the_method_is_a_flow_with_arrows(self):
+        # Marc Vinyard, 14 Nov 2026: connect the steps with arrows. Each check points at the section that shows it:
+        # the quotes against OPRA and Bloomberg (4), the recipe (5), the number against Cboe's index (3).
+        page, _ = self.build(trading_days("2026-11-02", "2026-11-13"), date(2026, 11, 13))
+        self.flow_checks(page)
+
+    def test_the_flow_check_sees_disorder_and_empty_arrows(self):
+        # Known answers for the check above: the two checks swapped, the arrows drawn empty, and the arrows shaped
+        # but unpainted (follow-up review, 14 Nov 2026).
+        page, _ = self.build(trading_days("2026-11-02", "2026-11-13"), date(2026, 11, 13))
+        a, b = "Check the quotes against the full market (OPRA) and Bloomberg", "Check the number against Cboe's official index"
+        swapped = page.replace(a, "\0").replace(b, a).replace("\0", b)
+        empty = re.sub(r'(<svg class="arw[^"]*"[^>]*>).*?(</svg>)', r"\1\2", page)
+        unpainted = re.sub(r'<svg class="arw[^"]*"[^>]*>.*?</svg>',
+                           lambda m: re.sub(r'(stroke|fill)="#[0-9a-fA-F]{6}"', r'\1="none"', m[0]), page)
+        for bad in (swapped, empty, unpainted):
+            self.assertNotEqual(bad, page)
+            with self.assertRaises(AssertionError):
+                self.flow_checks(bad)
+
+    def panel_checks(self, page):
+        # 14 Nov 2026 review: a whole-page search passes with every label in one panel. Each panel's own SVG names
+        # its market, its fund and its index, and no other panel does.
+        panels = re.findall(r'<svg viewBox="0 0 940 \d+" class="chart"[^>]*>.*?</svg>', page)
+        self.assertEqual(len(panels), len(bp.PAIRS))
+        for (sym, index, what), svg in zip(bp.PAIRS, panels, strict=True):
+            market = html.escape(what[:1].upper() + what[1:], quote=False)
+            self.assertIn(f">{market}</text>", svg)
+            self.assertIn(f">free estimate ({sym}) vs official index ({index})</text>", svg)
+            others = [o for o in panels if o is not svg]
+            self.assertFalse(any(f"({sym})" in o or f"({index})" in o for o in others), sym)
+        txt = " ".join(self.text(page).split())
+        self.assertIn("Each panel compares my estimate", txt)
+        self.assertIn("Gap = the free estimate minus Cboe's index", txt)
+
+    def test_each_panel_says_which_is_the_fund_and_which_the_index(self):
+        page, _ = self.build(trading_days("2026-11-02", "2026-11-13"), date(2026, 11, 13))
+        self.panel_checks(page)
+
+    def test_the_panel_check_sees_a_label_in_the_wrong_panel(self):
+        # A known answer: the Nasdaq-100 panel carrying the S&P 500 panel's fund and index.
+        page, _ = self.build(trading_days("2026-11-02", "2026-11-13"), date(2026, 11, 13))
+        bad = page.replace("free estimate (QQQ) vs official index (VXN)", "free estimate (SPY) vs official index (VIX)")
+        self.assertNotEqual(bad, page)
+        with self.assertRaises(AssertionError):
+            self.panel_checks(bad)
+
+    def strip_checks(self, page):
+        strip = page[page.index('<div class="tests">'):page.index('<div class="qr">')]
+        txt = " ".join(self.text(strip).split())
+        for words in ("Risk premium: implied minus later realized volatility, usually positive.", "Hedged gain:",
+                      "Side studies: other questions about volatility", "H1 tests the method on a known result."):
+            self.assertIn(words, txt)
+        # 14 Nov 2026 review: the key lists exactly the kinds the chips show, in the key's order. H4, the test of
+        # hedged gains, has not run, so the key claims no seller's earnings.
+        key = re.search(r'<span class="ik">((?:<span class="\w+">[^<]*</span> ?)+)</span>', strip)[1]
+        shown = {k for k in re.findall(r'<div class="chip (\w+)">', strip)}
+        self.assertEqual(re.findall(r'<span class="(\w+)">', key), [k for k in bp.ICON if k in shown])
+        self.assertNotRegex(txt, r"(?i)\bearn|profit on average")
+        return shown
+
+    def test_the_strip_has_a_key(self):
+        # Marc Vinyard, 14 Nov 2026: say what the symbols, the risk premium and the hedged gain are, and why there
+        # are side studies.
+        page, _ = self.build(trading_days("2026-11-02", "2026-11-13"), date(2026, 11, 13))
+        self.assertEqual(self.strip_checks(page), {"ok", "bad", "na"})        # H5e and H7 are read: nothing due
+
+    def test_the_strip_check_sees_a_key_that_lists_too_much(self):
+        # A known answer: the key also listing "reading due", which no chip shows.
+        page, _ = self.build(trading_days("2026-11-02", "2026-11-13"), date(2026, 11, 13))
+        bad = page.replace('<span class="ik">', '<span class="ik"><span class="due">… reading due</span> ', 1)
+        self.assertNotEqual(bad, page)
+        with self.assertRaises(AssertionError):
+            self.strip_checks(bad)
+
     def test_the_ai_line_names_every_use(self):
         # Worded 11 Nov 2026 under Gabriel's delegation: AI wrote the code (which draws the charts) and drafted
         # wording, and a second AI model reviewed; SCCUR asks for AI use to be acknowledged.
@@ -782,8 +1019,14 @@ class Recipe(unittest.TestCase):
         self.assertEqual((int(vol_calm), int(vol_wild)), (round(bp.CALM[1] * 100), round(bp.WILD[1] * 100)))
         self.assertEqual(f"{charts.band_sd(0.10, bp.CALM[1]):.1f}", sd_calm)
         self.assertEqual(f"{charts.band_sd(0.10, bp.WILD[1]):.1f}", sd_wild)
-        self.assertIn(f"about {sd_calm} standard deviations on a {vol_calm}-vol name but only {sd_wild} on "
-                      f"{vol_wild}-vol", bp.TRUNCATION_WHY)
+        # The README's numbers in plain words (Marc Vinyard, 14 Nov 2026: "16-vol name" is jargon), in their order.
+        # 14 Nov 2026 review: band_sd measures from the price to one edge, so the band reaches that far to each
+        # side; "spans" read as the whole width. The volatilities carry their unit, a percentage a year.
+        self.assertEqual(re.findall(r"about ([\d.]+) standard deviations of a 30-day move to each side at volatility "
+                                    r"(\d+)%, but only ([\d.]+) for crude oil at volatility (\d+)%", bp.TRUNCATION_WHY),
+                         [(sd_calm, vol_calm, sd_wild, vol_wild)])
+        self.assertNotIn("spans", bp.TRUNCATION_WHY)
+        self.assertIn("why USO's estimate read twelve points low", bp.TRUNCATION_WHY)
 
 
 if __name__ == "__main__":

@@ -31,6 +31,10 @@ never in its place: on the strikes both feeds carry, oil's rebuilds differ by 0.
 down on 17 Oct, before any reading), and Cboe's walk ran past the free file's +/-60% strike edge on 24 of 24 days.
 OPRA figures: Data provided by Databento. Index closes: Cboe Global Markets. Aggregates only.*
 
+*14 Nov 2026: the poster now prints the same answer in plainer words for SCCUR's mostly non-finance audience:
+"Use a wider range of strike prices, and free data averages within 1 point of Cboe's index." The claim is the
+decided one; only the words changed, and the site keeps the wording above.*
+
 ## Sections
 
 **1. Introduction (1.5 pages).** The problem: researchers without a data budget use free quotes, and

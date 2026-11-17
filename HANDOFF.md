@@ -4396,6 +4396,163 @@ fixed, none of which moves a registered verdict. Each has a known-answer check a
 *OPRA and one-second index figures: Data provided by Databento. Index closes: Cboe Global Markets. Aggregates
 only.*
 
+**Sat 14 Nov (UTC) - pushed after a full audit; the first audit was voided by iCloud evicting files**
+
+- *Gabriel:* "sorry computer died make sure everything is still going then when it finishes keep working", then
+  "ok keep going and push when it passes".
+- *Pushed:* `2ac3b55` (GitHub's ID: nothing had come in since `1ec784f`, so no rebase) at 06:11:58 UTC (Saturday,
+  01:11 New York), through the N-of-N gate: full audit 259 of 259 safeguards proven to fail when broken (05:25:44
+  to 06:11:38 UTC, three parallel jobs instead of four to spare the machine; the number changes only the time),
+  then the pre-push pressure test, 0 fail and 2 warn (the known two). GitHub Pages deployed it at 06:12:46 UTC.
+- *The live site, checked 06:13 to 06:20 UTC:* `index.html`, `tools/volrec.css`, `tools/volrec.js`,
+  `tools/lab.html` and `tools/monitor.html` as served are byte-identical to the commit (sha256). In a browser at
+  1280 x 900 and 375 x 812: the results line and its three figures (0.708, 205, 41), the in-sample paragraph, both
+  OPRA notes and the ledger's H3, H5, H7 and T rows are visible (`checkVisibility`, opacity and visibility
+  included), with their recorded statuses; no sideways scroll (four wide data tables scroll inside their own
+  boxes, as before; this commit did not touch them); clean console.
+- *The first audit was void (04:40 to 05:23 UTC), and nothing was pushed from it.* This repository (~/Desktop) and
+  the licensed folders (~/Documents) sync to iCloud with storage optimisation, and the disk was 89-91% full. With
+  the audit's 260 worktrees (7.7 GB) on disk, macOS moved 656 files of `~/Documents/volrec-licensed` (1.63 GB,
+  mostly `opra-lab`) and 118 of this repository (some `.git` objects and a pack, records of the audit's own
+  worktrees, `tools/panel_health.py`) to iCloud, leaving placeholders. Every pressure test runs
+  `lab/verify_purchases.py`, which opens each of the 8,073 lab files, and opening a placeholder waits for iCloud
+  to download the file. Mutants 108-111 waited at 0% CPU until `tools/audit.py` stopped each at its 600-second
+  limit, so the run could not read N of N. It was stopped by hand, its worktrees removed and pruned, and the push
+  helper refused as designed ("the audit did not read N of N - nothing pushed"). The files were brought back with
+  `brctl download` (one compared equal to the committed copy), and the second audit ran beside a small local
+  watcher that asks iCloud for any evicted file every 10 seconds (43 at its start, none after). The Mac has 8 GB
+  of memory; swap stood at 4.4 to 4.8 GB and the load average reached 230 during the audits, much of it macOS's
+  own photo analysis: most likely the "computer died".
+- *For the next full audit on this Mac:* count evicted files first, from the repository root
+  (`find ~/Documents/volrec-* . -path ./.venv -prune -o -flags +dataless -type f -print | wc -l`), and bring them
+  back before starting; a pressure test sitting at 0% CPU inside `lab/verify_purchases.py` is this, not a hung
+  check. Gabriel's to choose, if he wants it gone for good: free some disk space (the simplest fix), or mark the
+  volrec folders "Keep Downloaded" in Finder.
+- *Marc Vinyard's print question, answered (14 Nov):* Gabriel sent the reply himself from Gmail, with the final
+  poster PDF attached (`poster/Mitton_SCCUR_2026_poster_48x36.pdf`, sha256 `158eb729...00b5c`). It says: printing
+  at FedEx Office, ordered Monday, picked up Tuesday or Wednesday; Amanda Bernstein or the art department could
+  possibly help with printing; two registered tests failed and the poster reports them beside the ones that held.
+  The Gmail connector refused every call in this session ("requires additional permissions") even after he
+  reconnected it, so nothing went out from here.
+- *Not yet pushed:* this entry. Pushing it needs another full audit; it goes out with the next change.
+
+*Index closes: Cboe Global Markets. Aggregates only.*
+
+**Sat 14 Nov (later, UTC) - the poster revised after Marc Vinyard's comments**
+
+- *Gabriel:* pasted Marc's comments on the poster, then "make neccesary changes based on comments and then some
+  if needed i wnat this to be good". The audience at SCCUR is mostly STEM and outside finance.
+- *Marc's six points (his email, 14 Nov):* define the VIX ("fear gauge"), options and strikes; take the jargon
+  out of the quotes section ("far-out options", "no bid", bid-ask spreads, "unbid", "a tick or two") and say what
+  the filled and hollow circles mean; in section 3, show which ticker is the fund and which is Cboe's official
+  index; give the H1-H7 strip a legend (the variance risk premium, the hedged option gain, why "side studies");
+  clarify the headline; join the method's steps with arrows.
+- *Done (`poster/build_poster.py`, `poster/charts.py` and their two suites; the outputs stay git-ignored):*
+  - section 1 opens with the definitions: an option (the right to buy or sell a stock or fund at a set price, the
+    strike price, by a set date), the implied volatility (how big a swing traders are pricing in), and Cboe and
+    the VIX, "Wall Street's fear gauge"; the centre caption says what a VIX of 20 means (S&P 500 options price in
+    swings of about 20% a year, one standard deviation, over the next 30 days);
+  - section 2 is a flow with three arrows: record, then check the quotes (see 4); the recipe (see 5); compute the
+    swing priced in for the next 30 days, then check it against Cboe's official index (see 3);
+  - each histogram panel is titled by market, then "free estimate (USO) vs official index (OVX)", then "off by
+    1.77 on average" and the days within 1 point; a lead line above the panels says what each compares;
+  - section 4 in plain words: "far options (strike prices far from today's price)", "no buy offer" for an empty
+    bid, a spread defined as the gap between the highest price a buyer offers and the lowest a seller asks; the
+    quote chart has its own key (a filled dot for all far options, a hollow one for those with a buy offer on both
+    feeds); the caption says what was seen (both passes depend on the options with no buy offer; with a buy offer
+    on both feeds the gap is over the bar, mostly on TSLA, where one cent can be a whole spread: the H5 record's
+    own reading, 23 Sep and 25 Sep) and, as H5 requires beside any verdict, that only options both feeds quoted
+    were compared, so the free feed's hours-old prices on far options nobody else quoted are not tested here;
+  - section 5 puts the README's numbers in plain words: "A ±10% band reaches about 2.2 standard deviations of a
+    30-day move to each side at volatility 16%, but only 0.6 for crude oil at volatility 59%";
+  - the strip: a title ("scored against a bar set before its test ran"), a key of the symbols it shows (met its
+    bar, missed it, not yet tested), the side row named "Side studies: other questions about volatility", and a
+    closing key (the risk premium: implied minus later realized volatility, usually positive; the hedged gain: an
+    option's profit with its stock-price risk offset; H1 tests the method on a known result);
+  - the headline in plain words, on the poster only: "Use a wider range of strike prices, and free data averages
+    within 1 point of Cboe's index." `POSTER_WORDS` maps the decided headline (`HEADLINE_IF_H7_FAILS`) to it;
+  - the Limits in plain words (the formulas treat options as exercised only at expiry, though these can be
+    exercised any day), and the "12–19 Nov" bullet dropped now that both final readings are in.
+- *Astra review, run `20261114T215635Z-vtxy274m`* (three packets; INCOMPLETE, the bundle cut both poster suites).
+  Nine findings, each checked against the record and the code; all nine fixed, each fix test-first:
+  1. the VIX read as a one-year forecast, and implied volatility as a plain expectation: now the 30-day horizon
+     and "the swing priced in" (the test refuses "the market expects");
+  2. "no buyer" claimed more than a feed shows: now "no buy offer" (the caption's added reason why the gap is then
+     small was itself withdrawn after the follow-up, below);
+  3. "a cent or two wide, so one cent is a whole spread" is wrong for a two-cent market: now "where one cent can be
+     a whole spread", the record's "one-tick markets";
+  4. "option sellers earn it on average" claimed a money result that H4 has not tested: the risk premium is now
+     the volatility difference only;
+  5. the band "spans" 2.2 standard deviations read as its whole width: now "to each side", and the volatilities
+     carry their unit (16%, 59%);
+  6. the dot-key test could not tell the two dots apart if swapped: each dot is now bound to its own median;
+  7. checks that found a word anywhere on the page instead of in its place (the panels, the flow, the
+     definitions, the strip's key): each now checks the place, with a known-answer test that fails;
+  8. the jargon scan missed plurals and capitals: fixed, with a list of variants it must catch;
+  9. the quote chart's spoken description lacked the dots' meanings, and the histograms' had lost "the free
+     estimate minus the index": both restored and tested.
+  The review was right on all nine; partly covered before: the dots' drawing order (`test_scale`).
+- *Follow-up review, run `20261114T223404Z-now0tdw6`* (four packets: the three diffs against HEAD, the nine fixes
+  with the poster's text, and the H5 record itself). NEEDS ATTENTION, four findings, each checked and all four
+  fixed test-first; one follow-up is the rule, so these last fixes were not reviewed again:
+  1. "so the gap is small almost by construction" claimed a mechanism the medians do not show (with no bid on
+     either feed the gap is |ask - ask'| / (2 ask'), which need not be small): the caption now says only what was
+     seen, and the test refuses "by construction" anywhere on the page;
+  2. H5 says the exclusion "must be stated beside any verdict" (23 Sep; again under H5f, 25 Sep), and the poster
+     said it only in the Limits, as it already did at HEAD: section 4 now says it, and the test requires the
+     sentence inside section 4 and the record's own sentence in the H5 file;
+  3. the key test passed with the key's two labels swapped: each label is now bound to the dot beside it, with a
+     known-answer test that swaps only the labels;
+  4. the arrow check passed with the arrows shaped but unpainted: the shaft must now be stroked and the head
+     filled, in colour; the known-answer test stops at the stroke check.
+  To fit the new line, the curve chart's empty top and bottom margins were trimmed (its plot is 188 px tall
+  instead of 198; the right column has 5 px left).
+- *Decided 14 Nov 2026 (Vega, under Gabriel's go-ahead; his to veto):* not Marc's "target price" for the strike
+  (it is not a target: it is the price the holder may buy or sell at); "averages" kept in the headline, because oil
+  alone is 1.77 off and "matches within 1 point" would overclaim (the decided claim is the five-fund average, 0.71
+  over 205 readings, bar 1.0); the site keeps the decided wording ("Widen the strikes, ..."), because
+  `tools/site_results.py` prints and checks the decided constant and a new line on the site is Gabriel's call. The
+  poster says the same claim in plainer words; `PAPER-OUTLINE.md` notes it, dated, beside the decided wording.
+  The strip's H5 chips stay one-line summaries: H5's caveat sits in section 4, beside H5's figures, where the
+  follow-up review asked for it.
+- *Verified, after the last change:* the poster's page check passed (smallest text 32 px = 24 pt; 1413 words;
+  nothing overflows, clipped or overlapping; room left 22, 0 and 5 px in the three columns; one 3456 x 2592 pt
+  page, written to its end; the PDF's own check passed); the preview read whole and in crops. Poster suites 31
+  and 74 tests, OK; all 16 suites, none failed; pressure test 0 fail, 2 warn (the known two);
+  `tools/site_results.py --check` VERIFIED. Every new test was seen failing first, and each new check was seen
+  stopping its known-bad case at its own line.
+- *The 16 Nov reminder* (`trig_01WeRHdAkoi1zrk7XcBMUfWT`, Mon 16 Nov 17:00 UTC = 9:00 Pacific, no connectors;
+  read back 14 Nov) names the revised PDF: "order the SCCUR poster print today: FedEx Office, 48 x 36 in, plain
+  paper, the revised PDF Vega sent 14 Nov (v2); pick up Tue or Wed. Send Marc the v2 if not yet".
+- *Files:* `poster/Mitton_SCCUR_2026_poster_48x36_v2.pdf` (sha256 `0dbf60df...7d669`, git-ignored like every
+  PDF), beside the 13 Nov PDF that Marc has (`158eb729...00b5c`, kept as sent). `SCCUR-PITCH.md` follows the
+  revised poster: the opener in the headline's plain words, a one-sentence definition for a visitor outside
+  finance, the walk's sections 1-4, 7 and 8, what a VIX of 20 means, three new answers (what an option is; why
+  the headline says "averages" when oil's panel says 1.77; why the passes depend on the options with no buy
+  offer), the risk premium as the literature's account (H4 has not run), and two more things not to say (that
+  implied volatility is a forecast; that no buy offer means nobody would buy).
+- *Needs Gabriel:* look at the v2 PDF; send it to Marc himself (a draft note is in the chat); order the print on
+  Monday as planned. Whether the site's results line should also take the plainer words is his call.
+- *Not pushed:* nothing was committed; this entry, the poster code and the notes go out with the next audited push.
+
+*Bloomberg figures: Source: Bloomberg Finance L.P. OPRA figures: Data provided by Databento. Index closes: Cboe
+Global Markets. Aggregates only.*
+
+**Sun 15 Nov (UTC) - Marc has the revised poster; the Google Cloud trial's credits go unused**
+
+- *Gabriel:* "sent it": Marc has the v2 poster, sent by Gabriel himself.
+- *Gabriel:* Google Cloud wrote that his free trial ends in 7 days and urged an upgrade; he asked whether the
+  credits could help the project ("if not then we cool"). Checked 15 Nov: nothing here uses Google Cloud (the
+  tracked files name only Google Fonts, the private repository's workflows nothing, and this Mac has no `gcloud`),
+  and H8's 200,000 draws are already done. Google's page (docs.cloud.google.com/free/docs/free-cloud-features,
+  read 15 Nov): the trial credit cannot pay for GPUs, Marketplace products or the Gemini API in AI Studio; without
+  an upgrade nothing is billed, and the trial's resources stop, then are deleted after a 30-day grace period; an
+  upgrade keeps the leftover credit only to the original 90 days, then bills whatever runs.
+- *Decided 15 Nov 2026 (Vega, under Gabriel's go-ahead; his to veto):* the credits go unused, and he was told not
+  to upgrade. No reminder: nothing is due on the trial's last day.
+- *Not checked:* the email itself (the Gmail connector now asks to be reconnected with more access; he pasted its
+  text) and his Google Cloud console (his account).
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
@@ -4419,6 +4576,7 @@ only.*
 > a result block or the page around its markers, run it, then `--check`; never edit between the markers.
 > `--check` also refuses a passage hidden, moved or contradicted, and pins the ledger function: after any change
 > to that function, look at the ledger at 1280 and 375 px, then set `LEDGER_SHA256` to the new fingerprint.
-> SCCUR: Gabriel orders the print by Mon 16 Nov (FedEx Office, 48 x 36 in).
+> SCCUR: Gabriel orders the print by Mon 16 Nov (FedEx Office, 48 x 36 in) from
+> `poster/Mitton_SCCUR_2026_poster_48x36_v2.pdf`, revised 14 Nov after Marc Vinyard's comments (the entry above).
 > `tools/site_bloomberg.py` holds the page's Bloomberg figures to the reader's output on every push from
 > this Mac: after any change to that reader or that section, read its lines, never edit around them.
