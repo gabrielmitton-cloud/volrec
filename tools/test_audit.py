@@ -81,7 +81,8 @@ def run_audit(n_mutants, j, broken=(), raise_at=None, delay=0.05, late_drop=Fals
     stale_other: an unrelated worktree, its folder since deleted, is registered in the repository before the run.
     add_fails_at: git fails to add copy number i (an exception, as from a full disk).
     drop_raises_at: removing copy number i raises in its worker (the final clean-up still removes it).
-    Returns what was observed; "made" lists the copies asked for, in order."""
+    Returns what was observed; "made" lists the copies asked for, in order, and with add_fails_at or drop_raises_at,
+    "stop_at_release" says whether stop was already set when that planted failure left the auditor's lock."""
     spec = iu.spec_from_file_location("audit_under_test", R / "tools/audit.py")
     au = iu.module_from_spec(spec)
     spec.loader.exec_module(au)
@@ -123,6 +124,29 @@ def run_audit(n_mutants, j, broken=(), raise_at=None, delay=0.05, late_drop=Fals
             return real_drop(tree)                  # the auditor's final clean-up stays honest
         worker.previous = tree
         return True
+
+    class WatchedLock:
+        """The auditor's _GIT lock, watched (18 Nov 2026, Astra 2's follow-up review): when a planted failure leaves
+        the lock, is stop already set? That decides whether another worker could build a copy before the main thread
+        saw the failure, whatever the threads' timing; the copies asked for afterwards depend on that timing."""
+        def __init__(self):
+            self.inner = threading.Lock()
+
+        def __enter__(self):
+            self.inner.acquire()
+            return self
+
+        def __exit__(self, kind, exc, tb):
+            if exc is not None and "(planted)" in str(exc):
+                seen["stop_at_release"] = seen["stop"].is_set()
+            self.inner.release()
+            return False
+
+    real_audit_one = au.audit_one
+
+    def watched_audit_one(base, rev, stop, i, mutate=None):
+        seen["stop"] = stop
+        return real_audit_one(base, rev, stop, i, mutate)
 
     class HeldPool(au.ThreadPoolExecutor):
         """Lets the held pressure tests go only once shutdown has run, after any cancelling it was asked for."""
@@ -177,6 +201,8 @@ def run_audit(n_mutants, j, broken=(), raise_at=None, delay=0.05, late_drop=Fals
             au.drop_tree = late_drop_tree
         if drop_raises_at is not None:
             au.drop_tree = raising_drop_tree
+        if add_fails_at is not None or drop_raises_at is not None:
+            au._GIT, au.audit_one = WatchedLock(), watched_audit_one
         if hold or hold_baseline:
             au.ThreadPoolExecutor = HeldPool
         au.drift = lambda: []
@@ -280,11 +306,15 @@ s = run_audit(6, 1, add_fails_at=2)
 check(f"git failing to add mut02's copy voids the run (no RESULT line), and no copy is asked for after it "
       f"(asked for, in order: {s['made']})",
       isinstance(s["err"], RuntimeError) and "RESULT:" not in s["out"] and s["made"] == [0, 1, 2])
+check(f"and stop is already set when that failure leaves the auditor's lock, so no worker can build another copy "
+      f"first, whatever the threads' timing (saw {s.get('stop_at_release')})", s.get("stop_at_release") is True)
 check("and nothing is left behind", s["worktrees_left"] == 0 and not s["bases_left"])
 s = run_audit(6, 1, drop_raises_at=1)
 check(f"a removal that raises voids the run (no RESULT line), and no copy is asked for after it "
       f"(asked for, in order: {s['made']})",
       isinstance(s["err"], OSError) and "RESULT:" not in s["out"] and s["made"] == [0, 1])
+check(f"and stop is already set when that removal's failure leaves the auditor's lock, whatever the threads' timing "
+      f"(saw {s.get('stop_at_release')})", s.get("stop_at_release") is True)
 check("and the final clean-up still removes that copy", s["worktrees_left"] == 0 and not s["bases_left"])
 
 print("\n=== -j must be 1 or more ===")
