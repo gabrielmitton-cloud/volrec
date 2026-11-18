@@ -17,7 +17,7 @@ file is checked *against* it - the original 52 rows must still be there,
 value-for-value. That catches the failure that actually matters (history being
 rewritten) without firing on the one that does not (history growing).
 """
-import csv, hashlib, importlib.util, os, re, subprocess, sys, tempfile
+import csv, hashlib, importlib.util, os, re, subprocess, sys, tempfile, types
 from datetime import date
 from pathlib import Path
 
@@ -1902,7 +1902,9 @@ def _daily_day(seed):
         step = Path(args[1]).name
         calls.append((step, env_extra))
         return {"panel_health.py": (0, "HEALTHY\n"), "pressure_test.py": (0, "RESULT: 0 fail, 0 warn\n"),
-                "seed_frozen_rate.py": seed, "modelfree.py": (0, "risk-free (DGS1MO): 3.910%\n")}[step]
+                "seed_frozen_rate.py": seed,           # a reading has a block since 18 Nov (an empty one is a LOOK AT)
+                "modelfree.py": (0, "risk-free (DGS1MO): 3.910%\n\n   sym    days  mean as reg  mean zero-bid   reading\n"
+                                    "   USO       5        +2.00          +1.50   registered bracket 1.4 to 3.2: INSIDE\n")}[step]
     _argv, _run = sys.argv, _ddm.run
     sys.argv, _ddm.run = ["daily.py", "--no-pull"], _fake_run
     try:
@@ -1935,9 +1937,18 @@ ok([s for s, _ in _dd_ok[2]] == ["panel_health.py", "pressure_test.py", "seed_fr
 # rounding (CLAUDE.md, mistake 10). Now the block keeps only the lines it knows (H3's lift table compares two
 # free-feed readings, no index; H5e's two headings), the tally stays on the Mac, and the other steps' lines are
 # shown on the runner with every decimal number masked, their words and dates kept.
+# 18 Nov 2026 (later still), Astra 2's follow-up review: a known line with a value appended passed (H3's row pattern
+# took any text after its two means, the registration sentence anything after its date), the patterns applied
+# outside their own block, and masking only decimals left a whole number, a leading dot or an exponent; the RESULT
+# line and the risk-free line printed whole, and a notification's dry run printed the tally. Now each block's lines
+# must be exactly what modelfree writes, inside that block; every digit of the other steps' lines is masked; the
+# RESULT and rate lines print only in their exact form; and an empty reading is a LOOK AT, never ALL CLEAR.
 _pub_odd = ["   62.34   57.35   +1.27",                                     # an undated continuation of a row
             "-- note 2026-09-24 63.45 (a dated line that starts like a heading)",
-            "warning: the OVX close 61.23 looked stale"]                    # stderr, which run() appends to stdout
+            "warning: the OVX close 61.23 looked stale",                    # stderr, which run() appends to stdout
+            "   USO      2       +73.45         +74.56"]                    # H3's row shape, outside H3's table
+_pub_h3_odd = ["   GLD     13        +0.07          +0.07   null control, must stay under 0.3: ok 61.11",
+               "   Pre-registered in H3 on 18 Sep: USO's reading is the as-registered mean over 62.22"]
 def _h5e_row(d, cb, reg, wide, counted):
     return f"   {d:<12}{cb:>7.2f}{reg:>12.2f}{reg - cb:>+8.2f}{wide:>11.2f}{wide - cb:>+8.2f}  {counted}"
 _pub_rows = [_h5e_row("2026-09-22", 50.01, 45.03, 49.05, "no - in-sample, before registration"),
@@ -1951,7 +1962,7 @@ _pub_mf = "\n".join([
     f"{'2026-09-23':<12}{'USO':<6}{55.04:>8.2f}{60.02:>8.2f}{55.04 - 60.02:>+8.2f}{'28d/35d':>10}{30:>5}",
     "", f"   {'sym':<6}{'days':>5}{'mean as reg':>13}{'mean zero-bid':>15}   reading",
     f"   {'USO':<6}{2:>5}{3.52:>+13.2f}{1.11:>+15.2f}   registered bracket 1.4 to 3.2: OUTSIDE (only 2 day(s); "
-    "first reading at 5)",
+    "first reading at 5)", *_pub_h3_odd,
     "", "   Pre-registered in H3 on 18 Sep: USO's reading is the as-registered mean over",
     "   every covered wide day, never a subset. SPY is never widened, so its half of",
     "", "-- H5e: USO, wide strikes, zero bids SKIPPED, against OVX (registered 23 Sep; judged from 2026-09-23)",
@@ -1959,15 +1970,18 @@ _pub_mf = "\n".join([
     *_pub_rows,
     "   mean |gap| 0.96 against 0.5 (OVER); closer than registered on 1 of 1 days (majority) - 1 of 10 days, "
     "not a verdict yet", *_pub_odd]) + "\n"
-def _daily_runner(on_github, steps=None):
+def _daily_runner(on_github, steps=None, argv=("daily.py", "--no-pull")):
     seed = (0, "fred_cache.json already exists (DGS1MO last 2026-09-10 = 3.91%); left untouched.\n")
     fake = {"panel_health.py": (0, "HEALTHY\n"),
-            "pressure_test.py": (0, "RESULT: 0 fail, 1 warn\n  WARN: a synthetic warning that carries 67.89\n"),
+            "pressure_test.py": (0, "RESULT: 0 fail, 1 warn\n  WARN: a synthetic warning that carries 67.89 and 68 "
+                                    "and .69\nRESULT: 0 fail, 1 warn 70.12\n"),   # a RESULT-like diagnostic after it
             "seed_frozen_rate.py": seed, "modelfree.py": (0, _pub_mf), **(steps or {})}
     def _fake_run(args, env_extra=None):
         return fake[Path(args[1]).name]
     _argv, _run, _gha = sys.argv, _ddm.run, os.environ.pop("GITHUB_ACTIONS", None)
-    sys.argv, _ddm.run = ["daily.py", "--no-pull"], _fake_run
+    _ntf = sys.modules.get("notify")      # a notification's dry run prints its message, as tools/notify.py's does
+    sys.modules["notify"] = types.SimpleNamespace(send=lambda text, dry=False: (False, f"dry run, would send: {text}"))
+    sys.argv, _ddm.run = list(argv), _fake_run
     if on_github:
         os.environ["GITHUB_ACTIONS"] = "true"
     try:
@@ -1975,37 +1989,59 @@ def _daily_runner(on_github, steps=None):
             code = _ddm.main()
     finally:
         sys.argv, _ddm.run = _argv, _run
+        if _ntf is None:
+            sys.modules.pop("notify", None)
+        else:
+            sys.modules["notify"] = _ntf
         os.environ.pop("GITHUB_ACTIONS", None)
         if _gha is not None:
             os.environ["GITHUB_ACTIONS"] = _gha
     return code, _o.getvalue()
 _gh_run, _mac_run = _daily_runner(True), _daily_runner(False)
 _per_day = ("50.01", "60.02", "45.03", "55.04", "49.05", "59.06")   # each row's close, and the readings beside it
-_odd_vals = ("62.34", "57.35", "1.27", "63.45", "61.23", "67.89")    # the unrecognised lines' values, the warning's
+_odd_vals = ("62.34", "57.35", "1.27", "63.45", "61.23", "73.45", "74.56", "61.11", "62.22",   # unrecognised lines
+             "67.89", "68 ", ".69", "70.12")                                # the pressure test's warning, its suffix
 ok(_gh_run[0] == 0 and "ALL CLEAR" in _gh_run[1]
    and not any(x in _gh_run[1] for x in _per_day + _odd_vals)
    and not any(re.match(r"\s*20\d\d-\d\d-\d\d", ln) for ln in _gh_run[1].splitlines())
    and "mean |gap|" not in _gh_run[1] and "closer than registered" not in _gh_run[1]
-   and "(8 line(s) held back" in _gh_run[1] and "WARN: a synthetic warning that carries #" in _gh_run[1]
+   and "(11 line(s) held back" in _gh_run[1] and "RESULT: 0 fail, 1 warn\n" in _gh_run[1]
+   and "WARN: a synthetic warning that carries ##.## and ## and .##" in _gh_run[1]
+   and "risk-free (DGS1MO): 3.910%" in _gh_run[1]
    and "registered bracket 1.4 to 3.2: OUTSIDE" in _gh_run[1]
    and "-- H5e: USO, wide strikes, zero bids SKIPPED, against OVX (registered 23 Sep; judged from 2026-09-23)"
    in _gh_run[1],
    "on GitHub's runner the daily report never prints a per-day Cboe close, nor H5e's nightly tally: only lines it "
    "knows to carry none (H3's lift table, H5e's headings), a count of the lines held back, and the other steps' "
-   "lines with every decimal number masked (its log and job summary are public)")
+   "lines with every digit masked (its log and job summary are public)")
 _tb = ["Traceback (most recent call last):", '  File "modelfree.py", line 412, in h5e_report',
-       "ValueError: the close 64.56 is not finite"]
-_mf_died = _pub_mf.split(_pub_rows[-1])[0] + _pub_rows[-1] + "\n" + "\n".join(_tb) + "\n"   # rows, then a crash
+       "ValueError: the close 64.56 is not finite", "RuntimeError: OVX 65 at .57 or 6e1"]
+_mf_died = _pub_mf.split(_pub_rows[1])[0] + _pub_rows[1] + "\n" + "\n".join(_tb) + "\n"   # two rows, then a crash
 _pt_died = (1, "  PASS  a synthetic check\nTraceback (most recent call last):\n"
                '  File "tools/pressure_test.py", line 9, in <module>\nKeyError: \'66.78\'\n')
 _died = {"modelfree.py": (1, _mf_died), "pressure_test.py": _pt_died}
 _gh_died, _mac_died = _daily_runner(True, _died), _daily_runner(False, _died)
 ok(_gh_died[0] == 1 and "LOOK AT: pressure_test crashed, modelfree" in _gh_died[1]
-   and not any(x in _gh_died[1] for x in _per_day + ("64.56", "66.78"))
-   and "ValueError: the close # is not finite" in _gh_died[1] and "KeyError: '#'" in _gh_died[1]
-   and all(x in _mac_died[1] for x in ("60.02", "64.56", "66.78")),
+   and not any(x in _gh_died[1] for x in _per_day + ("64.56", "66.78", "65 ", ".57", "6e1"))
+   and "ValueError: the close ##.## is not finite" in _gh_died[1] and "KeyError: '##.##'" in _gh_died[1]
+   and "RuntimeError: OVX ## at .## or #e#" in _gh_died[1]
+   and all(x in _mac_died[1] for x in ("60.02", "64.56", "66.78", "OVX 65 at .57 or 6e1")),
    "on GitHub's runner a failing step's last lines carry no value: a crash in modelfree or in the pressure test "
-   "keeps its words and dates, every decimal number masked; the Mac shows them whole")
+   "keeps its words, every digit masked (whole numbers, leading dots and exponents too); the Mac shows them whole")
+_gh_rate = _daily_runner(True, {"modelfree.py": (0, _pub_mf.replace("risk-free (DGS1MO): 3.910%",
+                                                                     "risk-free (DGS1MO): 3.910% (OVX 72.34)"))})
+ok(_gh_rate[0] == 0 and "72.34" not in _gh_rate[1] and "risk-free line not recognised" in _gh_rate[1],
+   "on GitHub's runner the risk-free line prints only as modelfree writes it, the rate alone; a line with anything "
+   "else on it is held back")
+_gh_ntf = _daily_runner(True, argv=("daily.py", "--no-pull", "--notify-dry-run"))
+_mac_ntf = _daily_runner(False, argv=("daily.py", "--no-pull", "--notify-dry-run"))
+ok("dry run, would send" in _gh_ntf[1] and "mean |gap|" not in _gh_ntf[1] and "0.96" not in _gh_ntf[1]
+   and "H5e: mean |gap| 0.96 against 0.5" in _mac_ntf[1],
+   "on GitHub's runner a notification carries no H5e tally (its dry run prints the message); the Mac's still does")
+_gh_empty = _daily_runner(True, {"modelfree.py": (0, "risk-free (DGS1MO): 3.910%\nsomething else entirely\n")})
+_mac_empty = _daily_runner(False, {"modelfree.py": (0, "risk-free (DGS1MO): 3.910%\nsomething else entirely\n")})
+ok(all(r[0] == 1 and "LOOK AT: modelfree printed no reading" in r[1] for r in (_gh_empty, _mac_empty)),
+   "a reading that prints neither H3's table nor H5e's block makes the day LOOK AT, never ALL CLEAR")
 ok(_mac_run[0] == 0 and "\n".join(_pub_rows) in _mac_run[1] and "held back" not in _mac_run[1]
    and "mean |gap| 0.96 against 0.5" in _mac_run[1] and "61.23" in _mac_run[1] and "67.89" in _mac_run[1],
    "a local run of the daily report still prints H5e's full per-day table, as before")

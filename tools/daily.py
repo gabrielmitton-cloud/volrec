@@ -14,8 +14,10 @@ reported as a crash, never as a pass - on 23 Sep 2026 the pressure test had been
 
 On GitHub's runner (GITHUB_ACTIONS=true) step 4 prints aggregates only, because there this report is public:
 health.yml keeps it in the run's log and job summary (18 Nov 2026, aggregates_only()). The same day, after Astra 2's
-review, the lines steps 3 and 4 print of their own (warnings, a crash's last lines) have every decimal number masked
-there (masked()). On the Mac everything prints in full.
+reviews: each block's lines must be exactly what modelfree writes there, the lines steps 3 and 4 print of their own
+(warnings, a crash's last lines) have every digit masked (masked()), the RESULT and risk-free lines print only in
+their exact form, a notification carries no H5e tally, and a reading with neither block is a LOOK AT. On the Mac
+everything prints in full.
 
 USAGE
 -----
@@ -31,17 +33,27 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PY = sys.executable                    # whichever python runs this runs everything
-DECIMAL = re.compile(r"\d+\.\d+")
-# The lines of modelfree's block a public log may carry, each matched whole (18 Nov 2026, Astra 2's review):
-# H3's lift table compares two free-feed readings (wide strikes minus registered ones), so no index is in it;
-# H5e's two headings carry no value. Anything else - a dated row, the tally, a line not recognised - is held back.
-KNOWN = (re.compile(r"sym +days +mean as reg +mean zero-bid +reading"),
-         re.compile(r"[A-Z]{1,5} +\d+ +[+-]\d+\.\d\d +[+-]\d+\.\d\d( .*)?"),
-         re.compile(r"Pre-registered in H3 on \d+ [A-Z][a-z]{2}: .*"),
-         re.compile(r"-- H5e: [A-Z]+, wide strikes, zero bids SKIPPED, against [A-Z]+ "
-                    r"\(registered \d+ [A-Z][a-z]{2}; judged from 20\d\d-\d\d-\d\d\)"),
-         re.compile(r"date +[A-Z]+ +registered +gap +wide skip +gap +counted"),
-         re.compile(r"no counted day yet; H5e needs \d+"))
+DIGIT = re.compile(r"\d")
+RESULT = re.compile(r"RESULT: \d+ fail, \d+ warn")            # the pressure test's result line, exactly
+RATE = re.compile(r"risk-free \(DGS1MO\): \d+\.\d{3}%")       # modelfree's rate line, exactly
+# The lines of modelfree's two blocks a public log may carry, each matched whole and only inside its own block (18
+# Nov 2026, Astra 2's reviews). H3's lift table compares two free-feed readings (wide strikes minus registered ones),
+# so no index is in it; H5e's two headings carry no value. Anything else - a dated row, the tally, a known line with
+# something appended, a line not recognised - is held back.
+H3_SYMS = ("SPY", "QQQ", "IWM", "GLD", "USO", "TSLA", "NVDA", "AAPL")   # surface.py's SURFACE; another is held back
+H3_NOTE = (r"registered bracket \d+\.\d to \d+\.\d: (?:INSIDE|OUTSIDE)"
+           r"(?: \(only \d+ day\(s\); first reading at \d+\))?"
+           r"|null control, must stay under \d+(?:\.\d+)?: (?:ok|FAILED - lift that is not tail variance)")
+H3_ROW = (rf"(?:{'|'.join(H3_SYMS)}) +\d+ +[+-]\d+\.\d\d +[+-]\d+\.\d\d"    # sym, days, the two mean lifts
+          rf"(?:   (?:{H3_NOTE}))?")                                        # and modelfree's note, if it has one
+H3_REGISTERED = "Pre-registered in H3 on 18 Sep: USO's reading is the as-registered mean over"
+KNOWN = {"h3": (re.compile(r"sym +days +mean as reg +mean zero-bid +reading"),
+                re.compile(H3_ROW),
+                re.compile(re.escape(H3_REGISTERED))),
+         "h5e": (re.compile(r"-- H5e: [A-Z]+, wide strikes, zero bids SKIPPED, against [A-Z]+ "
+                            r"\(registered \d+ [A-Z][a-z]{2}; judged from 20\d\d-\d\d-\d\d\)"),
+                 re.compile(r"date +[A-Z]+ +registered +gap +wide skip +gap +counted"),
+                 re.compile(r"no counted day yet; H5e needs \d+"))}
 
 
 def on_github():
@@ -51,21 +63,23 @@ def on_github():
 
 
 def masked(lines):
-    """A step's own lines as a public log may carry them (18 Nov 2026, Astra 2's review): every decimal number
-    masked, so a crash or a warning keeps its words, dates and line numbers but no value."""
-    return [DECIMAL.sub("#", ln) for ln in lines]
+    """A step's own lines as a public log may carry them (18 Nov 2026, Astra 2's reviews): every digit masked, so a
+    crash or a warning keeps its words but no value - a whole number, a leading dot or an exponent included (masking
+    only decimals left those). Its dates and counts go too; the Mac prints them."""
+    return [DIGIT.sub("#", ln) for ln in lines]
 
 
-def aggregates_only(lines):
-    """The reading's lines as a public log may carry them. 18 Nov 2026: H5e's block printed one row per day with that
-    day's Cboe OVX close beside the free reading, in every health run from 23 Sep (946 rows in 43 public logs). Cboe
-    approved aggregates only (4 Nov 2026: "No Cboe data files are republished. Only aggregate statistics appear").
-    The same day, after Astra 2's review, only the lines in KNOWN stay. H5e's running tally is held back too: it
-    changes every night, so two nights' logs would give that night's gap, and with the public free reading the close
-    (CLAUDE.md, mistake 10). One line, where the first held line stood, says how many."""
+def aggregates_only(tagged):
+    """The reading's lines, each tagged with its block ("h3" or "h5e"), as a public log may carry them. 18 Nov 2026:
+    H5e's block printed one row per day with that day's Cboe OVX close beside the free reading, in every health run
+    from 23 Sep (946 rows in 43 public logs). Cboe approved aggregates only (4 Nov 2026: "No Cboe data files are
+    republished. Only aggregate statistics appear"). The same day, after Astra 2's reviews, a line stays only if it
+    is exactly one of its own block's KNOWN lines. H5e's running tally is held back too: it changes every night, so
+    two nights' logs would give that night's gap, and with the public free reading the close (CLAUDE.md, mistake
+    10). One line, where the first held line stood, says how many."""
     out, held, at = [], 0, None
-    for ln in lines:
-        if any(k.fullmatch(ln.strip()) for k in KNOWN):
+    for block, ln in tagged:
+        if any(k.fullmatch(ln.strip()) for k in KNOWN[block]):
             out.append(ln)
         else:
             held += 1
@@ -145,15 +159,18 @@ def main():
     section("pressure test")
     code, out = run([PY, "tools/pressure_test.py"])
     lines = out.splitlines()
-    result = next((ln for ln in reversed(lines) if ln.startswith("RESULT")), None)
-    if crashed(out) or result is None:
+    # 18 Nov 2026 (Astra 2's follow-up review): the result is the last line in RESULT's exact form, so a diagnostic
+    # that starts like it is neither taken for the result nor printed whole. The FAIL and WARN lines follow it.
+    at = next((i for i in reversed(range(len(lines))) if RESULT.fullmatch(lines[i])), None)
+    if crashed(out) or at is None:
         print("  CRASHED - it did not reach a result. Last lines:")
         print("\n".join("    " + ln for ln in (masked(lines[-6:]) if on_github() else lines[-6:])))
         bad.append("pressure_test crashed")
     else:
+        result = lines[at]
         print("  " + result)
         facts["pressure"] = result.replace("RESULT:", "").strip()
-        rest = lines[lines.index(result) + 1:]
+        rest = lines[at + 1:]
         for ln in masked(rest) if on_github() else rest:
             print("  " + ln.strip())
         if code:
@@ -178,25 +195,35 @@ def main():
         # 23 Sep 2026: the first CI run read USO at +9.39 against +9.41 locally, because
         # the FRED cache is gitignored (FRED's terms) and the runner fell back to r=0.
         rate = next((ln.strip() for ln in lines if ln.startswith("risk-free")), None)
-        if rate:
+        if rate and on_github() and not RATE.fullmatch(rate):     # 18 Nov 2026: it printed whole, anything on it
+            print("   risk-free line not recognised: held back, as this log is public (the Mac prints it)")
+        elif rate:
             print("   " + rate + ("   <- r=0: NOT the reading of record; run locally with the"
                                   " FRED cache for that" if "0.000%" in rate else ""))
-        grab, shown = False, []
+        block, shown = None, []          # (block, line), so that each line is matched to its own block's lines
         for ln in lines:
-            if ln.strip().startswith("sym ") and "days" in ln:
-                grab = True
+            if block is None and ln.strip().startswith("sym ") and "days" in ln:
+                block = "h3"
             if ln.startswith("-- H5e"):
-                grab = True
-            if grab and ln.strip():
-                shown.append(ln)
-            if grab and ln.strip().startswith("Pre-registered in H3"):
-                grab = False
-        print("\n".join(aggregates_only(shown) if on_github() else shown) if shown else "  no wide data yet")
-        uso = next((ln.split() for ln in shown if ln.strip().startswith("USO ") and "bracket" in ln), None)
+                block = "h5e"
+            if block and ln.strip():
+                shown.append((block, ln))
+            if block == "h3" and ln.strip().startswith("Pre-registered in H3"):
+                block = None
+        if not shown:
+            # 18 Nov 2026 (Astra 2's review): this read ALL CLEAR. The wide file exists since 18 Sep, so a reading
+            # with neither block went wrong somewhere.
+            print("  NO READING: modelfree printed neither H3's table nor H5e's block")
+            bad.append("modelfree printed no reading")
+        else:
+            print("\n".join(aggregates_only(shown) if on_github() else [ln for _, ln in shown]))
+        uso = next((ln.split() for b, ln in shown if b == "h3" and ln.strip().startswith("USO ") and "bracket" in ln),
+                   None)
         if uso:
             facts["h3"] = f"H3 USO lift {uso[2]} ({'inside' if 'INSIDE' in ' '.join(uso) else 'outside'} 1.4-3.2)"
-        tally = [ln.strip() for ln in shown if ln.strip().startswith(("mean |gap|", "no counted day"))]
-        if tally:
+        tally = [ln.strip() for b, ln in shown
+                 if b == "h5e" and ln.strip().startswith(("mean |gap|", "no counted day"))]
+        if tally and not on_github():    # 18 Nov 2026: a notification's dry run prints its message into the log
             facts["h5e"] = "H5e: " + tally[-1].split(";")[0].replace("no counted day yet", "0 counted days")
 
     section("verdict")

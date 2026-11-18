@@ -782,7 +782,8 @@ MUTANTS = [
      "a seed that fails (exit 1) or crashes makes the day LOOK AT: frozen rate"),
     # 18 Nov 2026: health.yml's public log and job summary carried H5e's per-day rows, each with that day's Cboe OVX
     # close (946 rows in 43 runs from 23 Sep). On GitHub's runner the report now prints aggregates only.
-    ("daily-public-prints-cboe-closes", "on GitHub's runner the daily report prints H5e's per-day Cboe closes again",
+    ("daily-public-prints-cboe-closes", "on_github() reads False everywhere, so GitHub's runner prints the Mac's full "
+     "report: H5e's per-day Cboe closes again",
      lambda w: _sub(w / "tools/daily.py", '    return os.environ.get("GITHUB_ACTIONS") == "true"\n',
                     "    return False\n"),
      "on GitHub's runner the daily report never prints a per-day Cboe close"),
@@ -790,11 +791,12 @@ MUTANTS = [
     # same fault, one more pattern that lets the in-sample rows through.
     ("daily-public-holds-counted-only", "the public report holds back only the counted rows; the in-sample rows "
      "still print their Cboe close",
-     lambda w: _sub(w / "tools/daily.py", '         re.compile(r"no counted day yet; H5e needs \\d+"))\n',
-                    '         re.compile(r"no counted day yet; H5e needs \\d+"),\n'
-                    '         re.compile(r"20\\d\\d-\\d\\d-\\d\\d .* no - in-sample.*"))\n'),
+     lambda w: _sub(w / "tools/daily.py", '                 re.compile(r"no counted day yet; H5e needs \\d+"))}\n',
+                    '                 re.compile(r"no counted day yet; H5e needs \\d+"),\n'
+                    '                 re.compile(r"20\\d\\d-\\d\\d-\\d\\d .* no - in-sample.*"))}\n'),
      "on GitHub's runner the daily report never prints a per-day Cboe close"),
-    ("daily-local-table-hidden", "a run on the Mac loses H5e's per-day table as well (aggregates everywhere)",
+    ("daily-local-table-hidden", "on_github() reads True everywhere, so a run on the Mac loses H5e's per-day table "
+     "as well (aggregates everywhere)",
      lambda w: _sub(w / "tools/daily.py", '    return os.environ.get("GITHUB_ACTIONS") == "true"\n',
                     "    return True\n"),
      "a local run of the daily report still prints H5e's full per-day table"),
@@ -802,13 +804,15 @@ MUTANTS = [
     # step's last lines could still carry a value into the public log.
     ("daily-public-tally-printed", "the public report prints H5e's running tally again (two nights' logs give a "
      "night's gap)",
-     lambda w: _sub(w / "tools/daily.py", '         re.compile(r"no counted day yet; H5e needs \\d+"))\n',
-                    '         re.compile(r"no counted day yet; H5e needs \\d+"), re.compile(r"mean \\|gap\\| .*"))\n'),
+     lambda w: _sub(w / "tools/daily.py", '                 re.compile(r"no counted day yet; H5e needs \\d+"))}\n',
+                    '                 re.compile(r"no counted day yet; H5e needs \\d+"), '
+                    're.compile(r"mean \\|gap\\| .*"))}\n'),
      "on GitHub's runner the daily report never prints a per-day Cboe close, nor H5e's nightly tally"),
     ("daily-public-drops-dated-only", "the public report drops only dated lines again, so an undated line with a "
      "value (a continuation, a warning from stderr, the tally) prints",
-     lambda w: _sub(w / "tools/daily.py", "        if any(k.fullmatch(ln.strip()) for k in KNOWN):\n",
-                    "        if any(k.fullmatch(ln.strip()) for k in KNOWN) or not re.search(r\"20\\d\\d-\\d\\d-\\d\\d\", ln):\n"),
+     lambda w: _sub(w / "tools/daily.py", "        if any(k.fullmatch(ln.strip()) for k in KNOWN[block]):\n",
+                    "        if any(k.fullmatch(ln.strip()) for k in KNOWN[block]) "
+                    "or not re.search(r\"20\\d\\d-\\d\\d-\\d\\d\", ln):\n"),
      "on GitHub's runner the daily report never prints a per-day Cboe close, nor H5e's nightly tally"),
     ("daily-public-warn-lines-whole", "on GitHub's runner the pressure test's warning lines print their values",
      lambda w: _sub(w / "tools/daily.py", "        for ln in masked(rest) if on_github() else rest:\n",
@@ -823,7 +827,7 @@ MUTANTS = [
      lambda w: _sub(w / "tools/daily.py", "(masked(lines[-6:]) if on_github() else lines[-6:])", "lines[-6:]"),
      "on GitHub's runner a failing step's last lines carry no value"),
     ("daily-public-mask-noop", "masking does nothing, so every step's own lines print their values on the runner",
-     lambda w: _sub(w / "tools/daily.py", '    return [DECIMAL.sub("#", ln) for ln in lines]\n',
+     lambda w: _sub(w / "tools/daily.py", '    return [DIGIT.sub("#", ln) for ln in lines]\n',
                     "    return list(lines)\n"),
      "on GitHub's runner a failing step's last lines carry no value"),
     ("daily-local-tail-masked", "a run on the Mac masks a failing modelfree's last lines too, so a crash cannot be "
@@ -831,6 +835,43 @@ MUTANTS = [
      lambda w: _sub(w / "tools/daily.py", '        print("\\n".join(masked(tail) if on_github() else tail))\n',
                     '        print("\\n".join(masked(tail)))\n'),
      "on GitHub's runner a failing step's last lines carry no value"),
+    # 18 Nov 2026 (later still), Astra 2's follow-up review: a known line with a value appended, a pattern applied
+    # outside its block, a whole number in a masked line, a RESULT-like line, the rate line, the notification's
+    # tally, and an empty reading each reached the public log or read ALL CLEAR.
+    ("daily-public-h3-row-loose", "H3's row pattern takes any text after the two means again, so a value appended "
+     "to a row prints",
+     lambda w: _sub(w / "tools/daily.py", '          rf"(?:   (?:{H3_NOTE}))?")', '          rf"(?: .*)?")'),
+     "on GitHub's runner the daily report never prints a per-day Cboe close, nor H5e's nightly tally"),
+    ("daily-public-preregistered-loose", "the registration sentence takes any text after it again, so a value "
+     "appended to it prints",
+     lambda w: _sub(w / "tools/daily.py", "re.compile(re.escape(H3_REGISTERED))),",
+                    're.compile(re.escape(H3_REGISTERED) + ".*")),'),
+     "on GitHub's runner the daily report never prints a per-day Cboe close, nor H5e's nightly tally"),
+    ("daily-public-patterns-unscoped", "each block's lines are matched to both blocks' lines, so an H3-shaped row "
+     "inside H5e's block prints",
+     lambda w: _sub(w / "tools/daily.py", "for k in KNOWN[block]):\n", 'for k in KNOWN["h3"] + KNOWN["h5e"]):\n'),
+     "on GitHub's runner the daily report never prints a per-day Cboe close, nor H5e's nightly tally"),
+    ("daily-public-mask-decimals-only", "masking covers decimals only again, so a whole number, a leading dot or an "
+     "exponent in a failing step's lines prints",
+     lambda w: _sub(w / "tools/daily.py", 'DIGIT = re.compile(r"\\d")\n', 'DIGIT = re.compile(r"\\d+\\.\\d+")\n'),
+     "on GitHub's runner a failing step's last lines carry no value"),
+    ("daily-public-result-loose", "any line that starts RESULT is the pressure test's result again, so a diagnostic "
+     "like it is printed whole and the warnings before it are lost",
+     lambda w: _sub(w / "tools/daily.py", 'RESULT = re.compile(r"RESULT: \\d+ fail, \\d+ warn")',
+                    'RESULT = re.compile(r"RESULT.*")'),
+     "on GitHub's runner the daily report never prints a per-day Cboe close, nor H5e's nightly tally"),
+    ("daily-public-rate-line-whole", "on GitHub's runner the risk-free line prints whole again, whatever is on it",
+     lambda w: _sub(w / "tools/daily.py", "        if rate and on_github() and not RATE.fullmatch(rate):",
+                    "        if False:"),
+     "on GitHub's runner the risk-free line prints only as modelfree writes it"),
+    ("daily-public-notify-tally", "on GitHub's runner the notification carries H5e's tally again, and its dry run "
+     "prints it into the public log",
+     lambda w: _sub(w / "tools/daily.py", "        if tally and not on_github():", "        if tally:"),
+     "on GitHub's runner a notification carries no H5e tally"),
+    ("daily-empty-reading-all-clear", "a reading with neither H3's table nor H5e's block reads ALL CLEAR again",
+     lambda w: _sub(w / "tools/daily.py", '            bad.append("modelfree printed no reading")\n',
+                    "            pass\n"),
+     "a reading that prints neither H3's table nor H5e's block makes the day LOOK AT"),
     ("cache-lacks-frozen-rate", "the FRED cache holds other series but not the registered rate",
      lambda w: _write(w / "data" / "fred_cache.json", '{"OTHER||": {"2026-09-10": 1.0}}'),
      "the fresh-clone seed carries the registered rate"),
