@@ -4670,6 +4670,71 @@ Global Markets. Aggregates only.*
 - *Needs Gabriel:* about 5 GB of free room, his choice of what goes; then a session reads the room, audits and
   pushes. Nothing on the system was changed and no app was quit; deleted tonight: only the 96 cache files above.
 
+**Wed 18 Nov (later, UTC) - every public health log carried H5e's per-day Cboe closes; fixed, publishing approved**
+
+- *The finding* (Vega, 18 Nov, seen while running `tools/daily.py`) *and Gabriel's task:* count which public
+  workflows print per-day Cboe values, never printing one; write a fix test-first that keeps aggregates in public
+  logs and the full table on the Mac; lay out the options for the old logs and wait. Cboe's approval (4 Nov)
+  answered a request that said "No Cboe data files are republished. Only aggregate statistics appear"; CLAUDE.md:
+  a public Actions log is publication.
+- *Measured 18 Nov, counts only:* every public run's log, read with `gh run view --log` into a script that prints
+  counts. No value was printed, kept or pasted.
+  - `health.yml`: **43 of 43 runs** (23 Sep 07:45 UTC to 18 Nov 04:39 UTC) print H5e's per-day rows: the day, its
+    OVX close, the registered and wide readings and their gaps to the close (a reading and its gap give the close
+    back). **946 rows in all, 42 on 18 Nov** (39 counted days, 3 in-sample; one more line is a dropped day with no
+    value). The finding's "34" was not reproduced: on 18 Nov, 35 counted rows are dated 11 Nov or earlier. The
+    block entered `daily.py` on 23 Sep (`c00d606`), before the first health run.
+  - The job summary on each run page holds the same report: health.yml's last step appends `report.txt` (the `tee`
+    of `daily.py`) with `if: always()`. GitHub serves summaries only inside the run page, which could not be read
+    from here without a browser, so this is read from the workflow file, not counted.
+  - No per-day row of any kind in `freshness` (145 runs), `guard` (155; one has no log, the 11 Nov
+    `startup_failure`), `record` (90), `surface` (83), `lab_bars` (1) and `opra_probe` (1). `h6` (4) and `sample_a`
+    (3) name Cboe's indices only on per-pair aggregate lines (counts, means, t, p; sample_a's end with the sample's
+    first and last date); their artifacts hold the same text and expire between 7 and 26 Jan 2027.
+  - Logs are kept 90 days (the repository's setting, GitHub's maximum): the 23 Sep log lapses Tue 22 Dec, the
+    18 Nov one Tue 16 Feb 2027.
+- *The fix* (test-first; committed on branch `claude/serene-leavitt-206096`). `tools/daily.py`
+  (sha256 `3214386b16cc...`): on GitHub's runner (`GITHUB_ACTIONS=true`) the H3/H5e section keeps its aggregate
+  lines (the lift table, H5e's header and its "mean |gap|" line) and prints one line in place of the rows: "(43
+  per-day row(s) held back: this log is public, and the rows carry Cboe's daily closes. tools/daily.py on the Mac
+  prints them.)". On the Mac it prints in full, as before. `health.yml` is unchanged: its job summary takes the same
+  report, and the phone's green line reads "mean |gap|", which stays. `tools/pressure_test.py` (`cac66291900a...`):
+  two checks, every step stubbed and synthetic rows in modelfree's layout (none is a Cboe close): on the runner no
+  per-day close, on the Mac the full table. `tools/audit.py` (`c643eb6bd90e...`): three mutants (the rows printed on
+  the runner again; only the counted rows held back; the Mac's table lost).
+- *Verified:* the runner check FAILED on the old code (the six synthetic per-day numbers and four dated rows
+  printed), then passed. `daily.py` on the real data, on the Mac, is byte-identical before and after (sha256
+  `c6298a3d7b32...` both). With `GITHUB_ACTIONS=true` on the Mac, 43 dated lines go, one count line comes, no dated
+  line with a number is left, and the verdict line stays. Pressure test **0 fail, 2 warn** (the known two; its only
+  change is the two new PASS lines); 15 suites, none failed; all 262 mutants dry-applied in a scratch worktree (each
+  applies, each file still parses); `tools/audit.py -k daily-` **7 of 7 KILLED**, the three new among them;
+  `tools/independent_check.py` **1342 of 1342** agree. Not run: the full audit (about 5 GB short of room, the
+  entry above). Re-run after the rebase onto the auditor commit, in CI mode (the licensed folder absent, as on
+  GitHub's runner): 16 suites, none failed; pressure test **0 fail, 2 warn**, the lab check skipped; the runner's
+  report has no dated line with a number, one held-back line, ALL CLEAR; 262 mutants dry-applied; `-k daily-`
+  **7 of 7 KILLED** under the new auditor.
+- *Decided 18 Nov 2026 (Vega, under Gabriel's go-ahead; his to veto):* the switch is GitHub's own `GITHUB_ACTIONS`
+  variable, not a flag in health.yml, so any run on GitHub prints aggregates and no workflow is edited; every line
+  that names a day is held back (the dropped and n/a rows too), a block's header excepted; the count stays.
+- *Gabriel, 18 Nov, on publishing:* "Yes, publish it" (asked: publish the fix with the next audited push?). It goes
+  to main only through a full audit reading N of N, outside 13:45-16:10 New York on a weekday, proposed as one push
+  with the poster commit and the main checkout's auditor change (that session decides on its own work). The audit
+  waits on the disk: at 07:53 UTC 13 GiB were free and 1,193 licensed files (2.81 GB) were in iCloud only. Asked
+  to free about 5 GB, he answered "Not tonight".
+- *Needs Gabriel* (each his call; nothing was deleted or sent):
+  1. The old logs. (a) Delete the 43 health runs (`gh run delete`) once the fix is live and the next health log
+     is clean: each run's log and job summary go at once; it cannot be undone, and the runs' green/red history goes
+     with them (this file records it). (b) Delete only their logs (GitHub's API keeps the run): GitHub's documents
+     do not say the job summary goes with the log, so the rows may stay on the run pages. (c) Let them lapse
+     (22 Dec to 16 Feb 2027), public until then. Recommended: (a).
+  2. Telling Cboe. (i) No separate message: this entry is public and dated, and the fix and the deletion restore
+     the approved scope. (ii) A short note from him to his Cboe contact. Recommended: (i); his call.
+- *Rebased 18 Nov* onto the auditor commit (the entry above), at the other session's request: the code applied
+  cleanly; this file met at its insertion point, both entries kept, that session's first.
+- *No reminder set:* nothing is dated until he chooses. Under (c), the last affected log lapses Tue 16 Feb 2027.
+
+*Index closes: Cboe Global Markets. Counts only; no index value appears in this entry.*
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
