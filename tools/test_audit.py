@@ -67,7 +67,8 @@ def live_copies(repo):
 
 
 def run_audit(n_mutants, j, broken=(), raise_at=None, delay=0.05, late_drop=False, hold=False,
-              hold_baseline=False, advance=False, stuck_at=None, stale_other=False):
+              hold_baseline=False, advance=False, stuck_at=None, stale_other=False, add_fails_at=None,
+              drop_raises_at=None):
     """Run audit.main() with n fake mutants. Each writes its own name into file.txt; the fake pressure test
     FAILs exactly the check named in file.txt. Every copy the auditor makes is counted through git right after it
     is made (max_live), and again whenever a pressure test starts (max_at_start, the first version's count).
@@ -78,12 +79,15 @@ def run_audit(n_mutants, j, broken=(), raise_at=None, delay=0.05, late_drop=Fals
     advance: the baseline's pressure test commits a new file, so HEAD moves while the run goes on.
     stuck_at: that mutant's pressure test leaves a folder in its copy that cannot be deleted.
     stale_other: an unrelated worktree, its folder since deleted, is registered in the repository before the run.
-    Returns what was observed."""
+    add_fails_at: git fails to add copy number i (an exception, as from a full disk).
+    drop_raises_at: removing copy number i raises in its worker (the final clean-up still removes it).
+    Returns what was observed; "made" lists the copies asked for, in order."""
     spec = iu.spec_from_file_location("audit_under_test", R / "tools/audit.py")
     au = iu.module_from_spec(spec)
     spec.loader.exec_module(au)
     names = [f"mut{k:02d}" for k in range(1, n_mutants + 1)]
-    seen = {"max_live": 0, "max_at_start": 0, "runs": [], "bases": set(), "marked": 0, "stuck": [], "released": []}
+    seen = {"max_live": 0, "max_at_start": 0, "runs": [], "bases": set(), "marked": 0, "stuck": [], "released": [],
+            "made": []}
     lock = threading.Lock()
     released = threading.Event()
     real_make, real_drop = au.make_tree, getattr(au, "drop_tree", None)
@@ -95,6 +99,10 @@ def run_audit(n_mutants, j, broken=(), raise_at=None, delay=0.05, late_drop=Fals
         return lambda w: au._sub(w / "file.txt", "unbroken", name)
 
     def counted_make(*args):
+        with lock:
+            seen["made"].append(args[1])
+        if add_fails_at is not None and args[1] == add_fails_at:
+            raise RuntimeError("git worktree add failed (planted)")
         tree = real_make(*args)
         with lock:
             seen["max_live"] = max(seen["max_live"], live_copies(au.ROOT))
@@ -102,6 +110,13 @@ def run_audit(n_mutants, j, broken=(), raise_at=None, delay=0.05, late_drop=Fals
             real_drop(worker.previous)              # the fault: the previous copy goes only now
             worker.previous = None
         return tree
+
+    def raising_drop_tree(tree):
+        if (Path(tree).name == f"m{drop_raises_at:02d}" and threading.current_thread() is not threading.main_thread()
+                and not seen.get("drop_raised")):
+            seen["drop_raised"] = True
+            raise OSError("git worktree remove crashed (planted)")
+        return real_drop(tree)
 
     def late_drop_tree(tree):
         if threading.current_thread() is threading.main_thread():
@@ -160,17 +175,19 @@ def run_audit(n_mutants, j, broken=(), raise_at=None, delay=0.05, late_drop=Fals
         au.make_tree = counted_make
         if late_drop:
             au.drop_tree = late_drop_tree
+        if drop_raises_at is not None:
+            au.drop_tree = raising_drop_tree
         if hold or hold_baseline:
             au.ThreadPoolExecutor = HeldPool
         au.drift = lambda: []
-        out, err, code = io.StringIO(), None, None
+        out, errs, err, code = io.StringIO(), io.StringIO(), None, None
         argv = sys.argv
         sys.argv = ["audit.py", "-j", str(j)]
         try:
-            with contextlib.redirect_stdout(out):
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(errs):
                 code = au.main()
-        except Exception as e:                      # a pressure test that raises must surface, as before
-            err = e
+        except (Exception, SystemExit) as e:        # a pressure test that raises must surface, as before;
+            err = e                                 # SystemExit: the command line was refused
         finally:
             sys.argv = argv
         listing = git(repo, "worktree", "list", "--porcelain")
@@ -184,7 +201,7 @@ def run_audit(n_mutants, j, broken=(), raise_at=None, delay=0.05, late_drop=Fals
                 stuck.chmod(0o700)
         for b in seen["bases"]:
             shutil.rmtree(b, ignore_errors=True)
-    seen.update(out=out.getvalue(), err=err, code=code, names=names)
+    seen.update(out=out.getvalue(), stderr=errs.getvalue(), err=err, code=code, names=names)
     return seen
 
 
@@ -255,6 +272,28 @@ s = run_audit(3, 1, stale_other=True)
 check("an unrelated worktree's stale registration is left alone (no repository-wide prune), and the run reads 3 of 3",
       s["other_kept"] and s["worktrees_left"] == 1 and "RESULT: 3 of 3 safeguards proven" in s["out"])
 
+# 18 Nov 2026 (later), Astra 2's review of this file: git failing to add a copy, or a removal that raised, left the
+# auditor's lock without setting stop, so another worker could make a copy before the main thread saw the failure;
+# and -j 0 silently ran one copy at a time.
+print("\n=== a copy git cannot add, or a removal that raises, voids the run before any other copy is made ===")
+s = run_audit(6, 1, add_fails_at=2)
+check(f"git failing to add mut02's copy voids the run (no RESULT line), and no copy is asked for after it "
+      f"(asked for, in order: {s['made']})",
+      isinstance(s["err"], RuntimeError) and "RESULT:" not in s["out"] and s["made"] == [0, 1, 2])
+check("and nothing is left behind", s["worktrees_left"] == 0 and not s["bases_left"])
+s = run_audit(6, 1, drop_raises_at=1)
+check(f"a removal that raises voids the run (no RESULT line), and no copy is asked for after it "
+      f"(asked for, in order: {s['made']})",
+      isinstance(s["err"], OSError) and "RESULT:" not in s["out"] and s["made"] == [0, 1])
+check("and the final clean-up still removes that copy", s["worktrees_left"] == 0 and not s["bases_left"])
+
+print("\n=== -j must be 1 or more ===")
+for _bad in (0, -2):
+    s = run_audit(3, _bad)
+    check(f"-j {_bad} is refused before any copy is made (exit {getattr(s['err'], 'code', None)}, copies asked for: "
+          f"{s['made']})",
+          isinstance(s["err"], SystemExit) and s["err"].code == 2 and s["made"] == [] and "RESULT:" not in s["out"])
+
 print("\n=== the audit's copies never read the licensed lab files ===")
 # 18 Nov 2026, Gabriel: "14 gb is atrocious". Every copy's pressure test ran lab/verify_purchases.py over the lab's
 # 8,073 licensed files (18.3 GB), so all of them had to stay on the disk through the whole audit while macOS keeps
@@ -289,13 +328,23 @@ with tempfile.TemporaryDirectory() as tmp:
           res == {"a check": "PASS", "another": "FAIL"} and seen.get("cwd") == tree and seen.get("timeout") == 600)
 
 
+# 18 Nov 2026 (later), Astra 2's review: this guard looked for "purchases verified" inside each target, while the
+# auditor's find() looks for the target inside the check's label, so a target from the middle of the label passed it.
+# Now it reads the label from the pressure test and asks the auditor's own lookup.
+_lab_label = next((ln.strip().strip('"),') for ln in (R / "tools/pressure_test.py").read_text().splitlines()
+                   if ln.strip().startswith('"lab/ purchases verified:')), "")
+
+
 def names_lab_check(mutants):
-    return any("purchases verified" in m[3] for m in mutants)
+    return any(au.find({_lab_label: "PASS"}, m[3]) is not None for m in mutants)
 
 
-check("no auditor mutant names the check that reads the licensed lab files (in the copies it reads SKIP, so such a "
-      "mutant could never be KILLED); this guard sees one if it is added",
-      not names_lab_check(au.MUTANTS) and names_lab_check(au.MUTANTS + [("x", "y", None, "lab/ purchases verified")]))
+check(f"no auditor mutant names the check that reads the licensed lab files (in the copies it reads SKIP, so such a "
+      f"mutant could never be KILLED); this guard sees one if it is added, by the label's start or by a phrase from "
+      f"its middle (label read from the pressure test: {_lab_label[:40]!r}...)",
+      _lab_label.startswith("lab/ purchases verified: every used file has data") and not names_lab_check(au.MUTANTS)
+      and names_lab_check(au.MUTANTS + [("x", "y", None, "lab/ purchases verified")])
+      and names_lab_check(au.MUTANTS + [("x", "y", None, "every used file has data")]))
 
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)

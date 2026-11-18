@@ -1149,7 +1149,14 @@ _GIT = threading.Lock()
 
 
 def _drop(tree, stop):
-    if not drop_tree(tree):
+    # 18 Nov 2026 (later), Astra 2's review: a removal that raised left the lock without setting stop, so another
+    # worker could make a copy before the main thread saw the failure. Now stop is set first, whichever way it fails.
+    try:
+        gone = drop_tree(tree)
+    except BaseException:
+        stop.set()
+        raise
+    if not gone:
         stop.set()
         raise RuntimeError(f"git could not remove the worktree {tree}: the run is void")
 
@@ -1163,7 +1170,11 @@ def audit_one(base, rev, stop, i, mutate=None):
     with _GIT:
         if stop.is_set():                          # the run is void already: build nothing more
             return None, "not started: the run was already void"
-        tree = make_tree(base, i, rev)
+        try:
+            tree = make_tree(base, i, rev)
+        except BaseException:                      # git could not add the copy (a full disk, say): void, and set
+            stop.set()                             # stop before the lock goes, so no other worker builds one
+            raise
         try:
             if mutate is not None:
                 mutate(tree)
@@ -1201,11 +1212,19 @@ def drift():
     return out
 
 
+def positive(text):
+    """-j: at least one copy at a time (18 Nov 2026, Astra 2's review: -j 0 or less silently ran one)."""
+    n = int(text)
+    if n < 1:
+        raise argparse.ArgumentTypeError(f"must be 1 or more, not {n}")
+    return n
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--list", action="store_true")
     ap.add_argument("-k", help="only mutants whose name contains this")
-    ap.add_argument("-j", type=int, default=4, help="parallel worktrees")
+    ap.add_argument("-j", type=positive, default=4, help="parallel worktrees (1 or more)")
     a = ap.parse_args()
     muts = [m for m in MUTANTS if not a.k or a.k in m[0]]
     if a.list:
@@ -1222,7 +1241,7 @@ def main():
     base = Path(tempfile.mkdtemp(prefix="volrec-audit-")).resolve()
     jobs, results = [], {}
     try:
-        with ThreadPoolExecutor(max_workers=max(1, a.j)) as ex:
+        with ThreadPoolExecutor(max_workers=a.j) as ex:
             try:
                 first = ex.submit(audit_one, base, rev, stop, 0)
                 futures = [(name, what, check, ex.submit(audit_one, base, rev, stop, i, mutate))
