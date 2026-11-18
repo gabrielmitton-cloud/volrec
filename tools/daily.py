@@ -12,6 +12,9 @@ there are unpushed local commits to replay on top of main), and the frozen-rate 
 only in a clone with no FRED cache (GitHub's runner) and otherwise checks the cache. A step that crashes is
 reported as a crash, never as a pass - on 23 Sep 2026 the pressure test had been crashing silently for two days.
 
+On GitHub's runner (GITHUB_ACTIONS=true) step 4 prints aggregates only, because there this report is public:
+health.yml keeps it in the run's log and job summary (18 Nov 2026, aggregates_only()). On the Mac it prints in full.
+
 USAGE
 -----
   python3 tools/daily.py
@@ -19,12 +22,39 @@ USAGE
   python3 tools/daily.py --notify         # and text Gabriel the one-line verdict (tools/notify.py)
 """
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PY = sys.executable                    # whichever python runs this runs everything
+DAY = re.compile(r"\b20\d\d-\d\d-\d\d\b")
+
+
+def on_github():
+    """GitHub's runner sets GITHUB_ACTIONS=true. There this report is public: the repository is public, and health.yml
+    keeps the report in the run's log and job summary."""
+    return os.environ.get("GITHUB_ACTIONS") == "true"
+
+
+def aggregates_only(lines):
+    """The reading's lines as a public log may carry them. 18 Nov 2026: H5e's block printed one row per day with that
+    day's Cboe OVX close beside the free reading, in every health run from 23 Sep (946 rows in 43 public logs). Cboe
+    approved aggregates only (4 Nov 2026: "No Cboe data files are republished. Only aggregate statistics appear").
+    A line that names a day is a per-day row, so it is held back, and one line where the first stood says how many;
+    a block's own header ("-- H5e: ... judged from <day>") names a day but carries no value, and stays."""
+    out, held, at = [], 0, None
+    for ln in lines:
+        if DAY.search(ln) and not ln.strip().startswith("--"):
+            held += 1
+            at = len(out) if at is None else at
+        else:
+            out.append(ln)
+    if held:
+        out.insert(at, f"   ({held} per-day row(s) held back: this log is public, and the rows carry Cboe's daily "
+                       "closes. tools/daily.py on the Mac prints them.)")
+    return out
 
 
 def run(args, env_extra=None):
@@ -139,7 +169,7 @@ def main():
                 shown.append(ln)
             if grab and ln.strip().startswith("Pre-registered in H3"):
                 grab = False
-        print("\n".join(shown) if shown else "  no wide data yet")
+        print("\n".join(aggregates_only(shown) if on_github() else shown) if shown else "  no wide data yet")
         uso = next((ln.split() for ln in shown if ln.strip().startswith("USO ") and "bracket" in ln), None)
         if uso:
             facts["h3"] = f"H3 USO lift {uso[2]} ({'inside' if 'INSIDE' in ' '.join(uso) else 'outside'} 1.4-3.2)"

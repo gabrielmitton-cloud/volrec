@@ -1921,6 +1921,64 @@ ok([s for s, _ in _dd_ok[2]] == ["panel_health.py", "pressure_test.py", "seed_fr
    "daily.py, every step stubbed: a seed that fails (exit 1) or crashes makes the day LOOK AT: frozen rate, a sound "
    f"one reads ALL CLEAR, and the seed runs after the pressure test, before the reading (exits {_dd_ok[0]}, "
    f"{_dd_exit[0]}, {_dd_crash[0]})")
+# 18 Nov 2026: health.yml publishes this report - its log and its job summary - on a PUBLIC repository, and H5e's
+# block there printed one row per day with that day's Cboe OVX close (every health run from 23 Sep to 18 Nov: 946
+# rows in 43 logs, 42 on 18 Nov). Cboe approved aggregates only (4 Nov 2026), and a public log is publication. On
+# GitHub's runner (GITHUB_ACTIONS=true) the report keeps the block's aggregate lines and counts the rows it holds
+# back; a local run prints the full table, unchanged. Synthetic numbers in modelfree's own layout (none is a Cboe
+# close), every step stubbed; the variable is set and cleared here, so the check reads the same on the runner.
+def _h5e_row(d, cb, reg, wide, counted):
+    return f"   {d:<12}{cb:>7.2f}{reg:>12.2f}{reg - cb:>+8.2f}{wide:>11.2f}{wide - cb:>+8.2f}  {counted}"
+_pub_rows = [_h5e_row("2026-09-22", 50.01, 45.03, 49.05, "no - in-sample, before registration"),
+             _h5e_row("2026-09-23", 60.02, 55.04, 59.06, "yes"),
+             f"   {'2026-09-28':<12} dropped - recorded after the close (23 Sep rule, applied 30 Sep)",
+             f"   {'2026-09-29':<12}{'n/a':>7}  (no OVX close yet, or too thin)"]
+_pub_mf = "\n".join([
+    "--wide: adding 2 contracts beyond the registered +/-30% band. SENSITIVITY ONLY - not H3's registered estimate.",
+    "", "risk-free (DGS1MO): 3.910%", "",
+    f"{'date':<12}{'sym':<6}{'ours':>8}{'cboe':>8}{'gap':>8}{'legs':>10}{'n':>5}", "-" * 58,
+    f"{'2026-09-23':<12}{'USO':<6}{55.04:>8.2f}{60.02:>8.2f}{55.04 - 60.02:>+8.2f}{'28d/35d':>10}{30:>5}",
+    "", f"   {'sym':<6}{'days':>5}{'mean as reg':>13}{'mean zero-bid':>15}   reading",
+    f"   {'USO':<6}{2:>5}{3.52:>+13.2f}{1.11:>+15.2f}   registered bracket 1.4 to 3.2: OUTSIDE (only 2 day(s); "
+    "first reading at 5)",
+    "", "   Pre-registered in H3 on 18 Sep: USO's reading is the as-registered mean over",
+    "   every covered wide day, never a subset. SPY is never widened, so its half of",
+    "", "-- H5e: USO, wide strikes, zero bids SKIPPED, against OVX (registered 23 Sep; judged from 2026-09-23)",
+    f"   {'date':<12}{'OVX':>7}{'registered':>12}{'gap':>8}{'wide skip':>11}{'gap':>8}  counted",
+    *_pub_rows,
+    "   mean |gap| 0.96 against 0.5 (OVER); closer than registered on 1 of 1 days (majority) - 1 of 10 days, "
+    "not a verdict yet"]) + "\n"
+def _daily_runner(on_github):
+    seed = (0, "fred_cache.json already exists (DGS1MO last 2026-09-10 = 3.91%); left untouched.\n")
+    def _fake_run(args, env_extra=None):
+        return {"panel_health.py": (0, "HEALTHY\n"), "pressure_test.py": (0, "RESULT: 0 fail, 0 warn\n"),
+                "seed_frozen_rate.py": seed, "modelfree.py": (0, _pub_mf)}[Path(args[1]).name]
+    _argv, _run, _gha = sys.argv, _ddm.run, os.environ.pop("GITHUB_ACTIONS", None)
+    sys.argv, _ddm.run = ["daily.py", "--no-pull"], _fake_run
+    if on_github:
+        os.environ["GITHUB_ACTIONS"] = "true"
+    try:
+        with _ctxs.redirect_stdout(_ios.StringIO()) as _o:
+            code = _ddm.main()
+    finally:
+        sys.argv, _ddm.run = _argv, _run
+        os.environ.pop("GITHUB_ACTIONS", None)
+        if _gha is not None:
+            os.environ["GITHUB_ACTIONS"] = _gha
+    return code, _o.getvalue()
+_gh_run, _mac_run = _daily_runner(True), _daily_runner(False)
+_per_day = ("50.01", "60.02", "45.03", "55.04", "49.05", "59.06")   # each row's close, and the readings beside it
+ok(_gh_run[0] == 0 and "ALL CLEAR" in _gh_run[1]
+   and not any(x in _gh_run[1] for x in _per_day)
+   and not any(re.match(r"\s*20\d\d-\d\d-\d\d", ln) for ln in _gh_run[1].splitlines())
+   and "4 per-day row(s) held back" in _gh_run[1]
+   and "mean |gap| 0.96 against 0.5 (OVER); closer than registered on 1 of 1 days" in _gh_run[1]
+   and "registered bracket 1.4 to 3.2: OUTSIDE" in _gh_run[1],
+   "on GitHub's runner the daily report never prints a per-day Cboe close: H5e's aggregates and a count of the rows "
+   "held back (its log and job summary are public)")
+ok(_mac_run[0] == 0 and "\n".join(_pub_rows) in _mac_run[1] and "held back" not in _mac_run[1]
+   and "mean |gap| 0.96 against 0.5" in _mac_run[1],
+   "a local run of the daily report still prints H5e's full per-day table, as before")
 
 print("\n=== N. OPRA REFERENCE (Databento) - money, keys, time, parsing ===")
 _ops = _iu.spec_from_file_location("opraref", R / "tools/opra_reference.py")

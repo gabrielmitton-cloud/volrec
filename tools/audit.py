@@ -777,6 +777,21 @@ MUTANTS = [
      lambda w: _sub(w / "tools/daily.py", '    if code or crashed(out):\n        print("  FROZEN RATE NOT READY',
                     '    if code:\n        print("  FROZEN RATE NOT READY'),
      "a seed that fails (exit 1) or crashes makes the day LOOK AT: frozen rate"),
+    # 18 Nov 2026: health.yml's public log and job summary carried H5e's per-day rows, each with that day's Cboe OVX
+    # close (946 rows in 43 runs from 23 Sep). On GitHub's runner the report now prints aggregates only.
+    ("daily-public-prints-cboe-closes", "on GitHub's runner the daily report prints H5e's per-day Cboe closes again",
+     lambda w: _sub(w / "tools/daily.py", '    return os.environ.get("GITHUB_ACTIONS") == "true"\n',
+                    "    return False\n"),
+     "on GitHub's runner the daily report never prints a per-day Cboe close"),
+    ("daily-public-holds-counted-only", "the public report holds back only the counted rows; the in-sample rows "
+     "still print their Cboe close",
+     lambda w: _sub(w / "tools/daily.py", '        if DAY.search(ln) and not ln.strip().startswith("--"):\n',
+                    '        if DAY.search(ln) and ln.rstrip().endswith("yes"):\n'),
+     "on GitHub's runner the daily report never prints a per-day Cboe close"),
+    ("daily-local-table-hidden", "a run on the Mac loses H5e's per-day table as well (aggregates everywhere)",
+     lambda w: _sub(w / "tools/daily.py", '    return os.environ.get("GITHUB_ACTIONS") == "true"\n',
+                    "    return True\n"),
+     "a local run of the daily report still prints H5e's full per-day table"),
     ("cache-lacks-frozen-rate", "the FRED cache holds other series but not the registered rate",
      lambda w: _write(w / "data" / "fred_cache.json", '{"OTHER||": {"2026-09-10": 1.0}}'),
      "the fresh-clone seed carries the registered rate"),
