@@ -1886,11 +1886,11 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 every decision. This section is the only one guaranteed current. Read it, run
 `tools/daily.py`, and open section 17 only when a task needs the why.
 
-### System status, checked 18 Nov 2026 (Wed, the auditor's copies; the push waits for room)
+### System status, checked 18 Nov 2026 (Wed, the auditor's copies; one push for three pieces of work)
 
 | check | result |
 |---|---|
-| diagnostic, 18 Nov | `daily.py` **ALL CLEAR** at 03:11 New York on 17 Nov's data (landed 19:31/19:40 UTC), run in CI's mode: macOS had moved 648 of the licensed clone's files back to iCloud for room, so the lab data was set aside. Pressure test **0 fail, 2 warn** (324 pass; the lab purchase check SKIPPED; the known two warns). **Not pushed:** the 17 Nov poster commit and the 18 Nov auditor change wait on this Mac for about 5 GB of free room, then one audit at N of N (the 18 Nov entry). Auditor: the last full run read **259 of 259** on 14 Nov (`2ac3b55`, 46 minutes at J=3); 17 Nov's was voided for lack of room; the 259 mutants all still name a check the pressure test has. Seventeen suites **0 failures** (new: `tools/test_audit.py`, 19 checks). Below: the 13 Nov reading, kept |
+| diagnostic, 18 Nov | `daily.py` **ALL CLEAR** at 03:11 New York on 17 Nov's data (landed 19:31/19:40 UTC), run in CI's mode: macOS had moved 648 of the licensed clone's files back to iCloud for room, so the lab data was set aside. On the combined code at 17:12 UTC, the same mode: pressure test **0 fail, 2 warn** (326 pass; the lab purchase check SKIPPED; the known two warns). **Not pushed yet:** the 17 Nov poster commit, the 18 Nov auditor change and the public-log fix go out in one push after one audit at N of N (the 18 Nov entries); since 18 Nov the audit's copies no longer read the lab's licensed files, so it needs no extra room. Auditor: the last full run read **259 of 259** on 14 Nov (`2ac3b55`, 46 minutes at J=3); 17 Nov's was voided for lack of room; 262 mutants now, all naming a check the pressure test has; `-k lab` **24 of 24** without the lab files. Seventeen suites **0 failures** (new: `tools/test_audit.py`, 23 checks). Below: the 13 Nov reading, kept |
 | diagnostic, 13 Nov | `daily.py` **ALL CLEAR** on 13 Nov's data (landed 19:31/19:40 UTC = 14:31/14:40 New York). **H7 is recorded** (the workflow, 13 Nov 03:28 UTC, `a5497ca`): H7a FAILS (free vs full-market rebuild: USO 0.316, GLD 0.034; bar 0.25 each), H7b HOLDS (GLD 0.172 from GVZ; bar 0.30). Recorded the same day by Vega, beside the verdicts and never in their place: H3's reading of record (H3a, H3b and H3c hold), the companions to H5e's and H7's verdicts, and the timing measurement, read once. The site's results are now generated from those files (`tools/site_results.py`) and held to them by the pressure test. Pressure test **0 fail, 2 warn** (327 checks; the known two). Auditor: 229 of 229 on 12 Nov; the commit of this table adds 30 mutants (259), every one of the 259 applies, and the 30 new ones are KILLED one at a time; the push goes out only at N of N. Sixteen suites **0 failures** (new: `tools/test_site_results.py`, 159 cases). Below: the 12 Nov reading, kept |
 | diagnostic, 12 Nov | `daily.py` **ALL CLEAR** on 11 Nov's data, the windows' last day (landed 19:31/19:40 UTC = 14:31/14:40 New York). **H5e's FINAL reading is recorded** (the workflow, 12 Nov 03:55 UTC, `e0b36c9`): FAILS, 0.91 against 0.5, closer than registered on 26 of 35 days. H3 over the complete window, the frozen scorer at full precision: H3a 0.708 over 205 readings and 41 days (bar 1.0), H3b -0.444, H3c p 0.0104, BH 4 of 5 and 3 of 5 (USO alone 1.767); it enters the record beside the verdicts, with the companions. Pressure test **0 fail, 2 warn** after Gabriel's renewal later on 12 Nov (325 checks; the warns: the known one-sided FXE quotes and the late GitHub backup; the backup cron's margin is accepted again through 29 Jan 2027, `CRON_MARGIN_ACCEPTED`, after his 23 Sep acceptance ran out on 11 Nov). Auditor **217 of 217** three times on 11 Nov (the last on `5e9031a`) and on the verdict-night rehearsal; the commit of this table adds twelve mutants (229) and, like every push, goes out only at N of N. Fifteen suites **0 failures**: the eleven unit suites, the poster's two (60 and 27 cases), the new page-against-reader suite (45) and the review bridge's (24); `samples/long/test_h2_variance.py` is H2's analysis script, not a suite, and needs Alpaca's keys. (6 Nov: H3a 0.685 over 185; H5e 0.98, 22 of 31.) |
 | independent re-implementation, 13 Nov | the workflow's companion step after both finals (13 Nov): `tools/independent_check.py --through 2026-11-11`, **1302 of 1302** values agree. 12 Nov, by hand: 1206 of 1206 (largest gap 0.00088). `--opra` not rerun since 6 Nov (1184 of 1184) |
@@ -4735,6 +4735,47 @@ Global Markets. Aggregates only.*
 
 *Index closes: Cboe Global Markets. Counts only; no index value appears in this entry.*
 
+**Wed 18 Nov (from 17:00 UTC) - one push for all three pieces of work; the audit stops reading the lab's files**
+
+- *Gabriel,* in the main checkout's session: "the audit does not need 14 gb like if we need to recreate the auditor
+  agent or process then cool but 14 gb is atrocious"; "from the other chat bring over what needs to be done"; and
+  for the reviews, "chatgpt astra 2 just came out so for now on we are going to use that ... have it run a review of
+  everything, give it more jobs if necessary". Asked three questions, he chose: the public-log fix goes out
+  **together** with the poster and auditor commits, in one audited push; the 43 old health runs are **deleted**
+  (`gh run delete`) once the fix is live and the next health log is clean; Cboe gets **no separate message**. These
+  answer the two "Needs Gabriel" items of the entry above.
+- *One line of commits:* main was fast-forwarded to the other session's branch, whose fix and entry it had rebased
+  onto the auditor commit. In order: the poster commit, the auditor commit, the fix, its entry, and this commit.
+- *Why the audit needed about 14 GiB:* not for itself (its copies take about 0.1 GB since this morning). Every copy's
+  pressure test re-read the lab's 8,073 licensed files (18.3 GB), so they all had to stay on the disk through the
+  whole audit, and macOS keeps 11-14 GiB free by moving iCloud files off it. Measured before any change: no auditor
+  mutant names the one check that reads them ("lab/ purchases verified"), and the pressure test with and without
+  them differs on that line alone (PASS against SKIP; the tokens' day counts apart). They decided no verdict.
+- *The change* (`tools/audit.py`, sha256 `22920df2533b...`): `run_pressure` sets `VOLREC_LICENSED_DIR` to a folder
+  beside the copies that never exists, so in every copy that check reads SKIP, as it always has in the weekly
+  cloud audit. The pre-push hook's pressure test still reads the files, once per push. `AUDITOR.md` says the same.
+  Test first (`tools/test_audit.py`, `d6c38684313e...`, now 23 checks): the two new ones failed on the old auditor
+  (no setting passed), then passed; a guard check fails if a mutant ever names the lab check. For real,
+  `tools/audit.py -k lab -j 3`: **24 of 24** in 163 seconds, and the lab files in iCloud only were 1,537 before and
+  1,537 after: none was opened.
+- *Checked on the combined code,* the pressure test without the lab files: 17 suites 0 failures; pressure test
+  0 fail, 2 warn (326 pass; the lab check SKIPPED).
+- *Reviews:* the local review bridge now asks for gpt-6.2-astra ("Astra 2"; GPT-6.2-Astra in the Codex app's model
+  list on 18 Nov), Ultra reasoning, with no fallback; its test pins the name and was seen failing on the old one.
+- *Decided 18 Nov 2026 (Vega, under Gabriel's go-ahead; his to veto):* the copies run without the lab files rather
+  than reading a stored copy of the verifier's result; the hook keeps its one real read per push; "Astra 2" is read
+  as gpt-6.2-astra, the only new Astra in the list.
+- *What remains, both sessions, in order:*
+  1. Astra 2 reviews the push's own code; findings that hold up are fixed test first.
+  2. From 16:10 New York: one audit at J=3 reading N of N, then the push. Just before it, the 1,537 lab files are
+     fetched back for the hook (`keep_local.sh`).
+  3. The next health run on GitHub (scheduled 23:37 UTC; GitHub often starts it hours late) must read clean: no
+     per-day row, one "held back" line (the other session's count-only scan).
+  4. Then the 43 old health runs (23 Sep to 18 Nov 04:39 UTC) are deleted, each re-scanned just before; any run that
+     still reads a per-day row goes too. This cannot be undone.
+  5. Astra 2 reviews the rest of the project, in several jobs; findings that hold up are fixed.
+  6. Gabriel: the poster print (FedEx Office, 48 x 36 in) if not yet done; SCCUR is Sat 21 Nov.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
@@ -4760,9 +4801,9 @@ Global Markets. Aggregates only.*
 > to that function, look at the ledger at 1280 and 375 px, then set `LEDGER_SHA256` to the new fingerprint.
 > SCCUR: Gabriel prints from `poster/Mitton_SCCUR_2026_poster_48x36_v2.pdf` (FedEx Office, 48 x 36 in), revised
 > 14 Nov after Marc Vinyard's comments and checked again 17 Nov, unchanged (the entries above). The poster work
-> (17 Nov) and the auditor change (18 Nov) are committed on this Mac; unless a later entry records their push,
-> they are NOT pushed: the 17 Nov audit was voided when macOS removed local copies of iCloud files for room, and
-> on 18 Nov the room was short again. Before the next audit, read the free space against the 18 Nov entry (about
-> 14 GiB with the lab's files on the disk); never push without N of N.
+> (17 Nov), the auditor change and the public-log fix (18 Nov) are committed on this Mac; unless a later entry
+> records their push, they are NOT pushed. Since 18 Nov the audit's copies run without the lab's licensed files
+> (no verdict depends on them), so free room no longer gates the audit; only the pre-push hook reads those files,
+> once: fetch them back first (`keep_local.sh`). Never push without N of N.
 > `tools/site_bloomberg.py` holds the page's Bloomberg figures to the reader's output on every push from
 > this Mac: after any change to that reader or that section, read its lines, never edit around them.

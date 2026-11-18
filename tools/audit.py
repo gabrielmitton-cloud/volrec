@@ -25,8 +25,10 @@ them exist at once (18 Nov 2026: until then all 260 were built first, 8.1 GB, an
 Every worktree is made from the one commit HEAD named when the run started. A run that
 cannot finish (a pressure test timing out, a worktree git cannot remove) builds no
 further worktree and prints no RESULT. It removes only its own worktrees: no
-repository-wide `git worktree prune` since 18 Nov. Doc-drift checks follow (stale
-"current state" dates).
+repository-wide `git worktree prune` since 18 Nov. The pressure tests run without the
+licensed lab files (18 Nov, run_pressure): no verdict depends on them, and keeping their
+18.3 GB on the disk for a whole audit is what macOS could not hold. Doc-drift checks
+follow (stale "current state" dates).
 
 USAGE
 -----
@@ -35,6 +37,7 @@ USAGE
   python3 tools/audit.py -k credit    # only mutants whose name contains "credit"
 """
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -1065,8 +1068,16 @@ def find(res, needle):
 
 
 def run_pressure(tree):
+    """One copy's pressure test, without the licensed lab files (18 Nov 2026, Gabriel: "14 gb is atrocious").
+    Every copy used to run lab/verify_purchases.py over the lab's 8,073 licensed files (18.3 GB), so all of them had
+    to stay on the disk through the whole audit while macOS keeps 11-14 GiB free by moving iCloud files off it: the
+    audits of 14 and 17 Nov were voided by the downloads (HANDOFF 18). No verdict depends on those files: no mutant
+    names that check, and without them it reads SKIP while every other line is the same. VOLREC_LICENSED_DIR names a
+    folder beside the copies that never exists; the weekly cloud audit runs the same way, and the pre-push hook's
+    pressure test still reads the files."""
+    env = dict(os.environ, VOLREC_LICENSED_DIR=str(tree.parent / "no-licensed-lab-data"))
     p = subprocess.run([PY, "tools/pressure_test.py"], cwd=tree, capture_output=True, text=True,
-                       timeout=600)
+                       timeout=600, env=env)
     return check_lines(p.stdout)
 
 

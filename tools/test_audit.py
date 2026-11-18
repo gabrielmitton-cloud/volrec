@@ -26,12 +26,14 @@ the auditor must leave an unrelated worktree's registration alone (no repository
 import contextlib
 import importlib.util as iu
 import io
+import os
 import shutil
 import subprocess
 import sys
 import tempfile
 import threading
 import time
+import types
 from pathlib import Path
 
 R = Path(__file__).resolve().parent.parent
@@ -252,6 +254,48 @@ check(f"the run is void (no RESULT line) and no further copy is made: J=1 held (
 s = run_audit(3, 1, stale_other=True)
 check("an unrelated worktree's stale registration is left alone (no repository-wide prune), and the run reads 3 of 3",
       s["other_kept"] and s["worktrees_left"] == 1 and "RESULT: 3 of 3 safeguards proven" in s["out"])
+
+print("\n=== the audit's copies never read the licensed lab files ===")
+# 18 Nov 2026, Gabriel: "14 gb is atrocious". Every copy's pressure test ran lab/verify_purchases.py over the lab's
+# 8,073 licensed files (18.3 GB), so all of them had to stay on the disk through the whole audit while macOS keeps
+# 11-14 GiB free by moving iCloud files off it. No verdict depends on them (no mutant names that check), so each
+# copy's pressure test runs with VOLREC_LICENSED_DIR naming a folder that does not exist: the check reads SKIP there.
+spec = iu.spec_from_file_location("audit_env_under_test", R / "tools/audit.py")
+au = iu.module_from_spec(spec)
+spec.loader.exec_module(au)
+seen = {}
+
+
+def fake_subprocess_run(args, **kw):
+    seen.update(kw, args=args)
+    return types.SimpleNamespace(stdout="  PASS  a check\n  FAIL  another\nRESULT: 1 fail, 0 warn\n", returncode=1)
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    tree = Path(tmp) / "m01"
+    tree.mkdir()
+    au.subprocess = types.SimpleNamespace(run=fake_subprocess_run, TimeoutExpired=subprocess.TimeoutExpired)
+    res = au.run_pressure(tree)
+    env = seen.get("env") or {}
+    lab = Path(env["VOLREC_LICENSED_DIR"]) if env.get("VOLREC_LICENSED_DIR") else None
+    check(f"each copy's pressure test runs with VOLREC_LICENSED_DIR naming a folder that does not exist, outside the "
+          f"copy and the repository (saw {lab})",
+          lab is not None and not lab.exists() and lab != tree and tree not in lab.parents
+          and R not in lab.resolve().parents)
+    check("the rest of the environment is passed on unchanged",
+          bool(env) and {k: v for k, v in env.items() if k != "VOLREC_LICENSED_DIR"}
+          == {k: v for k, v in os.environ.items() if k != "VOLREC_LICENSED_DIR"})
+    check("its lines are read as before, in the copy, with the 600 s limit",
+          res == {"a check": "PASS", "another": "FAIL"} and seen.get("cwd") == tree and seen.get("timeout") == 600)
+
+
+def names_lab_check(mutants):
+    return any("purchases verified" in m[3] for m in mutants)
+
+
+check("no auditor mutant names the check that reads the licensed lab files (in the copies it reads SKIP, so such a "
+      "mutant could never be KILLED); this guard sees one if it is added",
+      not names_lab_check(au.MUTANTS) and names_lab_check(au.MUTANTS + [("x", "y", None, "lab/ purchases verified")]))
 
 print(f"\n{len(fails)} failure(s)")
 sys.exit(1 if fails else 0)

@@ -20,7 +20,7 @@ things running, the auditor proves the alarms work.
 
 | component | runs | does | fails loudly when |
 |---|---|---|---|
-| `tools/audit.py` | by hand, and by the routine below | mutation testing: for each safeguard, a git worktree of HEAD with exactly that one thing broken, the pressure test run there, the matching check required to FAIL; then doc-drift checks | a breakage SURVIVES (a false check) or a check cannot be vouched for (INCONCLUSIVE) - exit code 1 |
+| `tools/audit.py` | by hand, and by the routine below | mutation testing: for each safeguard, a git worktree of HEAD with exactly that one thing broken, the pressure test run there, the matching check required to FAIL; then doc-drift checks. Since 18 Nov the copies' pressure tests run without the licensed lab files: no mutant names the one check that reads them, and the pre-push hook still reads them | a breakage SURVIVES (a false check) or a check cannot be vouched for (INCONCLUSIVE) - exit code 1 |
 | the auditor routine (Claude, cloud) | Mondays 16:30 UTC, so it lands before each verdict (Mon 5 Oct before 7 Oct, Mon 9 Nov before 12 Nov) | runs `tools/audit.py`, reads HANDOFF's current-state section against the live state for anything stale or contradicted, confirms `volrec-licensed` is still private | anything SURVIVED, INCONCLUSIVE or contradicted - one push notification; silent when clean |
 | `pressure_test.py`, section P | every pressure test | the auditor's list still names real checks, so renaming a check cannot quietly retire its mutant | a mutant names a check the pressure test no longer has |
 
