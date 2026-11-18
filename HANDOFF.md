@@ -1886,10 +1886,11 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 every decision. This section is the only one guaranteed current. Read it, run
 `tools/daily.py`, and open section 17 only when a task needs the why.
 
-### System status, checked 13 Nov 2026 (Fri, after H7's reading)
+### System status, checked 18 Nov 2026 (Wed, the auditor's copies; the push waits for room)
 
 | check | result |
 |---|---|
+| diagnostic, 18 Nov | `daily.py` **ALL CLEAR** at 03:11 New York on 17 Nov's data (landed 19:31/19:40 UTC), run in CI's mode: macOS had moved 648 of the licensed clone's files back to iCloud for room, so the lab data was set aside. Pressure test **0 fail, 2 warn** (324 pass; the lab purchase check SKIPPED; the known two warns). **Not pushed:** the 17 Nov poster commit and the 18 Nov auditor change wait on this Mac for about 5 GB of free room, then one audit at N of N (the 18 Nov entry). Auditor: the last full run read **259 of 259** on 14 Nov (`2ac3b55`, 46 minutes at J=3); 17 Nov's was voided for lack of room; the 259 mutants all still name a check the pressure test has. Seventeen suites **0 failures** (new: `tools/test_audit.py`, 19 checks). Below: the 13 Nov reading, kept |
 | diagnostic, 13 Nov | `daily.py` **ALL CLEAR** on 13 Nov's data (landed 19:31/19:40 UTC = 14:31/14:40 New York). **H7 is recorded** (the workflow, 13 Nov 03:28 UTC, `a5497ca`): H7a FAILS (free vs full-market rebuild: USO 0.316, GLD 0.034; bar 0.25 each), H7b HOLDS (GLD 0.172 from GVZ; bar 0.30). Recorded the same day by Vega, beside the verdicts and never in their place: H3's reading of record (H3a, H3b and H3c hold), the companions to H5e's and H7's verdicts, and the timing measurement, read once. The site's results are now generated from those files (`tools/site_results.py`) and held to them by the pressure test. Pressure test **0 fail, 2 warn** (327 checks; the known two). Auditor: 229 of 229 on 12 Nov; the commit of this table adds 30 mutants (259), every one of the 259 applies, and the 30 new ones are KILLED one at a time; the push goes out only at N of N. Sixteen suites **0 failures** (new: `tools/test_site_results.py`, 159 cases). Below: the 12 Nov reading, kept |
 | diagnostic, 12 Nov | `daily.py` **ALL CLEAR** on 11 Nov's data, the windows' last day (landed 19:31/19:40 UTC = 14:31/14:40 New York). **H5e's FINAL reading is recorded** (the workflow, 12 Nov 03:55 UTC, `e0b36c9`): FAILS, 0.91 against 0.5, closer than registered on 26 of 35 days. H3 over the complete window, the frozen scorer at full precision: H3a 0.708 over 205 readings and 41 days (bar 1.0), H3b -0.444, H3c p 0.0104, BH 4 of 5 and 3 of 5 (USO alone 1.767); it enters the record beside the verdicts, with the companions. Pressure test **0 fail, 2 warn** after Gabriel's renewal later on 12 Nov (325 checks; the warns: the known one-sided FXE quotes and the late GitHub backup; the backup cron's margin is accepted again through 29 Jan 2027, `CRON_MARGIN_ACCEPTED`, after his 23 Sep acceptance ran out on 11 Nov). Auditor **217 of 217** three times on 11 Nov (the last on `5e9031a`) and on the verdict-night rehearsal; the commit of this table adds twelve mutants (229) and, like every push, goes out only at N of N. Fifteen suites **0 failures**: the eleven unit suites, the poster's two (60 and 27 cases), the new page-against-reader suite (45) and the review bridge's (24); `samples/long/test_h2_variance.py` is H2's analysis script, not a suite, and needs Alpaca's keys. (6 Nov: H3a 0.685 over 185; H5e 0.98, 22 of 31.) |
 | independent re-implementation, 13 Nov | the workflow's companion step after both finals (13 Nov): `tools/independent_check.py --through 2026-11-11`, **1302 of 1302** values agree. 12 Nov, by hand: 1206 of 1206 (largest gap 0.00088). `--opra` not rerun since 6 Nov (1184 of 1184) |
@@ -4553,6 +4554,122 @@ Global Markets. Aggregates only.*
 - *Not checked:* the email itself (the Gmail connector now asks to be reconnected with more access; he pasted its
   text) and his Google Cloud console (his account).
 
+**Tue 17 Nov (UTC, into 18 Nov) - the poster checked once more; the push held: its audit was voided for lack of disk**
+
+- *Gabriel:* "no i did not sumbit the order yet, i am going to print it out today so give it one more look publish
+  it, then give me the intrsuctions to print it out"; later, going out: "do what u need to do, i am goin out, figure
+  it out and execute please and thank you Vega".
+- *The look:* the v2 PDF needs no change and is printed as it is (`poster/Mitton_SCCUR_2026_poster_48x36_v2.pdf`,
+  sha256 `0dbf60df...7d669`, the 14 Nov file): one page of 3456 x 2592 pt (48 x 36 in), the text drawn as vector
+  outlines, no raster image, and the QR code decodes (CoreImage) to the site's address. The print steps (FedEx
+  Office, 48 x 36 in, from that file) were given in the chat.
+- *Committed, not pushed:* the 14-15 Nov work is one local commit on top of the recorder's "surface 2026-11-17":
+  `poster/build_poster.py` (sha256 `6396e68dd444...`), `poster/charts.py` (`91f3d76a9534...`),
+  `poster/test_build_poster.py` (`a8321a365c90...`), `poster/test_charts.py` (`1dc2a2679e9c...`), `SCCUR-PITCH.md`
+  (`370477185739...`), `PAPER-OUTLINE.md` and this file's 14-15 Nov entries. It touches no page of the site, so
+  nothing at SCCUR waits on it: the poster's QR code leads to the site as it is.
+- *The audit, voided* (`.codex-reviews/held/push_offhours.sh`, J=3, `keep_local.sh` beside it): it started at 18:03
+  New York. From 19:57 macOS removed the local copies of iCloud files to make room (the repository's own files,
+  `.git` among them, and the licensed folders in `~/Documents`); `keep_local.sh` asked for up to 5,293 of them back
+  in one pass (21:26). The checks that read those files waited on downloads, and pressure tests hit their 600-second
+  limit from about 20:12, the last at 21:12. A timeout leaves no RESULT line, so the gate held: the run was stopped
+  at 21:30 (exit 143; the script: "STOP: the audit did not read N of N - nothing pushed"). Its 30 stranded checks
+  were ended, its 8.1 GB temporary folder deleted, and `git worktree prune` left no records.
+- *Why it failed* (measured 21:47-22:00 New York, no audit running): the audit builds all 260 copies of the
+  repository before it starts, 31.5 MB each (178 files; `data/surface.csv` is 20.5 MB of it): the voided run's
+  folder held 8.1 GB. The disk had 11-13.6 GiB free (93-95% used) and swap used 6.8-7.4 GB of its 8 GB. macOS held
+  the free space there by removing local copies: the licensed clone went from 583 to 2,470 files removed in twelve
+  minutes, and 5.2 of its 19.4 GB were off the disk at 21:59. The purchase verifier (`lab/verify_purchases.py`, run
+  inside every pressure test) opens each of the lab's 8,073 licensed files (18.3 GB), so every removed one is a
+  download the check waits on. A clean run needs about 13 GB more room than tonight's: 8.1 GB of copies plus the
+  5.2 GB off the disk.
+- *Repaired, 22:10 New York:* `.git/index` was gone (only iCloud's conflict copy `.git/index 2`, of 6 Nov, was
+  left), so `git status` listed every tracked file as deleted and as untracked. `git fsck --no-dangling` found no
+  fault (exit 0; the 189 removed `.git` files came back as it read them), the seven committed files matched the
+  disk (HANDOFF.md apart, edited tonight), and `git reset -q` rebuilt the index from the commit, where nothing had
+  been staged. `git status` reads as before: HANDOFF.md, CLAUDE.md and .gitignore modified, the bridge's files
+  untracked. What removed the index was not established.
+- *Decided 17 Nov 2026 (Vega, under Gabriel's go-ahead; his to veto):* no second run tonight; it would meet the
+  same removals with less room. The commit waits on this Mac. Nothing was changed on the system, no app was quit,
+  and nothing was deleted except the voided audit's own temporary folder.
+- *Needs Gabriel:* about 13 GB more free space before the next audit. A restart gives back most of the swap's 8 GB;
+  the rest is his to choose (System Settings > General > Storage lists the biggest items). Then a session checks
+  the room, runs the audit and pushes, outside 13:45-16:10 New York on a weekday. For the 2 Dec auditor work, two
+  facts from tonight: the 260 copies are built up front (J at a time would need about 0.1 GB), and every copy's
+  pressure test reads the lab's 18.3 GB.
+- *Next session:* the status table ("checked 13 Nov") turns stale for the auditor after 20 Nov: refresh it with
+  the next push. After any eviction, read `git status --short` before a commit: a lost index shows as every file
+  deleted. (Overtaken the same night: Gabriel restarted the Mac and the auditor now builds its copies as it needs
+  them; the entry below.)
+
+**Wed 18 Nov (UTC) - the auditor builds its copies as it needs them; a small cleanup of the folder**
+
+- *Gabriel,* after restarting the Mac: "ok i restarted my mac, i dont see any reason why u have to make 260 copies
+  tbh"; then "keep going but if u want to like go clean up the folder then be my guest ... i want u to be as safe
+  as possible and not delete any data that is necessary or could be ... be smart about it dont just cut to cut".
+- *After the restart* (01:40 New York): 25 GiB free (88% used), swap 1.06 GB. macOS had removed more local copies
+  meanwhile: 5,223 of the lab's 8,073 files (11.86 GB to come back) and 508 of `.git`'s files. Both were fetched
+  back with `keep_local.sh`, beside a new `.codex-reviews/held/disk_watch.sh` that logs free space and removals
+  every 20 s and stops the downloads below 14 GiB.
+- *He is right about the copies.* Each mutant needs its own throwaway worktree, but only while its pressure test
+  runs. `tools/audit.py` now builds each worktree when its turn comes and removes it as soon as its pressure test
+  ends, so at most `-j` exist at once (about 0.1 GB at J=3 instead of 8.1 GB). Adding a worktree, breaking it and
+  removing it happen one at a time under a lock; only the pressure tests overlap, as before. A pressure test that
+  raises (a timeout) still voids the run with no RESULT line, and now no further worktree is started (before, the
+  whole queue ran on for up to an hour). The report, the verdicts and the RESULT line are unchanged.
+- *Test first* (`tools/test_audit.py`, new: a tiny throwaway git repository, fake mutants and a fake pressure
+  test; no network, no data). Its first 11 checks, on the old auditor: 3 failed (9 worktrees at once with J=2, 7
+  with J=1, and 21 of 21 pressure tests run after one had raised); on the new one none (2, 1, and 5 of 21). The
+  other 8 hold what must not change: each mutant's copy holds only its own breakage, the baseline is unbroken, a
+  mutation that cannot apply reads INCONCLUSIVE, every copy is removed on every path.
+- *Two Astra reviews* (`tools/codex_review.py`; inside each, the pressure test read 0 fail, 2 warn and the second
+  implementation 1342 of 1342). The first (07:19 UTC) read INCOMPLETE: its packet sat in a folder the bundle leaves
+  out. Its two MEDIUM findings were on the test: copies were counted only when a pressure test started, so one made
+  and removed between two starts went unseen; and "fewer than 21 ran" did not show that the waiting mutants were
+  stopped. The second (07:33 UTC, NEEDS_ATTENTION) found four MEDIUM faults in the auditor itself: each copy read
+  HEAD on its own, so a commit made mid-run could mix two commits in one audit; a failure behind a pressure test
+  still running was noticed late, and more copies could start meanwhile; `drop_tree` ignored git's exit status, so
+  a copy git could not remove let more than J exist and a perfect RESULT could still print; and the repository-wide
+  `git worktree prune` could remove another worktree's stale record. All four were fixed test first: HEAD is read
+  once and every copy is made from that commit; every result is watched as it lands, and a stop signal keeps any
+  further copy from being built; a copy git cannot remove voids the run, and the final clean-up checks both the
+  folders and git's records; the auditor removes only its own copies. The suite now has 19 checks, and each was
+  seen to fail on a deliberately broken auditor (removing `cancel_futures` alone fails none: the stop signal
+  already covers it, and it stays as a second guard). Eight runs in a row passed. No third review: the rule is one
+  follow-up after fixes.
+- *Cleanup, under his go-ahead:* the 7 `__pycache__` folders outside `.venv` (96 cache files: git-ignored, none
+  tracked, nothing reads them on purpose; Python rebuilds them). One had been removed to iCloud, and the first
+  run of the new test waited more than five minutes on it, queued behind the lab files. `.git/index 2`, iCloud's
+  6 Nov conflict copy of git's index, went to the Trash; no other conflict copy was found in the folder or in
+  `~/Documents/volrec-*`. Kept on purpose: `.venv` (the finished TimesFM benchmark re-runs from it), both poster
+  PDFs (v2 is the print; the 13 Nov one is what Marc has), `.codex-reviews/` (the review record), `data/` and the
+  private folders.
+- *Decided 18 Nov 2026 (Vega, under Gabriel's go-ahead; his to veto):* the auditor change now, not with the 2 Dec
+  auditor work; that item keeps the speed work.
+- *The room ran out again* (`.codex-reviews/held/disk_watch_18nov.log`; New York times): with every lab file back on
+  the disk, 16.33 GiB were free at 02:16. By 02:41 only 11.38 GiB were, though nothing had been removed; at 02:47
+  macOS removed local copies again (1,093 lab files, 88 of `.git`'s). A pressure test started at 02:51 on the
+  final code waited on those downloads and was stopped at 03:04. Changed on the disk in those hours (read at 03:10;
+  how much each grew cannot be read now): the Claude app's virtual-machine image (`~/Library/Application
+  Support/Claude/vm_bundles`, 8.8 GB on disk), an update of the ChatGPT app waiting in `~/Library/Caches` (about
+  1.5 GB in its largest files) and a third 1 GB swap file (02:27). At 03:10: 11.2 GiB free; 648 files of the
+  licensed clone (1.57 GiB) and 85 of `.git/objects` were in iCloud only. At 03:12, with nothing of ours
+  running, macOS removed another round (1,537 lab files, 140 of `.git`'s) and free space rose to 13.8 GiB: it
+  acts near 11.2-11.4 GiB free and stops near 13.3-13.8.
+- *So no audit tonight.* The 17 Nov rule holds: free space must stay above about 14 GiB with the lab's 18.3 GB on
+  the disk, so about 5 GB more room is needed. Asked by the other session to free it, Gabriel answered "Not
+  tonight". The final code was checked in CI's mode instead (`VOLREC_LICENSED_DIR` set to a missing folder, the
+  way the nightly cloud run sees it): `tools/daily.py` ALL CLEAR; the pressure test 0 fail, 2 warn (324 pass; the
+  lab purchase check SKIPPED, the one difference from the full run's 325); all 17 suites pass.
+- *Committed, not pushed:* `tools/audit.py` (sha256 `0baa933a2ebb...`), `tools/test_audit.py` (`bbd0a70d3e8f...`)
+  and this file, one local commit on top of the 17 Nov poster commit. The push needs the room first, then one
+  audit of that commit at J=3 (14 Nov's took 46 minutes) reading N of N, outside 13:45-16:10 New York.
+- *A second session* worked tonight on the health workflow's public log: its branch `claude/serene-leavitt-206096`
+  and its own entry. Its commits are not in this one. Whether they go out in the same push (one audit) or after it
+  (a second audit) is Gabriel's call.
+- *Needs Gabriel:* about 5 GB of free room, his choice of what goes; then a session reads the room, audits and
+  pushes. Nothing on the system was changed and no app was quit; deleted tonight: only the 96 cache files above.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
@@ -4576,7 +4693,11 @@ Global Markets. Aggregates only.*
 > a result block or the page around its markers, run it, then `--check`; never edit between the markers.
 > `--check` also refuses a passage hidden, moved or contradicted, and pins the ledger function: after any change
 > to that function, look at the ledger at 1280 and 375 px, then set `LEDGER_SHA256` to the new fingerprint.
-> SCCUR: Gabriel orders the print by Mon 16 Nov (FedEx Office, 48 x 36 in) from
-> `poster/Mitton_SCCUR_2026_poster_48x36_v2.pdf`, revised 14 Nov after Marc Vinyard's comments (the entry above).
+> SCCUR: Gabriel prints from `poster/Mitton_SCCUR_2026_poster_48x36_v2.pdf` (FedEx Office, 48 x 36 in), revised
+> 14 Nov after Marc Vinyard's comments and checked again 17 Nov, unchanged (the entries above). The poster work
+> (17 Nov) and the auditor change (18 Nov) are committed on this Mac; unless a later entry records their push,
+> they are NOT pushed: the 17 Nov audit was voided when macOS removed local copies of iCloud files for room, and
+> on 18 Nov the room was short again. Before the next audit, read the free space against the 18 Nov entry (about
+> 14 GiB with the lab's files on the disk); never push without N of N.
 > `tools/site_bloomberg.py` holds the page's Bloomberg figures to the reader's output on every push from
 > this Mac: after any change to that reader or that section, read its lines, never edit around them.

@@ -18,8 +18,15 @@ test there, and requires the matching check to FAIL:
   INCONCLUSIVE  the check already fails on the unbroken repository, or its line is
                 missing - either way this run cannot vouch for it. The audit fails.
 
-It never touches the real working tree, data/, or any remote; every worktree is
-removed afterwards. Doc-drift checks follow (stale "current state" dates).
+It never touches the real working tree, data/, or any remote. Each worktree is built
+when its turn comes and removed as soon as its pressure test ends, so at most -j of
+them exist at once (18 Nov 2026: until then all 260 were built first, 8.1 GB, and on
+17 Nov macOS removed local copies of iCloud files mid-run to make room - HANDOFF 18).
+Every worktree is made from the one commit HEAD named when the run started. A run that
+cannot finish (a pressure test timing out, a worktree git cannot remove) builds no
+further worktree and prints no RESULT. It removes only its own worktrees: no
+repository-wide `git worktree prune` since 18 Nov. Doc-drift checks follow (stale
+"current state" dates).
 
 USAGE
 -----
@@ -33,7 +40,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from concurrent.futures import ThreadPoolExecutor
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -1047,11 +1055,67 @@ def run_pressure(tree):
     return check_lines(p.stdout)
 
 
-def make_tree(base, i):
+def make_tree(base, i, rev):
     tree = base / f"m{i:02d}"
-    subprocess.run(["git", "worktree", "add", "--detach", "--quiet", str(tree), "HEAD"],
+    subprocess.run(["git", "worktree", "add", "--detach", "--quiet", str(tree), rev],
                    cwd=ROOT, check=True, capture_output=True)
     return tree
+
+
+def drop_tree(tree):
+    """Remove one of this run's worktrees ('--force' twice: it is the run's own, even if something locked it).
+    True only when git succeeded and the folder is gone (18 Nov 2026, Astra's second review: the exit status was
+    ignored, so a copy git could not remove stayed on the disk unseen)."""
+    r = subprocess.run(["git", "worktree", "remove", "--force", "--force", str(tree)], cwd=ROOT, capture_output=True)
+    return r.returncode == 0 and not tree.exists()
+
+
+def own_registrations(base):
+    """The worktrees git still lists inside this run's folder: the clean-up is verified, never pruned repo-wide."""
+    out = subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=ROOT, check=True, capture_output=True,
+                         text=True).stdout
+    return [p for p in (Path(ln[len("worktree "):]).resolve() for ln in out.splitlines() if ln.startswith("worktree "))
+            if base in p.parents]
+
+
+# 18 Nov 2026: worktrees are added, broken and removed one at a time (they share the repository's metadata);
+# only the pressure tests run side by side. Astra's second review the same day: every copy is made from the one
+# commit resolved when the run starts (copies are now made all through the run, and HEAD may move meanwhile); a
+# pressure test that raises sets `stop` at once, so its worker and the others make no further copy; a copy git
+# cannot remove voids the run instead of letting more than -j exist.
+_GIT = threading.Lock()
+
+
+def _drop(tree, stop):
+    if not drop_tree(tree):
+        stop.set()
+        raise RuntimeError(f"git could not remove the worktree {tree}: the run is void")
+
+
+def audit_one(base, rev, stop, i, mutate=None):
+    """Build worktree i of commit rev, break it (not the baseline, i = 0), run the pressure test there, remove it.
+
+    Returns (check results, None), or (None, why) when the mutation could not apply or the run was already void
+    (either reads INCONCLUSIVE, should it ever reach the report). The worktree is removed even when the pressure
+    test raises (a timeout); the exception sets stop and goes on to void the run, as before 18 Nov."""
+    with _GIT:
+        if stop.is_set():                          # the run is void already: build nothing more
+            return None, "not started: the run was already void"
+        tree = make_tree(base, i, rev)
+        try:
+            if mutate is not None:
+                mutate(tree)
+        except Exception as e:                     # a mutation that cannot apply is itself a finding
+            _drop(tree, stop)
+            return None, f"could not apply: {e}"
+    try:
+        return run_pressure(tree), None
+    except BaseException:
+        stop.set()
+        raise
+    finally:
+        with _GIT:
+            _drop(tree, stop)
 
 
 def drift():
@@ -1090,30 +1154,38 @@ def main():
                       capture_output=True, text=True).stdout.strip():
         print("NOTE  the working tree has uncommitted changes; the audit tests HEAD, not them.")
 
-    base = Path(tempfile.mkdtemp(prefix="volrec-audit-"))
-    trees = []
+    rev = subprocess.run(["git", "rev-parse", "--verify", "HEAD^{commit}"], cwd=ROOT, check=True,
+                         capture_output=True, text=True).stdout.strip()   # one commit for every copy (18 Nov)
+    stop = threading.Event()
+    base = Path(tempfile.mkdtemp(prefix="volrec-audit-")).resolve()
+    jobs, results = [], {}
     try:
-        base_tree = make_tree(base, 0)
-        trees.append(base_tree)
-        jobs = []
-        for i, (name, what, mutate, check) in enumerate(muts, 1):
-            tree = make_tree(base, i)
-            trees.append(tree)
-            try:
-                mutate(tree)
-                jobs.append((name, what, check, tree, None))
-            except Exception as e:                     # a mutation that cannot apply is itself a finding
-                jobs.append((name, what, check, tree, f"could not apply: {e}"))
         with ThreadPoolExecutor(max_workers=max(1, a.j)) as ex:
-            baseline = ex.submit(run_pressure, base_tree)
-            futures = {j[0]: ex.submit(run_pressure, j[3]) for j in jobs if j[4] is None}
-            baseline = baseline.result()
-            results = {k: f.result() for k, f in futures.items()}
+            try:
+                first = ex.submit(audit_one, base, rev, stop, 0)
+                futures = [(name, what, check, ex.submit(audit_one, base, rev, stop, i, mutate))
+                           for i, (name, what, mutate, check) in enumerate(muts, 1)]
+                for f in as_completed([first] + [f for *_, f in futures]):
+                    f.result()                     # the first to raise, in whatever order it finishes, voids the run
+            except BaseException:
+                stop.set()                                    # the run is void: build no further worktree,
+                ex.shutdown(wait=True, cancel_futures=True)   # and start none still waiting
+                raise
+        baseline = first.result()[0]
+        for name, what, check, f in futures:
+            res, err = f.result()
+            jobs.append((name, what, check, None, err))
+            if err is None:
+                results[name] = res
     finally:
-        for t in trees:
-            subprocess.run(["git", "worktree", "remove", "--force", str(t)], cwd=ROOT, capture_output=True)
-        subprocess.run(["git", "worktree", "prune"], cwd=ROOT, capture_output=True)
-        shutil.rmtree(base, ignore_errors=True)
+        left = [t for t in sorted(p for p in base.iterdir() if p.is_dir()) if not drop_tree(t)] if base.exists() else []
+        if base.exists() and not left:
+            shutil.rmtree(base, ignore_errors=True)         # empty by now: every copy was removed through git
+        mine = own_registrations(base)
+        if left or mine or base.exists():
+            raise RuntimeError(f"clean-up incomplete: {len(left)} worktree(s) git could not remove, {len(mine)} still "
+                               f"registered, under {base}; remove each with `git worktree remove --force --force "
+                               f"PATH`. The run is void.")
 
     bad = 0
     print(f"volrec audit {date.today()}: {len(jobs)} safeguards broken on purpose, one at a time\n")
