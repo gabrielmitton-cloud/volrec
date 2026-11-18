@@ -786,15 +786,51 @@ MUTANTS = [
      lambda w: _sub(w / "tools/daily.py", '    return os.environ.get("GITHUB_ACTIONS") == "true"\n',
                     "    return False\n"),
      "on GitHub's runner the daily report never prints a per-day Cboe close"),
+    # Re-aimed 18 Nov 2026 (later), when the report changed from dropping dated lines to keeping known ones: the
+    # same fault, one more pattern that lets the in-sample rows through.
     ("daily-public-holds-counted-only", "the public report holds back only the counted rows; the in-sample rows "
      "still print their Cboe close",
-     lambda w: _sub(w / "tools/daily.py", '        if DAY.search(ln) and not ln.strip().startswith("--"):\n',
-                    '        if DAY.search(ln) and ln.rstrip().endswith("yes"):\n'),
+     lambda w: _sub(w / "tools/daily.py", '         re.compile(r"no counted day yet; H5e needs \\d+"))\n',
+                    '         re.compile(r"no counted day yet; H5e needs \\d+"),\n'
+                    '         re.compile(r"20\\d\\d-\\d\\d-\\d\\d .* no - in-sample.*"))\n'),
      "on GitHub's runner the daily report never prints a per-day Cboe close"),
     ("daily-local-table-hidden", "a run on the Mac loses H5e's per-day table as well (aggregates everywhere)",
      lambda w: _sub(w / "tools/daily.py", '    return os.environ.get("GITHUB_ACTIONS") == "true"\n',
                     "    return True\n"),
      "a local run of the daily report still prints H5e's full per-day table"),
+    # 18 Nov 2026 (later), Astra 2's review of the fix above: the tally, an undated line with a value, and a failing
+    # step's last lines could still carry a value into the public log.
+    ("daily-public-tally-printed", "the public report prints H5e's running tally again (two nights' logs give a "
+     "night's gap)",
+     lambda w: _sub(w / "tools/daily.py", '         re.compile(r"no counted day yet; H5e needs \\d+"))\n',
+                    '         re.compile(r"no counted day yet; H5e needs \\d+"), re.compile(r"mean \\|gap\\| .*"))\n'),
+     "on GitHub's runner the daily report never prints a per-day Cboe close, nor H5e's nightly tally"),
+    ("daily-public-drops-dated-only", "the public report drops only dated lines again, so an undated line with a "
+     "value (a continuation, a warning from stderr, the tally) prints",
+     lambda w: _sub(w / "tools/daily.py", "        if any(k.fullmatch(ln.strip()) for k in KNOWN):\n",
+                    "        if any(k.fullmatch(ln.strip()) for k in KNOWN) or not re.search(r\"20\\d\\d-\\d\\d-\\d\\d\", ln):\n"),
+     "on GitHub's runner the daily report never prints a per-day Cboe close, nor H5e's nightly tally"),
+    ("daily-public-warn-lines-whole", "on GitHub's runner the pressure test's warning lines print their values",
+     lambda w: _sub(w / "tools/daily.py", "        for ln in masked(rest) if on_github() else rest:\n",
+                    "        for ln in rest:\n"),
+     "on GitHub's runner the daily report never prints a per-day Cboe close, nor H5e's nightly tally"),
+    ("daily-public-reading-tail-whole", "on GitHub's runner a failing modelfree prints its last lines whole, a "
+     "Cboe close among them",
+     lambda w: _sub(w / "tools/daily.py", '        print("\\n".join(masked(tail) if on_github() else tail))\n',
+                    '        print("\\n".join(tail))\n'),
+     "on GitHub's runner a failing step's last lines carry no value"),
+    ("daily-public-crash-tail-whole", "on GitHub's runner a crashing pressure test prints its last lines whole",
+     lambda w: _sub(w / "tools/daily.py", "(masked(lines[-6:]) if on_github() else lines[-6:])", "lines[-6:]"),
+     "on GitHub's runner a failing step's last lines carry no value"),
+    ("daily-public-mask-noop", "masking does nothing, so every step's own lines print their values on the runner",
+     lambda w: _sub(w / "tools/daily.py", '    return [DECIMAL.sub("#", ln) for ln in lines]\n',
+                    "    return list(lines)\n"),
+     "on GitHub's runner a failing step's last lines carry no value"),
+    ("daily-local-tail-masked", "a run on the Mac masks a failing modelfree's last lines too, so a crash cannot be "
+     "read where it is fixed",
+     lambda w: _sub(w / "tools/daily.py", '        print("\\n".join(masked(tail) if on_github() else tail))\n',
+                    '        print("\\n".join(masked(tail)))\n'),
+     "on GitHub's runner a failing step's last lines carry no value"),
     ("cache-lacks-frozen-rate", "the FRED cache holds other series but not the registered rate",
      lambda w: _write(w / "data" / "fred_cache.json", '{"OTHER||": {"2026-09-10": 1.0}}'),
      "the fresh-clone seed carries the registered rate"),

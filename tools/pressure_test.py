@@ -1927,6 +1927,17 @@ ok([s for s, _ in _dd_ok[2]] == ["panel_health.py", "pressure_test.py", "seed_fr
 # GitHub's runner (GITHUB_ACTIONS=true) the report keeps the block's aggregate lines and counts the rows it holds
 # back; a local run prints the full table, unchanged. Synthetic numbers in modelfree's own layout (none is a Cboe
 # close), every step stubbed; the variable is set and cleared here, so the check reads the same on the runner.
+# 18 Nov 2026 (later): Astra 2's review of that fix found three ways a value could still reach the public log. A
+# failing modelfree, or a crashing pressure test, printed its last lines verbatim (a row printed before the crash
+# went with them); the block was filtered by what to drop, so an undated line with a value went through (a
+# continuation, a warning appended from stderr, a dated line that starts like a heading); and H5e's tally changes
+# every night, so two nights' logs give that night's gap - with the public free reading, the close to within
+# rounding (CLAUDE.md, mistake 10). Now the block keeps only the lines it knows (H3's lift table compares two
+# free-feed readings, no index; H5e's two headings), the tally stays on the Mac, and the other steps' lines are
+# shown on the runner with every decimal number masked, their words and dates kept.
+_pub_odd = ["   62.34   57.35   +1.27",                                     # an undated continuation of a row
+            "-- note 2026-09-24 63.45 (a dated line that starts like a heading)",
+            "warning: the OVX close 61.23 looked stale"]                    # stderr, which run() appends to stdout
 def _h5e_row(d, cb, reg, wide, counted):
     return f"   {d:<12}{cb:>7.2f}{reg:>12.2f}{reg - cb:>+8.2f}{wide:>11.2f}{wide - cb:>+8.2f}  {counted}"
 _pub_rows = [_h5e_row("2026-09-22", 50.01, 45.03, 49.05, "no - in-sample, before registration"),
@@ -1947,12 +1958,14 @@ _pub_mf = "\n".join([
     f"   {'date':<12}{'OVX':>7}{'registered':>12}{'gap':>8}{'wide skip':>11}{'gap':>8}  counted",
     *_pub_rows,
     "   mean |gap| 0.96 against 0.5 (OVER); closer than registered on 1 of 1 days (majority) - 1 of 10 days, "
-    "not a verdict yet"]) + "\n"
-def _daily_runner(on_github):
+    "not a verdict yet", *_pub_odd]) + "\n"
+def _daily_runner(on_github, steps=None):
     seed = (0, "fred_cache.json already exists (DGS1MO last 2026-09-10 = 3.91%); left untouched.\n")
+    fake = {"panel_health.py": (0, "HEALTHY\n"),
+            "pressure_test.py": (0, "RESULT: 0 fail, 1 warn\n  WARN: a synthetic warning that carries 67.89\n"),
+            "seed_frozen_rate.py": seed, "modelfree.py": (0, _pub_mf), **(steps or {})}
     def _fake_run(args, env_extra=None):
-        return {"panel_health.py": (0, "HEALTHY\n"), "pressure_test.py": (0, "RESULT: 0 fail, 0 warn\n"),
-                "seed_frozen_rate.py": seed, "modelfree.py": (0, _pub_mf)}[Path(args[1]).name]
+        return fake[Path(args[1]).name]
     _argv, _run, _gha = sys.argv, _ddm.run, os.environ.pop("GITHUB_ACTIONS", None)
     sys.argv, _ddm.run = ["daily.py", "--no-pull"], _fake_run
     if on_github:
@@ -1968,16 +1981,33 @@ def _daily_runner(on_github):
     return code, _o.getvalue()
 _gh_run, _mac_run = _daily_runner(True), _daily_runner(False)
 _per_day = ("50.01", "60.02", "45.03", "55.04", "49.05", "59.06")   # each row's close, and the readings beside it
+_odd_vals = ("62.34", "57.35", "1.27", "63.45", "61.23", "67.89")    # the unrecognised lines' values, the warning's
 ok(_gh_run[0] == 0 and "ALL CLEAR" in _gh_run[1]
-   and not any(x in _gh_run[1] for x in _per_day)
+   and not any(x in _gh_run[1] for x in _per_day + _odd_vals)
    and not any(re.match(r"\s*20\d\d-\d\d-\d\d", ln) for ln in _gh_run[1].splitlines())
-   and "4 per-day row(s) held back" in _gh_run[1]
-   and "mean |gap| 0.96 against 0.5 (OVER); closer than registered on 1 of 1 days" in _gh_run[1]
-   and "registered bracket 1.4 to 3.2: OUTSIDE" in _gh_run[1],
-   "on GitHub's runner the daily report never prints a per-day Cboe close: H5e's aggregates and a count of the rows "
-   "held back (its log and job summary are public)")
+   and "mean |gap|" not in _gh_run[1] and "closer than registered" not in _gh_run[1]
+   and "(8 line(s) held back" in _gh_run[1] and "WARN: a synthetic warning that carries #" in _gh_run[1]
+   and "registered bracket 1.4 to 3.2: OUTSIDE" in _gh_run[1]
+   and "-- H5e: USO, wide strikes, zero bids SKIPPED, against OVX (registered 23 Sep; judged from 2026-09-23)"
+   in _gh_run[1],
+   "on GitHub's runner the daily report never prints a per-day Cboe close, nor H5e's nightly tally: only lines it "
+   "knows to carry none (H3's lift table, H5e's headings), a count of the lines held back, and the other steps' "
+   "lines with every decimal number masked (its log and job summary are public)")
+_tb = ["Traceback (most recent call last):", '  File "modelfree.py", line 412, in h5e_report',
+       "ValueError: the close 64.56 is not finite"]
+_mf_died = _pub_mf.split(_pub_rows[-1])[0] + _pub_rows[-1] + "\n" + "\n".join(_tb) + "\n"   # rows, then a crash
+_pt_died = (1, "  PASS  a synthetic check\nTraceback (most recent call last):\n"
+               '  File "tools/pressure_test.py", line 9, in <module>\nKeyError: \'66.78\'\n')
+_died = {"modelfree.py": (1, _mf_died), "pressure_test.py": _pt_died}
+_gh_died, _mac_died = _daily_runner(True, _died), _daily_runner(False, _died)
+ok(_gh_died[0] == 1 and "LOOK AT: pressure_test crashed, modelfree" in _gh_died[1]
+   and not any(x in _gh_died[1] for x in _per_day + ("64.56", "66.78"))
+   and "ValueError: the close # is not finite" in _gh_died[1] and "KeyError: '#'" in _gh_died[1]
+   and all(x in _mac_died[1] for x in ("60.02", "64.56", "66.78")),
+   "on GitHub's runner a failing step's last lines carry no value: a crash in modelfree or in the pressure test "
+   "keeps its words and dates, every decimal number masked; the Mac shows them whole")
 ok(_mac_run[0] == 0 and "\n".join(_pub_rows) in _mac_run[1] and "held back" not in _mac_run[1]
-   and "mean |gap| 0.96 against 0.5" in _mac_run[1],
+   and "mean |gap| 0.96 against 0.5" in _mac_run[1] and "61.23" in _mac_run[1] and "67.89" in _mac_run[1],
    "a local run of the daily report still prints H5e's full per-day table, as before")
 
 print("\n=== N. OPRA REFERENCE (Databento) - money, keys, time, parsing ===")

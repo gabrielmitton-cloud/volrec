@@ -13,7 +13,9 @@ only in a clone with no FRED cache (GitHub's runner) and otherwise checks the ca
 reported as a crash, never as a pass - on 23 Sep 2026 the pressure test had been crashing silently for two days.
 
 On GitHub's runner (GITHUB_ACTIONS=true) step 4 prints aggregates only, because there this report is public:
-health.yml keeps it in the run's log and job summary (18 Nov 2026, aggregates_only()). On the Mac it prints in full.
+health.yml keeps it in the run's log and job summary (18 Nov 2026, aggregates_only()). The same day, after Astra 2's
+review, the lines steps 3 and 4 print of their own (warnings, a crash's last lines) have every decimal number masked
+there (masked()). On the Mac everything prints in full.
 
 USAGE
 -----
@@ -29,7 +31,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PY = sys.executable                    # whichever python runs this runs everything
-DAY = re.compile(r"\b20\d\d-\d\d-\d\d\b")
+DECIMAL = re.compile(r"\d+\.\d+")
+# The lines of modelfree's block a public log may carry, each matched whole (18 Nov 2026, Astra 2's review):
+# H3's lift table compares two free-feed readings (wide strikes minus registered ones), so no index is in it;
+# H5e's two headings carry no value. Anything else - a dated row, the tally, a line not recognised - is held back.
+KNOWN = (re.compile(r"sym +days +mean as reg +mean zero-bid +reading"),
+         re.compile(r"[A-Z]{1,5} +\d+ +[+-]\d+\.\d\d +[+-]\d+\.\d\d( .*)?"),
+         re.compile(r"Pre-registered in H3 on \d+ [A-Z][a-z]{2}: .*"),
+         re.compile(r"-- H5e: [A-Z]+, wide strikes, zero bids SKIPPED, against [A-Z]+ "
+                    r"\(registered \d+ [A-Z][a-z]{2}; judged from 20\d\d-\d\d-\d\d\)"),
+         re.compile(r"date +[A-Z]+ +registered +gap +wide skip +gap +counted"),
+         re.compile(r"no counted day yet; H5e needs \d+"))
 
 
 def on_github():
@@ -38,22 +50,30 @@ def on_github():
     return os.environ.get("GITHUB_ACTIONS") == "true"
 
 
+def masked(lines):
+    """A step's own lines as a public log may carry them (18 Nov 2026, Astra 2's review): every decimal number
+    masked, so a crash or a warning keeps its words, dates and line numbers but no value."""
+    return [DECIMAL.sub("#", ln) for ln in lines]
+
+
 def aggregates_only(lines):
     """The reading's lines as a public log may carry them. 18 Nov 2026: H5e's block printed one row per day with that
     day's Cboe OVX close beside the free reading, in every health run from 23 Sep (946 rows in 43 public logs). Cboe
     approved aggregates only (4 Nov 2026: "No Cboe data files are republished. Only aggregate statistics appear").
-    A line that names a day is a per-day row, so it is held back, and one line where the first stood says how many;
-    a block's own header ("-- H5e: ... judged from <day>") names a day but carries no value, and stays."""
+    The same day, after Astra 2's review, only the lines in KNOWN stay. H5e's running tally is held back too: it
+    changes every night, so two nights' logs would give that night's gap, and with the public free reading the close
+    (CLAUDE.md, mistake 10). One line, where the first held line stood, says how many."""
     out, held, at = [], 0, None
     for ln in lines:
-        if DAY.search(ln) and not ln.strip().startswith("--"):
+        if any(k.fullmatch(ln.strip()) for k in KNOWN):
+            out.append(ln)
+        else:
             held += 1
             at = len(out) if at is None else at
-        else:
-            out.append(ln)
     if held:
-        out.insert(at, f"   ({held} per-day row(s) held back: this log is public, and the rows carry Cboe's daily "
-                       "closes. tools/daily.py on the Mac prints them.)")
+        out.insert(at, f"   ({held} line(s) held back: this log is public. They are H5e's dated rows, which carry "
+                       "Cboe's daily closes; its running tally, which two nights' logs would turn into a day's gap; "
+                       "and any line not recognised. tools/daily.py on the Mac prints them.)")
     return out
 
 
@@ -128,12 +148,13 @@ def main():
     result = next((ln for ln in reversed(lines) if ln.startswith("RESULT")), None)
     if crashed(out) or result is None:
         print("  CRASHED - it did not reach a result. Last lines:")
-        print("\n".join("    " + ln for ln in lines[-6:]))
+        print("\n".join("    " + ln for ln in (masked(lines[-6:]) if on_github() else lines[-6:])))
         bad.append("pressure_test crashed")
     else:
         print("  " + result)
         facts["pressure"] = result.replace("RESULT:", "").strip()
-        for ln in lines[lines.index(result) + 1:]:
+        rest = lines[lines.index(result) + 1:]
+        for ln in masked(rest) if on_github() else rest:
             print("  " + ln.strip())
         if code:
             bad.append("pressure_test")
@@ -149,7 +170,8 @@ def main():
         bad.append("frozen rate")
     code, out = run([PY, "modelfree.py", "--wide"], {"FRED_KEY": "use-cache"})
     if code != 0 or crashed(out):        # 16 Oct: a sys.exit("...") has no traceback but is still a crash
-        print("\n".join(out.splitlines()[-6:]))
+        tail = out.splitlines()[-6:]     # 18 Nov: rows printed before a crash were among them; masked on the runner
+        print("\n".join(masked(tail) if on_github() else tail))
         bad.append("modelfree")
     else:
         lines = out.splitlines()
