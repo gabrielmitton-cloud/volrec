@@ -1886,11 +1886,12 @@ useful: SPY's 221 strikes span -61% to +32% of forward, TSLA's 50 span ±34%, an
 every decision. This section is the only one guaranteed current. Read it, run
 `tools/daily.py`, and open section 17 only when a task needs the why.
 
-### System status, checked 18 Nov 2026 (Wed, the auditor's copies; one push for three pieces of work)
+### System status, checked 18 Nov 2026 (Wed afternoon: Astra 2's fixes; one push for all the day's work)
 
 | check | result |
 |---|---|
-| diagnostic, 18 Nov | `daily.py` **ALL CLEAR** at 03:11 New York on 17 Nov's data (landed 19:31/19:40 UTC), run in CI's mode: macOS had moved 648 of the licensed clone's files back to iCloud for room, so the lab data was set aside. On the combined code at 17:12 UTC, the same mode: pressure test **0 fail, 2 warn** (326 pass; the lab purchase check SKIPPED; the known two warns). **Not pushed yet:** the 17 Nov poster commit, the 18 Nov auditor change and the public-log fix go out in one push after one audit at N of N (the 18 Nov entries); since 18 Nov the audit's copies no longer read the lab's licensed files, so it needs no extra room. Auditor: the last full run read **259 of 259** on 14 Nov (`2ac3b55`, 46 minutes at J=3); 17 Nov's was voided for lack of room; 262 mutants now, all naming a check the pressure test has; `-k lab` **24 of 24** without the lab files. Seventeen suites **0 failures** (new: `tools/test_audit.py`, 23 checks). Below: the 13 Nov reading, kept |
+| diagnostic, 18 Nov (afternoon) | `daily.py` **ALL CLEAR** on the real data just after 14:11 New York, run in GitHub's mode (`GITHUB_ACTIONS=true`, the lab data set aside): the public report held back 44 lines, and a count-only scan of its 32 lines found no per-day row, no dated index value and no index value at all. Pressure test on the final code **0 fail, 2 warn** (330 pass, the lab purchase check SKIPPED; the known two). Auditor: **277 mutants**, every one applies and parses; `-k daily-` **22 of 22**; `-k lab` 24 of 24 this morning; the last full run 259 of 259 (14 Nov). **Not pushed yet:** the poster v2 commit, the auditor change, the public-log fix and Astra 2's follow-up fixes, in one push after one full audit at N of N (the 18 Nov entries). Seventeen suites **0 failures** (`tools/test_audit.py` 31 checks). Below: the morning's reading, then 13 Nov's, kept |
+| diagnostic, 18 Nov (morning) | `daily.py` **ALL CLEAR** at 03:11 New York on 17 Nov's data (landed 19:31/19:40 UTC), run in CI's mode: macOS had moved 648 of the licensed clone's files back to iCloud for room, so the lab data was set aside. On the combined code at 17:12 UTC, the same mode: pressure test **0 fail, 2 warn** (326 pass; the lab purchase check SKIPPED; the known two warns). **Not pushed yet:** the 17 Nov poster commit, the 18 Nov auditor change and the public-log fix go out in one push after one audit at N of N (the 18 Nov entries); since 18 Nov the audit's copies no longer read the lab's licensed files, so it needs no extra room. Auditor: the last full run read **259 of 259** on 14 Nov (`2ac3b55`, 46 minutes at J=3); 17 Nov's was voided for lack of room; 262 mutants now, all naming a check the pressure test has; `-k lab` **24 of 24** without the lab files. Seventeen suites **0 failures** (new: `tools/test_audit.py`, 23 checks). Kept |
 | diagnostic, 13 Nov | `daily.py` **ALL CLEAR** on 13 Nov's data (landed 19:31/19:40 UTC = 14:31/14:40 New York). **H7 is recorded** (the workflow, 13 Nov 03:28 UTC, `a5497ca`): H7a FAILS (free vs full-market rebuild: USO 0.316, GLD 0.034; bar 0.25 each), H7b HOLDS (GLD 0.172 from GVZ; bar 0.30). Recorded the same day by Vega, beside the verdicts and never in their place: H3's reading of record (H3a, H3b and H3c hold), the companions to H5e's and H7's verdicts, and the timing measurement, read once. The site's results are now generated from those files (`tools/site_results.py`) and held to them by the pressure test. Pressure test **0 fail, 2 warn** (327 checks; the known two). Auditor: 229 of 229 on 12 Nov; the commit of this table adds 30 mutants (259), every one of the 259 applies, and the 30 new ones are KILLED one at a time; the push goes out only at N of N. Sixteen suites **0 failures** (new: `tools/test_site_results.py`, 159 cases). Below: the 12 Nov reading, kept |
 | diagnostic, 12 Nov | `daily.py` **ALL CLEAR** on 11 Nov's data, the windows' last day (landed 19:31/19:40 UTC = 14:31/14:40 New York). **H5e's FINAL reading is recorded** (the workflow, 12 Nov 03:55 UTC, `e0b36c9`): FAILS, 0.91 against 0.5, closer than registered on 26 of 35 days. H3 over the complete window, the frozen scorer at full precision: H3a 0.708 over 205 readings and 41 days (bar 1.0), H3b -0.444, H3c p 0.0104, BH 4 of 5 and 3 of 5 (USO alone 1.767); it enters the record beside the verdicts, with the companions. Pressure test **0 fail, 2 warn** after Gabriel's renewal later on 12 Nov (325 checks; the warns: the known one-sided FXE quotes and the late GitHub backup; the backup cron's margin is accepted again through 29 Jan 2027, `CRON_MARGIN_ACCEPTED`, after his 23 Sep acceptance ran out on 11 Nov). Auditor **217 of 217** three times on 11 Nov (the last on `5e9031a`) and on the verdict-night rehearsal; the commit of this table adds twelve mutants (229) and, like every push, goes out only at N of N. Fifteen suites **0 failures**: the eleven unit suites, the poster's two (60 and 27 cases), the new page-against-reader suite (45) and the review bridge's (24); `samples/long/test_h2_variance.py` is H2's analysis script, not a suite, and needs Alpaca's keys. (6 Nov: H3a 0.685 over 185; H5e 0.98, 22 of 31.) |
 | independent re-implementation, 13 Nov | the workflow's companion step after both finals (13 Nov): `tools/independent_check.py --through 2026-11-11`, **1302 of 1302** values agree. 12 Nov, by hand: 1206 of 1206 (largest gap 0.00088). `--opra` not rerun since 6 Nov (1184 of 1184) |
@@ -4776,6 +4777,75 @@ Global Markets. Aggregates only.*
   5. Astra 2 reviews the rest of the project, in several jobs; findings that hold up are fixed.
   6. Gabriel: the poster print (FedEx Office, 48 x 36 in) if not yet done; SCCUR is Sat 21 Nov.
 
+**Wed 18 Nov (from 17:25 UTC) - Astra 2's seven reviews; the public report tightened again; the push waits on one choice**
+
+- *Gabriel* (the entry above): "have it run a review of everything, give it more jobs if necessary".
+- *Seven Astra 2 jobs* (gpt-6.2-astra, Ultra; each in its own scratch worktree, the sources in packets under 32 KB;
+  the reports in `.codex-reviews/`, local and git-ignored). Findings (high / medium / low): the push's code 2/8/1,
+  the poster 4/11/2, the estimators 7/16/4, the verdict code 13/15/3, the recorders 6/11/1, the site 5/12/0, and the
+  follow-up of the first fixes 2/3/2. Three read INCOMPLETE (a bundle cut at 32 KB); their findings are still real.
+  None stopped at a usage limit.
+- *Fixed, test first, in this push:*
+  - The public daily report (`tools/daily.py`, sha256 `5fb25cbec1bc...`). On GitHub's runner each block's lines must
+    be exactly what modelfree writes there: H3's rows only for the eight surface symbols and with modelfree's own
+    notes, the registration sentence word for word, each matched only inside its own block. Every digit of the
+    other steps' lines is masked (a whole number, a leading dot or an exponent went through when only decimals
+    were). The pressure test's result is the last line in its exact form, so a line that only starts like it is
+    neither taken for it nor printed whole. A risk-free line with anything else on it is held back. A notification
+    carries no H5e tally (its dry run printed it into the log). A reading with neither block is now a LOOK AT, on
+    the runner and on the Mac (it read ALL CLEAR).
+  - The pressure test (`37e7876d39dd...`): six checks new or tightened, all six seen failing on the old code, then
+    0 fail. The auditor (`ba2a907b55a1...`): eight new mutants, four re-aimed, two re-described by the switch they
+    flip; all 277 apply and parse; `-k daily-` read **22 of 22** (7 min 20 s at J=3).
+  - On the real data, in GitHub's mode: the status table's line.
+  - The auditor's own tests (`tools/test_audit.py`, `98574f600cd4...`, 31 checks): the two race tests now read,
+    through a watched lock, whether stop was already set when the planted failure left the lock: False on the old
+    auditor code in three runs of three, True on the current code in three of three. `AUDITOR.md`
+    (`37c4f1095360...`) states two outcomes apart: a clone without the hook runs no check; a pressure test without
+    the lab files reads SKIP for that one check.
+  - Before the push, a count-only scan: the unpushed commits add no decimal number the public tree does not already
+    carry, except the pressure test's synthetic fixtures and this file's disk sizes. The poster v2 source repeats
+    figures the README and the site have shown since 12 Sep.
+- *Not fixed in this push:* `run_pressure` takes a copy's check lines without its RESULT line, so a mutant that
+  crashes after printing its target FAIL would read KILLED (pre-existing; the push review, medium); with it, two
+  improvements to the removal tests. Both go with the 2 Dec auditor work, as the calendar has it. A second
+  identical RESULT line is handled by taking the last exact one; it has no check of its own.
+- *Gabriel's, found by the reviews; nothing changed (registered text, the recorders, published pages):*
+  1. Licensing. Cboe approved aggregates only (4 Nov). Public now: the H5 hypothesis file's two "Skip-only gap by
+     day:" lines (10 and 35 dated gaps to OVX; committed 8 Oct and 12 Nov) and H5f-c's per-day OPRA inflation (5
+     days); the calibration's worst single pairs, dated, in the README and on the site (since 12 Sep); one day's
+     levels beside VIX and OVX in H3's registration; the dated values the verdict writer puts into its blocks
+     (`tools/record_verdict.py`). Registered text cannot change (a correction goes beside it, dated); the README and
+     the site can. Options and one recommendation: in today's message to him.
+  2. The site's Bloomberg per-day medians: decided 23 Sep and recorded; read back to him, not reopened.
+  3. The recorders, each needing his yes (Hard stop 6). Six high: quotes accepted across the closing bell
+     (`surface.py`, `record.py`); a calendar error read as a holiday (`record.py`); the 15-minute job timeout before
+     the commit (`surface.yml`); the guard's alert suppression (`guard.py`); one outside scheduler for everything
+     (`guard.yml`); an empty call side accepted (`surface.py`). Eleven medium, in the report.
+  4. The estimators (7 high), the verdict code (13 high) and the site (5 high): frozen or registered code and
+     published results, reported and not changed. The site's three code items (`tools/site_bloomberg.py`'s dated
+     rows, the results ledger without Databento's credit, the timing parser on one day) are page changes: his.
+- *The phone:* health.yml's GREEN step takes its text from the report's `landed|RESULT|mean |gap|` lines. On GitHub
+  the tally is no longer in the report, so the GREEN text loses H5e's part. H5e is final (12 Nov): nothing is lost.
+- *Decided 18 Nov 2026 (Vega, under Gabriel's go-ahead; his to veto):* the eight surface symbols are written out in
+  `tools/daily.py`, not imported from the recorder (a symbol added later would only be held back); every digit is
+  masked, so the public warning lines lose their dates and counts (the Mac prints them); an empty reading is a
+  LOOK AT everywhere; no second follow-up review of these fixes (CLAUDE.md: one is enough); the poster's corrections
+  (v3, the local branch `poster-v3`) go out later, after their own review and audit.
+- *The push needs one choice from Gabriel (asked today).* macOS has moved 2,908 of the licensed folders' files to
+  iCloud (6.13 GiB), and 425 of the repository's (212 of them git objects), with 14 GiB free, where it starts doing
+  so. The pre-push hook's pressure test reads the start of every lab file, which brings each whole file back: about
+  6.13 GiB during the push. In the night of 17-18 Nov a pressure test waited on such downloads until it was stopped,
+  and on 17 Nov `.git/index` was lost once.
+- *What remains, in order:*
+  1. The full audit of the commit carrying this entry, at J=3, started once it is committed.
+  2. Gabriel's choice; then the push, outside 13:45-16:10 New York, only at N of N.
+  3. The next health run on GitHub reads clean (count-only scan: no per-day row, one "held back" line).
+  4. Then the 43 old health runs are deleted, each re-scanned just before.
+  5. The poster v3: finish it, Astra 2's follow-up review, render, PDF, both widths, screenshots; its own audit and
+     push.
+  6. Gabriel: the print, from v3 rather than v2 once v3 is ready tonight (his choice and cost); SCCUR is Sat 21 Nov.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
@@ -4799,8 +4869,9 @@ Global Markets. Aggregates only.*
 > a result block or the page around its markers, run it, then `--check`; never edit between the markers.
 > `--check` also refuses a passage hidden, moved or contradicted, and pins the ledger function: after any change
 > to that function, look at the ledger at 1280 and 375 px, then set `LEDGER_SHA256` to the new fingerprint.
-> SCCUR: Gabriel prints from `poster/Mitton_SCCUR_2026_poster_48x36_v2.pdf` (FedEx Office, 48 x 36 in), revised
-> 14 Nov after Marc Vinyard's comments and checked again 17 Nov, unchanged (the entries above). The poster work
+> SCCUR: the v2 PDF (`poster/Mitton_SCCUR_2026_poster_48x36_v2.pdf`, revised 14 Nov after Marc Vinyard's comments)
+> has faults Astra 2's review found on 18 Nov; v3 is being made on the local branch `poster-v3`. Unless a later entry
+> records v3 as the print, recommend Gabriel print v3, not v2 (FedEx Office, 48 x 36 in). The poster work
 > (17 Nov), the auditor change and the public-log fix (18 Nov) are committed on this Mac; unless a later entry
 > records their push, they are NOT pushed. Since 18 Nov the audit's copies run without the lab's licensed files
 > (no verdict depends on them), so free room no longer gates the audit; only the pre-push hook reads those files,
