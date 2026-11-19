@@ -24,24 +24,27 @@ not a speech: a 30-second opener for everyone, the 2-minute walk for anyone who 
 
 ## The 30-second opener
 
-> Students and small researchers price options with free quotes, because the full market feed costs thousands
-> of dollars a year. I asked what that free data gives up, and where the loss is: in the quotes themselves, or
-> in the recipe that turns quotes into a volatility number. Since September I've recorded a free feed daily
-> and checked it against Cboe's official indices, the full market feed and Bloomberg. Short answer: use a wider
-> range of strike prices, and free data averages within a point of Cboe's index. Whether the rest of the gap is
-> the quotes or the recipe is still open.
+> Students and small researchers price options with free quotes, because the full market feed and a Bloomberg
+> terminal cost money. I asked what that free data gives up, and where the loss is: in the quotes themselves, or
+> in the recipe that turns quotes into a volatility number. Since September I've recorded a free feed on trading days
+> and checked it against Cboe's official indices, the full market feed and Bloomberg. Short answer: with strike
+> prices up to 30% either side of the fund's price, free data averaged within a point of Cboe's index: an average
+> gap size of 0.71 points over 205 readings. Whether the rest of the gap is the quotes or the recipe is still open.
 
 *For a visitor outside finance, say one sentence first (14 Nov): "An option is the right to buy or sell a stock
 at a set price, the strike price, by a set date. Its price shows how big a swing traders are pricing in, and Cboe
 turns those prices into official indices like the VIX, Wall Street's fear gauge."*
 
 *Updated 13 Nov: H7a failed and H3 held, so the poster prints the fallback headline and the opener ends as above.
-14 Nov: the poster prints it in plain words, "Use a wider range of strike prices, and free data averages within 1
-point of Cboe's index." The claim is the decided one; only the words changed (the site keeps "Widen the strikes").
+14 Nov: the poster printed it in plain words. 18 Nov: those words, "Use a wider range ...", read as an instruction,
+as if widening caused the result, which H3 did not test (it measured one fixed range, ±30%); the poster now reads
+"With a wide range of strike prices, free data averaged within 1 point of Cboe's index." The claim is the decided
+one; only the words changed (the site keeps "Widen the strikes").
 The 4 Nov draft ended "Short answer: the free quotes are close. Most of the error is in the recipe." Do not say
 that now: on oil, the free and full-market rebuilds differed by more than their bar.*
 
-*If H7 fails, the poster's headline changes by itself (Gabriel's rule of 21 Oct, worded 11 Nov), and which way
+*Historical, superseded 13-14 Nov (the poster prints the plain words above): if H7 fails, the poster's headline
+changes by itself (Gabriel's rule of 21 Oct, worded 11 Nov), and which way
 depends on H3. If H3 holds, it reads "Widen the strikes, and free data averages within a point of Cboe's index."
 Then the opener's last two sentences become: "Short answer: widen the strikes, and free data averages within a
 point of Cboe's index. Whether the rest of the gap is the quotes or the recipe is still open." If H3 fails too, it
@@ -60,60 +63,68 @@ until its reading of record (the one after 11 Nov): read them off the printed ti
 1. **The headline, then 1 (left).** 1 opens with what an option, the strike price and the VIX are; point at
    it for a visitor outside finance. Then the question: free quotes versus the paid feed, what precision is
    lost, and where. If the loss is in the method, anyone without a data budget can fix most of it for free.
-2. **2 What I did (left, the flow with arrows).** Record Alpaca's free quotes daily since September, and check
-   the quotes against the full market and Bloomberg (that is section 4). Cboe's VIX formula, with the strikes
+2. **2 What I did (left, the flow with arrows).** Record Alpaca's free quotes on trading days since September (one option each on a 109-ticker watchlist, many
+   strike prices on eight funds and stocks), and check far-option quotes on USO and TSLA against the full market
+   and Bloomberg (that is section 4). Cboe's VIX formula, with the strikes
    and expiry dates I chose, is the recipe (section 5): it turns each fund's quotes into one volatility number a
-   day, checked against Cboe's official index (section 3).
+   day, checked against Cboe's official index for five fund–index pairs (section 3).
 3. **3 The main chart (centre).** Each panel names its market, the fund behind the free estimate and Cboe's
    index: "Crude oil, free estimate (USO) vs official index (OVX)". The blue line is Cboe's index; each bar
    counts the days free data landed that far from it, and the band is within a point. Left of the line reads
-   low. The tile: the average gap, against a bar of 1.0 set beforehand. Then oil: the widest spread, mostly low.
+   low. The tile: the average gap size, sign ignored, against a bar of 1.0 set beforehand. Then oil: the widest spread, mostly low. *(Index closes: Cboe Global Markets.)*
 4. **4 The quotes (right, top).** 64 of 64: when the free feed shows no buy offer for a far option (a strike
    price far from today's price), neither does the full market. A spread is the gap between the highest price a
-   buyer offers and the lowest a seller asks. The key above the chart: filled dots count all far options,
+   buyer offers and the lowest a seller asks. The key above the chart: filled dots are all far options both feeds quoted,
    hollow dots only those with a buy offer on both feeds. Filled: the free price sits a third of a spread from
    Bloomberg's and half a spread from the full market's, at or under the bar; but both passes depend on the
    options with no buy offer. Hollow: with a buy offer on both feeds, 0.67, over the bar, mostly on TSLA, where
    one cent can be a whole spread. Then the caveat printed beside it: only options both feeds quoted were
-   compared, so the free feed's hours-old prices on far options nobody else quoted are not tested here.
-5. **5 The recipe (right).** A fixed 10% band of strikes sees 97% of a calm fund's likely moves but only 45%
-   of oil's. Widen it to 30% and the average gap falls from 3.97 to 0.59 points on one calibration day; SPY's
-   estimate read 0.01 points under the VIX. That shows coverage matters; it does not by itself rule out the
-   feed, the timing or the index-versus-fund difference.
-6. **How it stays honest (left).** Every bar was dated in a public repository before its test ran. On 17 Oct
-   a second program sharing no code recomputed every result and caught one bug, fixed; no verdict changed.
-7. **The strip (bottom).** Every registered test is a chip, read by the key on the strip's title line: a check
+   compared, so the free feed's hours-old prices on far options the professional feed did not quote are not tested
+   here. *(Source: Bloomberg Finance L.P. Data provided by Databento.)*
+5. **5 The recipe (right).** In a simple model, a fixed 10% band of strikes sees 97% of a calm fund's likely
+   moves but only 45% of oil's: an illustration. On one exploratory calibration day (11 Sep), before the
+   registered series, the average gap size over five fund–index pairs was 3.97 points with ±10% and 0.59 with ±30%;
+   that set the ±30% range H3 then tested. One day cannot say why: the feed, the timing and fund-versus-index
+   differences all remain possible. *(Source: Cboe Global Markets.)*
+6. **How it stays honest (left).** Every bar was dated in a public repository before its test ran. On 17 Oct,
+   separate code sharing none of the original recomputed the results recorded by then, and found one bug, in
+   reading Bloomberg's spreadsheets: the fix changed figures, not verdicts.
+7. **The strip (bottom).** Every registered hypothesis is a chip, in brief (the full results are behind the QR code), read by the key on the strip's title line: a check
    mark met its bar, a cross missed it, a dash is not yet tested. The second row is the side studies, other
    questions about volatility, with their two terms defined at its end; H1 is the check that the method finds
-   a known result. Point at a cross on purpose: H6a, 0 of 9. **[after 19 Nov]** Then H5e's and H7's final
+   a known result. Point at a cross on purpose: H6a, 0 of 9. H2a's mark is as recorded and not robust: clustered by date,
+   p = 0.18, and it did not survive a change of price source. **[after 19 Nov]** Then H5e's and H7's final
    readings, one sentence each, off their chips: "Skipping the quotes with no buy offer did not fix oil: 0.91
-   against a bar of 0.5, though it was closer on 26 of 35 days." "Through Cboe's own rules, gold's free
-   estimate matched GVZ, 0.172 against 0.30, but on oil the free and full-market rebuilds were 0.316 apart,
-   over their 0.25 bar, so H7a fails."
+   against a bar of 0.5, though it was closer than the registered estimate on 26 of 35 days, a majority." "Through Cboe's own rules, gold's free
+   estimate matched GVZ, 0.172 over 24 days, against a bar of 0.30, but on oil the free and full-market
+   rebuilds were 0.316 apart over 24 days, over their 0.25 bar, so H7a fails." *(Data provided by
+   Databento; index closes: Cboe Global Markets.)*
 8. **Limits (left, bottom).** One free feed, about two months, one snapshot a day; the formulas treat options
    as exercised only at expiry, though these can be exercised any day (to a finance listener: European
    formulas on American options).
 
 ## Questions you are likely to get, with short answers
 
-**What is a volatility index?** A number for how big a move a fund's options price in over the next month.
-VIX, Wall Street's "fear gauge", is the one for the S&P 500; OVX is crude oil's, GVZ gold's. A VIX of 20 means
+**What is a volatility index?** A number for the volatility that options on one market price in over the next
+30 days, quoted at an annual rate. The VIX, Wall Street's "fear gauge", is built from S&P 500 index options (I
+record SPY, the fund that tracks the index); OVX is crude oil's, from USO's options, and GVZ gold's, from GLD's. A VIX of 20 means
 S&P 500 options price in swings of about 20% a year (one standard deviation) over the next 30 days.
 
 **What is an option?** The right, not the obligation, to buy (a call) or sell (a put) a stock or fund at a set
-price, the strike price, by a set date. The bigger the swing the market prices in, the more the option costs;
+price, the strike price, by a set date. The bigger the swing the market prices in, the more the option costs, other things equal;
 read backwards, its price gives that swing, the implied volatility. It is not a plain forecast: it carries a
 premium for risk, which is why it usually sits above the volatility that follows.
 
-**The headline says within 1 point, but the oil panel says 1.77?** The headline is the average over all five
+**The headline says within 1 point, but the oil panel says 1.77?** The headline is the average gap size over all five
 funds: 0.71 over 205 readings, against a bar of 1.0 set before the data. Oil alone is 1.77, and its panel says
-so; that is why the headline says "averages".
+so; that is why the headline says "averaged".
 
-**Why do the passes depend on the options with no buy offer?** With no buy offer, each feed's midpoint is half its
-asking price, and the yardstick, the spread, is the whole asking price. So the gap is half the difference between
-the two asking prices, measured against the whole asking price. Here those gaps were mostly small, which is what
-brings the filled dots to the bar or under it, but nothing forces them to be small; that is why the hollow dots
-sit beside them (14 Nov).
+**Why do the passes depend on the options with no buy offer?** The measure is the distance between the two
+feeds' midpoints, divided by the professional feed's spread. When neither feed shows a buy offer, each midpoint
+is half the asking price and the professional spread is its whole asking price, so the measure is half the
+difference between the two asking prices, over the professional one; nothing forces that to be small. Where both
+feeds show a buy offer, the median is over the bar (the hollow dots), mostly on TSLA, where one cent can be a
+whole spread (14 Nov; worded 18 Nov).
 
 **Why does it matter who gets this right?** If the error is in the method, not the data, anyone without a data
 budget can remove most of it for free.
@@ -128,13 +139,14 @@ one day of its wing data, which its file says - while the ten-year validation an
 that already existed. It stops me from choosing the test after seeing the answer.
 
 **Did anything fail?** Yes, and it's on the poster, in the strip of chips: H6a (implied volatility did not beat the 14-day
-average range at forecasting the next day's range: 0 of 9 pairs) and H2b (not supported). H5e's first reading failed too (0.90
+average range at forecasting the next day's range: 0 of 9 pairs) and H2b (not supported). H5e's first reading failed too (0.90 over 10 days,
 against a bar of 0.5). **[after 19 Nov]** Add the final readings: H5e's final failed (0.91 against 0.5, 12 Nov), and
-so did H7a (oil's free and full-market rebuilds 0.316 apart, bar 0.25, 13 Nov). H7b held (gold, 0.172 against 0.30).
+so did H7a (oil's free and full-market rebuilds 0.316 apart over 24 days, bar 0.25, 13 Nov). H7b held
+(gold, 0.172 over 24 days, against a bar of 0.30).
 
 **Why did H7a fail?** On oil, Cboe's rules keep walking out to strikes beyond the free file's edge (+/-60% of the
 price): they did on 24 of 24 days, and the full market carries those strikes. On the strikes both feeds carry,
-the two rebuilds differ by 0.132 instead of 0.316. I wrote that comparison down on 17 Oct, before any reading, as
+the two rebuilds differ by 0.132 instead of 0.316, over the same 24 days (descriptive). I wrote that comparison down on 17 Oct, before any reading, as
 a description beside the test, never in its place: the test failed as registered, and the poster says so.
 
 **Isn't two months too short?** For a long-run claim, yes; the poster says so under Limits. Each test fixed its
@@ -143,7 +155,7 @@ the volatility risk premium on 9 of 11 pairs.
 
 **What is the volatility risk premium?** Implied volatility usually sits above the volatility that follows:
 option sellers are paid for carrying the risk, in the literature's account (my own test of hedged gains, H4,
-has not run yet). It is well documented, so finding it checks the method.
+has no verdict yet). It is well documented, so finding it checks the method.
 
 **Why Alpaca?** It's a free retail brokerage feed anyone can sign up for, which is the point: the question is
 what a person without a data budget gets.
@@ -155,8 +167,8 @@ and OPRA data are licensed, so only aggregates appear, with credit lines (bottom
 **Why does the chart count days instead of drawing the VIX?** My request to Cboe, approved on 4 Nov, said
 only aggregate statistics would appear, "for example, average differences between my estimates and the index".
 Counts of days by gap are that; a dated line of the index, or of each day's gap, is not. No index level is
-printed anywhere on the poster: even the calibration day appears as a difference (SPY's estimate 0.01 points
-under the VIX).
+printed anywhere on the poster: even the calibration day appears only as an average over five fund–index pairs, never one
+fund's gap that day.
 
 **Did you use AI?** Yes, and the poster says so: the code, the charts and draft wording were produced with AI
 assistants (Claude Code), and a second AI model reviewed the work; the question, decisions and interpretation
@@ -207,9 +219,10 @@ after each. No scripted answers below on purpose: each line says what a good ans
 5. **"How do you show two feeds are the same, not just 'not significantly different'?"** - an equivalence
    test (two one-sided tests against +/-0.10 points) for H8; failing to find a difference is not evidence
    of none; fixed-b critical values because the days are correlated.
-6. **"Isn't your +/-30% strike band a choice that drives the result?"** - yes, and that is the finding:
-   +/-10% reads oil 12 points low, +/-30% brings the mean gap to 0.59 (H3); truncation grows with
-   volatility (Jiang and Tian's mechanism).
+6. **"Isn't your +/-30% strike band a choice that drives the result?"** - yes, and the record says how it was chosen: on one
+   exploratory calibration day the five-pair average gap size was 3.97 points at ±10% and 0.59 at ±30%; the
+   registered test then used ±30%, and H3a's five-pair mean gap size, 0.71 over 205 readings, held under its bar of 1.0. That
+   truncation grows with volatility is Jiang and Tian's mechanism; one day cannot show it is the cause here.
 7. **"VIX is built on S&P 500 index options and you record SPY. Apples and oranges?"** - for VIX, VXN and
    RVX, yes, and the poster says so; OVX and GVZ are built on USO's and GLD's own options, so the main tests
    use those.

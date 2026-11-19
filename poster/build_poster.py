@@ -52,9 +52,13 @@ HEADLINES = (HEADLINE, HEADLINE_IF_H7_FAILS, HEADLINE_IF_H7_AND_H3_FAIL)     # -
 # The poster's own words for a decided headline. Marc Vinyard's review, 14 Nov 2026: SCCUR's audience is mostly not in
 # finance, and "Widen the strikes" is jargon to them. The same claim, still an average, claiming no quotes-versus-recipe
 # split. The decided wording itself is unchanged, because tools/site_results.py prints it on the site. Decided 14 Nov
-# 2026 (Vega, under Gabriel's go-ahead; his to veto).
-POSTER_WORDS = {HEADLINE_IF_H7_FAILS: ("Use a wider range of strike prices,",
-                                       "and free data averages within 1 point of Cboe's index.")}
+# 2026 (Vega, under Gabriel's go-ahead; his to veto). 18 Nov 2026 (Astra 2's follow-up review): "Use a wider range"
+# read as an instruction, as if widening caused the result; H3 measured agreement at one fixed range (±30%), and the
+# calibration day changed the range and the number of strikes together. The words now state the condition and the
+# registered observation, in the past tense (H3a: 0.71 over 205 readings). Decided 18 Nov 2026 (Vega, under
+# Gabriel's go-ahead; his to veto).
+POSTER_WORDS = {HEADLINE_IF_H7_FAILS: ("With a wide range of strike prices,",
+                                       "free data averaged within 1 point of Cboe's index.")}
 
 # Gabriel: set True once you approve the AI-use sentence below; until then it prints marked DRAFT.
 AI_LINE_APPROVED = True   # approved by Gabriel 21 Oct 2026; reworded 11 Nov under his delegation ("do whats best")
@@ -75,20 +79,21 @@ PAIRS = (("SPY", "VIX", "S&P 500"), ("QQQ", "VXN", "Nasdaq-100"), ("IWM", "RVX",
 
 # ---------------- frozen figures, each with its source ----------------
 # README.md "Calibrated 11 September 2026" (also PAPER-DRAFT.md, H3 file "Calibration, 2026-09-11"): one day,
-# five fund/index pairs. Columns: band, strikes, mean absolute gap to Cboe, worst single pair, that pair.
-# Worst pair: USO/OVX at +/-10% (README: "which is why USO was twelve points light"; index.html: "12.37
-# measured") and at +/-30% (H3 file: "USO 57.08 against 58.92 (-1.84)"). The +/-20% row's pair is not
-# recorded anywhere in the repo, so it is not named.
-BANDS = [("±10%", 20, 3.97, -12.37, "USO"), ("±20%", 30, 1.31, -4.39, None), ("±30%", 40, 0.59, -1.84, "USO")]
-# The same day at +/-30% (H3 file: "SPY 15.83 against 15.84 (**-0.01**)"), printed as the gap alone: Cboe approved
-# aggregates such as differences, so neither level is printed (decided 11 Nov 2026 under Gabriel's delegation).
-SPY_GAP_AT_30 = "0.01"   # points under the VIX
+# five fund/index pairs. Columns: band, strikes, mean absolute gap to Cboe over the five pairs.
+# 18 Nov 2026 (Astra 2's review, HIGH): the worst single pair's signed gap (USO at +/-10% and +/-30%) and SPY's gap at
+# +/-30% were one fund's gap on one named day, and with that day's public free estimate each gives the index's close
+# back; the request Cboe approved (4 Nov) promised averages ("average differences between my estimates and the
+# index"). Only the five-pair means stay. Decided 18 Nov 2026 (Vega, under Gabriel's go-ahead; his to veto). The
+# README and the site still show the worst pair: that is Gabriel's call.
+BANDS = [("±10%", 20, 3.97), ("±20%", 30, 1.31), ("±30%", 40, 0.59)]
 # README.md, under the calibration table: why a fixed band misses oil. The README's numbers, in plain words for the
 # poster (Marc Vinyard's review, 14 Nov 2026: "a 16-vol name" is jargon); test_build_poster.py binds them to the README.
 # "To each side", not the README's "spans": charts.band_sd measures from the price to one edge; and each volatility
-# with its unit, a percentage a year, as the VIX is (14 Nov 2026 review).
+# with its unit, a percentage a year, as the VIX is (14 Nov 2026 review). 18 Nov 2026 (Astra 2's review, HIGH): the
+# old ending made the model's illustration the cause of one day's gap, and printed one fund's gap on that day; the
+# sentence now says only what the model shows.
 TRUNCATION_WHY = ("A ±10% band reaches about 2.2 standard deviations of a 30-day move to each side at volatility 16%, "
-                  "but only 0.6 for crude oil at volatility 59%: that is why USO's estimate read twelve points low.")
+                  "but only 0.6 for crude oil at volatility 59%, so it leaves out much of oil's likely range.")
 
 # The right column, one track per feed: (all far strikes, only those both feeds bid). H5 file, Result (corrected
 # 17 Oct): H5a's pooled median, 0.33 of Bloomberg's spread over 179 wing contracts, and 0.67 on the 134 both feeds
@@ -118,7 +123,9 @@ class Unrecognised(ValueError):
 H3_LINE_A = re.compile(r"^H3a (HOLDS|FAILS): pooled mean \|gap\| ([\d.]+) vs bar under 1\.0 "
                        r"\((\d+) readings over (\d+) days\)", re.M)
 H3_LINE_B = re.compile(r"^H3b (HOLDS|FAILS): pooled mean gap ([+-][\d.]+) \(registered: negative\)", re.M)
-H3_LINE_C = re.compile(r"^H3c (HOLDS|FAILS): pooled slope of \|gap\| on the index level", re.M)
+# 18 Nov 2026 (Astra 2's poster review, #7): H3c's slope is read too, as the scorer printed it (never re-rounded).
+H3_LINE_C = re.compile(r"^H3c (HOLDS|FAILS): pooled slope of \|gap\| on the index level ([+-]\d+\.\d{4}) per point",
+                       re.M)
 # The scorer's per-pair lines, e.g. "   SPY  T= 38  mean |gap| 0.446  p(H3a) ...".
 H3_PER = re.compile(r"^\s+([A-Z]{3})\s+T=\s*(\d+)\s+mean \|gap\| ([\d.]+)\s", re.M)
 
@@ -132,7 +139,7 @@ def parse_h3(out):
     if not (a and b and c) or set(per) != {p[0] for p in PAIRS}:
         raise Unrecognised("h3_scorer.py output not recognised - the poster will not guess:\n" + out)
     return {"verdict": a[1], "mae": float(a[2]), "n": int(a[3]), "days": int(a[4]), "b": b[1],
-            "mean": float(b[2]), "c": c[1], "per": per}
+            "mean": float(b[2]), "c": c[1], "c_slope": c[2], "per": per}
 
 
 def run_modelfree():
@@ -270,6 +277,9 @@ def esc(s):
     return html.escape(str(s), quote=False)
 
 
+# Beside each quote verdict (H5, 23 Sep: "Stated beside any verdict"); section 4 says what was left out.
+# 18 Nov 2026 (poster v3 page check): "options" dropped, a line shorter on H5f; the chips already name far options.
+QUOTED_ONLY = "both feeds quoted (see 4)"
 KIND = {"HOLDS": "ok", "FAILS": "bad"}
 ICON = {"ok": "✓", "bad": "✗", "due": "…", "na": "–"}     # a verdict is an icon and a word, never colour alone
 # The strip's key, one word per symbol (Marc Vinyard's review, 14 Nov 2026: the symbols were never named).
@@ -295,6 +305,7 @@ def h3_tile(h3, record):
     return {"mae": f'{h3["mae"]:.2f}', "n": h3["n"], "days": h3["days"],
             "a": h3["verdict"].lower() + so_far(record), "b": h3["b"].lower() + so_far(record),
             "c": h3["c"].lower() + so_far(record), "mean": f'{h3["mean"]:+.2f}'.replace("-", "−"),
+            "c_slope": h3["c_slope"],
             "label": ("The reading of record, to 11 Nov 2026" if record else
                       "To date; the reading of record runs to 11 Nov")}
 
@@ -305,9 +316,16 @@ def h5e_chip(h5e):
     claim = "Skipping quotes with no buy offer fixes oil"
     if h5e is None:
         # H5 file, Result: first verdict FAILS, 0.90, closer on 2 of 10 days.
-        return chip("H5e", claim, "bad", "fails (first, 8 Oct)", f"0.90 (bar < 0.5); final {DUE}")
-    return chip("H5e", claim, KIND[h5e["verdict"]], h5e["verdict"].lower() + " (final)",
-                f'{h5e["mae"]} (bar < 0.5); closer on {h5e["closer"]} of {h5e["n"]} days; 8 Oct: fails, 0.90')
+        return chip("H5e", claim, "bad", "fails (first, 8 Oct)", f"0.90 on 10 days (bar < 0.5); final {DUE}")
+    # 18 Nov 2026 (Astra 2's poster review, #6): both registered conditions and the comparator. Poster v3 page check,
+    # same day: the day count first, so the chip fits the strip; the first verdict (8 Oct: fails, 0.90 on 10 days)
+    # stays beside a final HOLDS, where a pass must not hide the recorded failure, and is left off beside a final
+    # FAILS, where it adds nothing.
+    number = (f'{h5e["mae"]} (bar < 0.5); on {h5e["closer"]} of {h5e["n"]} days closer than the registered estimate '
+              f'(bar: most)')
+    if h5e["verdict"] == "HOLDS":
+        number += "; 8 Oct: fails, 0.90 on 10 days"
+    return chip("H5e", claim, KIND[h5e["verdict"]], h5e["verdict"].lower() + " (final)", number)
 
 
 def h7_chips(h7):
@@ -316,9 +334,14 @@ def h7_chips(h7):
     a, b = ("H7a", "Free feed matches the full market"), ("H7b", "Gold's estimate matches GVZ")
     if h7 is None:
         return [chip(*a, "due", DUE, "bar ≤ 0.25"), chip(*b, "due", DUE, "bar ≤ 0.30")]
+    # 18 Nov 2026 (Astra 2's poster review, #6): each figure with its own day count, from the recorded block. Its
+    # follow-up, the same evening: the statistic named, in points (H7 file: "mean absolute difference"), and the
+    # bar is each fund's.
     return [chip(*a, KIND.get(h7["a"].split()[0], "na"), h7["a"].lower(),
-                 f'USO {h7["uso"]}, GLD {h7["gld"]} (bar ≤ 0.25)'),
-            chip(*b, KIND.get(h7["b"].split()[0], "na"), h7["b"].lower(), f'{h7["gvz"]} (bar ≤ 0.30)')]
+                 f'mean gap size: USO {h7["uso"]} points over {h7["uso_n"]} days, GLD {h7["gld"]} over {h7["gld_n"]} '
+                 f'(bar ≤ 0.25 each)'),
+            chip(*b, KIND.get(h7["b"].split()[0], "na"), h7["b"].lower(),
+                 f'mean gap size {h7["gvz"]} points over {h7["n"]} days (bar ≤ 0.30)')]
 
 
 def scorecard(h3, h5e, h7, record):
@@ -328,12 +351,16 @@ def scorecard(h3, h5e, h7, record):
         h3_chip(h3, record),
         # H5 file, Result (corrected 17 Oct): 0.33 over 179 (bar 0.5); 0.67 on the 134 both feeds bid; "holds weakly".
         # 14 Nov 2026 (Marc Vinyard's review): the claims in section 4's plain words, a bid being a buy offer.
-        chip("H5a", "Far-option prices near Bloomberg's", "ok", "holds, weakly", "0.33 of a spread (bar 0.5)"),
+        # 18 Nov 2026 (Astra 2's poster review, #5): H5 requires, beside any verdict, that its rule compares only
+        # contracts both feeds quote; the three quote chips say so and point to section 4.
+        chip("H5a", "Far-option prices near Bloomberg's", "ok", "holds, weakly",
+             f"0.33 of a spread (bar 0.5); {QUOTED_ONLY}"),
         # H5 file, Result (corrected 17 Oct): 44 of 44 (bar 80%).
-        chip("H5b", "No buy offer on Bloomberg either", "ok", "holds", "44 of 44 (bar 80%)"),
+        chip("H5b", "No buy offer on Bloomberg either", "ok", "holds", f"44 of 44 (bar 80%); {QUOTED_ONLY}"),
         # H5 file, "H5f, read 25 September 2026": a 0.500 (bar 0.5, ON the bar), b 64 of 64 (bar 80%),
-        # c 0.6% median per-day gap (bar 25%).
-        chip("H5f", "The same, on the full market", "ok", "holds", "0.500 (on the bar); 64 of 64"),
+        # c 0.6% median per-day gap (bar 25%); all three parts shown (18 Nov 2026, Astra 2, #7).
+        chip("H5f", "The same, on the full market", "ok", "holds",
+             f"0.500 of a spread (on the bar); 64 of 64; 0.6% (bar 25%); {QUOTED_ONLY}"),
         # H5 file, Result: "H5c, H5d: descriptive until their 10 underlying-days support the date-clustered test";
         # HANDOFF 18: H5d "12 underlying-days on 3 dates; the date-clustered test needs more dates". H5c: Bloomberg's
         # prices reproduce the inflation (the estimate's overshoot, as registered minus Cboe's rule); H5d: it grows
@@ -347,15 +374,20 @@ def scorecard(h3, h5e, h7, record):
     ]
     side = [
         # H1 file, Result: H1a 9 of 11 pairs, all 9 survive Benjamini-Hochberg; H1b holds but mixed; H1c holds.
-        chip("H1", "The known risk premium, 10 years", "ok", "holds", "9 of 11 pairs"),
+        # 18 Nov 2026 (Astra 2's poster review, #7): each side-study figure carries its measure and its bar.
+        chip("H1", "The known risk premium, 10 years", "ok", "holds", "9 of 11 pairs significantly positive (p < 0.05)"),
         # H2 file, Result: log variance t 16.26, raw variance t 2.14 (H2a holds as recorded). 28 Oct 2026 (outside
         # review M05): the pooled t treats the equity indices' windows as independent though they share market
         # episodes. Companion, Actions run 40720872275 (28 Oct): clustered on date, raw variance t 1.34 (p 0.18).
         # The write-up's words: "holds as recorded; not robust to date clustering or to the price source".
-        chip("H2a", "The premium, in variance", "ok", "holds as recorded", "p = 0.18 by date; vendor-sensitive"),
+        # The recorded test (pooled t 2.14, p 0.033) earned the mark; the clustered companion (p 0.18) qualifies it.
+        # 18 Nov 2026 (poster v3 page check): the verdict says "as recorded"; the figure does not repeat it.
+        chip("H2a", "The premium, in variance", "ok", "holds as recorded", "p = 0.033; p = 0.18 clustered by date"),
         # H2 file, Result: H2b not supported; companion (28 Oct): on its registered statistic, log lower on 3 of 11.
         # H2b's claim: the log formulation, ln(IV^2) - ln(RV^2), is less autocorrelated than the level one.
-        chip("H2b", "Log form less autocorrelated", "bad", "not supported", "3 of 11 pairs"),
+        # 18 Nov 2026 (Astra 2's follow-up): the registration names a direction (lower) and no count of pairs.
+        chip("H2b", "Log form less autocorrelated", "bad", "not supported",
+             "lag-1 autocorrelation lower in 3 of 11 pairs (no count set)"),
         # H4 file / hypotheses README: registered 13 Sep, not yet tested; adjustment log "STRIKE 2 of 3" (8 Oct);
         # "roughly 40 day pairs is enough for both claims".
         chip("H4", "Hedged option gains negative", "na", "not yet tested", "needs ~40 day pairs"),
@@ -364,7 +396,10 @@ def scorecard(h3, h5e, h7, record):
         chip("H6a", "Implied vol beats the 14-day average range", "bad", "fails", "0 of 9 pairs (bar 7)"),
         # H6 file, Result: mean d +0.3272 after spikes vs +0.4165 calm; Welch p < 0.0001; Newey-West lag 21
         # p 0.0001, lag 63 p 0.0018.
-        chip("H6b", "Its miss shrinks after spikes", "ok", "holds", "0.33 vs 0.42, p < 0.01"),
+        # d is implied vol's squared log error minus the range forecast's; dates: 1,910 after a spike, 782 calm.
+        # 18 Nov 2026 (poster v3 page check): "extra" moves into the claim, which already says "after spikes".
+        chip("H6b", "Its extra miss shrinks after spikes", "ok", "holds",
+             "squared log error 0.33 vs 0.42 calm; 2,692 dates; p < 0.01"),
     ]
     return confirmatory, side
 
@@ -416,11 +451,13 @@ def tile_html(t):
     mark = {"holds": ("ok", ICON["ok"]), "fails": ("bad", ICON["bad"])}
     parts = (("a", "Bar, set before the data: under 1.0"),
              ("b", f"Free data reads low on average ({t['mean']})"),
-             ("c", "The gap grows when volatility is high"))
+             # 18 Nov 2026 (Astra 2's follow-up): H3c's slope is of the gap's size; section 3's gap is signed.
+             ("c", f"The gap widens when volatility is high: {t['c_slope']} points per index point "
+                   "(bar: positive, significant)"))
     items = "".join('<li class="{0}"><b>{1} H3{2} {3}</b><span>{4}</span></li>'.format(
         *mark.get(t[k].split()[0], ("na", ICON["na"])), k, esc(t[k]), esc(words)) for k, words in parts)
     return (f'<div class="cell tile"><div class="tk">All five funds · {t["n"]} daily readings</div>'
-            f'<div class="tv">{t["mae"]}</div><div class="tu">points off Cboe’s index, on average</div>'
+            f'<div class="tv">{t["mae"]}</div><div class="tu">points from Cboe’s index, on average, sign ignored</div>'
             f'<ul class="tl">{items}</ul><div class="tk">{esc(t["label"])}</div></div>')
 
 
@@ -479,32 +516,33 @@ def build(today=None, force_headline=None, out_dir=OUT):
       a set date. Option prices show how big a swing traders are pricing in: the <b>implied volatility</b>.
       Cboe, which publishes the VIX (Wall Street's “fear gauge”), turns option prices into official volatility
       indices.</p>
-      <p>Students and small researchers use <b>free quotes</b>; the full market feed costs thousands of dollars a
-      year. How much precision does free data lose, and <b>where</b>: in the quotes, or in the recipe that turns
+      <p>Students and small researchers use <b>free quotes</b>, because the full market feed and a Bloomberg terminal
+      cost money. How much precision does free data lose, and <b>where</b>: in the quotes, or in the recipe that turns
       them into a volatility number?</p>
       <p class="why"><b>Why it matters:</b> if the error lies in the method rather than the data, anyone without a
       data budget can remove most of it for free.</p></div>
     <div><h2><span class="n">2</span>What I did</h2>
       <div class="flow">
-        <div class="step"><b>Record</b> free option quotes from a retail brokerage (Alpaca), daily since September
-        2026: 109 tickers</div>
+        <div class="step"><b>Record</b> free option quotes from a retail brokerage (Alpaca) on trading days since
+        September 2026: one option each on a 109-ticker watchlist, many strike prices on eight funds and stocks</div>
         {ARROW}
-        <div class="check"><span>Check the quotes against the full market (OPRA) and Bloomberg</span>
+        <div class="check"><span>Check far-option quotes (USO, TSLA) against the full market (OPRA) and
+        Bloomberg</span>
         <span class="see">4</span></div>
         <div class="via">{DOWN}<p>Cboe's VIX formula, with my choice of strikes and expiry dates: <b>the
         recipe</b> <span class="see">5</span></p></div>
         <div class="step"><b>Compute</b> a volatility number per fund per day: the swing priced in for the next
         30 days</div>
         {ARROW}
-        <div class="check"><span>Check the number against Cboe's official index</span> <span class="see">3</span></div>
+        <div class="check"><span>Check the number against Cboe's official index: five fund–index pairs</span>
+        <span class="see">3</span></div>
       </div></div>
     <div><h2>How it stays honest</h2>
       <ul>
         <li>Every pass/fail bar was <b>written before its test ran</b>, dated in a public repository; H5e and H7
             were also frozen on <b>OSF</b>, the Open Science Framework.</li>
-        <li>A <b>second program sharing no code</b> recomputed every recorded result on 17 Oct, catching one
-            spreadsheet-reading bug (fixed; no verdict changed).</li>
-        <li>Failures are reported beside successes: see the strip below.</li>
+        <li>On 17 Oct, <b>separate code sharing none of the original</b> recomputed the results recorded by
+            then; it found one bug, in reading Bloomberg's files: the fix changed figures, not verdicts.</li>
       </ul></div>
     <div><h2>What's next</h2>
       <ul>
@@ -514,7 +552,7 @@ def build(today=None, force_headline=None, out_dir=OUT):
       </ul></div>
     <div class="limits"><h2>Limits</h2>
       <p>One free feed; about two months of data; one snapshot a day, since October about 80 minutes before the
-      close (in market-stress months the estimate moves a median 0.53 points between 2:30 and 3:55 pm); the formulas
+      close, so each gap to an index also holds what moved before the close; the formulas
       treat options as exercised only at expiry, though these can be exercised any day; options nobody is
       quoting can show hours-old free prices.</p></div>
   </section>
@@ -527,7 +565,8 @@ def build(today=None, force_headline=None, out_dir=OUT):
     <div class="grid">{panels}{tile_html(h3_tile(h3, record))}</div>
     <p class="cap">Gap = the free estimate minus Cboe's index, in volatility points (a VIX of 20 means S&amp;P 500
     options price in swings of about 20% a year, one standard deviation, over the next 30 days); left of zero, free data reads low. Same
-    axes in all five panels; {span_label(series, record)}. The estimate uses strikes within ±30% of the price (see 5).</p>
+    axes in all five panels; {span_label(series, record)}; strikes within ±30% of the price (see 5).
+    Source: Cboe Global Markets.</p>
   </section>
   <section class="col right">
     <div><h2><span class="n">4</span>The quotes: close to the professional feeds</h2>
@@ -538,23 +577,24 @@ def build(today=None, force_headline=None, out_dir=OUT):
       {charts.quote_scale(QUOTE_FEEDS, QUOTE_BAR)}
       <p class="cap">Both passes depend on the options with no buy offer on one feed or both: with a buy offer on
       both feeds, the gap is over the bar, mostly on TSLA, where one cent can be a whole spread. Only options both
-      feeds quoted were compared, so the free feed's hours-old prices on far options nobody else quoted are not
-      tested here. Source: Bloomberg Finance L.P. Data provided by Databento (OPRA).</p></div>
-    <div><h2><span class="n">5</span>The recipe: a wider strike range shrinks the gap</h2>
+      feeds quoted were compared, so the free feed's hours-old prices on far options the professional feed did not
+      quote are not tested here. Source: Bloomberg Finance L.P. Data provided by Databento (OPRA).</p></div>
+    <div><h2><span class="n">5</span>The recipe: a wider strike range, a smaller gap</h2>
       <p class="lead">Strikes within ±10% of the price cover almost all of a calm market's likely moves, but under
       half of oil's:</p>
       {charts.coverage_curves(CALM, WILD)}
-      <p class="cap">30-day price moves under a simple model. {esc(TRUNCATION_WHY)}</p>
-      <p class="lead">Widen the range: the average gap falls from {BANDS[0][2]:.2f} to {BANDS[-1][2]:.2f} points</p>
+      <p class="cap">An illustration: 30-day price moves under a simple model. {esc(TRUNCATION_WHY)}</p>
+      <p class="lead">One test day: average gap size {BANDS[0][2]:.2f} points at ±10%, {BANDS[-1][2]:.2f} at ±30%</p>
       {charts.band_bars(BANDS)}
-      <p class="cap">Average size of the gap to Cboe's index, five fund–index pairs, one test day (11 Sep 2026); worst: the pair
-      furthest off (minus: reads low). At ±30%, SPY's estimate read {SPY_GAP_AT_30} points under the VIX. The range
-      matters; this alone does not rule out the feed's error, the snapshot's timing or fund-versus-index
-      differences.</p></div>
+      <p class="cap">Exploratory: the average gap size to Cboe's index over five fund–index pairs on one test day (11 Sep
+      2026), before the registered series began; it set the ±30% range that H3 then tested. The wider settings
+      changed both the range and the number of strikes; one day cannot rule out other causes. Source: Cboe Global
+      Markets.</p></div>
   </section>
 </main>
 <footer class="bottom">
-  <div class="tests"><h3><span>Every registered hypothesis, H1–H7, scored against a bar set before its test ran</span>
+  <div class="tests"><h3><span>Every registered hypothesis, H1–H7, with its bar set before its test ran (in brief; full
+    results: scan the code)</span>
     <span class="ik">{strip_key(conf + side)}</span></h3>
     <div class="row"><div class="rl">The free-data question</div>{chips(conf)}</div>
     <div class="row"><div class="rl">Side studies: other questions about volatility</div>{chips(side)}
@@ -653,7 +693,7 @@ CSS = """
   .kpi span { font-size:35px; line-height:1.28; }
   .why { margin-top:0.12in; padding-left:0.2in; border-left:8px solid var(--orange); }
   .why b { color:var(--navy); }
-  .bottom { display:grid; grid-template-columns:minmax(0, 1fr) 3.2in 11.2in; gap:0.45in; align-items:start;
+  .bottom { display:grid; grid-template-columns:minmax(0, 1fr) 3.2in 9.6in; gap:0.45in; align-items:start;
             padding:0.22in 0.8in 0.3in; background:var(--tint); border-top:4px solid var(--rule); }
   .tests h3 { font:700 38px/1.2 'Inter Tight'; color:var(--navy); margin-bottom:0.12in; display:flex;
               justify-content:space-between; align-items:baseline; gap:0.4in; }
@@ -663,7 +703,7 @@ CSS = """
   .tests .key { grid-column:span 2; font-size:32px; line-height:1.17; color:var(--mute); padding:0.02in 0.04in; }
   .tests .key p + p { margin-top:0.05in; }
   .tests .key b { color:var(--ink); }
-  .tests .row { display:grid; grid-template-columns:2.2in repeat(8, minmax(0, 1fr)); gap:0.1in; }
+  .tests .row { display:grid; grid-template-columns:1.9in repeat(8, minmax(0, 1fr)); gap:0.1in; }
   .tests .row + .row { margin-top:0.1in; }
   .tests .rl { font:700 32px/1.2 'Inter Tight'; color:var(--mute); align-self:center; }
   .chip { background:#fff; border:3px solid var(--rule); border-top:10px solid var(--na); border-radius:10px;

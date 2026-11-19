@@ -67,9 +67,42 @@ def weekdays(start, end):
 DAYS38 = [d for d in weekdays("2026-09-14", "2026-11-06") if d not in ("2026-09-16", "2026-09-28")]
 GAPS38 = [(d, round(-1.6 + 1.8 * ((i * 7) % 11 - 5) / 5, 2)) for i, d in enumerate(DAYS38)]
 SCALE = (-6, 4, 2)
-BANDS = [("±10%", 20, 3.97, -12.37, "USO"), ("±20%", 30, 1.31, -4.39, None), ("±30%", 40, 0.59, -1.84, "USO")]
+BANDS = [("±10%", 20, 3.97), ("±20%", 30, 1.31), ("±30%", 40, 0.59)]
 FEEDS = [("Bloomberg (179 far options; 134 with a buy offer on both)", (0.33, "0.33"), (0.67, "0.67")),
          ("Full market, OPRA (466 far options; 402 with a buy offer on both)", (0.5, "0.500"), (0.667, "0.667"))]
+
+
+PLACED = re.compile(r'<text x="([\d.]+)" y="([\d.]+)"[^>]*>([^<]*)</text>')      # a text with its position
+DATA_DOT = re.compile(r'<circle cx="([\d.]+)" cy="([\d.]+)" r="17" fill="([^"]+)"')
+
+
+def quote_bindings(case, svg, feeds):
+    """18 Nov 2026 (Astra 2's poster review, #11): each feed's label, its track, each dot's position and the number
+    printed beside that dot, bound together. The label names the track 48 px below it (its baseline + 48); on that
+    track the filled dot sits at 20 + all x 1220 and the hollow at 20 + both x 1220, and each one's number is printed
+    30 px right of it, 13 px down."""
+    texts = [(float(x), float(y), html.unescape(v)) for x, y, v in PLACED.findall(svg)]
+    dots = [(float(x), float(y), f) for x, y, f in DATA_DOT.findall(svg)]
+    for label, (va, sa), (vb, sb) in feeds:
+        at = [(x, y) for x, y, v in texts if v == label]
+        case.assertEqual(len(at), 1, label)
+        track = at[0][1] + 48
+        on = {f: x for x, y, f in dots if abs(y - track) < 0.05}
+        case.assertEqual(set(on), {charts.ORANGE, "#fff"}, label)
+        for fill, v, shown in ((charts.ORANGE, va, sa), ("#fff", vb, sb)):
+            case.assertAlmostEqual(on[fill], 20 + v * 1220, delta=0.05, msg=label)
+            beside = [w for x, y, w in texts if abs(x - (on[fill] + 30)) < 0.05 and abs(y - (track + 13)) < 0.05]
+            case.assertEqual(beside, [shown], label)
+
+
+def coverage_bindings(case, svg, want):
+    """Each market's coverage line sits directly under its own name (same x, 44 px down). want: {name: coverage}."""
+    texts = [(float(x), float(y), html.unescape(v)) for x, y, v in PLACED.findall(svg)]
+    for name, cover in want.items():
+        at = [(x, y) for x, y, v in texts if v == name]
+        case.assertEqual(len(at), 1, name)
+        under = [v for x, y, v in texts if abs(x - at[0][0]) < 0.05 and abs(y - (at[0][1] + 44)) < 0.05]
+        case.assertEqual(under, [cover], name)
 
 
 class Steps(unittest.TestCase):
@@ -256,6 +289,19 @@ class WeekdaySlot(unittest.TestCase):
 
 
 class Coverage(unittest.TestCase):
+    WANT = {"S&P 500 (volatility 16%)": "band sees 97% of moves", "Crude oil (volatility 59%)": "band sees 45% of moves"}
+
+    def test_each_share_sits_under_its_own_market(self):
+        # 18 Nov 2026 (Astra 2's poster review, #11): both percentages anywhere in the SVG passed with them swapped.
+        # 97% and 45% are the hand-worked shares of test_share_of_moves_inside_the_band.
+        s = charts.coverage_curves(("S&P 500", 0.16), ("Crude oil", 0.59))
+        coverage_bindings(self, s, self.WANT)
+        a, b = ">band sees 97% of moves<", ">band sees 45% of moves<"
+        swapped = s.replace(a, "\0").replace(b, a).replace("\0", b)
+        self.assertNotEqual(swapped, s)
+        with self.assertRaises(AssertionError):
+            coverage_bindings(self, swapped, self.WANT)
+
     def test_band_in_standard_deviations(self):
         self.assertEqual(f"{charts.band_sd(0.10, 0.16):.1f}", "2.2")
         self.assertEqual(f"{charts.band_sd(0.10, 0.59):.1f}", "0.6")
@@ -295,8 +341,13 @@ class BandBars(unittest.TestCase):
         check_svg(self, s)
         b = bars(s)
         self.assertEqual(len(b), 3)                                       # every bar is the same thing: the gap
-        for t in ("3.97", "1.31", "0.59", "worst: USO −12.37", "worst: −4.39", "40 strikes"):
+        for t in ("3.97", "1.31", "0.59", "20 strikes", "40 strikes"):
             self.assertIn(t, s)
+        # 18 Nov 2026 (Astra 2's review, HIGH): one fund's signed gap on one named day gives that day's index close
+        # back; the chart shows the five-pair means only. No fund, no "worst", no signed number.
+        self.assertNotIn("worst", s)
+        self.assertNotRegex(s, r"\b(SPY|QQQ|IWM|GLD|USO)\b")
+        self.assertNotRegex(s, r"[−+-]\d+\.\d")
         ends = [max(x for x, _ in pts) for pts in b]
         self.assertEqual(ends, sorted(ends, reverse=True))               # a longer bar is a bigger gap
         for pts in b:                                                     # square at the baseline, rounded at the end
@@ -307,11 +358,30 @@ class BandBars(unittest.TestCase):
     def test_lengths_in_proportion(self):
         # Independent arithmetic: the longest bar (3.97) spans 1300 - 220 - 330 = 750 px from x = 220.
         ends = [max(x for x, _ in pts) - 220 for pts in bars(charts.band_bars(BANDS))]
-        for got, (_, _, mae, _, _) in zip(ends, BANDS, strict=True):
+        for got, (_, _, mae) in zip(ends, BANDS, strict=True):
             self.assertAlmostEqual(got, mae * 750 / 3.97, delta=0.1)
 
 
 class QuoteScale(unittest.TestCase):
+    def test_each_feed_label_dot_and_number_are_bound(self):
+        s = charts.quote_scale(FEEDS, 0.5)
+        quote_bindings(self, s, FEEDS)
+
+    def test_the_bindings_see_swapped_numbers_or_feeds(self):
+        # Known answers: the two printed medians of one track swapped (dots and labels in place), and the two feeds'
+        # labels swapped (dots and numbers in place).
+        s = charts.quote_scale(FEEDS, 0.5)
+        (la, (_, a1), (_, a2)), (lb, _, _) = FEEDS
+        n1, n2 = f'>{a1}</text>', f'>{a2}</text>'
+        self.assertEqual((s.count(n1), s.count(n2)), (1, 1))
+        numbers = s.replace(n1, "\0").replace(n2, n1).replace("\0", n2)
+        e1, e2 = f">{html.escape(la, quote=False)}</text>", f">{html.escape(lb, quote=False)}</text>"
+        feeds = s.replace(e1, "\0").replace(e2, e1).replace("\0", e2)
+        for bad in (numbers, feeds):
+            self.assertNotEqual(bad, s)
+            with self.assertRaises(AssertionError):
+                quote_bindings(self, bad, FEEDS)
+
     def test_linear_from_zero_to_one_spread(self):
         # Independent arithmetic: 1300 px wide, margins 20 and 60, so one spread is 1220 px from x = 20.
         s = charts.quote_scale(FEEDS, 0.5)
@@ -391,6 +461,20 @@ class QuoteScale(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.key_bound(swapped)
 
+    def test_the_key_items_do_not_touch(self):
+        # 18 Nov 2026 (poster v3): the first key label grew to "far options both feeds quoted" (Astra 2, #5) and ran
+        # into the second key dot (the print check's overlap test sees text only; on the page the ring sat 6 units
+        # from the label). The second dot's ring must clear the first label by 30 units, by the half-an-em estimate
+        # check_svg uses (Inter measures about 0.48 em per character here, so the estimate is the longer one).
+        s = charts.quote_scale(FEEDS, 0.5)
+        dots = [(float(cx), float(r)) for cx, r in
+                re.findall(r'<circle class="key" cx="([\d.]+)" cy="[\d.]+" r="([\d.]+)"', s)]
+        x, size = re.search(r'<text x="([\d.]+)" y="[\d.]+" font-family="[^"]*" font-size="([\d.]+)"[^>]*>'
+                            + re.escape(charts.KEY_ALL) + "</text>", s).groups()
+        label_end = float(x) + 0.5 * float(size) * len(charts.KEY_ALL)
+        ring_left = dots[1][0] - dots[1][1] - 3                    # the ring's stroke is 6 wide
+        self.assertGreaterEqual(ring_left - label_end, 30, (ring_left, label_end))
+
     def test_a_key_names_both_dots(self):
         # Marc Vinyard, 14 Nov 2026: the filled and hollow dots were explained only in a caption below the chart.
         # The chart now carries its own key, above the tracks, each key dot drawn like the dots it names.
@@ -407,7 +491,10 @@ class QuoteScale(unittest.TestCase):
         self.key_bound(s)
         # Plain words (Marc, 14 Nov): "no bid" became a buy offer, not "a buyer": a feed showing no buy offer does
         # not show that no buyer exists (14 Nov 2026 review).
-        self.assertEqual((charts.KEY_ALL, charts.KEY_BOTH), ("all far options", "only those with a buy offer on both feeds"))
+        # 18 Nov 2026 (Astra 2's poster review, #5): the filled dots are the far options both feeds quoted (H5's rule
+        # compares matched contracts only), never "all far options".
+        self.assertEqual((charts.KEY_ALL, charts.KEY_BOTH),
+                         ("far options both feeds quoted", "only those with a buy offer on both feeds"))
         # The key's meanings reach a screen reader too, not only the eye.
         name = html.unescape(re.search(r'aria-label="([^"]*)"', s)[1])
         self.assertIn(f"filled dots: {charts.KEY_ALL}; hollow dots: {charts.KEY_BOTH}", name)

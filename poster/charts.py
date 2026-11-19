@@ -240,28 +240,28 @@ def coverage_curves(calm, wild, band=0.10, w=1300, h=306):
 
 
 def band_bars(bands, w=1300, row=112, bar=56):
-    """Mean |gap| to Cboe by strike band (the 11 Sep 2026 calibration), the worst pair beside each.
+    """Mean |gap| to Cboe by strike band (the 11 Sep 2026 calibration), over the five fund-index pairs.
     Every bar is the same thing, free data's gap, so every bar is orange; square on the baseline, rounded at the
-    data end. bands: [(label '±10%', strikes, mean_abs_gap, worst_signed_gap, pair or None)]."""
+    data end. bands: [(label '±10%', strikes, mean_abs_gap)]. 18 Nov 2026 (Astra 2's poster review, HIGH): the
+    worst pair's signed gap on that one dated day is gone - with the free reading it gives Cboe's close back."""
     x0, r = 220, 8.0
     scale = (w - x0 - 330) / max(b[2] for b in bands)
     out = []
-    for k, (band, n, mae, worst, pair) in enumerate(bands):
+    for k, (band, n, mae) in enumerate(bands):
         y = 6 + k * row
         bw, yb = max(mae * scale, 2 * r), y + 12
         d = (f"M{x0:.1f} {yb:.1f} L{x0 + bw - r:.1f} {yb:.1f} Q{x0 + bw:.1f} {yb:.1f} {x0 + bw:.1f} {yb + r:.1f} "
              f"L{x0 + bw:.1f} {yb + bar - r:.1f} Q{x0 + bw:.1f} {yb + bar:.1f} {x0 + bw - r:.1f} {yb + bar:.1f} "
              f"L{x0:.1f} {yb + bar:.1f} Z")
-        who = "worst: " + (f"{pair} " if pair else "") + minus(f"{worst:+.2f}")
         out += [text(x0 - 22, y + 52, band, 48, weight=700, family=HEAD, anchor="end"),
                 text(x0 - 22, y + 98, f"{n} strikes", 32, fill=MUTE, anchor="end"),
                 f'<path d="{d}" fill="{ORANGE}"/>',
-                text(x0 + bw + 20, y + 55, f"{mae:.2f}", 54, weight=800, family=HEAD),
-                text(x0 + bw + 20, y + 102, who, 32, fill=MUTE)]
+                text(x0 + bw + 20, y + 55, f"{mae:.2f}", 54, weight=800, family=HEAD)]
     return svg(w, 6 + len(bands) * row, "Mean absolute gap to Cboe by strike band", "".join(out))
 
 
-KEY_ALL, KEY_BOTH = "all far options", "only those with a buy offer on both feeds"
+# 18 Nov 2026 (Astra 2's poster review, #5): the filled dots are the far options both feeds quoted, not all of them.
+KEY_ALL, KEY_BOTH = "far options both feeds quoted", "only those with a buy offer on both feeds"
 
 
 def dot(cx, cy, hollow, key=False):
@@ -283,8 +283,12 @@ def quote_scale(feeds, bar, w=1300, row=108, top=60):
     def X(v):
         return L + v * (w - L - R)
 
-    out = [dot(L + 17, 30, False, key=True), text(L + 50, 42, KEY_ALL, 34),
-           dot(L + 400, 30, True, key=True), text(L + 433, 42, KEY_BOTH, 34)]
+    # 18 Nov 2026 (poster v3): the first label grew to "far options both feeds quoted" (Astra 2, #5) and ran into the
+    # second dot. The key is set at the poster's floor, 32 px, and the second dot moves right: on the page the first
+    # label ends at 518 and the ring starts at 593; the second label (620 units, 656 by the tests' half-an-em
+    # estimate) still ends inside the chart.
+    out = [dot(L + 17, 30, False, key=True), text(L + 50, 42, KEY_ALL, 32),
+           dot(L + 593, 30, True, key=True), text(L + 626, 42, KEY_BOTH, 32)]
     ticks = []
     for k, (label, (va, sa), (vb, sb)) in enumerate(feeds):
         y0 = top + k * row

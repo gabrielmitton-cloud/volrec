@@ -31,15 +31,21 @@ never in its place: on the strikes both feeds carry, oil's rebuilds differ by 0.
 down on 17 Oct, before any reading), and Cboe's walk ran past the free file's +/-60% strike edge on 24 of 24 days.
 OPRA figures: Data provided by Databento. Index closes: Cboe Global Markets. Aggregates only.*
 
-*14 Nov 2026: the poster now prints the same answer in plainer words for SCCUR's mostly non-finance audience:
-"Use a wider range of strike prices, and free data averages within 1 point of Cboe's index." The claim is the
-decided one; only the words changed, and the site keeps the wording above.*
+*14 Nov 2026: the poster now prints the same answer in plainer words for SCCUR's mostly non-finance audience.
+18 Nov 2026: those words, "Use a wider range ...", read as an instruction, as if widening caused the result, which
+H3 did not test (it measured one fixed range, ±30%); the poster now reads "With a wide range of strike prices, free
+data averaged within 1 point of Cboe's index." The claim is the decided one; only the words changed, and the site
+keeps the wording above.*
 
 ## Sections
 
-**1. Introduction (1.5 pages).** The problem: researchers without a data budget use free quotes, and
-nobody measures what that costs. The question. The answer in three sentences. The contribution: a
-measurement, not a new method. The methods are Cboe's and published work's, and are credited.
+**1. Introduction (1.5 pages).** The problem: researchers without a data budget use free quotes; what that
+costs in precision is measured here for one free feed. The question. The answer in three sentences. The
+contribution: a measurement of this free retail feed against named references (Cboe's published indices, the
+consolidated OPRA feed, a Bloomberg terminal), not a new method; and a practical use: testing, with quotes
+already in hand, whether a method change improves agreement. The methods are Cboe's and published work's, and
+are credited. *(Worded 18 Nov 2026, Astra 2's review: the earlier line claimed no one measures this, which no
+search here supports.)*
 
 **2. Related work (1 page).** Short, against the closest papers (Cochrane's advice).
 - Cboe's VIX methodology and its mathematics document: the reference being reproduced.
@@ -117,8 +123,9 @@ with an interval.
   Prices within a fraction of a spread; empty bids match the market.
   [H8's confirmatory reading goes here, 1 Dec 2026 - 29 Jan 2027, all eight funds; registered after
   the November verdicts under PROTOCOL.md - see H8-DRAFT.md.]
-- 5.2 *Strike coverage.* The ±10% band reads oil 12 points light; ±30% brings the mean gap to 0.59.
-  Truncation scales with volatility: Jiang & Tian's mechanism, measured (H3).
+- 5.2 *Strike coverage.* At ±10% the mean gap size over the five pairs is 3.97 points; ±30% brings it to 0.59.
+  Truncation scales with volatility: Jiang & Tian's mechanism. H3c measured an association, the gap's size
+  rising with the index level, not the mechanism itself.
 - 5.3 *Empty bids in the wings.* What zero-bid quotes do to the estimate, and H5e's test.
   [H5e FINAL reading goes here, as recorded.]
 - 5.4 *Cboe's own rules.* The step-by-step rebuild: data, quote rules, coverage, expiry, and what
