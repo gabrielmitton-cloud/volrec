@@ -51,12 +51,14 @@ HEADLINE_IF_H7_AND_H3_FAIL = ("Free data misses Cboe's index", "by a point or mo
 HEADLINES = (HEADLINE, HEADLINE_IF_H7_FAILS, HEADLINE_IF_H7_AND_H3_FAIL)     # --headline N previews each
 # The poster's own words for a decided headline. Marc Vinyard's review, 14 Nov 2026: SCCUR's audience is mostly not in
 # finance, and "Widen the strikes" is jargon to them. The same claim, still an average, claiming no quotes-versus-recipe
-# split. The decided wording itself is unchanged, because tools/site_results.py prints it on the site. Decided 14 Nov
-# 2026 (Vega, under Gabriel's go-ahead; his to veto). 18 Nov 2026 (Astra 2's follow-up review): "Use a wider range"
-# read as an instruction, as if widening caused the result; H3 measured agreement at one fixed range (±30%), and the
-# calibration day changed the range and the number of strikes together. The words now state the condition and the
-# registered observation, in the past tense (H3a: 0.71 over 205 readings). Decided 18 Nov 2026 (Vega, under
-# Gabriel's go-ahead; his to veto).
+# split. The decided wording itself is unchanged: headline() still chooses it (until 19 Nov the site printed it, too).
+# Decided 14 Nov 2026 (Vega, under Gabriel's go-ahead; his to veto). 18 Nov 2026 (Astra 2's follow-up review): "Use a
+# wider range" read as an instruction, as if widening caused the result; H3 measured agreement at one fixed range
+# (±30%), and the calibration day changed the range and the number of strikes together. The words now state the
+# condition and the registered observation, in the past tense (H3a: 0.71 over 205 readings). Decided 18 Nov 2026
+# (Vega, under Gabriel's go-ahead; his to veto). 19 Nov 2026 (Gabriel's choice, preview first): the site prints these
+# words too. tools/site_results.py passes the decided headline through poster_headline(), so the poster's QR code
+# lands on the same sentence.
 POSTER_WORDS = {HEADLINE_IF_H7_FAILS: ("With a wide range of strike prices,",
                                        "free data averaged within 1 point of Cboe's index.")}
 
