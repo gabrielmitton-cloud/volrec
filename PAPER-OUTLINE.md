@@ -34,8 +34,8 @@ OPRA figures: Data provided by Databento. Index closes: Cboe Global Markets. Agg
 *14 Nov 2026: the poster now prints the same answer in plainer words for SCCUR's mostly non-finance audience.
 18 Nov 2026: those words, "Use a wider range ...", read as an instruction, as if widening caused the result, which
 H3 did not test (it measured one fixed range, ±30%); the poster now reads "With a wide range of strike prices, free
-data averaged within 1 point of Cboe's index." The claim is the decided one; only the words changed, and the site
-keeps the wording above.*
+data averaged within 1 point of Cboe's index." The claim is the decided one; only the words changed. 19 Nov 2026: the site
+prints the same words (Gabriel's choice), so the poster's QR code lands on the same sentence.*
 
 ## Sections
 

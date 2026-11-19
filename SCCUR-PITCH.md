@@ -39,7 +39,7 @@ turns those prices into official indices like the VIX, Wall Street's fear gauge.
 14 Nov: the poster printed it in plain words. 18 Nov: those words, "Use a wider range ...", read as an instruction,
 as if widening caused the result, which H3 did not test (it measured one fixed range, ±30%); the poster now reads
 "With a wide range of strike prices, free data averaged within 1 point of Cboe's index." The claim is the decided
-one; only the words changed (the site keeps "Widen the strikes").
+one; only the words changed. 19 Nov: the site prints the same words, so the QR code lands on the same sentence.
 The 4 Nov draft ended "Short answer: the free quotes are close. Most of the error is in the recipe." Do not say
 that now: on oil, the free and full-market rebuilds differed by more than their bar.*
 

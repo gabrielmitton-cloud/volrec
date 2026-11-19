@@ -555,8 +555,9 @@ class Headline(unittest.TestCase):
 
     def test_the_poster_says_the_decided_headline_in_plain_words(self):
         # Marc Vinyard, 14 Nov 2026: "Widen the strikes" is jargon to SCCUR's mostly non-finance audience. The decided
-        # wording stays as it is (tools/site_results.py prints it on the site); the poster says the same claim
-        # plainly, still an average, still claiming no quotes-versus-recipe split.
+        # wording stays as it is; the poster says the same claim plainly, still an average, still claiming no
+        # quotes-versus-recipe split. 19 Nov 2026: the site prints these plain words too (tools/site_results.py,
+        # through poster_headline(); Gabriel's choice), so the QR code lands on the same sentence.
         plain = bp.poster_headline(bp.HEADLINE_IF_H7_FAILS)
         # 18 Nov 2026 (Astra 2's follow-up review): "Use a wider range ..." read as an instruction, that widening
         # causes the result; H3 measured agreement at one fixed range (±30%), and the calibration day changed the

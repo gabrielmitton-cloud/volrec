@@ -1004,6 +1004,10 @@ MUTANTS = [
                     '    first, second = BP.headline({"verdict": h3["a"]}, rec["h7"])\n',
                     "    first, second = BP.HEADLINE\n"),
      "the site-results generator's tests pass"),
+    # 19 Nov 2026: the site prints the poster's plain words (Gabriel's choice); losing them must fail.
+    ("site-results-poster-words-dropped", "the results line goes back to the decided words, not the ones the poster prints",
+     lambda w: _sub(w / "tools/site_results.py", "    first, second = BP.poster_headline((first, second))\n", ""),
+     "the site-results generator's tests pass"),
     # 13 Nov 2026 (Astra's review of the generator): where the passages sit, and the records' own consistency.
     ("site-results-passage-hidden", "the H7 passage is moved into a template, never shown, its words unchanged",
      lambda w: _sub(w / "index.html", "    <!-- results:h7note -->", "    <template><!-- results:h7note -->"),

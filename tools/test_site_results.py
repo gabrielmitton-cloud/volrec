@@ -536,8 +536,12 @@ H5E = {"verdict": "FAILS", "mae": "0.91", "closer": "26", "n": "35"}     # H5's 
 rec = {"h3": h3, "h5e": H5E, "h7": h7, "timing": tm}
 ok_rec = all(rec.values())
 p = SR.render(rec) if ok_rec else {}
-check("the headline: the poster's rule (H7 fails, H3 holds), then H3a's figures exactly as recorded",
-      p.get("headline") == "Widen the strikes, and free data averages within a point of Cboe's index. On the "
+# 19 Nov 2026 (Gabriel's choice, preview first): the site prints the poster's plain words, so the poster's QR code
+# lands on the same sentence; the decided claim is unchanged ("Widen the strikes" read as an instruction, which H3
+# did not test: it measured one fixed range, +/-30%).
+check("the headline: the poster's rule (H7 fails, H3 holds) in the poster's printed words, then H3a's figures "
+      "exactly as recorded",
+      p.get("headline") == "With a wide range of strike prices, free data averaged within 1 point of Cboe's index. On the "
       "registered test, the estimate built from free quotes missed Cboe's indices by a mean absolute "
       '<span class="m">0.708</span> volatility points over <span class="m">205</span> readings on '
       '<span class="m">41</span> days, against a limit of 1.0 written down before the data.')

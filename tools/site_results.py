@@ -12,7 +12,8 @@ readings beside the verdicts.
 
 This reads the four records and writes three passages of index.html between markers:
   headline   the dek's results line: the poster's headline, by the poster's own rule
-             (poster/build_poster.py headline(), decided by Gabriel 21 Oct), then H3a's figures;
+             (poster/build_poster.py headline(), decided by Gabriel 21 Oct), in the words the poster prints
+             (poster_headline(); since 19 Nov 2026, Gabriel's choice), then H3a's figures;
   ledger     the ledger's results, one JSON constant inside the page's script;
   h7note     two blocks in the OPRA section: H7's verdict with its companion, and the timing measurement.
 Markers: <!-- results:NAME --> ... <!-- /results:NAME --> in HTML, /* results:NAME */ ... /* /results:NAME */ in
@@ -416,6 +417,9 @@ BAR_A, BAR_B = f"{RV.H7_BAR_A:.2f}", f"{RV.H7_BAR_B:.2f}"      # "0.25", "0.30":
 def headline(rec):
     h3 = rec["h3"]
     first, second = BP.headline({"verdict": h3["a"]}, rec["h7"])
+    # 19 Nov 2026 (Gabriel's choice, preview first): the poster's printed words, so its QR code lands on the same
+    # sentence. The decided claim is unchanged; "Widen the strikes" read as an instruction, which H3 did not test.
+    first, second = BP.poster_headline((first, second))
     return (f"{html.escape(first, quote=False)} {html.escape(second, quote=False)} On the registered test, the "
             f"estimate built from free quotes missed Cboe's indices by a mean absolute {_m(h3['mae'])} volatility "
             f"points over {_m(h3['n'])} readings on {_m(h3['days'])} days, against a limit of {HS.H3A_BAR} written "
