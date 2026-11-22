@@ -15,7 +15,7 @@ Setup:
     2. Dashboard -> switch to Paper Trading -> generate API keys
     3. export ALPACA_KEY="your_key"
        export ALPACA_SECRET="your_secret"
-    4. pip install requests
+    4. pip install -r requirements.txt    (the exact versions both recorders install; locked 22 Nov 2026)
     5. python record.py
 
 Skips weekends and, via Alpaca's market calendar, exchange holidays.
