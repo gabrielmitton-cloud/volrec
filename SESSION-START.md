@@ -48,7 +48,7 @@ session's job is to read results, answer a question, or do one bounded thing.
 | `freshness.yml` | 20:00 and 23:00 daily (GitHub runs both 2-5 h late) | installs nothing, on purpose; emails on a red X; no phone alert (health sends it) |
 | `health.yml` | 23:37 | the full daily check; emails on any FAIL or crash |
 | ~~launchd `com.volrec.daily`~~ | - | retired 23 Oct 2026; Pushover (`tools/alert.py`) carries the daily alert |
-| `volrec-licensed` daily.yml (private repo) | 23:05 UTC | OPRA fetch (USO/TSLA wide days, H7's monthly legs, H8's eight funds) + registered verdicts; opens an issue there |
+| `volrec-licensed` daily.yml (private repo) | 23:05 UTC, a second pass at 03:05 | OPRA fetch (USO/TSLA wide days, H7's monthly legs, H8's eight funds; from 2 Dec H8's six indices) + registered verdicts; reports days Databento has still not released 5+ days on; opens an issue there |
 | auditor routine (Claude, cloud) | Mondays 16:30 UTC | `tools/audit.py` + doc drift; notifies only on a problem |
 
 ## Standing rules - these are not up for re-argument without new, dated evidence
@@ -58,6 +58,10 @@ session's job is to read results, answer a question, or do one bounded thing.
 - **Never edit record.yml or surface.yml's `schedule:` on a day whose run is
   needed.** The cron is held as-is through H8's window, to Fri 29 Jan 2027 (Gabriel, 23 Sep; renewed
   12 Nov 2026, `CRON_MARGIN_ACCEPTED`).
+- **The recorders install exactly `requirements.txt`'s pins** (requests 2.34.2, urllib3 2.8.0; locked
+  22 Nov 2026, Gabriel's yes). Change the three files together, after a day's run has landed. The
+  pressure test fails on a pin they do not share, and on any new step before a recorder or new setting
+  in its workflow or job.
 - **Phone alerts are Pushover (tools/alert.py), four levels.** RED (repeats every 2 min for 1 h until
   acknowledged) only from the guard, only while a day can still be saved; YELLOW = look today; NOTICE =
   news (a verdict, a recovered day); GREEN = the quiet daily all-clear - a weekday without one means the
