@@ -903,8 +903,11 @@ ok(_push_retries("surface.yml"),
 # Same day, after the Astra review: each workflow is read as YAML hands it to the runner (a continued or folded
 # line joins the command; comments drop out), every step or setting that names an installer counts, and a name
 # pinned twice fails. Anything outside the one recognised form fails, a pip flag included: fail closed.
-_PIN_TOOL = re.compile(r"(?i)\bpip(?!e)|install|\buv\b|\bpoetry\b|\bconda\b|requirements")
-_pin_lines = [_pin_l.split("#")[0].strip() for _pin_l in (R / "requirements.txt").read_text().splitlines()]
+# Same day, after the follow-up review: pipenv and pipx count as installers too, and a `#` starts a comment only at
+# the start of a line or after a space, as pip reads a requirements file (`requests==2.34.2#note` fails).
+_PIN_TOOL = re.compile(r"(?i)pip(?!e(?:fail|lines?|s|d)?\b)|install|\buv\b|\bpoetry\b|\bconda\b|requirements")
+_pin_lines = [re.sub(r"(?:^|\s)#.*", "", _pin_l).strip()
+              for _pin_l in (R / "requirements.txt").read_text().splitlines()]
 _pin_lines = [_pin_l for _pin_l in _pin_lines if _pin_l]
 _pin_req = [re.fullmatch(r"([A-Za-z0-9][A-Za-z0-9._-]*)==(\d+(?:\.\d+)+)", _pin_l) for _pin_l in _pin_lines]
 _pin_names = [_pin_m.group(1).lower() for _pin_m in _pin_req if _pin_m]
@@ -925,6 +928,43 @@ _pin_same = _pin_cmd is not None and all(_pin_found == [{"run": _pin_cmd}] for _
 ok(_pin_exact and _pin_same,
    "both recorders install exactly the requests and urllib3 versions requirements.txt pins"
    + ("" if _pin_exact and _pin_same else f" -- requirements.txt {_pin_lines}; steps naming an installer {_pin_rec}"))
+# Same day, after the follow-up review: the lock holds only if each recorder runs on what that install put there. So
+# a recorder runs once, as the fourth step of a job whose first three are exactly checkout, setup-python (its Python
+# version only) and the locked install, and neither its workflow nor its job sets anything else (an env, a default
+# shell, a container). A step, action or setting this check cannot read fails rather than passes: fail closed.
+_PIN_FIRST = [
+    lambda _pin_s: set(_pin_s) == {"uses"} and re.fullmatch(r"actions/checkout@[\w.-]+", str(_pin_s["uses"])),
+    lambda _pin_s: (set(_pin_s) == {"uses", "with"}
+                    and re.fullmatch(r"actions/setup-python@[\w.-]+", str(_pin_s["uses"]))
+                    and isinstance(_pin_s["with"], dict) and set(_pin_s["with"]) == {"python-version"}),
+    lambda _pin_s: _pin_cmd is not None and _pin_s == {"run": _pin_cmd}]
+def _pin_start(_pin_wf, _pin_py):
+    """Why a recorder might not run on the locked install; an empty list when it starts as it should."""
+    _pin_y = yaml.safe_load((R / ".github/workflows" / _pin_wf).read_text())
+    _pin_why = [f"the workflow sets {_pin_k!r}" for _pin_k in _pin_y
+                if _pin_k not in ("name", True, "on", "permissions", "jobs")]
+    _pin_at = [(_pin_job, _pin_i) for _pin_job in (_pin_y.get("jobs") or {}).values()
+               for _pin_i, _pin_st in enumerate(_pin_job.get("steps") or []) if _pin_py in str(_pin_st)]
+    if len(_pin_at) != 1:
+        return _pin_why + [f"{len(_pin_at)} steps name {_pin_py}"]
+    _pin_job, _pin_i = _pin_at[0]
+    _pin_why += [f"its job sets {_pin_k!r}" for _pin_k in _pin_job
+                 if _pin_k not in ("runs-on", "timeout-minutes", "steps")]
+    _pin_head = [{_pin_k: _pin_v for _pin_k, _pin_v in _pin_s.items() if _pin_k not in ("name", "id")}
+                 if isinstance(_pin_s, dict) else _pin_s for _pin_s in _pin_job["steps"][:_pin_i + 1]]
+    _pin_rule = _PIN_FIRST + [
+        lambda _pin_s: (set(_pin_s) == {"run", "env"} and _pin_s["run"] == f"python {_pin_py}"
+                        and isinstance(_pin_s["env"], dict) and set(_pin_s["env"]) == {"ALPACA_KEY", "ALPACA_SECRET"})]
+    if len(_pin_head) != len(_pin_rule) or not all(isinstance(_pin_s, dict) and _pin_f(_pin_s)
+                                                   for _pin_f, _pin_s in zip(_pin_rule, _pin_head)):
+        _pin_why.append(f"its steps up to {_pin_py} are {_pin_head}, not checkout, setup-python, the locked install "
+                        "and the recorder alone")
+    return _pin_why
+_pin_late = {_pin_wf: _pin_start(_pin_wf, _pin_py) for _pin_wf, _pin_py in (("record.yml", "record.py"),
+                                                                             ("surface.yml", "surface.py"))}
+ok(not any(_pin_late.values()),
+   "each recorder runs once, right after checkout, setup-python and the locked install, and no setting changes its run"
+   + ("" if not any(_pin_late.values()) else f" -- {_pin_late}"))
 ok(_rec_min >= US_OPEN_UTC_MIN,
    f"record starts after the LATER of the two US opens, so it survives the "
    f"November DST shift ({_rec_min//60:02d}:{_rec_min%60:02d} UTC)")

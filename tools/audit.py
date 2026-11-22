@@ -69,6 +69,23 @@ def _resub(path, pattern, repl):
     path.write_text(t)
 
 
+def _move_install(path, before=None):
+    """Take a recorder workflow's locked install step out of its place and put it just above `before`, or, with no
+    `before`, in a job of its own at the end of the file (22 Nov 2026, the follow-up review). The step is copied,
+    never retyped, so the mutant names no version; a missing step or anchor is refused, as _sub does."""
+    t = path.read_text()
+    m = re.search(r"\n( *)- run: (pip install [^\n]+)\n", t)
+    if not m or not t.endswith("\n") or (before is not None and before not in t):
+        raise RuntimeError(f"mutation target not found in {path.name}: the install step or {before!r}")
+    t = t[:m.start()] + "\n" + t[m.end():]
+    if before is None:
+        t += f"  install:\n    runs-on: ubuntu-latest\n    steps:\n      - run: {m.group(2)}\n"
+    else:
+        i = t.index(before)
+        t = t[:i] + f"{m.group(1)}- run: {m.group(2)}\n" + t[i:]
+    path.write_text(t)
+
+
 def _write(path, text, add=False):
     path.write_text(text)
     if add:
@@ -496,7 +513,7 @@ MUTANTS = [
     # Same day, after the Astra review: the first check read each workflow line by line and kept the last of two
     # pins of one name, so the five marked (old) passed it. None names a pinned version.
     ("dependency-pin-wildcard-alike", "all three files loosen requests to a wildcard, keeping both names and agreeing",
-     lambda w: [_resub(w / p, r"requests==(\d+\.\d+)\.\d+", r"requests==\1.*") for p in
+     lambda w: [_resub(w / p, r"requests==(\d+(?:\.\d+)+)", r"requests==\1.*") for p in
                 ("requirements.txt", ".github/workflows/record.yml", ".github/workflows/surface.yml")],
      "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
     ("dependency-pinned-twice-requirements", "(old) requirements.txt pins requests twice, a conflicting pin first",
@@ -524,6 +541,60 @@ MUTANTS = [
                + [_resub(w / p, r"(- run: pip install [^\n]+)", r"\1 idna==3.10")
                   for p in (".github/workflows/record.yml", ".github/workflows/surface.yml")],
      "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    # Same day, after the follow-up review; "(old)" now marks a mutant the check passed as the first review left it.
+    # pipenv slipped past `pip(?!e)`; a `#` joined to a pin was read as a comment (pip reads it as part of the pin);
+    # and a pin repeated alike in all three files meets only the guard against a name pinned twice, so it fails if
+    # that guard is ever removed. The wildcard above now matches a version of any length.
+    ("dependency-pipenv-after-install", "(old) a pipenv step after the locked install re-syncs the recorder's packages",
+     lambda w: _resub(w / ".github/workflows/record.yml", r"( *)(- run: pip install [^\n]+\n)",
+                      r"\1\2\1- run: pipenv sync --system\n"),
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    ("dependency-pin-comment-attached", "(old) requirements.txt's requests pin carries a #note that pip cannot read",
+     lambda w: _resub(w / "requirements.txt", r"(requests==[^\s#]+)", r"\1#note"),
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    ("dependency-pinned-twice-alike", "all three files pin requests twice at one version, so they still agree",
+     lambda w: [_resub(w / "requirements.txt", r"(requests==[^\n]+\n)", r"\1\1")]
+               + [_resub(w / p, r"pip install (requests==\S+)", r"pip install \1 \1")
+                  for p in (".github/workflows/record.yml", ".github/workflows/surface.yml")],
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    # The rest break where the recorder starts, and each must fail the second check: the version check pooled
+    # installs across jobs, ignored their order, and could not see into a script, an action or a setting.
+    ("dependency-install-own-job", "(old) the surface install moves to a job of its own, on another runner",
+     lambda w: _move_install(w / ".github/workflows/surface.yml"),
+     "each recorder runs once, right after checkout, setup-python and the locked install, and no setting changes its run"),
+    ("dependency-install-after-recorder", "(old) the recorder runs before its install",
+     lambda w: _move_install(w / ".github/workflows/record.yml", "      - run: |\n          git config"),
+     "each recorder runs once, right after checkout, setup-python and the locked install, and no setting changes its run"),
+    ("dependency-helper-before-recorder", "(old) a script runs between the locked install and the recorder",
+     lambda w: _resub(w / ".github/workflows/record.yml", r"( *)(- run: pip install [^\n]+\n)",
+                      r"\1\2\1- run: bash tools/bootstrap.sh\n"),
+     "each recorder runs once, right after checkout, setup-python and the locked install, and no setting changes its run"),
+    ("dependency-setup-python-replaced", "(old) a local action this check cannot read stands in for setup-python",
+     lambda w: _resub(w / ".github/workflows/surface.yml", r"uses: actions/setup-python@\S+",
+                      "uses: ./.github/actions/python"),
+     "each recorder runs once, right after checkout, setup-python and the locked install, and no setting changes its run"),
+    ("dependency-setup-python-input", "(old) setup-python stops putting its own Python first on the path",
+     lambda w: _resub(w / ".github/workflows/record.yml", r"( *)(python-version: [^\n]+\n)",
+                      r"\1\2\1update-environment: false\n"),
+     "each recorder runs once, right after checkout, setup-python and the locked install, and no setting changes its run"),
+    ("dependency-recorder-wrapped", "(old) a script runs inside the recorder's own step, just before it",
+     lambda w: _sub(w / ".github/workflows/record.yml", "- run: python record.py\n",
+                    "- run: bash tools/bootstrap.sh && python record.py\n"),
+     "each recorder runs once, right after checkout, setup-python and the locked install, and no setting changes its run"),
+    ("dependency-recorder-env", "(old) the surface recorder's step points Python at other packages",
+     lambda w: _sub(w / ".github/workflows/surface.yml", "        env:\n", "        env:\n          PYTHONPATH: vendor\n"),
+     "each recorder runs once, right after checkout, setup-python and the locked install, and no setting changes its run"),
+    ("dependency-recorder-runs-twice", "(old) a second job runs the surface recorder with no install",
+     lambda w: _resub(w / ".github/workflows/surface.yml", r"\n\Z",
+                      "\n  again:\n    runs-on: ubuntu-latest\n    steps:\n      - run: python surface.py\n"),
+     "each recorder runs once, right after checkout, setup-python and the locked install, and no setting changes its run"),
+    ("dependency-job-setting", "(old) the recorder's job sets an environment for every step",
+     lambda w: _resub(w / ".github/workflows/record.yml", r"(\n    runs-on: [^\n]+\n)",
+                      r"\1    env:\n      PYTHONPATH: vendor\n"),
+     "each recorder runs once, right after checkout, setup-python and the locked install, and no setting changes its run"),
+    ("dependency-workflow-setting", "(old) the surface workflow sets an environment for every job",
+     lambda w: _sub(w / ".github/workflows/surface.yml", "\njobs:\n", "\nenv:\n  PYTHONPATH: vendor\njobs:\n"),
+     "each recorder runs once, right after checkout, setup-python and the locked install, and no setting changes its run"),
     ("guard-trusts-the-run", "the guard calls a day complete without reading the data",
      lambda w: _sub(w / "tools/guard.py", "    if have >= need:\n        return \"ok\"", "    if True:\n        return \"ok\""),
      "the guard and alert tests pass"),
