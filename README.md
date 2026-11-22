@@ -298,7 +298,7 @@ without a hypothesis in `hypotheses/` dated before the join that tests it.**
 ## Running it
 
 ```bash
-pip install requests
+pip install -r requirements.txt    # the exact versions both recorders install
 export ALPACA_KEY="..."
 export ALPACA_SECRET="..."
 python record.py

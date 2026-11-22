@@ -1,1 +1,4 @@
-requests>=2.31
+# Locked 22 Nov 2026 (Gabriel's yes): both recorders install exactly these versions, and tools/pressure_test.py
+# fails if their workflows and this file disagree. Change all three together, after a day's run has landed.
+requests==2.34.2
+urllib3==2.8.0

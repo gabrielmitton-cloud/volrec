@@ -60,6 +60,15 @@ def _sub(path, old, new, count=1):
     path.write_text(t.replace(old, new, count if count else t.count(old)))
 
 
+def _resub(path, pattern, repl):
+    """Regex-replace the first match in a worktree file, for a mutant that must not name a version (22 Nov 2026);
+    refuse a pattern that matches nothing, as _sub does."""
+    t, n = re.subn(pattern, repl, path.read_text(), count=1)
+    if not n:
+        raise RuntimeError(f"mutation target not found in {path.name}: {pattern[:60]!r}")
+    path.write_text(t)
+
+
 def _write(path, text, add=False):
     path.write_text(text)
     if add:
@@ -471,6 +480,50 @@ MUTANTS = [
                     "            git pull --rebase origin main && git" + " push origin main && exit 0\n",
                     "            git" + " push && exit 0\n"),   # split so this file never contains a push command
      "record.yml rebases and retries its push, so a concurrent commit cannot drop a day"),
+    # 22 Nov 2026: the recorders' dependency lock. The three mutants name no version, so a deliberate bump of
+    # requirements.txt and both workflows together leaves them aimed.
+    ("recorder-dependency-unlocked", "the recorder accepts whatever requests is newest again",
+     lambda w: _sub(w / ".github/workflows/record.yml", "pip install requests==", "pip install requests>="),
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    ("surface-dependency-drifts", "the surface recorder installs a different urllib3 from the one requirements.txt pins",
+     lambda w: _sub(w / ".github/workflows/surface.yml", " urllib3==", " urllib3==9"),
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    ("dependency-lock-dropped-alike", "requirements.txt and both recorders drop the lock together, so they still agree",
+     lambda w: [_sub(w / p, a + "==", a + ">=") for p in
+                ("requirements.txt", ".github/workflows/record.yml", ".github/workflows/surface.yml")
+                for a in ("requests", "urllib3")],
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    # Same day, after the Astra review: the first check read each workflow line by line and kept the last of two
+    # pins of one name, so the five marked (old) passed it. None names a pinned version.
+    ("dependency-pin-wildcard-alike", "all three files loosen requests to a wildcard, keeping both names and agreeing",
+     lambda w: [_resub(w / p, r"requests==(\d+\.\d+)\.\d+", r"requests==\1.*") for p in
+                ("requirements.txt", ".github/workflows/record.yml", ".github/workflows/surface.yml")],
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    ("dependency-pinned-twice-requirements", "(old) requirements.txt pins requests twice, a conflicting pin first",
+     lambda w: _sub(w / "requirements.txt", "\nrequests==", "\nrequests==0.1.0\nrequests=="),
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    ("dependency-pinned-twice-surface", "(old) the surface recorder asks pip for two versions of requests",
+     lambda w: _sub(w / ".github/workflows/surface.yml", "pip install requests==", "pip install requests==0.1.0 requests=="),
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    ("dependency-install-continued", "(old) a continued line folds an extra package into the surface install",
+     lambda w: _resub(w / ".github/workflows/surface.yml", r"(- run: pip install [^\n]+\n)", r"\1          extra-package\n"),
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    ("dependency-second-installer", "(old) the recorder gains a second install step spelled pip3",
+     lambda w: _resub(w / ".github/workflows/record.yml", r"( *)(- run: pip install [^\n]+\n)",
+                      r"\1\2\1- run: pip3 install extra-package\n"),
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    ("dependency-install-commented-out", "(old) the pinned install is commented out above a bare pip3 install",
+     lambda w: _resub(w / ".github/workflows/record.yml", r"( *)- run: (pip install [^\n]+)\n",
+                      r"\1# - run: \2\n\1- run: pip3 install requests\n"),
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    ("dependency-install-step-missing", "the recorder's install step is deleted",
+     lambda w: _resub(w / ".github/workflows/record.yml", r" *- run: pip install [^\n]+\n", ""),
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
+    ("dependency-extra-pin-alike", "all three files add a third pinned package together, so they still agree",
+     lambda w: [_resub(w / "requirements.txt", r"(urllib3==[^\n]+\n)", r"\1idna==3.10\n")]
+               + [_resub(w / p, r"(- run: pip install [^\n]+)", r"\1 idna==3.10")
+                  for p in (".github/workflows/record.yml", ".github/workflows/surface.yml")],
+     "both recorders install exactly the requests and urllib3 versions requirements.txt pins"),
     ("guard-trusts-the-run", "the guard calls a day complete without reading the data",
      lambda w: _sub(w / "tools/guard.py", "    if have >= need:\n        return \"ok\"", "    if True:\n        return \"ok\""),
      "the guard and alert tests pass"),

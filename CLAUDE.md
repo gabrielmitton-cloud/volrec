@@ -110,9 +110,9 @@ files, lab outputs), `~/Documents/volrec-bloomberg`, `-wrds`, `-lseg`, `-papers`
 
 `python3` on this Mac resolves to `/opt/homebrew/bin/python3`, which has **no `requests`**: every project
 tool dies with `ModuleNotFoundError`. It is a silent trap (Homebrew sits earlier in PATH) and has cost two
-sessions. Use the framework python below for everything. CI is unaffected (`actions/setup-python`, `pip
-install requests`). `analysis/` alone runs in `.venv` (`.venv/bin/python`: pandas, numpy, torch); the
-pipeline stays stdlib + `requests`, and `requirements.txt` is not the place for analysis dependencies.
+sessions. Use the framework python below for everything. CI is unaffected (`actions/setup-python`).
+`analysis/` alone runs in `.venv` (`.venv/bin/python`: pandas, numpy, torch); the pipeline stays stdlib +
+`requests`, and `requirements.txt` (the recorders' exact pins) is not the place for analysis dependencies.
 
 ### The commands
 

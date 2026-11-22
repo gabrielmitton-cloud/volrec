@@ -895,6 +895,36 @@ ok(_push_retries("record.yml"),
    "record.yml rebases and retries its push, so a concurrent commit cannot drop a day")
 ok(_push_retries("surface.yml"),
    "surface.yml rebases and retries its push, so a concurrent commit cannot drop a day")
+# 22 Nov 2026 (Gabriel's yes; suggestion 1 of 12 Nov): the recorders' one dependency is locked. `pip install
+# requests` resolved afresh on every run (requests 2.34.2 with urllib3 2.8.0 on 11 and 20 Nov), so a new release
+# could break a recording inside H8's window (from 1 Dec), and a lost day is gone for good. Both recorders install
+# exactly the versions requirements.txt pins; certifi, idna and charset-normalizer stay free, so the certificate
+# roots stay current. Files unpinned alike must fail too: a check that agrees with itself is no check (mistake 17).
+# Same day, after the Astra review: each workflow is read as YAML hands it to the runner (a continued or folded
+# line joins the command; comments drop out), every step or setting that names an installer counts, and a name
+# pinned twice fails. Anything outside the one recognised form fails, a pip flag included: fail closed.
+_PIN_TOOL = re.compile(r"(?i)\bpip(?!e)|install|\buv\b|\bpoetry\b|\bconda\b|requirements")
+_pin_lines = [_pin_l.split("#")[0].strip() for _pin_l in (R / "requirements.txt").read_text().splitlines()]
+_pin_lines = [_pin_l for _pin_l in _pin_lines if _pin_l]
+_pin_req = [re.fullmatch(r"([A-Za-z0-9][A-Za-z0-9._-]*)==(\d+(?:\.\d+)+)", _pin_l) for _pin_l in _pin_lines]
+_pin_names = [_pin_m.group(1).lower() for _pin_m in _pin_req if _pin_m]
+_pin_exact = (bool(_pin_req) and all(_pin_req) and len(_pin_names) == len(set(_pin_names))
+              and set(_pin_names) == {"requests", "urllib3"})
+_pin_cmd = ("pip install " + " ".join(_pin_lines)) if _pin_exact else None
+def _pin_installs(_pin_wf):
+    """Each part of a recorder workflow that names an installer: its settings, each job's settings, each step."""
+    _pin_y = yaml.safe_load((R / ".github/workflows" / _pin_wf).read_text())
+    _pin_out = ["(workflow settings)"] if _PIN_TOOL.search(str({k: v for k, v in _pin_y.items() if k != "jobs"})) else []
+    for _pin_job in (_pin_y.get("jobs") or {}).values():
+        if _PIN_TOOL.search(str({k: v for k, v in _pin_job.items() if k != "steps"})):
+            _pin_out.append("(job settings)")
+        _pin_out += [_pin_st for _pin_st in _pin_job.get("steps") or [] if _PIN_TOOL.search(str(_pin_st))]
+    return _pin_out
+_pin_rec = {_pin_wf: _pin_installs(_pin_wf) for _pin_wf in ("record.yml", "surface.yml")}
+_pin_same = _pin_cmd is not None and all(_pin_found == [{"run": _pin_cmd}] for _pin_found in _pin_rec.values())
+ok(_pin_exact and _pin_same,
+   "both recorders install exactly the requests and urllib3 versions requirements.txt pins"
+   + ("" if _pin_exact and _pin_same else f" -- requirements.txt {_pin_lines}; steps naming an installer {_pin_rec}"))
 ok(_rec_min >= US_OPEN_UTC_MIN,
    f"record starts after the LATER of the two US opens, so it survives the "
    f"November DST shift ({_rec_min//60:02d}:{_rec_min%60:02d} UTC)")
