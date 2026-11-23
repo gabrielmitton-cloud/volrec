@@ -4917,6 +4917,11 @@ Global Markets. Aggregates only.*
 - *Checks for this commit:* pressure test **0 fail, 2 warn** (the standing two); suites **17 of 17**; every mutant applies (**302 of 302**) (with the new `record.py` carried in); no outside review (a documentation line; the practice since 6 Nov). The full audit and the push: the next entry.
 - *What remains:* (1) Mon 23 Nov: both recorders' logs show the locked versions (`trig_0111rcfHzVNgn1v6kmuu8wrX`). (2) Tue 24 Nov: the private run of Mon 23 Nov 23:05 UTC, the first on the new workflow, then close issue #6 (`trig_018d7wn31iMqR6YgcFsfCgdU`). (3) His Monday calls: licensing Plan A and the recorders page (`trig_01DNAYTxk8jGsp79gmidw5zK`). (4) H8's registration before its 1 Dec window (`trig_015xUPeM6BmznpW1RCEmPfk3`, 24 Nov). (5) Thu 3 Dec: the first index file bought and sealed (`trig_012unyBTk1QB8BWmg1twEgMW`). (6) The judges' questions at SCCUR, once he names them; the 18 Nov follow-up review's open items.
 
+**Sun 22 Nov (night, New York) - `record.py`'s setup note pushed**
+
+- *The push:* the full audit of the commit carrying `record.py`'s fix and the evening entry read **302 of 302** at J=3 (23:57-00:46 UTC, 49 minutes, no stall; keep_local beside it); pushed 00:46 UTC (19:46 New York, Sunday) through the gate, `941d0af..e4707b5`, no rebase (nothing had arrived); the hook's pressure test passed. GitHub's ID: `e4707b5`. This entry is committed on this Mac only and goes up with the next push (each push needs its own full audit).
+- *What remains:* as the evening entry above.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
