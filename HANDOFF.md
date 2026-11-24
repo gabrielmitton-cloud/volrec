@@ -4922,6 +4922,13 @@ Global Markets. Aggregates only.*
 - *The push:* the full audit of the commit carrying `record.py`'s fix and the evening entry read **302 of 302** at J=3 (23:57-00:46 UTC, 49 minutes, no stall; keep_local beside it); pushed 00:46 UTC (19:46 New York, Sunday) through the gate, `941d0af..e4707b5`, no rebase (nothing had arrived); the hook's pressure test passed. GitHub's ID: `e4707b5`. This entry is committed on this Mac only and goes up with the next push (each push needs its own full audit).
 - *What remains:* as the evening entry above.
 
+**Tue 24 Nov (01:30 New York) - two failure emails, both false alarms; the private Monday-night run not yet started**
+
+- *Gabriel:* "i got a fail notification make sure verything is ok".
+- *Monday landed on the lock:* record (dispatched 19:30 UTC, `snapshot 2026-11-23`) and surface (19:40 UTC, `surface 2026-11-23`) both green; the record log reads `Successfully installed certifi-2026.11.20 charset_normalizer-3.5.3 idna-3.20 requests-2.34.2 urllib3-2.8.0`, as do both backups. Monday's 21:00 UTC reminder's question is answered: yes.
+- *The two red runs:* GitHub's own cron backups for record (`45308354568`) and surface (`45308601844`) started at 01:53-01:55 UTC Tue (20:53 New York Mon, about 11 h after their 14:47 cron) and refused, as built: "REFUSING to record ... the US session has already closed". Every earlier late backup (to 23:34 UTC) exited green as "already recorded"; these crossed midnight UTC, and `record.py` takes `date.today()` on the runner (UTC), so it looked for Tuesday's rows, found none, and reached the after-close refusal. Nothing was recorded wrongly; the guard ran after each, green. The standing WARN ("record's GitHub-cron backup can land after the close") names this family. A fix (check the New York date's rows before refusing) is a recorder change: proposed to him, not made; only after a day's run has landed.
+- *Private nightly run:* no run of the Mon 23 Nov 23:05 UTC slot by 06:29 UTC (the latest start since 6 Nov was 05:01); the workflow is active, its schedule and YAML unchanged and valid. The 03:05 UTC pass usually starts 10:00-11:40 UTC; any day not bought is bought by the next run (days on disk never twice); if no run succeeds, the healthchecks.io ping is missed and pages him. Nothing dispatched by hand. The Tue 17:00 UTC reminder (`trig_018d7wn31iMqR6YgcFsfCgdU`) reads it.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
