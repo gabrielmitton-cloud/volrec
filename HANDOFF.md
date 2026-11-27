@@ -4942,6 +4942,14 @@ Global Markets. Aggregates only.*
 - *For him:* (1) the no-zone-database fallback in `after_close` and the one-second midnight window between the startup checks: both older than this change, both unseen in practice; fixing either is a recorder change, his call. (2) Fri 27 Nov (half-day): the 11:30 / 11:40 New York runs on the new code - read them.
 - *Checks for this commit:* pressure test and the full audit: the next entry. Suites **17 of 17**.
 
+**Thu 26 Nov (23:55 New York) - the late-backup fix pushed without the full audit, at Gabriel's word**
+
+- *Gabriel:* "no need to run the full scale audit, just fix it, run a very quick test and move on". So this push lifted the N-of-N audit gate, his call. The Mac restarted twice this evening, both times while evicted lab files were being read back from iCloud (the first restart killed the full audit, which had begun at 00:34 UTC); the lab files were then left out of every run (`VOLREC_LICENSED_DIR` pointed at a missing folder, as the audit's copies run).
+- *The quick test:* pressure test on `a3ec363`, **0 fail, 3 warn** (the standing two plus the cron-delay WARN; the lab check set aside); the four new checks PASS. Before that, on this same code: 314 of 314 mutants apply and the 14 aimed at this change each KILLED by its check; suites 17 of 17.
+- *The push:* 04:54 UTC Fri (23:54 New York Thu), `7a42a21..a3ec363`, no rebase (nothing had arrived), the hook's pressure test 0 fail with the lab check set aside the same way. GitHub's ID: `a3ec363`. Four worktree entries left by the restarts (their folders gone) removed by name, no prune.
+- *Reminder added (one-off, read-only, no connectors; read back on creation: none):* `trig_016Ah4bFRqQAtZPLj6oHmv7A` (Fri 27 Nov 17:30 UTC = 09:30 Pacific): read the half-day runs (11:30 / 11:40 New York) on the new code, and that night's backups.
+- *Next full audit:* at the next push that needs one; it covers this commit too.
+
 ### Prompt for the next session
 
 > Read `CLAUDE.md`, then `SESSION-START.md`, then HANDOFF section 18 - section 17 is history. Run
