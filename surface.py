@@ -706,6 +706,13 @@ def main():
               "Refusing, so the day is never recorded at the wrong point in the session.")
         return
 
+    t_late = R.utc_now()  # 26 Nov 2026: a late backup asks about the New York date before refusing,
+    if R.after_close(t_late):   # judged on one clock reading
+        why = R.closed_day_nothing_missed(already_recorded, lambda d: R.is_trading_day(R.session(), d), t_late)
+        if why:
+            print(why)
+            return
+        R.refuse_after_close("the strike surface", late=True)   # no second clock read
     R.refuse_after_close("the strike surface")   # after the "already recorded" exit (5 Oct 2026)
 
     s = R.session()

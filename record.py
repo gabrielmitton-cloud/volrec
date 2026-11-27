@@ -476,8 +476,55 @@ def after_close(now_utc=None):
         return now_utc.hour >= close_utc
 
 
-def refuse_after_close(what):
-    if after_close():
+def utc_now():
+    """The time now, in UTC: one reading for the late-start decision (26 Nov 2026 review)."""
+    from datetime import timezone
+    return datetime.now(timezone.utc)
+
+
+def closed_day_nothing_missed(recorded, trading_day, now_utc=None):
+    """A message when a run that starts after the close has missed nothing, else None (refuse).
+
+    Added 26 Nov 2026, Gabriel's yes ("fix the false alarm"): two false failure emails from late
+    GitHub backups. Tue 24 Nov 01:53 UTC a backup crossed midnight UTC, so the runner's date.today()
+    named Tuesday, found nothing recorded under it and refused, though Monday was recorded; Thu 26 Nov
+    (Thanksgiving) 23:17 UTC a backup refused before asking the market calendar. So, for the NEW YORK
+    date: a weekend, a day with rows already recorded (`recorded(day)`, the recorder's own file), or a
+    day the calendar says was closed (`trading_day(day)`) has missed nothing. It never records: the
+    caller either exits quietly or refuses as before. Fails closed - no zone database, or a calendar
+    check that errors (no keys, no network), or a row file that cannot be read, returns None and the refusal
+    stands; is_trading_day itself fails open, which also keeps the refusal. The caller then refuses with
+    late=True, not by reading the clock again: a run started just before New York midnight could otherwise
+    pass a second reading after it and record (the 26 Nov review).
+    """
+    from datetime import timezone
+    try:
+        from zoneinfo import ZoneInfo
+        day = (now_utc or datetime.now(timezone.utc)).astimezone(ZoneInfo("America/New_York")).date()
+    except Exception:
+        return None
+    if day.weekday() >= 5:
+        return f"{day} (New York) was a weekend - nothing was missed."
+    try:
+        done = recorded(day)
+    except Exception as e:
+        print(f"  reading {day}'s rows failed ({e}) - refusing as usual")
+        return None
+    if done:
+        return (f"The session has closed; {len(done)} symbols were recorded for {day} (New York date) "
+                f"earlier - nothing to do.")
+    try:
+        is_open = trading_day(day)
+    except (Exception, SystemExit) as e:
+        print(f"  calendar check failed ({e}) - refusing as usual")
+        return None
+    if is_open is False:
+        return f"{day} (New York) was a market holiday - nothing to record."
+    return None
+
+
+def refuse_after_close(what, late=False):
+    if late or after_close():      # late=True: already judged after the close (26 Nov 2026)
         print(f"REFUSING to record {what}: the US session has already closed, so these would be "
               f"closing quotes under a mid-session label (28 Sep 2026). The day is left missing "
               f"on purpose; panel_health reports it.")
@@ -519,6 +566,13 @@ def main():
               "Refusing, so the day is never recorded at the wrong point in the session.")
         return
 
+    t_late = utc_now()    # 26 Nov 2026: a late backup asks about the New York date before refusing,
+    if after_close(t_late):     # judged on one clock reading
+        why = closed_day_nothing_missed(already_recorded, lambda d: is_trading_day(session(), d), t_late)
+        if why:
+            print(why)
+            return
+        refuse_after_close("the ATM panel", late=True)   # no second clock read
     refuse_after_close("the ATM panel")
 
     s = session()

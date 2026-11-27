@@ -2467,6 +2467,137 @@ ok(_before(_recsrc, 'refuse_after_close("the ATM panel")', "s = session()")
 ok(_before(_recsrc, "if backup_too_early():", 'refuse_after_close("the ATM panel")')
    and _before(_srfsrc, "if R.backup_too_early(offset_min=10):", 'R.refuse_after_close("the strike surface")'),
    "both recorders apply the backup rule after the already-recorded exit and before fetching anything")
+# 26 Nov 2026 (Gabriel's yes): two false failure emails from late GitHub backups. Tue 24 Nov 01:53 UTC the
+# backup crossed midnight UTC, so the runner's date named Tuesday and Monday's recorded rows went unseen;
+# Thu 26 Nov (Thanksgiving) 23:17 UTC the backup refused before it asked the market calendar. A run that
+# starts after the close now asks about the NEW YORK date first and exits quietly when nothing was
+# missed; a trading day with no rows is still refused (red), and any doubt keeps the refusal. The branch
+# is run with its inputs stubbed, never read (3 Nov 2026).
+_cdn = getattr(_rcm, "closed_day_nothing_missed", None)
+def _cd(when, rows=None, open_days=(), boom=False, bad_rows=False):
+    asked, cal = [], []
+    def _rec(d):
+        asked.append(d)
+        if bad_rows:
+            raise OSError("unreadable")
+        return (rows or {}).get(d, set())
+    def _cal(d):
+        cal.append(d)
+        if boom:
+            raise SystemExit("no keys")
+        return d in open_days
+    try:
+        with _ctx2.redirect_stdout(_io2.StringIO()):          # its "refusing as usual" lines
+            return _cdn(_rec, _cal, _DT.fromisoformat(when).replace(tzinfo=_TZ.utc)), asked, cal
+    except Exception as e:
+        return f"CRASH {type(e).__name__}", asked, cal
+_quiet = lambda m: isinstance(m, str) and m.strip() != "" and not m.startswith("CRASH")   # noqa: E731
+_cd_ok = callable(_cdn)
+if _cd_ok:
+    _m24, _a24, _ = _cd("2026-11-24T01:53:00", rows={date(2026, 11, 23): {"SPY", "QQQ"}}, open_days={date(2026, 11, 23)})
+    _m26, _, _c26 = _cd("2026-11-26T23:17:00", open_days=set())
+    _m25, _, _ = _cd("2026-11-25T23:17:00", open_days={date(2026, 11, 25)})
+    _m25x, _, _ = _cd("2026-11-25T23:17:00", boom=True)
+    _m25r, _, _ = _cd("2026-11-25T23:17:00", open_days={date(2026, 11, 25)}, bad_rows=True)
+    _m28, _a28, _c28 = _cd("2026-11-28T22:00:00")
+ok(_cd_ok and _quiet(_m24) and _a24[:1] == [date(2026, 11, 23)]
+   and _quiet(_m26) and _c26 == [date(2026, 11, 26)] and _quiet(_m28) and _a28 == [] and _c28 == [],
+   "a late backup reads the New York date: a recorded day past midnight UTC, a holiday or a weekend exits quietly")
+ok(_cd_ok and _m25 is None and _m25x is None and _m25r is None,
+   "a late backup on a trading day with no rows is still refused, and so is one whose calendar check fails")
+def _wired_cd(src, pre, call):
+    m = max(src.find("def main"), 0)
+    d = src.find("done = already_recorded(today)", m)
+    w = src.find(f"\n        why = {pre}closed_day_nothing_missed(", m)
+    head = src[src.rfind("\n", 0, w) + 1:w] if w > 0 else ""        # the line that opens the block
+    g = src.find(call, m)
+    return (0 <= src.find("def main") < d < w < g and head.startswith(f"    if {pre}after_close(t_late):")
+            and w < src.find("\n            return\n", w) < g)
+ok(_wired_cd(_recsrc, "", '\n    refuse_after_close("the ATM panel")')
+   and _wired_cd(_srfsrc, "R.", '\n    R.refuse_after_close("the strike surface")'),
+   "both recorders ask about the New York date after the already-recorded exit and before refusing")
+# The 26 Nov review: run both main() functions for real, every outside call stubbed, the clock fixed, the row
+# file a temporary one; any quote fetch or row write counts as a failure. "cross" is a run judged after the
+# close whose clock then reads before it (a start just before New York midnight): it must still refuse.
+def _late_main(which, when, rows=(), cal_open=True, cal_boom=False, cross=False, later=None):
+    import datetime as _dtm
+    t0 = _DT.fromisoformat(when).replace(tzinfo=_TZ.utc)
+    t1 = _DT.fromisoformat(later).replace(tzinfo=_TZ.utc) if later else t0     # the clock after its first reading
+    ticks = iter([t0])
+    class _FD(_dtm.date):
+        @classmethod
+        def today(cls):
+            return cls(t0.year, t0.month, t0.day)
+    class _FT(_dtm.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            t_ = next(ticks, t1)
+            return t_ if tz is not None else t_.replace(tzinfo=None)
+    saved = sys.modules.get("record")
+    try:
+        _s1 = _iu.spec_from_file_location("record", R / "record.py")
+        rec = _iu.module_from_spec(_s1); sys.modules["record"] = rec; _s1.loader.exec_module(rec)
+        mod = rec
+        if which == "surface":
+            _s2 = _iu.spec_from_file_location("surface_e2e", R / "surface.py")
+            mod = _iu.module_from_spec(_s2); _s2.loader.exec_module(mod)
+    finally:
+        if saved is None:
+            sys.modules.pop("record", None)
+        else:
+            sys.modules["record"] = saved
+    _tmpd = tempfile.TemporaryDirectory()
+    out = Path(_tmpd.name) / "rows.csv"
+    if rows:
+        out.write_text("date,symbol\n" + "".join(f"{d},{s}\n" for d, s in rows))
+    before = out.read_bytes() if out.exists() else None
+    touched, reads = [], iter([True] + [not cross] * 50)
+    def _no(name):
+        def f(*a, **k):
+            touched.append(name)
+            raise RuntimeError(f"{name} called after the close")
+        return f
+    def _cal(s, d):
+        if cal_boom:
+            raise SystemExit("no keys")
+        return (d in cal_open) if isinstance(cal_open, set) else cal_open
+    for m_ in {rec, mod}:
+        m_.date, m_.datetime = _FD, _FT
+    mod.OUT = out
+    rec.after_close = lambda now_utc=None: next(reads)
+    rec.backup_too_early = lambda *a, **k: False
+    rec.before_slot = lambda *a, **k: False
+    rec.session = lambda: "stub"
+    rec.is_trading_day = _cal
+    rec.spot_prices = _no("spot_prices")
+    mod.append = _no("append")
+    code = 0
+    with _ctx2.redirect_stdout(_io2.StringIO()):
+        try:
+            mod.main()
+        except SystemExit as e:
+            code = 0 if e.code is None else e.code if isinstance(e.code, int) else 1   # sys.exit() is 0
+        except Exception as e:
+            code = f"CRASH {type(e).__name__}"
+    unchanged = (out.read_bytes() if out.exists() else None) == before
+    _tmpd.cleanup()
+    return code, (not touched and unchanged)
+_e2e = {}
+for _w_ in ("record", "surface"):
+    _sym = "SPY"
+    try:
+        _e2e[_w_] = (
+            _late_main(_w_, "2026-11-26T23:17:00", cal_open=False) == (0, True),                  # Thanksgiving
+            _late_main(_w_, "2026-11-24T01:53:00", rows=[("2026-11-23", _sym)]) == (0, True),     # past UTC midnight
+            _late_main(_w_, "2026-11-25T23:17:00") == (1, True),                                  # a day missed
+            _late_main(_w_, "2026-11-25T23:17:00", cal_boom=True) == (1, True),                   # calendar error
+            _late_main(_w_, "2026-11-26T04:59:00", cross=True) == (1, True),                      # clock crosses
+            _late_main(_w_, "2026-11-26T04:59:59", later="2026-11-26T05:00:01",                 # Wed 23:59:59, then
+                       cal_open={date(2026, 11, 25)}) == (1, True))                            # Thanksgiving: refused
+    except Exception as e:
+        _e2e[_w_] = (f"CRASH {type(e).__name__}: {e}",)
+ok(all(v is True for vs in _e2e.values() for v in vs) and len(_e2e) == 2,
+   f"both recorders, run after the close with stubs, exit 0 on a holiday or a recorded day and 1 on a missed day, a calendar error or a clock that crosses midnight, fetching and writing nothing {_e2e}")
 
 _mfsrc, _hgsrc = (R / "modelfree.py").read_text(), (R / "hedged.py").read_text()
 ok(date(2026, 9, 28) in _phm.AFTER_CLOSE_DAYS

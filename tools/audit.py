@@ -94,6 +94,11 @@ def _write(path, text, add=False):
 
 
 # (name, what it breaks, mutate(worktree), the pressure-test check that must FAIL)
+# 26 Nov 2026: the late-backup blocks in record.py and surface.py, removed whole by two mutants below.
+BLK_R = '    t_late = utc_now()    # 26 Nov 2026: a late backup asks about the New York date before refusing,\n    if after_close(t_late):     # judged on one clock reading\n        why = closed_day_nothing_missed(already_recorded, lambda d: is_trading_day(session(), d), t_late)\n        if why:\n            print(why)\n            return\n'
+BLK_S = '    t_late = R.utc_now()  # 26 Nov 2026: a late backup asks about the New York date before refusing,\n    if R.after_close(t_late):   # judged on one clock reading\n        why = R.closed_day_nothing_missed(already_recorded, lambda d: R.is_trading_day(R.session(), d), t_late)\n        if why:\n            print(why)\n            return\n'
+
+
 MUTANTS = [
     ("spreadsheet-in-repo", "a Bloomberg export lands in the repo root",
      lambda w: _write(w / "TSLA_OMON_2026-09-30.xlsx", "x"),
@@ -422,6 +427,46 @@ MUTANTS = [
      lambda w: _sub(w / "record.py", "    done = already_recorded(today)\n",
                     '    refuse_after_close("the ATM panel")\n    done = already_recorded(today)\n'),
      "both recorders check the close before fetching or writing anything"),
+    # 26 Nov 2026 (Gabriel's yes): a late backup asks about the New York date before refusing (two false alarms).
+    ("late-backup-utc-date", "a late backup reads the runner's UTC date again (24 Nov false alarm)",
+     lambda w: _sub(w / "record.py", '(now_utc or datetime.now(timezone.utc)).astimezone(ZoneInfo("America/New_York")).date()',
+                    '(now_utc or datetime.now(timezone.utc)).date()'),
+     "a late backup reads the New York date: a recorded day past midnight UTC, a holiday or a weekend exits quietly"),
+    ("late-backup-hides-missed-day", "a late backup on a missed trading day exits quietly instead of refusing",
+     lambda w: _sub(w / "record.py", "    if is_open is False:\n", "    if True:\n"),
+     "a late backup on a trading day with no rows is still refused, and so is one whose calendar check fails"),
+    ("late-backup-calendar-error-quiet", "a calendar check that errors reads as a holiday",
+     lambda w: _sub(w / "record.py", 'calendar check failed ({e}) - refusing as usual")\n        return None\n',
+                    'calendar check failed ({e}) - refusing as usual")\n        is_open = False\n'),
+     "a late backup on a trading day with no rows is still refused, and so is one whose calendar check fails"),
+    ("late-backup-unwired-record", "the ATM recorder no longer asks about the New York date",
+     lambda w: _sub(w / "record.py", BLK_R, ""),
+     "both recorders ask about the New York date after the already-recorded exit and before refusing"),
+    ("late-backup-unwired-surface", "the surface recorder no longer asks about the New York date",
+     lambda w: _sub(w / "surface.py", BLK_S, ""),
+     "both recorders ask about the New York date after the already-recorded exit and before refusing"),
+    ("late-backup-why-reversed", "the ATM recorder exits quietly when nothing explains the late start (26 Nov review)",
+     lambda w: _sub(w / "record.py", "        why = closed_day_nothing_missed(already_recorded, lambda d: is_trading_day(session(), d), t_late)\n        if why:\n",
+                    "        why = closed_day_nothing_missed(already_recorded, lambda d: is_trading_day(session(), d), t_late)\n        if not why:\n"),
+     "both recorders, run after the close with stubs, exit 0 on a holiday or a recorded day and 1 on a missed day, a calendar error or a clock that crosses midnight, fetching and writing nothing"),
+    ("late-backup-second-clock-read", "the surface recorder reads the clock again before refusing a late start (26 Nov review)",
+     lambda w: _sub(w / "surface.py", '        R.refuse_after_close("the strike surface", late=True)   # no second clock read\n', ""),
+     "both recorders, run after the close with stubs, exit 0 on a holiday or a recorded day and 1 on a missed day, a calendar error or a clock that crosses midnight, fetching and writing nothing"),
+    ("late-backup-weekend-asks-calendar", "a late weekend run reads rows and asks the calendar (26 Nov review)",
+     lambda w: _sub(w / "record.py", "    if day.weekday() >= 5:\n        return f\"{day} (New York) was a weekend - nothing was missed.\"\n", ""),
+     "a late backup reads the New York date: a recorded day past midnight UTC, a holiday or a weekend exits quietly"),
+    ("late-backup-row-read-crashes", "an unreadable row file crashes the late-start decision (26 Nov review)",
+     lambda w: _sub(w / "record.py", "    try:\n        done = recorded(day)\n    except Exception as e:\n", "    try:\n        done = recorded(day)\n    except KeyError as e:\n"),
+     "a late backup on a trading day with no rows is still refused, and so is one whose calendar check fails"),
+    ("late-backup-bare-exit", "the after-close refusal exits 0 (a bare sys.exit()) (26 Nov follow-up review)",
+     lambda w: _sub(w / "record.py", 'on purpose; panel_health reports it.")\n        sys.exit(1)\n', 'on purpose; panel_health reports it.")\n        sys.exit()\n'),
+     "both recorders, run after the close with stubs, exit 0 on a holiday or a recorded day and 1 on a missed day, a calendar error or a clock that crosses midnight, fetching and writing nothing"),
+    ("late-backup-two-clock-readings", "the ATM recorder's late-start helper reads the clock again (26 Nov follow-up review)",
+     lambda w: _sub(w / "record.py", "lambda d: is_trading_day(session(), d), t_late)\n", "lambda d: is_trading_day(session(), d))\n"),
+     "both recorders, run after the close with stubs, exit 0 on a holiday or a recorded day and 1 on a missed day, a calendar error or a clock that crosses midnight, fetching and writing nothing"),
+    ("late-backup-block-falls-through", "the surface recorder prints the reason but goes on to refuse",
+     lambda w: _sub(w / "surface.py", "            print(why)\n            return\n", "            print(why)\n"),
+     "both recorders ask about the New York date after the already-recorded exit and before refusing"),
     ("ovx-zero-ask-kept", "the OVX replica stops excluding zero-ask quotes",
      lambda w: _sub(w / "tools/ovx_replicate.py", "if qt[0] == 0 or qt[1] == 0:", "if qt[0] == 0:"),
      "the OVX replica excludes zero-ask quotes"),
