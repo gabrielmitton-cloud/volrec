@@ -4949,6 +4949,7 @@ Global Markets. Aggregates only.*
 - *The push:* 04:54 UTC Fri (23:54 New York Thu), `7a42a21..a3ec363`, no rebase (nothing had arrived), the hook's pressure test 0 fail with the lab check set aside the same way. GitHub's ID: `a3ec363`. Four worktree entries left by the restarts (their folders gone) removed by name, no prune.
 - *Reminder added (one-off, read-only, no connectors; read back on creation: none):* `trig_016Ah4bFRqQAtZPLj6oHmv7A` (Fri 27 Nov 17:30 UTC = 09:30 Pacific): read the half-day runs (11:30 / 11:40 New York) on the new code, and that night's backups.
 - *Next full audit:* at the next push that needs one; it covers this commit too.
+- *The two older timing gaps (his "fix the timing gaps if neccessary"), not fixed. Decided 27 Nov 2026 (Vega, under his word; his to veto):* (1) `after_close`'s no-zone-database fallback never runs on GitHub's runners, which carry the zone database (every New York-time rule has held in their logs since September: the clock change, the backup rule, the 26 Nov holiday); (2) the one-second window at New York midnight between `before_slot` and `after_close` needs a backup about 14 hours late inside that second (the latest seen is about 11 hours), and the guard and panel_health would still report the day. A recorder change on Fri 27 Nov, a day whose run is still needed, would risk more than either gap. If one is ever seen: read the clock once at the start of `main()`, and refuse when the zone cannot be read.
 
 ### Prompt for the next session
 
